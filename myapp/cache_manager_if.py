@@ -248,6 +248,7 @@ class CacheManagerIF:
         return updateflg
     
     def fetch_weekly_duties(self, organization, affiliation_ids):
+        """
         weekly_duties = WeeklyDuty.objects.filter(
             affilation_id=affiliation_ids,
             plan__inspection_no__control_no__line_name__organization__organization=organization
@@ -258,6 +259,22 @@ class CacheManagerIF:
         )
         
         
+        
+        return weekly_duties
+        """
+        weekly_duties = WeeklyDuty.objects.filter(
+            affilation_id = affiliation_ids,
+            plan__inspection_no__control_no__line_name__organization=organization
+        ).select_related(
+            'plan',
+            'plan__inspection_no',
+            'plan__inspection_no__control_no',
+            'plan__inspection_no__control_no__line_name',
+            'plan__p_date',
+            'affilation'
+        ).order_by(
+            'plan__plan_time'
+        )
         
         return weekly_duties
     
