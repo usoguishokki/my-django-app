@@ -1,0 +1,401 @@
+Watching for file changes with StatReloader
+"GET /home/ HTTP/1.1" 200 1577544
+"GET /static/css/base.css HTTP/1.1" 200 4656
+"GET /static/js/home/home.js HTTP/1.1" 200 42064
+"GET /static/debug_toolbar/js/toolbar.js HTTP/1.1" 200 14601
+"GET /static/css/home.css HTTP/1.1" 200 13056
+"GET /static/img/Nika.png HTTP/1.1" 200 1998
+"GET /static/css/gantt.css HTTP/1.1" 200 5701
+"GET /static/img/home.png HTTP/1.1" 200 1757
+"GET /static/img/calendar.png HTTP/1.1" 200 6716
+"GET /static/img/check.png HTTP/1.1" 200 5831
+"GET /static/debug_toolbar/css/toolbar.css HTTP/1.1" 200 16675
+"GET /static/js/common.js HTTP/1.1" 200 426
+"GET /static/img/standard.png HTTP/1.1" 200 8097
+"GET /static/img/achievements.png HTTP/1.1" 200 7529
+"GET /static/img/plannedMaintenance.png HTTP/1.1" 200 9917
+"GET /static/img/spareParts.png HTTP/1.1" 200 10360
+"GET /static/img/RAV4.png HTTP/1.1" 200 109866
+"GET /static/img/logout.png HTTP/1.1" 200 5621
+"GET /static/css/header.css HTTP/1.1" 200 4897
+"GET /static/img/user.png HTTP/1.1" 200 10366
+"GET /static/js/header/header.js HTTP/1.1" 200 3077
+"GET /static/js/home/chartSetup.js HTTP/1.1" 200 2884
+"GET /static/js/frappeGantt/NewFrappeGantt.js HTTP/1.1" 200 40670
+"GET /static/js/home/homeMappingConfig.js HTTP/1.1" 200 11866
+"GET /static/js/manager/TableManger.js HTTP/1.1" 200 12573
+"GET /static/js/frappeGantt/svg_utils.js HTTP/1.1" 200 3468
+"GET /static/js/frappeGantt/data_utils.js HTTP/1.1" 200 6993
+"GET /static/js/manager/UIManger.js HTTP/1.1" 200 18932
+"GET /static/js/home/layout.js HTTP/1.1" 200 2828
+"GET /static/js/manager/loadingManager.js HTTP/1.1" 200 1427
+"GET /static/debug_toolbar/js/utils.js HTTP/1.1" 200 4742
+"GET /static/js/frappeGantt/popup.js HTTP/1.1" 200 2212
+"GET /static/js/manager/ModalManger.js HTTP/1.1" 200 2231
+"GET /static/js/frappeGantt/bar.js HTTP/1.1" 200 12443
+"GET /static/js/frappeGantt/arrow.js HTTP/1.1" 200 3247
+"GET /static/js/asyncCommunicator/asyncCommunicator.js HTTP/1.1" 200 1900
+"GET /static/debug_toolbar/css/print.css HTTP/1.1" 200 43
+"GET /static/img/Nika.png HTTP/1.1" 200 1998
+🔍 dev_redirect_view: Redirecting to http://localhost:3000/nika/spareParts
+🔍 request.COOKIES in dev_redirect_view: {'csrftoken': 'psHQcRMeRHmdA5EACZeOvFrHSmGddQNz', 'sessionid': '3dnjfslvll9mgaada4mfzvbo3gxqy3u3'}
+🔍 Django Set-Cookie: SESSION_COOKIE_SAMESITE=None, SESSION_COOKIE_SECURE=False
+"GET /nika/spareParts HTTP/1.1" 302 0
+"OPTIONS /api/employee/ HTTP/1.1" 200 0
+🔍 request.COOKIES in get_employee: {}
+🔍 request.META['HTTP_COOKIE']: None
+🔍 Django 認証ユーザー: AnonymousUser
+🔍 認証済みか？: False
+🔍 request.COOKIES in get_employee: {}
+🔍 request.META['HTTP_COOKIE']: None
+🔍 Django 認証ユーザー: AnonymousUser
+🔍 認証済みか？: False
+🚨 未認証のため 403 を返します
+🚨 未認証のため 403 を返します
+Forbidden: /api/employee/
+"GET /api/employee/ HTTP/1.1" 403 36
+Forbidden: /api/employee/
+"GET /api/employee/ HTTP/1.1" 403 36
+🔍 dev_redirect_view: Redirecting to http://localhost:3000/nika/spareParts
+🔍 request.COOKIES in dev_redirect_view: {'csrftoken': 'psHQcRMeRHmdA5EACZeOvFrHSmGddQNz', 'sessionid': '3dnjfslvll9mgaada4mfzvbo3gxqy3u3'}
+🔍 Django Set-Cookie: SESSION_COOKIE_SAMESITE=None, SESSION_COOKIE_SECURE=False
+"GET /nika/spareParts HTTP/1.1" 302 0
+🔍 request.COOKIES in get_employee: {}
+🔍 request.META['HTTP_COOKIE']: None
+🔍 Django 認証ユーザー: AnonymousUser
+🔍 認証済みか？: False
+🚨 未認証のため 403 を返します
+Forbidden: /api/employee/
+"GET /api/employee/ HTTP/1.1" 403 36
+🔍 request.COOKIES in get_employee: {}
+🔍 request.META['HTTP_COOKIE']: None
+🔍 Django 認証ユーザー: AnonymousUser
+🔍 認証済みか？: False
+🚨 未認証のため 403 を返します
+Forbidden: /api/employee/
+"GET /api/employee/ HTTP/1.1" 403 36
+C:\inetpub\wwwroot\sitefolder\myproject\myproject\settings.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /home/ HTTP/1.1" 200 1577544
+"GET /static/img/Nika.png HTTP/1.1" 200 1998
+🔍 dev_redirect_view: Redirecting to http://localhost:3000/nika/spareParts
+🔍 request.COOKIES in dev_redirect_view: {'csrftoken': 'psHQcRMeRHmdA5EACZeOvFrHSmGddQNz', 'sessionid': '3dnjfslvll9mgaada4mfzvbo3gxqy3u3'}
+🔍 Django Set-Cookie: SESSION_COOKIE_SAMESITE=None, SESSION_COOKIE_SECURE=False
+"GET /nika/spareParts HTTP/1.1" 302 0
+🔍 request.COOKIES in get_employee: {}
+🔍 request.META['HTTP_COOKIE']: None
+🔍 Django 認証ユーザー: AnonymousUser
+🔍 認証済みか？: False
+🚨 未認証のため 403 を返します
+Forbidden: /api/employee/
+"GET /api/employee/ HTTP/1.1" 403 36
+🔍 request.COOKIES in get_employee: {}
+🔍 request.META['HTTP_COOKIE']: None
+🔍 Django 認証ユーザー: AnonymousUser
+🔍 認証済みか？: False
+🚨 未認証のため 403 を返します
+Forbidden: /api/employee/
+"GET /api/employee/ HTTP/1.1" 403 36
+🔍 dev_redirect_view: Redirecting to http://localhost:3000/nika/spareParts
+🔍 request.COOKIES in dev_redirect_view: {'csrftoken': 'psHQcRMeRHmdA5EACZeOvFrHSmGddQNz', 'sessionid': '3dnjfslvll9mgaada4mfzvbo3gxqy3u3'}
+🔍 Django Set-Cookie: SESSION_COOKIE_SAMESITE=None, SESSION_COOKIE_SECURE=False
+"GET /nika/spareParts HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 200 1577544
+"GET /static/css/base.css HTTP/1.1" 200 4656
+"GET /static/css/header.css HTTP/1.1" 200 4897
+"GET /static/img/Nika.png HTTP/1.1" 200 1998
+"GET /static/debug_toolbar/js/toolbar.js HTTP/1.1" 200 14601
+"GET /static/img/home.png HTTP/1.1" 200 1757
+"GET /static/img/calendar.png HTTP/1.1" 200 6716
+"GET /static/img/check.png HTTP/1.1" 200 5831
+"GET /static/css/gantt.css HTTP/1.1" 200 5701
+"GET /static/js/common.js HTTP/1.1" 200 426
+"GET /static/debug_toolbar/css/toolbar.css HTTP/1.1" 200 16675
+"GET /static/css/home.css HTTP/1.1" 200 13056
+"GET /static/img/standard.png HTTP/1.1" 200 8097
+"GET /static/img/achievements.png HTTP/1.1" 200 7529
+"GET /static/img/plannedMaintenance.png HTTP/1.1" 200 9917
+"GET /static/img/spareParts.png HTTP/1.1" 200 10360
+"GET /static/debug_toolbar/js/utils.js HTTP/1.1" 200 4742
+"GET /static/img/logout.png HTTP/1.1" 200 5621
+"GET /static/img/user.png HTTP/1.1" 200 10366
+"GET /static/js/home/home.js HTTP/1.1" 200 42064
+"GET /static/js/header/header.js HTTP/1.1" 200 3077
+"GET /static/debug_toolbar/css/print.css HTTP/1.1" 200 43
+"GET /static/js/frappeGantt/svg_utils.js HTTP/1.1" 200 3468
+"GET /static/js/home/chartSetup.js HTTP/1.1" 200 2884
+"GET /static/js/manager/TableManger.js HTTP/1.1" 200 12573
+"GET /static/js/frappeGantt/NewFrappeGantt.js HTTP/1.1" 200 40670
+"GET /static/js/manager/UIManger.js HTTP/1.1" 200 18932
+"GET /static/js/frappeGantt/data_utils.js HTTP/1.1" 200 6993
+"GET /static/js/home/homeMappingConfig.js HTTP/1.1" 200 11866
+"GET /static/js/home/layout.js HTTP/1.1" 200 2828
+"GET /static/js/manager/loadingManager.js HTTP/1.1" 200 1427
+"GET /static/js/frappeGantt/bar.js HTTP/1.1" 200 12443
+"GET /static/js/manager/ModalManger.js HTTP/1.1" 200 2231
+"GET /static/js/frappeGantt/popup.js HTTP/1.1" 200 2212
+"GET /static/js/asyncCommunicator/asyncCommunicator.js HTTP/1.1" 200 1900
+"GET /static/js/frappeGantt/arrow.js HTTP/1.1" 200 3247
+"GET /static/img/RAV4.png HTTP/1.1" 200 109866
+"GET /static/img/Nika.png HTTP/1.1" 200 1998
+🔍 dev_redirect_view: Redirecting to http://localhost:3000/nika/spareParts
+🔍 request.COOKIES in dev_redirect_view: {'csrftoken': 'psHQcRMeRHmdA5EACZeOvFrHSmGddQNz', 'sessionid': '3dnjfslvll9mgaada4mfzvbo3gxqy3u3'}
+🔍 Django Set-Cookie: SESSION_COOKIE_SAMESITE=None, SESSION_COOKIE_SECURE=False
+"GET /nika/spareParts HTTP/1.1" 302 0
+Watching for file changes with StatReloader
+Not Found: /
+"GET / HTTP/1.1" 404 9324
+Not Found: /favicon.ico
+"GET /favicon.ico HTTP/1.1" 404 9375
+"GET /home/ HTTP/1.1" 200 1577544
+"GET /workContents/ HTTP/1.1" 200 18270
+"GET /static/js/workContents/workContents.js HTTP/1.1" 304 0
+"GET /static/css/workContents.css HTTP/1.1" 304 0
+"GET /static/js/workContents/workContentsMappingConfig.js HTTP/1.1" 304 0
+"GET /calendar/ HTTP/1.1" 200 410929
+"GET /static/js/calendar/calendar.js HTTP/1.1" 304 0
+"GET /static/css/calendar.css HTTP/1.1" 304 0
+"GET /static/js/calendar/calendarMappingConfig.js HTTP/1.1" 304 0
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 455078
+"GET /home/ HTTP/1.1" 200 1577544
+🔍 dev_redirect_view: Redirecting to http://localhost:3000/nika/spareParts
+🔍 request.COOKIES in dev_redirect_view: {'csrftoken': 'psHQcRMeRHmdA5EACZeOvFrHSmGddQNz', 'sessionid': '3dnjfslvll9mgaada4mfzvbo3gxqy3u3'}
+🔍 Django Set-Cookie: SESSION_COOKIE_SAMESITE=None, SESSION_COOKIE_SECURE=False
+"GET /nika/spareParts HTTP/1.1" 302 0
+🔍 dev_redirect_view: Redirecting to http://localhost:3000/nika/spareParts
+🔍 request.COOKIES in dev_redirect_view: {'csrftoken': 'psHQcRMeRHmdA5EACZeOvFrHSmGddQNz', 'sessionid': '3dnjfslvll9mgaada4mfzvbo3gxqy3u3'}
+🔍 Django Set-Cookie: SESSION_COOKIE_SAMESITE=None, SESSION_COOKIE_SECURE=False
+"GET /nika/spareParts HTTP/1.1" 302 0
+🔍 dev_redirect_view: Redirecting to http://localhost:3000/nika/spareParts
+🔍 request.COOKIES in dev_redirect_view: {'csrftoken': 'psHQcRMeRHmdA5EACZeOvFrHSmGddQNz', 'sessionid': '3dnjfslvll9mgaada4mfzvbo3gxqy3u3'}
+🔍 Django Set-Cookie: SESSION_COOKIE_SAMESITE=None, SESSION_COOKIE_SECURE=False
+"GET /nika/spareParts HTTP/1.1" 302 0
+C:\inetpub\wwwroot\sitefolder\myproject\myproject\settings.py changed, reloading.
+Watching for file changes with StatReloader
+🔍 dev_redirect_view: Redirecting to http://localhost:3000/nika/spareParts
+🔍 request.COOKIES in dev_redirect_view: {'csrftoken': 'psHQcRMeRHmdA5EACZeOvFrHSmGddQNz', 'sessionid': '3dnjfslvll9mgaada4mfzvbo3gxqy3u3'}
+🔍 Django Set-Cookie: SESSION_COOKIE_SAMESITE=None, SESSION_COOKIE_SECURE=False
+"GET /nika/spareParts HTTP/1.1" 302 0
+C:\inetpub\wwwroot\sitefolder\myproject\myproject\settings.py changed, reloading.
+Forbidden (CSRF cookie not set.): /login/
+Not Found: /favicon.ico
+Watching for file changes with StatReloader
+"GET /logout/ HTTP/1.1" 302 0
+"GET /login/ HTTP/1.1" 200 7912
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 302 0
+"GET /login/?next=/home/ HTTP/1.1" 200 7912
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 302 0
+"GET /login/?next=/home/ HTTP/1.1" 200 7912
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 302 0
+"GET /login/?next=/home/ HTTP/1.1" 200 7912
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 302 0
+"GET /login/?next=/home/ HTTP/1.1" 200 7912
+C:\inetpub\wwwroot\sitefolder\myproject\myproject\settings.py changed, reloading.
+Watching for file changes with StatReloader
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 200 1577544
+"GET /logout/ HTTP/1.1" 302 0
+"GET /login/ HTTP/1.1" 200 7912
+C:\inetpub\wwwroot\sitefolder\myproject\myproject\settings.py changed, reloading.
+Watching for file changes with StatReloader
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 302 0
+"GET /login/?next=/home/ HTTP/1.1" 200 7912
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 302 0
+"GET /login/?next=/home/ HTTP/1.1" 200 7912
+C:\inetpub\wwwroot\sitefolder\myproject\myproject\settings.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myproject\settings.py changed, reloading.
+Watching for file changes with StatReloader
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 200 1577544
+C:\inetpub\wwwroot\sitefolder\myproject\myproject\settings.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myproject\settings.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /logout/ HTTP/1.1" 302 0
+"GET /login/ HTTP/1.1" 200 7912
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 302 0
+"GET /login/?next=/home/ HTTP/1.1" 200 7912
+C:\inetpub\wwwroot\sitefolder\myproject\myproject\settings.py changed, reloading.
+Watching for file changes with StatReloader
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 302 0
+"GET /login/?next=/home/ HTTP/1.1" 200 7912
+C:\inetpub\wwwroot\sitefolder\myproject\myproject\settings.py changed, reloading.
+Watching for file changes with StatReloader
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 302 0
+"GET /login/?next=/home/ HTTP/1.1" 200 7912
+C:\inetpub\wwwroot\sitefolder\myproject\myproject\settings.py changed, reloading.
+Watching for file changes with StatReloader
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 200 1577544
+Forbidden (CSRF cookie not set.): /login/
+🔍 dev_redirect_view: Redirecting to http://localhost:3000/nika/spareParts
+🔍 request.COOKIES in dev_redirect_view: {'csrftoken': 'Ido2fk5R77GLmzDXR1jqg2OhLBGrvCMU', 'sessionid': 'hnm1cp2dkmrb4whs0vnf3i2yxojyrz3z'}
+🔍 Django Set-Cookie: SESSION_COOKIE_SAMESITE=Lax, SESSION_COOKIE_SECURE=False
+Watching for file changes with StatReloader
+"GET /home/ HTTP/1.1" 200 1577544
+🔍 request.COOKIES in nika_app_view: {'csrftoken': 'KY2EbktiNLtW9sXaPXY5mFijNxKlZavH', 'sessionid': 'tkbbrwsepv97nolksn04ttuze9dealbm'}
+"GET /nika/spareParts HTTP/1.1" 200 5443
+"GET /static/css/main.e6c13ad2.css HTTP/1.1" 200 337
+"GET /static/js/main.707ce409.js HTTP/1.1" 200 183352
+"GET /static/css/main.e6c13ad2.css.map HTTP/1.1" 200 584
+"GET /static/js/main.707ce409.js.map HTTP/1.1" 200 865514
+Not Found: /favicon.ico
+"GET /favicon.ico HTTP/1.1" 404 9375
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /home/ HTTP/1.1" 200 1577544
+"GET /static/css/base.css HTTP/1.1" 200 4656
+"GET /static/css/home.css HTTP/1.1" 200 13056
+"GET /static/css/header.css HTTP/1.1" 200 4897
+"GET /static/img/Nika.png HTTP/1.1" 200 1998
+"GET /static/img/home.png HTTP/1.1" 200 1757
+"GET /static/css/gantt.css HTTP/1.1" 200 5701
+"GET /static/img/calendar.png HTTP/1.1" 200 6716
+"GET /static/img/check.png HTTP/1.1" 200 5831
+"GET /static/img/standard.png HTTP/1.1" 200 8097
+"GET /static/img/achievements.png HTTP/1.1" 200 7529
+"GET /static/js/common.js HTTP/1.1" 200 426
+"GET /static/img/RAV4.png HTTP/1.1" 200 109866
+"GET /static/debug_toolbar/js/toolbar.js HTTP/1.1" 200 14601
+"GET /static/js/home/home.js HTTP/1.1" 200 42064
+"GET /static/img/plannedMaintenance.png HTTP/1.1" 200 9917
+"GET /static/img/spareParts.png HTTP/1.1" 200 10360
+"GET /static/debug_toolbar/css/toolbar.css HTTP/1.1" 200 16675
+"GET /static/img/logout.png HTTP/1.1" 200 5621
+"GET /static/img/user.png HTTP/1.1" 200 10366
+"GET /static/js/header/header.js HTTP/1.1" 200 3077
+"GET /static/debug_toolbar/css/print.css HTTP/1.1" 200 43
+"GET /static/js/frappeGantt/svg_utils.js HTTP/1.1" 200 3468
+"GET /static/js/manager/TableManger.js HTTP/1.1" 200 12573
+"GET /static/js/manager/UIManger.js HTTP/1.1" 200 18932
+"GET /static/js/frappeGantt/NewFrappeGantt.js HTTP/1.1" 200 40670
+"GET /static/js/home/chartSetup.js HTTP/1.1" 200 2884
+"GET /static/js/frappeGantt/data_utils.js HTTP/1.1" 200 6993
+"GET /static/js/home/homeMappingConfig.js HTTP/1.1" 200 11866
+"GET /static/js/home/layout.js HTTP/1.1" 200 2828
+"GET /static/debug_toolbar/js/utils.js HTTP/1.1" 200 4742
+"GET /static/js/manager/loadingManager.js HTTP/1.1" 200 1427
+"GET /static/js/asyncCommunicator/asyncCommunicator.js HTTP/1.1" 200 1900
+"GET /static/js/frappeGantt/arrow.js HTTP/1.1" 200 3247
+"GET /static/js/frappeGantt/popup.js HTTP/1.1" 200 2212
+"GET /static/js/manager/ModalManger.js HTTP/1.1" 200 2231
+"GET /static/js/frappeGantt/bar.js HTTP/1.1" 200 12443
+"GET /static/img/Nika.png HTTP/1.1" 200 1998
+🔍 request.COOKIES in nika_app_view: {'csrftoken': 'KY2EbktiNLtW9sXaPXY5mFijNxKlZavH', 'sessionid': 'tkbbrwsepv97nolksn04ttuze9dealbm'}
+"GET /nika/spareParts HTTP/1.1" 200 5443
+"GET /static/js/main.707ce409.js HTTP/1.1" 304 0
+"GET /static/css/main.e6c13ad2.css HTTP/1.1" 304 0
+"GET /static/css/main.e6c13ad2.css.map HTTP/1.1" 304 0
+"GET /static/js/main.707ce409.js.map HTTP/1.1" 304 0
+Not Found: /favicon.ico
+"GET /favicon.ico HTTP/1.1" 404 9375
+🔍 request.COOKIES in nika_app_view: {'csrftoken': 'KY2EbktiNLtW9sXaPXY5mFijNxKlZavH', 'sessionid': 'tkbbrwsepv97nolksn04ttuze9dealbm'}
+"GET /nika/spareParts HTTP/1.1" 200 5443
+"GET /home/ HTTP/1.1" 200 1577544
+"GET /static/js/home/home.js HTTP/1.1" 200 42064
+"GET /static/debug_toolbar/js/toolbar.js HTTP/1.1" 200 14601
+"GET /static/css/base.css HTTP/1.1" 200 4656
+"GET /static/css/home.css HTTP/1.1" 200 13056
+"GET /static/css/gantt.css HTTP/1.1" 200 5701
+"GET /static/img/RAV4.png HTTP/1.1" 200 109866
+"GET /static/css/header.css HTTP/1.1" 200 4897
+"GET /static/img/Nika.png HTTP/1.1" 200 1998
+"GET /static/img/home.png HTTP/1.1" 200 1757
+"GET /static/img/calendar.png HTTP/1.1" 200 6716
+"GET /static/img/check.png HTTP/1.1" 200 5831
+"GET /static/js/common.js HTTP/1.1" 200 426
+"GET /static/js/home/chartSetup.js HTTP/1.1" 200 2884
+"GET /static/js/manager/UIManger.js HTTP/1.1" 200 18932
+"GET /static/js/manager/TableManger.js HTTP/1.1" 200 12573
+"GET /static/js/frappeGantt/NewFrappeGantt.js HTTP/1.1" 200 40670
+"GET /static/js/frappeGantt/svg_utils.js HTTP/1.1" 200 3468
+"GET /static/js/frappeGantt/data_utils.js HTTP/1.1" 200 6993
+"GET /static/js/home/homeMappingConfig.js HTTP/1.1" 200 11866
+"GET /static/js/home/layout.js HTTP/1.1" 200 2828
+"GET /static/js/manager/loadingManager.js HTTP/1.1" 200 1427
+"GET /static/img/achievements.png HTTP/1.1" 200 7529
+"GET /static/img/plannedMaintenance.png HTTP/1.1" 200 9917
+"GET /static/img/logout.png HTTP/1.1" 200 5621
+"GET /static/img/standard.png HTTP/1.1" 200 8097
+"GET /static/img/spareParts.png HTTP/1.1" 200 10360
+"GET /static/img/user.png HTTP/1.1" 200 10366
+"GET /static/debug_toolbar/css/toolbar.css HTTP/1.1" 200 16675
+"GET /static/js/header/header.js HTTP/1.1" 200 3077
+"GET /static/debug_toolbar/css/print.css HTTP/1.1" 200 43
+"GET /static/js/asyncCommunicator/asyncCommunicator.js HTTP/1.1" 200 1900
+"GET /static/js/frappeGantt/bar.js HTTP/1.1" 200 12443
+"GET /static/js/frappeGantt/arrow.js HTTP/1.1" 200 3247
+"GET /static/js/frappeGantt/popup.js HTTP/1.1" 200 2212
+"GET /static/js/manager/ModalManger.js HTTP/1.1" 200 2231
+"GET /static/debug_toolbar/js/utils.js HTTP/1.1" 200 4742
+"GET /static/img/Nika.png HTTP/1.1" 200 1998
+🔍 request.COOKIES in nika_app_view: {'csrftoken': 'KY2EbktiNLtW9sXaPXY5mFijNxKlZavH', 'sessionid': 'tkbbrwsepv97nolksn04ttuze9dealbm'}
+"GET /nika/spareParts HTTP/1.1" 200 5443
+Not Found: /favicon.ico
+"GET /favicon.ico HTTP/1.1" 404 9375
+🔍 request.COOKIES in nika_app_view: {'csrftoken': 'KY2EbktiNLtW9sXaPXY5mFijNxKlZavH', 'sessionid': 'tkbbrwsepv97nolksn04ttuze9dealbm'}
+"GET /nika/spareParts HTTP/1.1" 200 5443
+"GET /static/js/main.707ce409.js HTTP/1.1" 304 0
+"GET /static/css/main.e6c13ad2.css HTTP/1.1" 304 0
+"GET /static/css/main.e6c13ad2.css.map HTTP/1.1" 304 0
+"GET /static/js/main.707ce409.js.map HTTP/1.1" 304 0
+🔍 request.COOKIES in nika_app_view: {'csrftoken': 'KY2EbktiNLtW9sXaPXY5mFijNxKlZavH', 'sessionid': 'tkbbrwsepv97nolksn04ttuze9dealbm'}
+"GET /nika/spareParts HTTP/1.1" 200 5443
+"GET /static/js/main.382658b3.js HTTP/1.1" 200 183865
+"GET /static/css/main.e6c13ad2.css HTTP/1.1" 200 337
+"GET /static/css/main.e6c13ad2.css.map HTTP/1.1" 200 584
+"GET /static/js/main.382658b3.js.map HTTP/1.1" 200 866610
+🔍 request.COOKIES in get_employee: {'csrftoken': 'KY2EbktiNLtW9sXaPXY5mFijNxKlZavH', 'sessionid': 'tkbbrwsepv97nolksn04ttuze9dealbm'}
+🔍 Django 認証ユーザー: 52510
+🔍 認証済みか？: True
+"OPTIONS /api/employee/ HTTP/1.1" 200 0
+"OPTIONS /api/employee/ HTTP/1.1" 200 0
+🔍 request.COOKIES in get_employee: {}
+🔍 Django 認証ユーザー: AnonymousUser
+🔍 認証済みか？: False
+🔍 request.COOKIES in get_employee: {}
+"GET /api/employee/ HTTP/1.1" 200 49
+🔍 Django 認証ユーザー: AnonymousUser
+🔍 認証済みか？: False
+"GET /api/employee/ HTTP/1.1" 200 40
+"GET /api/employee/ HTTP/1.1" 200 49
+C:\inetpub\wwwroot\sitefolder\myproject\myproject\settings.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myproject\settings.py changed, reloading.
+Watching for file changes with StatReloader
+🔍 request.COOKIES in nika_app_view: {'csrftoken': 'KY2EbktiNLtW9sXaPXY5mFijNxKlZavH', 'sessionid': 'tkbbrwsepv97nolksn04ttuze9dealbm'}
+"GET /nika/spareParts HTTP/1.1" 200 5443
+"GET /static/js/main.382658b3.js HTTP/1.1" 304 0
+"GET /static/css/main.e6c13ad2.css HTTP/1.1" 304 0
+"GET /static/css/main.e6c13ad2.css.map HTTP/1.1" 304 0
+"GET /static/js/main.382658b3.js.map HTTP/1.1" 304 0
+🔍 request.COOKIES in get_employee: {'csrftoken': 'KY2EbktiNLtW9sXaPXY5mFijNxKlZavH', 'sessionid': 'tkbbrwsepv97nolksn04ttuze9dealbm'}
+🔍 Django 認証ユーザー: 52510
+🔍 認証済みか？: True
+"GET /api/employee/ HTTP/1.1" 200 40
+🔍 request.COOKIES in nika_app_view: {'csrftoken': 'KY2EbktiNLtW9sXaPXY5mFijNxKlZavH', 'sessionid': 'tkbbrwsepv97nolksn04ttuze9dealbm'}
+"GET /nika/spareParts HTTP/1.1" 200 5443
+"GET /static/js/main.382658b3.js HTTP/1.1" 304 0
+"GET /static/css/main.e6c13ad2.css HTTP/1.1" 304 0
+"GET /static/css/main.e6c13ad2.css.map HTTP/1.1" 304 0
+"GET /static/js/main.382658b3.js.map HTTP/1.1" 304 0
+🔍 request.COOKIES in get_employee: {'csrftoken': 'KY2EbktiNLtW9sXaPXY5mFijNxKlZavH', 'sessionid': 'tkbbrwsepv97nolksn04ttuze9dealbm'}
+🔍 Django 認証ユーザー: 52510
+🔍 認証済みか？: True
+"GET /api/employee/ HTTP/1.1" 200 40
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myproject\urls.py changed, reloading.
+Watching for file changes with StatReloader

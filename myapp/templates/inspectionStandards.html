@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}WorkContents{% endblock %}
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/inspectionStandards.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+get_card_info
+{% block header %}
+{% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+
+<div id="parentFilterArea" class="parent-filterarea">
+    <div id="filterarea" class="filter-container" >
+        <div class="filter-item">
+            <label for="controlNameSelect">設備名:</label>
+            <select id="controlNameSelect" data-filter-attribute="machine">
+                <option value="" data-machine="" data-control-no=""></option>
+                {% for control in controls %}
+                <option value="{{ control.machine }}"
+                 data-machine="{{ control.machine }}" 
+                 data-control-no="{{ control.control_no }}">
+                    {{ control.machine }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="controlIdSelect">設備番号</label>
+            <select id="controlIdSelect" data-filter-attribute="control_no">
+                <option value="" data-machine="" data-control-no=""></option>
+                {% for control in controls %}
+                <option value="{{ control.control_no }}" 
+                data-machine="{{ control.machine }}"
+                data-control-no="{{ control.control_no }}">
+                    {{ control.control_no }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <div class="table-container" id="inspectionStandards">
+        <div class="equipment-info" id="controlNo">
+            <h1 class="equipment-info-title" id="controlNoTitle">
+                <span class="equipment-name">
+                    設備名: <span id="controlNameSpan"></span>
+                </span>
+                <span class="equipment-id">
+                    管理番号: <span id="controlNoSpan"></span>
+                </span>
+            </h1>
+        </div>
+        <div class="table-scroll" id="tableScroll">
+            <table id="myTable">
+                <colgroup>
+                    <col class="inspection-no-content" id="inspectionNoCol">
+                    <col class="work-name-content" id="workNameCol">
+                    <col class="applicable-device-content" id="applicableDeviceCol">
+                    <col class="method-content" id="methodCol">
+                    <col class="contents-content" id="contentsCol">
+                    <col class="period-content" id="periodCol">
+                    <col class="timezone-content" id="timezoneCol">
+                    <col class="standard-content" id="standardCol">
+                    <col class="remarks-content" id="remarksCol">
+                </colgroup>
+                <thead>
+                    <tr class="table-th" id="tableTh">
+                        <th class="inspection-no-content inspection-no-column" id="inspectionNoColumn">カードNo</th>
+                        <th class="work-name-content work-name-column" id="workNameColumn">作業名</th>
+                        <th class="applicable-device-content applicable-device-column" id="applicableDeviceColumn">該当装置</th>
+                        <th class="method-content method-column" id="methodColumn">方法</th>
+                        <th class="contents-content contents-column" id="contentsColumn">点検方法</th>
+                        <th class="period-content period-column" id="periodColumn">周期</th>
+                        <th class="timezone-content timezone-column" id="timezoneColumn">時間帯</th>
+                        <th class="standard-content standard-column" id="standardColumn">基準処置</th>
+                        <th class="remarks-content remarks-column" id="remarksColumn">備考</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for application in applications_data_list %}
+                        <tr>
+                            <td class="inspection-no-content inspection-no-row">{{ application.id }}</td>
+                            <td class="work-name-content work-name-row">{{ application.status }}</td>
+                            <td class="applicable-device-content applicable-device-row">{{ application.work_name }}</td>
+                            <td class="method-content method-row">{{ application.points_to_note }}</td>
+                            <td class="contents-content contents-row">{{ application.result }}</td>
+                            <td class="period-content period-row">{{ application.applicant_name }}</td>
+                            <td class="timezone-content timezone-row">{{ application.approver_name }}</td>
+                            <td class="standard-content standard-row"></td>
+                            <td class="remarks-content remarks-row"></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>  
+    </div>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block script %}
+    <script type="module" src="{% static 'js/inspectionStandards/inspectionStandards.js' %}"></script>
+{% endblock %}

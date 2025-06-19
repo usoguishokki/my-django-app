@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}Callendar{% endblock %}
+
+{% block head %}
+<!-- jQuery (3.x以上) -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.5/main.min.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.5/main.min.js'></script>
+{% endblock %}
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/calendar.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block header %}
+    {% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+
+    <div class="card-display">
+        <div id="card-table" class="table-container">
+            <table  id="myTable">
+                <colgroup>
+                    <col class="line-content" id="lineCol">
+                    <col class="machine-content" id="machineCol">
+                    <col class="work-name-content" id="workNameCol">
+                    <col class="man-hour-content" id="manHourCol">
+                </colgroup>
+                <thead>
+                    <tr class="table-th" id="tableTh">
+                        <th class="line-content line-column" id="lineColumn">ライン名</th>
+                        <th class="machine-content machine-column" id="machineColumn">設備名</th>
+                        <th class="work-name-content work-name-column" id="workNameColumn">作業名</th>
+                        <th class="man-hour-content man-hour-column" id="manHourColumn">工数</th>
+                    </tr>
+                </thead>
+                <tbody id="external-events">
+                    {% for duty in plan_data %}
+                    <tr class="fc-event" draggable="True" 
+                    data-draggable="false"
+                    data-plan-id="{{ duty.plan_id }}"
+                    data-status="{{ duty.status }}"
+                    data-work-name="{{ duty.plan.inspection_no.wark_name }}"
+                    data-man-hour="{{ duty.plan.inspection_no.man_hours }}"
+                    data-affilation="{{ duty.affilation.affilation}}"
+                    data-time-zone="{{ duty.plan.inspection_no.time_zone }}"
+                    data-control-name="{{ duty.plan.inspection_no.control_no.machine }}"
+                    data-plan-inspection-no="{{ duty.plan.inspection_no.inspection_no }}"                    
+                    data-line = "{{ duty.plan.inspection_no.control_no.line_name.line_name }}"
+                    data-weekday="{{ duty.plan.inspection_no.day_of_week }}"
+                    data-event='{"title": "Plan ID: {{ duty.plan.plan_id }}", "id": "{{ duty.plan.plan_id }}"}'
+                    data-week="{{ duty.plan.p_date.date_alias }}"
+                    data-plan-week-of-day="{{ duty.plan.p_date.h_day_of_week }}">
+                        <td class="line-content line-row">{{ duty.plan.inspection_no.control_no.line_name.line_name }}</td>
+                        <td class="machine-content machine-row">{{ duty.plan.inspection_no.control_no.machine }}</td>
+                        <td class="work-name-content work-name-row">{{ duty.plan.inspection_no.wark_name }}</td>
+                        <td class="man-hour-content man-hour-row">{{ duty.plan.inspection_no.man_hours }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div id="card-total">
+            <label id="totalCount" class="total"></Label>
+            <label id="manHours" class="total"></Label>
+            <div id="buttonRegistration" class="mybutton disable-events">
+                <a>一括登録</a>
+            </div>
+        </div>
+        <div id="card-detail" class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>部位</th>
+                        <th>作業内容</th>
+                    </tr>
+                </thead>
+                <tbody id="card-detail-table-body">
+                    <tr>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <div id="filterarea" class="filter-container" data-this-week="{{ this_week }}">
+        <div class="filter-item">
+            <label for="memberSelect">メンバー</label>
+            <select id="memberSelect" data-filter-attribute="data-member">
+                <option id="memberSelectDefault" value="">選択してください。</option>
+                <option id="allMember" class="display-none" value="">全て</option>
+                {% for member in members_with_profiles %}
+                <option value="{{ member.user.name }}"
+                    data-team="{{ member.belongs.affilation }}"
+                    data-login-number="{{ member.user_id }}">
+                    {{ member.user.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="teamSelect">班</label>
+            <select id="teamSelect" data-filter-attribute="data-team">
+                <option value="">全て</option>
+                {% for key, value in filters.working_conditions_info %}
+                <option value="{{ value.affiliation }}" 
+                    data-pattern_name="{{ value.shift_pattern_name }}"
+                    data-affiliation="{{ value.affiliation }}">
+                    {{ value.affiliation }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="weekSelect">週</label>
+            <select id="weekSelect" data-filter-attribute="data-week">
+                <option value="">全て</option>
+                {% for alias in filters.hozen_date_alias %}
+                <option value="{{ alias }}">
+                    {{ alias }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="lineSelect">ライン名</label>
+            <select id="lineSelect" data-filter-attribute="data-line">
+                <option value="">全て</option>
+                {% for line_name in filters.line_names %}
+                <option value="{{ line_name }}">
+                    {{ line_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="machineSelect">設備名</label>
+            <select id="machineSelect" data-filter-attribute="data-machine">
+                <option value="">全て</option>
+                {% for machine_name in filters.machine_names %}
+                <option value="{{ machine_name }}">
+                    {{ machine_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="daySelect">曜日</label>
+            <select id="daySelect" data-filter-attribute="data-weekday">
+                <option value="">全て</option>
+                {% for day_of_week in filters.days_of_week %}
+                <option value="{{ day_of_week }}"{% if day_of_week == filters.today_weekday %}selected{% endif %}>
+                    {{ day_of_week }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="timezoneSelect">時間帯</label>
+            <select id="timezoneSelect" data-filter-attribute="data-timezone">
+                <option value="">全て</option>
+                {% for time_zone in filters.time_zones %}
+                <option value="{{ time_zone }}">
+                    {{ time_zone }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="calendar-areas" id="calendarAreas">
+        
+        <label id="calendarLabel" class="noneDisplay">No members selected</label>
+        <div id="calendar" class="noMember"></div>
+        
+        <div id="memberGraph" class="member-graph">
+            <div class="card" role="region" aria-label="card1-title" aria-describedby="card1-content">
+                <div class="card-title" id="necessaryTimeTitle">今週配布の点検時間</div>
+                <div class="card-content" id="necessaryTime"></div>
+            </div>
+            <div class="card" role="region" aria-label="card2-title" aria-describedby="card2-content">
+                <div class="card-title" id="necessaryLateTimeTitle">遅れ点検時間</div>
+                <div class="card-content" id="necessaryLateTime"></div>
+            </div>
+            <div class="card" role="region" aria-label="card3-title" aria-describedby="card3-content">
+                <div class="card-title" id="thisWeekTotalCardTitle">今週配布のカード枚数</div>
+                <div class="card-content" id="thisWeekTotalCard"></div>
+            </div>
+            <div class="card" role="region" aria-label="card4-title" aria-describedby="card4-content">
+                <div class="card-title" id="thisWeekLateTotalCardTitle">遅れカード枚数</div>
+                <div class="card-content" id="thisWeekLateTotalCard"></div>
+            </div>
+        </div>
+       
+    </div>
+     
+    <form method="post">
+        {% csrf_token %}
+    </form>
+{% endblock %}
+{% block script %}
+    <script type="module" src="{% static 'js/calendar/calendar.js' %}"></script>
+{% endblock %}

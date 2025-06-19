@@ -1,0 +1,491 @@
+@import 'variables';
+@import 'common';
+@import 'mixins';
+
+$border-radius: 3px;
+$border-color: rgb(204, 204, 204);
+$highlight: #0d4b8d;
+$light-bg: #f5f5f5 !default;
+
+.status-text {
+    font-size: $font-size-regular;
+}
+
+form {
+    display: none;
+}
+
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+
+    thead th {
+        position: sticky;
+        top: 0;
+        border-bottom: 1px solid rgb(240, 237, 237);
+        background-color: white;
+        color: black;
+    }
+    
+    tr.alarm {
+        background-color: rgb(255, 142, 142);
+    }
+}
+
+th {
+    position: relative;
+    text-align: left;
+    padding: 5px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+td {
+    text-align: left;
+    padding-left: 5px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+tr > *:last-child {
+    border-right: none;
+}
+
+tbody tr:hover {
+    cursor: pointer;
+    background-color: $focus-color;
+}
+
+button {
+    transition: background-color 0.3s ease, transform 0.3s ease; // 色とサイズの変化にアニメーション効果を追加
+    text-align: center;
+    &:hover {
+        background-color: $focus-color; // ホバー時の背景色
+        color: $font-color-modal;
+    }
+    &:active {
+        transform: scale(0.95);   // クリック時に少し縮小
+    }
+}
+
+
+
+.desktop-table {
+    tr:hover {
+        background-color: $focus-color;
+    }
+    .no-touch {
+        pointer-events: none;
+        color: rgba(0, 0, 0, 0.3); /* 見た目の視認性向上のために半透明化もおすすめ */
+        cursor: not-allowed;
+    }
+}
+
+.resizer {
+    width: 5px;
+    height: 100%;
+    position: absolute;
+    right: 0;
+    top: 0;
+    cursor: col-resize;
+    user-select: none;
+}
+
+.grid-title {
+    font-size: 0.8rem;
+    margin: 0.8em 0;
+    color: #333;
+    @media (min-width: 1000px) {
+        font-size: 1.2rem;
+    }
+}
+
+// テキストを中央揃えにするクラス
+.t-center {
+    text-align: center;
+    margin: 0.8em 0;
+}
+
+// テキストを左揃えにするクラス
+.t-left {
+    text-align: left;
+    margin: 0.8em 0;
+}
+
+.child-grid {
+    display: grid;
+}
+
+.row1 {
+    grid-row: 1; //1行目に配置
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.1), /* 主な影 */
+                6px 6px 12px rgba(0, 0, 0, 0.08); /* 拡散した影 */
+}
+
+.progress-grid, .personal-grid {
+    padding-left: 8px;
+    padding-right: 8px;
+    
+}
+
+.personal-grid {
+    position: relative;
+    height: 100%;
+    .personal-progress-header {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        flex-wrap: wrap;
+    }
+}
+
+
+
+.personal-progress-container {
+    position: absolute;
+    top: 55%;
+    left: 50%;
+    transform: translate(-45%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* 左揃えにする */
+    padding: 20px;
+    border-radius: 10px;
+    .unit {
+        margin-left: 3px;
+    }
+}
+
+.progress-radio {
+    display: flex;
+    align-items: center; /* 縦方向の中央揃え */
+    margin-bottom: 15px; /* 各行の間にスペースを追加 */
+    
+    .progress-radio-label {
+        width: 250px; /* ラベルの固定幅を設定して位置を揃える */
+        text-align: right; /* テキストを右揃え */
+        margin-right: 10px; /* ラベルと値の間にスペースを追加 */
+        font-size: $font-size-xlarge;
+    }
+
+    .progress-values {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        font-size: $font-size-xlarge;
+    }
+}
+
+
+.childlist-display {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-bottom: 10px;
+}
+
+.header-and-buttons {
+    display: flex;
+    align-items: center;
+}
+
+.childlist-display-header-conteiner {
+    flex: 1;
+  }
+
+
+.buttons-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.filter-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    border-radius: 50%;
+    align-items: center;
+    color: #fff;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 5px;
+    position :relative;
+
+    .count {
+        font-size: 16px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+}
+
+#btnWaiting {
+    background-color:rgba(173, 173, 173, 0.2);
+    &.active {
+        background-color: rgb(173, 173, 173);
+    }
+}
+
+#btnPending {
+    background-color: rgba(0, 204, 102, 0.2);
+    &.active {
+        background-color: rgb(0, 204, 102);
+    }
+}
+
+#btnApproval {
+    background-color: rgba(255, 215, 0, 0.2);
+    &.active {
+        background-color: rgb(255, 215, 0);
+    }
+}
+
+#btnDelayed {
+    background-color: rgba(221, 53, 53, 0.2);
+    &.active {
+        background-color: rgb(221, 53, 53);
+    }
+}
+
+#btnCompletion {
+    background-color: rgba(9, 101, 193, 0.2);
+    &.active {
+        background-color: rgb(9, 101, 193);
+    }
+}
+
+#btnRejected {
+    background-color: rgba(255, 153, 153, 0.2);
+    &.active {
+        background-color: rgb(255, 153, 153);
+    }
+}
+
+.glow-border::before {
+    @extend %glow-border
+}
+
+#tableScroll {
+    overflow: auto;
+}
+
+.practitioner-name-row {
+    overflow-x: auto;
+    white-space: nowrap;
+    display: inline-block;
+    text-overflow: clip;
+}
+
+.row2 {
+    grid-row: 2;//2行目に配置
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.1), /* 主な影 */
+                6px 6px 12px rgba(0, 0, 0, 0.08); /* 拡散した影 */
+}
+
+.group-schedule {
+    grid-column: 1 / -1; /*1行目から最後まで拡張して1列にする*/
+    overflow: hidden;
+    
+}
+
+#groupScheduleTitle {
+    padding-left: 8px;
+}
+
+#workContenxt {
+    padding-left: 16px;
+}
+
+
+.gantt-container-parent {
+    display: flex;
+    overflow: hidden;
+}
+
+#gantt {
+    max-width: 100%;
+    overflow-y: auto
+}
+#gantt, .assignee-container {
+    flex-grow: 1;
+}
+
+.grid-title {
+    flex: 1.4;
+}
+
+.filter-item {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    .select-label {
+        margin: 0;
+        padding-right: 5px;
+        text-align: right;
+        font-size: $font-size-regular
+    }
+
+    .select-select {
+        width: 100%;
+        font-size: $font-size-regular;
+    }
+    .schedule-label, .schedule-label {
+        flex: 0 0 auto; /* ラベルの幅を自動で調整し、折り返しを防止 */
+    }
+    .select-select, .schedule-select {
+        flex: 1; /* セレクトボックスが利用可能なスペースを占めるように設定 */
+    }
+}
+
+
+@include respond-to(xs) {
+    .child-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        padding: 8px;
+        .row1 {
+            display: none;
+        }
+        .row2 {
+            display: none;
+        }
+    }
+}
+
+@include respond-to(sm) {
+
+}
+
+@include respond-to(md) {
+}
+
+@include respond-to(lg) {
+    .child-grid {
+        grid-template-columns: 0.7fr 0.7fr 1fr;
+        grid-template-rows: 2.5fr 3fr;
+        gap: 15px;
+        width: 100%;
+        .chart-container{
+            padding-bottom: 10px;
+        }
+    }
+}
+
+@include respond-to(xl){
+    .child-grid {
+        grid-template-columns: 0.6fr 0.4fr 1fr;
+        grid-template-rows: 2.5fr 3fr;
+        padding: 15px;
+        gap: 15px;
+        width: 100%;
+        .chart-container{
+            padding-bottom: 10px;
+        }
+        .mobile-content {
+            display: none;
+        }
+    }
+}
+
+.mobile-content {
+    .section-title {
+        position: relative;
+        padding-left: 12px;
+        padding-bottom: 12px;
+        
+        &::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 1px;
+            background-color: $under-line-color;
+        }
+        &.not-first {
+            padding-top: 20px;
+        }
+    }
+    
+    .progress-ul {
+        position: relative;
+        padding-left: 17px;
+        font-size: $font-size-large;
+        list-style-type: none;
+        .progress-li {
+            position: relative;
+            padding-top: 12px;
+            padding-bottom: 12px;
+            margin-bottom: 0.8em;
+            border-bottom: 1px dashed $under-line-color;
+            transition: background-color 0.2s ease;
+            &.active {
+                background-color: $click-color
+            }
+            .maker {
+                padding-right: 12px;
+                background: linear-gradient(transparent 65%, #a8d4ff 65%);
+                &.maker-alarm {
+                    background: linear-gradient(transparent 65%, #fc5858 65%);
+                }
+            }
+            .progress-li-text {
+                display: inline-block;
+                margin-left: 12px;
+            }
+        }
+    }
+
+    h3 {
+        font-size: $font-size-large;
+    }
+}
+
+.mobile-table {
+    overflow-y: auto;
+
+    table {
+        border: none;
+        padding-left: 12px;
+        font-size: $font-size-medium;
+        tr > * {
+            border: none;
+            border-right: none;
+            border-bottom: 1px dashed $under-line-color;
+            background-color: transparent;
+            padding-top: 15px;
+            padding-bottom: 15px;
+            
+        }
+    }
+
+    .start-date-row,
+    .start-time-row,
+    .control-name-row {
+        display: table-cell;
+        vertical-align: top;
+    }
+}
+
+.task-time-line-title {
+    .task-time-line-span-text {
+        margin-left: 12px;
+    }
+}

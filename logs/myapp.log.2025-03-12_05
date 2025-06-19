@@ -1,0 +1,10 @@
+Not Found: /
+Not Found: /favicon.ico
+Watching for file changes with StatReloader
+Not Found: /
+"GET / HTTP/1.1" 404 9193
+Not Found: /favicon.ico
+"GET /favicon.ico HTTP/1.1" 404 9244
+"GET /home/ HTTP/1.1" 302 0
+"GET /login/?next=/home/ HTTP/1.1" 200 7912
+"GET /static/css/base.css HTTP/1.1" 304 0

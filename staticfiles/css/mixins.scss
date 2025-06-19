@@ -1,0 +1,40 @@
+
+@mixin border-style($width: 1px, $color: $border-color, $radius: $border-radius) {
+    border: $width solid $color;
+    border-radius: $radius;
+}
+
+@mixin hover-focus-border {
+    &:hover {
+        border: 1.5px solid $border-color-hover;
+    }
+    &:focus {
+        border: 2px solid $border-color-hover;
+        outline: none;
+    }
+}
+
+//レスポンシブデザイン用のミックスインを定義
+@mixin respond-to($breakpoint) {
+    @if $breakpoint == xs {
+        @media (max-width: #{$breakpoint-xs}) {
+            @content;
+        }
+    } @else if $breakpoint == sm {
+        @media (min-width: #{$breakpoint-xs + 1}) and (max-width: #{$breakpoint-sm}) {
+            @content;
+        }
+    } @else if $breakpoint == md {
+        @media (min-width: #{$breakpoint-sm + 1}) and (max-width: #{$breakpoint-md}) {
+            @content;
+        }
+    } @else if $breakpoint == lg {
+        @media (min-width: #{$breakpoint-md + 1}) and (max-width: #{$breakpoint-lg}) {
+            @content;
+        }
+    } @else if $breakpoint == xl {
+        @media (min-width: #{$breakpoint-lg + 1}) {
+            @content;
+        }
+    }
+}

@@ -1,0 +1,112 @@
+<button id="implementation-button" class="fixed-button txt-color-white action-btn base-font-size">実施結果入力</button>
+
+
+<div class="mask" id="mask"></div>
+
+<div class="filter-content overlay" id="filterContent">
+    <h1 class="title">フィルター条件</h1>
+    <div class="filter-items" id="filterItems">
+        <div class="filter-item">
+            <label for="lineNameSelect">工程</label>
+            <select id="lineNameSelect" data-filter-attribute="data-line-name">
+                <!--オプションは動的に生成-->
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="machineSelect">設備名</label>
+            <select id="machineSelect" data-filter-attribute="data-machine-name">
+                <!--オプションは動的に生成-->
+            </select>
+        </div>
+    </div>
+    <button id="closeOverlayButton">閉じる</button>
+</div>
+
+<form id="post-form">
+    {% csrf_token %}
+    <input type="hidden" name="plan_id" value="">
+    <div id="overModal" class="over-modal">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="30" stroke="#009900" stroke-width="4" fill="none"/>
+            <path d="M40 50 L47 57 L60 40" stroke="#009900" stroke-width="4" fill="none"/>
+        </svg>
+        <div class="submit-message">SUCCESS</div>
+    </div>
+    <div id="optMyModal" class="opt-modal">
+        <div class="panel-container panel-nav">
+            <div class="panelNavbar">
+                <div class="panelNavbarRow">
+                    <div class="backbtn panelNavbarBack txt-color-white" id="headerBackBtn">
+                        <svg class="backbtn header-back-btn"vxmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 80 80">
+                            <path d="M70 20 L30 50 L70 80" stroke="white" stroke-width="5" fill="none"/>
+                        </svg>
+                        戻る
+                    </div>
+                    <div class="panelNavbarTitle txt-color-white">実施結果</div>
+                    <div class="panelNavTool txt-color-white"></div>
+                </div>
+            </div>
+            <div class="opt-modal-content panel-content" id="implementationResults">
+                <fieldset class="date-time-content form-top">
+                    <div class="form-row">
+                        <label for="datetime" class="base-font-size">実施日:</label>
+                        <input type="datetime-local" id="datetime" class="base-font-size" name="datetime">
+                    </div>
+                </fieldset>
+                <fieldset id="result-content">
+                    <legend id="result"></legend>
+                    <div id="customRadio" class="custom-radio">
+                        <span class="result-label base-font-size">結果:</span>
+                        {% for choice in form.options %}
+                            <input type="radio" id="{{ choice.id_for_label }}" name="{{ form.options.html_name }}" value="{{ choice.data.value }}">
+                            <label for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+                        {% endfor %}   
+                    </div>
+                    <div class="issueDatailsContainer">
+                        {{ form.issueDetails }}
+                        <label for="{{ for.issueDetails.id_for_label }}" class="textarea-label">{{ form.issueDetails.label }}</label>
+                        <div id="textInsertButtonContainer" class="text-insert-button-container hidden">
+                            <button id="toppatsuButton" class="toppatsu-button" type="button" value="突発対応">突発対応</button>
+                        </div>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <div class="titGrayBelt" id="memberSelectLabel">
+                        <div class="backbtn nav-item">
+                            <span class="executor base-font-size">実施者:</span>
+                            <span id="selectedMemberText" class="base-font-size">選択者なし</span>
+                            <svg class="backbtn select-backbtn" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M30 20 L70 50 L30 80" stroke="#818181" stroke-width="5" fill="none"/>
+                            </svg>
+                        </div>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <div class="man-hours">
+                        <label for="selected-manhours" class="base-font-size">工数:</label>
+                        {{ form.manhours }}
+                         分
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <div class="comment">
+                        {{ form.comment }}
+                        <label for="{{ for.comment.id_for_label }}" class="textarea-label">{{ form.comment.label }}</label>
+                    </div>
+                </fieldset>
+            </div>
+            <div class="opt-modal-content panel-content select-member-content"  id="selectMemberContent">
+                {% for member in members %}
+                <label class="member-list" for="{{ member.user.name }}">
+                    <input type="checkbox" id="{{ member.user.name }}" name="practitionerid" value="{{ member.user.name }}" data-member-id="{{ member.user_id }}">
+                    <span class="ico-checkbox"></span>
+                    <span class="txt">{{ member.user.name }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            <div class="panel-nav-action-col">
+                <input class="panel-nav-btn txt-color-white action-btn base-font-size" id="submit" data-modalstate="submit" type="button" value="完了">
+            </div>
+        </div>
+    </div>
+</form>

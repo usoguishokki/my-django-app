@@ -1,0 +1,49 @@
+<div class="carousel">
+    <div class="carousel-track-container">
+        <ul class="carousel-track">
+            {% for plan in plans %}
+            <li id="carouselSlide" class="carousel-slide"
+             data-tile="{{ plan.inspection_no.wark_name }}"
+             data-index="{{ forloop.counter0 }}" 
+             plan-id="{{ plan.plan_id }}" 
+             data-result='{{ plan.result }}'
+             data-point-to-note="{{ plan.points_to_note}}"
+             data-comment="{{ plan.comment }}"
+             data-member-check-list="{{ plan.member_check_list }}"
+             data-result-mahours="{{ plan.result_man_hours }}"
+             data-line-name="{{ plan.inspection_no.control_no.line_name }}"
+             data-machine-name="{{ plan.inspection_no.control_no.machine }}">
+                <div class="card">
+                    <div class="content-tilte">
+                        <span class="title-number"></span>
+                    </div>  
+                    <div class="card-header">
+                        <h1 class="wark_name">
+                            <span class="part">{{ plan.inspection_no.control_no.machine }}</span>
+                            <span class="part">{{ plan.inspection_no.wark_name }}</span>
+                        </h1>
+                    </div>
+                    <div class="applicable-devices-wrappper">
+                        {% for device, data in plan.details_unique_devices.items %}
+                        <div class="applicable_devices">
+                            <div class="device">
+                               <p>{{ device }}</p>
+                            </div>
+                            <div class="wark-contents">
+                                {% for content, standard, method in data.details %}
+                                <p class="wark-contents-content">・{{ content }}({{ method }})</p>
+                                <p class="wark-contents-standard">‣{{ standard }}</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <button id="carouselButtonLeft" class="carousel-button"></button>
+    <button id="carouselButtonRight" class="carousel-button"></button>
+</div>

@@ -1,0 +1,315 @@
+@charset "UTF-8";
+button, select {
+  cursor: pointer; }
+
+.filter-item {
+  margin: 10px;
+  padding: 5px; }
+  .filter-item label {
+    display: block;
+    margin-bottom: 5px;
+    padding: 5px; }
+  .filter-item select {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer; }
+    .filter-item select:hover {
+      border: 1.5px solid #6b94e2; }
+    .filter-item select:focus {
+      border: 2px solid #6b94e2;
+      outline: none; }
+
+.filter-item-horizontal {
+  padding-top: 10px;
+  padding-left: 10px;
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  /* 必要に応じて上下の中央揃えも行う */ }
+  .filter-item-horizontal label {
+    display: inline-block;
+    margin-bottom: 0;
+    /* 横並びでは不要 */
+    margin-right: 10px;
+    /* labelとselectの間に適当な間隔を設定 */ }
+  .filter-item-horizontal select {
+    width: 50vw;
+    /* 横並びでは必要に応じて調整 */
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer; }
+    .filter-item-horizontal select:hover {
+      border: 1.5px solid #6b94e2; }
+    .filter-item-horizontal select:focus {
+      border: 2px solid #6b94e2;
+      outline: none; }
+
+/*
+.hidden {
+    display: none;
+}
+*/
+.display-none {
+  display: none; }
+
+.hidden {
+  opacity: 0;
+  /* 完全に透明 */
+  visibility: hidden;
+  /* 見えなくするが、DOMに残す */
+  transform: scale(0.9);
+  /* 少し縮小して非表示状態を演出 */
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  /* アニメーション */ }
+
+.visible {
+  opacity: 1;
+  /* 完全に表示 */
+  visibility: visible;
+  /* 見える状態にする */
+  transform: scale(1);
+  /* 元のサイズに拡大 */
+  transition: opacity 0.3s ease, transform 0.3s ease; }
+
+.disable-events {
+  pointer-events: none;
+  opacity: 0.5; }
+
+.margin-br {
+  display: block;
+  content: "";
+  margin-bottom: 12px; }
+
+.sticky {
+  position: sticky !important;
+  top: 60px;
+  background-color: white;
+  /* 必要に応じて背景色を設定 */
+  z-index: 1000;
+  /* 必要に応じて調整 */ }
+
+@keyframes border-glow {
+  0% {
+    mask-position: 0% 0%;
+    /* 左上 */ }
+  25% {
+    mask-position: 100% 0%;
+    /* 右上 */ }
+  50% {
+    mask-position: 100% 100%;
+    /* 右下 */ }
+  75% {
+    mask-position: 0% 100%;
+    /* 左下 */ }
+  100% {
+    mask-position: 0% 0%;
+    /* 左上に戻る */ } }
+
+.overlay-right {
+  visibility: hidden;
+  position: absolute;
+  right: -20%;
+  top: 5px;
+  width: 20%;
+  height: 98%;
+  background-color: #d8e6fc;
+  border-radius: 4px 4px 4px 4px;
+  z-index: 1000;
+  overflow: auto;
+  opacity: 0;
+  transition: visibility 0s linear 0.25s, opacity 0.15s linear, right 0.25s linear; }
+  .overlay-right.show {
+    visibility: visible;
+    opacity: 1;
+    right: 0;
+    transition-delay: 0s; }
+
+.overlay-left {
+  visibility: hidden;
+  position: absolute;
+  left: -20%;
+  top: 5px;
+  width: 20%;
+  height: 98%;
+  background-color: #d8e6fc;
+  border-radius: 0 4px 4px 4px;
+  z-index: 1000;
+  overflow: auto;
+  opacity: 0;
+  transition: visibility 0s linear 0.25s, opacity 0.15s linear, left 0.25s linear; }
+  .overlay-left.show {
+    visibility: visible;
+    opacity: 1;
+    left: 0;
+    transition-delay: 0s; }
+
+#closeOverlayButton {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  padding: 10px 20px;
+  border-radius: 4px;
+  background-color: #414141;
+  color: white;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2); }
+  #closeOverlayButton:hover {
+    background-color: #5b5b5b;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); }
+  #closeOverlayButton:active {
+    background-color: #2d2d2d;
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.3); }
+
+.tooltip {
+  z-index: 100; }
+  .tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 30%;
+    top: 100%;
+    transform: translateX(-70%);
+    padding: 5px 10px;
+    background-color: #333;
+    color: #fff;
+    border-radius: 5px;
+    white-space: nowrap;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none; }
+  .tooltip:hover::after {
+    opacity: 1; }
+  .tooltip.tooltip-hidden::after {
+    opacity: 0; }
+  .tooltip:active {
+    transform: scale(0.95); }
+
+/* 太いボーダーを定義 */
+.thick-top-border {
+  border-width: 1.5px 0px 0px 0px;
+  border-style: solid;
+  border-color: #2c3e50; }
+
+.base-font-size {
+  font-size: calc(1.5vw + 0.7rem); }
+
+/*
+.table-container {
+    display: none;
+}
+*/
+.table-scroll {
+  width: 100%;
+  max-height: 560px;
+  overflow: auto; }
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 4px;
+  table-layout: fixed; }
+  table thead {
+    position: sticky;
+    top: 0;
+    z-index: 100; }
+    table thead tr:first-child th {
+      position: sticky;
+      top: 0;
+      background-color: white;
+      border-right: 1px solid #ccc;
+      z-index: 101; }
+    table thead tr:nth-child(2) th {
+      position: sticky;
+      top: 40px;
+      background-color: white;
+      border-bottom: 1px solid #ccc;
+      z-index: 100; }
+  table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: white;
+    border-right: 1px solid #ccc; }
+  table td, table th {
+    white-space: nowrap;
+    /* セル内での改行を防止 */
+    overflow: hidden;
+    /* 内容が長い場合に隠す */
+    text-overflow: ellipsis;
+    /* 内容が長い場合は「...」で切り詰め */
+    border-right: 1px solid #ccc;
+    padding-top: 10px;
+    padding-bottom: 10px; }
+    table td:last-child, table th:last-child {
+      border-right: none; }
+
+th {
+  color: black;
+  text-align: left;
+  padding: 5px;
+  height: 40px;
+  width: 60px; }
+  th:first-child {
+    border-top-left-radius: 8px; }
+  th:last-child {
+    border-top-right-radius: 8px; }
+
+td {
+  text-align: left;
+  padding-left: 5px; }
+
+tr > * {
+  border: none;
+  border-bottom: 1px solid #ccc; }
+
+.item-name-content {
+  width: 140px; }
+
+.week-of-content {
+  width: 65px; }
+
+.planned-maintenance-container {
+  display: flex;
+  position: relative;
+  height: 100%;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  overflow: hidden; }
+  .planned-maintenance-container .filter-container {
+    position: absolute;
+    z-index: 900;
+    background-color: #ebeded;
+    border-radius: 6.5px;
+    height: calc(100% - 40px);
+    width: 2.5vw;
+    margin-right: 6.5px;
+    margin-bottom: 20px;
+    transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    overflow: hidden;
+    box-sizing: border-box; }
+    .planned-maintenance-container .filter-container:hover {
+      width: 20vw;
+      box-shadow: 5px 0px 12px rgba(0, 0, 0, 0.3);
+      overflow-y: auto;
+      /* 必要に応じてスクロールを許可 */ }
+  .planned-maintenance-container .right-content {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+    padding-left: 12px;
+    margin-left: 2.5vw;
+    width: calc(100% - 2.5vw);
+    transition: margin-left 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    /* 過渡アニメーション */ }
+    .planned-maintenance-container .right-content .graph-container {
+      width: 100%;
+      height: 100%; }
+      .planned-maintenance-container .right-content .graph-container #plannedMaintenanceGraph {
+        height: 100%; }
+
+/*# sourceMappingURL=plannedMaintenance.css.map */

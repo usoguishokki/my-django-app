@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}Cal{% endblock %}
+
+{% block head %}
+<!-- jQuery (3.x以上) -->
+<link href="{% sass_src 'css/gantt.scss' %}" rel="stylesheet" type="text/css">
+<link href="{% sass_src 'css/test.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div id="gantt"></div>
+
+<!--
+
+    人の名前はjsで追加するか適当にやればいいか？
+    位置だけしてするばいいか？
+-->
+
+{% endblock %}
+
+{% block script %}
+<script type="module" src="{% static 'js/test.js' %}"></script>
+{% endblock %}

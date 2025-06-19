@@ -1,0 +1,22 @@
+.card-item {
+  padding: 24px 0;
+  padding-left: 8px;
+  border-bottom: 1px solid #e0e0e0;
+  color: #333; }
+
+.card-item:last-child {
+  border-bottom: none; }
+
+.inspection-link {
+  display: block;
+  background-color: #f8fbfe;
+  color: #5a6b7a;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.2s ease-in-out; }
+  .inspection-link:hover, .inspection-link:focus {
+    background-color: #d0e7f9; }
+  .inspection-link:active {
+    background-color: #c0dff2; }
+
+/*# sourceMappingURL=mobilLedger.css.map */

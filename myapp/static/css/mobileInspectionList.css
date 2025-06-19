@@ -1,0 +1,434 @@
+@charset "UTF-8";
+button, select {
+  cursor: pointer; }
+
+.filter-item {
+  margin: 10px;
+  padding: 5px; }
+  .filter-item label {
+    display: block;
+    margin-bottom: 5px;
+    padding: 5px; }
+  .filter-item select {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer; }
+    .filter-item select:hover {
+      border: 1.5px solid #6b94e2; }
+    .filter-item select:focus {
+      border: 2px solid #6b94e2;
+      outline: none; }
+
+.filter-item-horizontal {
+  padding-top: 10px;
+  padding-left: 10px;
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  /* 必要に応じて上下の中央揃えも行う */ }
+  .filter-item-horizontal label {
+    display: inline-block;
+    margin-bottom: 0;
+    /* 横並びでは不要 */
+    margin-right: 10px;
+    /* labelとselectの間に適当な間隔を設定 */ }
+  .filter-item-horizontal select {
+    width: 50vw;
+    /* 横並びでは必要に応じて調整 */
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer; }
+    .filter-item-horizontal select:hover {
+      border: 1.5px solid #6b94e2; }
+    .filter-item-horizontal select:focus {
+      border: 2px solid #6b94e2;
+      outline: none; }
+
+/*
+.hidden {
+    display: none;
+}
+*/
+.display-none {
+  display: none; }
+
+.hidden {
+  opacity: 0;
+  /* 完全に透明 */
+  visibility: hidden;
+  /* 見えなくするが、DOMに残す */
+  transform: scale(0.9);
+  /* 少し縮小して非表示状態を演出 */
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  /* アニメーション */ }
+
+.visible {
+  opacity: 1;
+  /* 完全に表示 */
+  visibility: visible;
+  /* 見える状態にする */
+  transform: scale(1);
+  /* 元のサイズに拡大 */
+  transition: opacity 0.3s ease, transform 0.3s ease; }
+
+.disable-events {
+  pointer-events: none;
+  opacity: 0.5; }
+
+.margin-br {
+  display: block;
+  content: "";
+  margin-bottom: 12px; }
+
+.sticky {
+  position: sticky !important;
+  top: 60px;
+  background-color: white;
+  /* 必要に応じて背景色を設定 */
+  z-index: 1000;
+  /* 必要に応じて調整 */ }
+
+@keyframes border-glow {
+  0% {
+    mask-position: 0% 0%;
+    /* 左上 */ }
+  25% {
+    mask-position: 100% 0%;
+    /* 右上 */ }
+  50% {
+    mask-position: 100% 100%;
+    /* 右下 */ }
+  75% {
+    mask-position: 0% 100%;
+    /* 左下 */ }
+  100% {
+    mask-position: 0% 0%;
+    /* 左上に戻る */ } }
+
+.overlay-right {
+  visibility: hidden;
+  position: absolute;
+  right: -20%;
+  top: 5px;
+  width: 20%;
+  height: 98%;
+  background-color: #d8e6fc;
+  border-radius: 4px 4px 4px 4px;
+  z-index: 1000;
+  overflow: auto;
+  opacity: 0;
+  transition: visibility 0s linear 0.25s, opacity 0.15s linear, right 0.25s linear; }
+  .overlay-right.show {
+    visibility: visible;
+    opacity: 1;
+    right: 0;
+    transition-delay: 0s; }
+
+.overlay-left {
+  visibility: hidden;
+  position: absolute;
+  left: -20%;
+  top: 5px;
+  width: 20%;
+  height: 98%;
+  background-color: #d8e6fc;
+  border-radius: 0 4px 4px 4px;
+  z-index: 1000;
+  overflow: auto;
+  opacity: 0;
+  transition: visibility 0s linear 0.25s, opacity 0.15s linear, left 0.25s linear; }
+  .overlay-left.show {
+    visibility: visible;
+    opacity: 1;
+    left: 0;
+    transition-delay: 0s; }
+
+#closeOverlayButton {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  padding: 10px 20px;
+  border-radius: 4px;
+  background-color: #414141;
+  color: white;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2); }
+  #closeOverlayButton:hover {
+    background-color: #5b5b5b;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); }
+  #closeOverlayButton:active {
+    background-color: #2d2d2d;
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.3); }
+
+.tooltip {
+  z-index: 100; }
+  .tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 30%;
+    top: 100%;
+    transform: translateX(-70%);
+    padding: 5px 10px;
+    background-color: #333;
+    color: #fff;
+    border-radius: 5px;
+    white-space: nowrap;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none; }
+  .tooltip:hover::after {
+    opacity: 1; }
+  .tooltip.tooltip-hidden::after {
+    opacity: 0; }
+  .tooltip:active {
+    transform: scale(0.95); }
+
+/* 太いボーダーを定義 */
+.thick-top-border {
+  border-width: 1.5px 0px 0px 0px;
+  border-style: solid;
+  border-color: #2c3e50; }
+
+.base-font-size {
+  font-size: 18px; }
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(90%);
+    opacity: 0; }
+  to {
+    transform: translateX(0);
+    opacity: 1; } }
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(-100%);
+    opacity: 0; }
+  to {
+    transform: translateX(0);
+    opacity: 1; } }
+
+.filter-icon {
+  position: fixed;
+  top: 70px;
+  /* 上から10px */
+  left: 10px;
+  /* 左から10px */
+  width: 40px;
+  /* アイコンの幅 */
+  height: 40px;
+  /* アイコンの高さ */
+  z-index: 100;
+  /* カルーセルの上に表示 */
+  cursor: pointer;
+  /*円形デザインの追加*/
+  border-radius: 50%;
+  background-color: #2c3e50;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  /* ホバー時の影とスケールを滑らかに */
+  /* クリック時の効果 */ }
+  .filter-icon svg {
+    width: 60%;
+    height: 60%;
+    object-fit: contain;
+    /*デフォルトの色*/ }
+    .filter-icon svg line {
+      stroke: #e8f4fc; }
+    .filter-icon svg circle {
+      fill: #e8f4fc; }
+  .filter-icon:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    /* ホバー時に影をさらに強調 */ }
+  .filter-icon:active {
+    transform: scale(1.1) translateY(-2px);
+    /* ホバーと同じ効果 */
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    /* ホバーと同じ影 */ }
+
+.animated {
+  animation: slideInRight 0.3s ease-in forwards; }
+
+.slide-out {
+  animation: slideOutRight 0.3s ease-out forwards; }
+
+textarea {
+  width: 100%;
+  height: 25vw;
+  padding: 15px 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid #c6c6c6;
+  cursor: pointer; }
+  textarea:focus, textarea:hover {
+    outline: none;
+    border-color: #21026b; }
+  textarea:focus ~ .textarea-label, textarea:not(:placeholder-shown) ~ .textarea-label {
+    transform: translate(0, -28px);
+    padding: 0 10px;
+    font-size: 0.6em;
+    background-color: #fff;
+    color: #000000; }
+  @media (min-width: 1000px) {
+    textarea {
+      height: 8vw; } }
+.textarea-label {
+  position: absolute;
+  font-size: 0.8em;
+  top: 20px;
+  left: 5px;
+  color: rgba(0, 0, 0, 0.6);
+  transition: all 0.2s ease;
+  pointer-events: none; }
+
+.carousel {
+  position: relative;
+  width: 98vw; }
+  .carousel .carousel-track-container {
+    position: relative;
+    width: 100%; }
+    .carousel .carousel-track-container .carousel-track {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      width: 100%;
+      transition: transform 0.5s; }
+      .carousel .carousel-track-container .carousel-track .carousel-slide {
+        flex: 0 0 100%; }
+        .carousel .carousel-track-container .carousel-track .carousel-slide .card {
+          position: relative;
+          text-align: center;
+          font-size: 2rem;
+          margin: 0 1vw;
+          text-align: left; }
+          @media (min-width: 1000px) {
+            .carousel .carousel-track-container .carousel-track .carousel-slide .card {
+              padding: 20px 10vw; } }
+          .carousel .carousel-track-container .carousel-track .carousel-slide .card .title-number {
+            position: absolute;
+            padding-top: 3px;
+            left: 50%;
+            font-size: 1rem;
+            transform: translateX(-50%);
+            will-change: transform; }
+          .carousel .carousel-track-container .carousel-track .carousel-slide .card .card-header {
+            padding-top: 25px;
+            padding-bottom: 20px; }
+          .carousel .carousel-track-container .carousel-track .carousel-slide .card .wark_name {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column; }
+            .carousel .carousel-track-container .carousel-track .carousel-slide .card .wark_name .part {
+              display: block; }
+              .carousel .carousel-track-container .carousel-track .carousel-slide .card .wark_name .part:first-child {
+                margin-bottom: 4px; }
+          .carousel .carousel-track-container .carousel-track .carousel-slide .card .applicable_devices {
+            font-size: 1.7rem; }
+            .carousel .carousel-track-container .carousel-track .carousel-slide .card .applicable_devices .device p {
+              margin: 0;
+              padding: 8px 5px;
+              border-radius: 8px;
+              background-color: rgba(34, 139, 34, 0.3); }
+            .carousel .carousel-track-container .carousel-track .carousel-slide .card .applicable_devices .wark-contents {
+              margin-top: 15px;
+              line-height: 1.5; }
+              .carousel .carousel-track-container .carousel-track .carousel-slide .card .applicable_devices .wark-contents p {
+                margin: 0px; }
+            .carousel .carousel-track-container .carousel-track .carousel-slide .card .applicable_devices .wark-contents-content {
+              padding-bottom: 8px; }
+            .carousel .carousel-track-container .carousel-track .carousel-slide .card .applicable_devices .wark-contents-standard {
+              padding-bottom: 2.5vw; }
+              .carousel .carousel-track-container .carousel-track .carousel-slide .card .applicable_devices .wark-contents-standard::before {
+                content: '    ';
+                white-space: pre; }
+  .carousel #carouselButtonLeft,
+  .carousel #carouselButtonRight {
+    position: absolute;
+    top: 0;
+    width: 5vw;
+    height: 100%;
+    z-index: 10;
+    border: none;
+    background-color: transparent;
+    cursor: pointer; }
+  .carousel #carouselButtonLeft {
+    left: 0; }
+  .carousel #carouselButtonRight {
+    right: 0; }
+  .carousel .carousel-button:hover {
+    background-color: rgba(0, 0, 0, 0.8); }
+
+.mask {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999; }
+
+.overlay.show {
+  display: block;
+  position: fixed;
+  opacity: 1;
+  background-color: #ffffff;
+  z-index: 1000;
+  border-radius: 8px;
+  left: 0;
+  top: 0;
+  animation: slideOutRight 0.3s ease-in forwards;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  min-height: 100%; }
+  .overlay.show .title {
+    display: flex;
+    background-color: #07395a;
+    color: #ffffff;
+    padding-top: 14px;
+    padding-bottom: 12px;
+    justify-content: center;
+    font-size: 1.5rem; }
+  .overlay.show #closeOverlayButton {
+    position: absolute;
+    width: calc(100% - 26px);
+    bottom: 10px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    background-color: #414141;
+    color: white;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    margin-left: 13px;
+    margin-right: 13px; }
+    .overlay.show #closeOverlayButton:hover {
+      background-color: #5b5b5b;
+      box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); }
+    .overlay.show #closeOverlayButton:active {
+      background-color: #2d2d2d;
+      box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.3); }
+
+.detail-content {
+  display: none; }
+
+.card-item {
+  padding: 24px 0;
+  padding-left: 8px;
+  border-bottom: 1px solid #e0e0e0;
+  color: #333; }
+
+.card-item:last-child {
+  border-bottom: none; }
+
+/*# sourceMappingURL=mobileInspectionList.css.map */

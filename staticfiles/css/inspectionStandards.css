@@ -1,0 +1,316 @@
+@charset "UTF-8";
+button, select {
+  cursor: pointer; }
+
+.filter-item {
+  margin: 10px;
+  padding: 5px; }
+  .filter-item label {
+    display: block;
+    margin-bottom: 5px;
+    padding: 5px; }
+  .filter-item select {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer; }
+    .filter-item select:hover {
+      border: 1.5px solid #6b94e2; }
+    .filter-item select:focus {
+      border: 2px solid #6b94e2;
+      outline: none; }
+
+.filter-item-horizontal {
+  padding-top: 10px;
+  padding-left: 10px;
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  /* 必要に応じて上下の中央揃えも行う */ }
+  .filter-item-horizontal label {
+    display: inline-block;
+    margin-bottom: 0;
+    /* 横並びでは不要 */
+    margin-right: 10px;
+    /* labelとselectの間に適当な間隔を設定 */ }
+  .filter-item-horizontal select {
+    width: 50vw;
+    /* 横並びでは必要に応じて調整 */
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer; }
+    .filter-item-horizontal select:hover {
+      border: 1.5px solid #6b94e2; }
+    .filter-item-horizontal select:focus {
+      border: 2px solid #6b94e2;
+      outline: none; }
+
+/*
+.hidden {
+    display: none;
+}
+*/
+.display-none {
+  display: none; }
+
+.hidden {
+  opacity: 0;
+  /* 完全に透明 */
+  visibility: hidden;
+  /* 見えなくするが、DOMに残す */
+  transform: scale(0.9);
+  /* 少し縮小して非表示状態を演出 */
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  /* アニメーション */ }
+
+.visible {
+  opacity: 1;
+  /* 完全に表示 */
+  visibility: visible;
+  /* 見える状態にする */
+  transform: scale(1);
+  /* 元のサイズに拡大 */
+  transition: opacity 0.3s ease, transform 0.3s ease; }
+
+.disable-events {
+  pointer-events: none;
+  opacity: 0.5; }
+
+.margin-br {
+  display: block;
+  content: "";
+  margin-bottom: 12px; }
+
+.sticky {
+  position: sticky !important;
+  top: 60px;
+  background-color: white;
+  /* 必要に応じて背景色を設定 */
+  z-index: 1000;
+  /* 必要に応じて調整 */ }
+
+@keyframes border-glow {
+  0% {
+    mask-position: 0% 0%;
+    /* 左上 */ }
+  25% {
+    mask-position: 100% 0%;
+    /* 右上 */ }
+  50% {
+    mask-position: 100% 100%;
+    /* 右下 */ }
+  75% {
+    mask-position: 0% 100%;
+    /* 左下 */ }
+  100% {
+    mask-position: 0% 0%;
+    /* 左上に戻る */ } }
+
+.overlay-right {
+  visibility: hidden;
+  position: absolute;
+  right: -20%;
+  top: 5px;
+  width: 20%;
+  height: 98%;
+  background-color: #d8e6fc;
+  border-radius: 4px 4px 4px 4px;
+  z-index: 1000;
+  overflow: auto;
+  opacity: 0;
+  transition: visibility 0s linear 0.25s, opacity 0.15s linear, right 0.25s linear; }
+  .overlay-right.show {
+    visibility: visible;
+    opacity: 1;
+    right: 0;
+    transition-delay: 0s; }
+
+.overlay-left {
+  visibility: hidden;
+  position: absolute;
+  left: -20%;
+  top: 5px;
+  width: 20%;
+  height: 98%;
+  background-color: #d8e6fc;
+  border-radius: 0 4px 4px 4px;
+  z-index: 1000;
+  overflow: auto;
+  opacity: 0;
+  transition: visibility 0s linear 0.25s, opacity 0.15s linear, left 0.25s linear; }
+  .overlay-left.show {
+    visibility: visible;
+    opacity: 1;
+    left: 0;
+    transition-delay: 0s; }
+
+#closeOverlayButton {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  padding: 10px 20px;
+  border-radius: 4px;
+  background-color: #414141;
+  color: white;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2); }
+  #closeOverlayButton:hover {
+    background-color: #5b5b5b;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); }
+  #closeOverlayButton:active {
+    background-color: #2d2d2d;
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.3); }
+
+.tooltip {
+  z-index: 100; }
+  .tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 30%;
+    top: 100%;
+    transform: translateX(-70%);
+    padding: 5px 10px;
+    background-color: #333;
+    color: #fff;
+    border-radius: 5px;
+    white-space: nowrap;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none; }
+  .tooltip:hover::after {
+    opacity: 1; }
+  .tooltip.tooltip-hidden::after {
+    opacity: 0; }
+  .tooltip:active {
+    transform: scale(0.95); }
+
+/* 太いボーダーを定義 */
+.thick-top-border {
+  border-width: 1.5px 0px 0px 0px;
+  border-style: solid;
+  border-color: #2c3e50; }
+
+.base-font-size {
+  font-size: calc(1.5vw + 0.7rem); }
+
+.table-scroll {
+  width: 100%;
+  height: 90%;
+  overflow-y: auto; }
+
+.table-container {
+  position: absolute;
+  top: 0;
+  left: calc(2.5vw);
+  height: 100%;
+  padding-top: 15px;
+  padding-left: 6.5px;
+  overflow: hidden; }
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 4px;
+  table-layout: fixed; }
+  table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: white; }
+  table td, table th {
+    overflow: hidden;
+    /* 内容が長い場合に隠す */
+    text-overflow: ellipsis;
+    /* 内容が長い場合は「...」で切り詰め */ }
+  table tr.odd {
+    background-color: white; }
+  table tr.even {
+    background-color: #ecfddc; }
+  table tr.alarm {
+    background-color: #ff8e8e; }
+
+th {
+  color: black;
+  text-align: left;
+  padding: 5px;
+  height: 40px; }
+  th:first-child {
+    border-top-left-radius: 8px; }
+  th:last-child {
+    border-top-right-radius: 8px; }
+
+td {
+  border: 1px solid #ccc;
+  vertical-align: middle;
+  text-align: left;
+  padding-left: 5px; }
+  td textarea {
+    display: block;
+    /* ブロックレベル要素として表示 */
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px; }
+    td textarea:hover {
+      border: 1.5px solid #6b94e2; }
+    td textarea:focus {
+      border: 2px solid #6b94e2;
+      outline: none; }
+
+td[style*="display: none"] {
+  border: none; }
+
+tbody tr > * {
+  border: none;
+  padding-top: 5px;
+  padding-bottom: 5px; }
+  tbody tr > *:not(.thick-top-border) {
+    border-top: 1px solid #ccc; }
+
+.parent-filterarea {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+  padding-top: 20px;
+  padding-bottom: 20px; }
+
+.filter-container {
+  z-index: 900;
+  position: relative;
+  background-color: #ebeded;
+  border-radius: 6.5px;
+  width: 2.5vw;
+  margin-right: 6.5px;
+  transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  /* スムーズなアニメーション */
+  flex-shrink: 0;
+  /* 幅を固定する */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  /* 初期状態でスクロールバーを非表示 */ }
+  .filter-container:hover {
+    width: 20vw;
+    box-shadow: 5px 0px 12px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
+    /* 必要に応じてスクロールを許可 */ }
+
+.equipment-info {
+  display: flex;
+  justify-content: center;
+  align-items: center; }
+  .equipment-info .equipment-info-title {
+    font-size: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: left;
+    align-items: flex-start; }
+    .equipment-info .equipment-info-title .equipment-name, .equipment-info .equipment-info-title .equipment-id {
+      display: flex;
+      align-items: center;
+      gap: 8px; }
+
+/*# sourceMappingURL=inspectionStandards.css.map */

@@ -1,0 +1,45 @@
+// 色の設定
+
+$modal-color-default: #f1f1f1;
+$modal-color-green: #f1faf1;
+$modal-color-red: #fdf5f5;
+$modal-color-blue: #2196F3;
+$font-color-modal: #202020;
+$focus-color: #e8f4fc;
+$under-line-color: #ccc;
+$click-color:  #d3d3d3;
+
+// Base font sizes
+$font-size-small: 12px;
+$font-size-regular: 14px;
+$font-size-medium: 16px;
+$font-size-large: 18px;
+$font-size-xlarge: 24px;
+$font-size-xxlarge: 32px;
+
+//フォントの太さ
+// Font weight variables
+$font-weight-light: 300; // 軽量
+$font-weight-normal: 400; // 通常
+$font-weight-medium: 500; // 中間
+$font-weight-semibold: 600; // セミ太字
+$font-weight-bold: 700; // 太字
+$font-weight-extrabold: 800; // 超太字
+$font-weight-black: 900; // 最太字
+
+$border-color: #ccc;
+$border-color-hover: #6b94e2;
+$border-radius: 4px;
+$margin: 10px;
+$padding: 5px;
+
+
+//ブレークポイントの変数を定義
+$breakpoint-xs: 576px;
+$breakpoint-sm: 768px;
+$breakpoint-md: 992px;
+$breakpoint-lg: 1200px;
+$breakpoint-xl: 1400px;
+
+//改行のマージン
+$margin-br: 12px;

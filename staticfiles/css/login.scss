@@ -1,0 +1,89 @@
+
+.child-grid {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.sign-in {
+    position: relative;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column; // 子要素を縦に並べる
+    align-items: center; // 水平方向の中央揃え
+    justify-content: center;
+    width: calc(100% - 4vw);
+    background: white;
+    transform: translateY(-40%);
+    
+    .sign-in-input {
+      font-size: 1.5rem;
+      padding: 2vw;
+      padding-bottom: 1.5vw;
+      margin: 0 3vw;
+      text-align: center;
+      width: calc(100% - 20vw);
+      background: #fff; /* フラットな色 */
+      border: none; /* フラットなボーダーカラー */
+      cursor: pointer;
+      border-bottom: 2px solid rgba(196, 185, 185, 0.884);
+      transition: border-bottom 0.2s ease;
+      &::placeholder {
+        text-align: center;
+      }
+      &:focus {
+        outline: 1px solid transparent;
+        border-bottom: 2px solid #032161;
+      }
+    }
+}
+
+.sign-in-title {
+  margin: 0;
+  line-height: 1.3;
+  font-size: 1.5rem;
+  color: #555454;
+  text-align: center;
+  text-shadow: 0 1px rgba(255, 255, 255, 0.75);
+}
+
+.mybutton {
+  margin-top :20px;
+  cursor: pointer;
+  &:hover {
+    button {
+      background-color: #1483cd; // ホバー時の背景色
+    } 
+  }
+  &:active {
+    button {
+      transform: scale(0.95);   // クリック時に少し縮小
+    }
+  }
+  button {
+      display: block;   // ブロック要素として表示しつつ、コンテンツの幅に合わせてサイズ調整
+      width: 100%;
+      //font-size: 3vw;
+      font-size: 1.5rem;
+      padding: 10px 20px;      // 内側の余白
+      border-radius: 8px;      // 角を丸くする
+      background-color: #032e4a; // ボタンの背景色
+      color: #ffffff;         // テキストの色
+      text-decoration: none;  // アンダーラインを削除
+      transition: background-color 0.3s ease, transform 0.3s ease; // 色とサイズの変化にアニメーション効果を追加
+      text-align: center;
+      
+  }
+}
+
+.loading-screen {
+  display: none;
+}
+
+.parent-grid {
+  visibility: visible;
+}
+
+.error-message {
+  color: red;
+}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}WorkContents{% endblock %}
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/plannedMaintenance.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+{% block header %}
+{% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="planned-maintenance-container">
+    <div id="filterarea" class="filter-container">
+        <div class="filter-item">
+            <label for="monthSelect">項目:</label>
+            <select id="graphSelect" data-filter-attribute="graph-name">
+                <option value="週別保全工数" data-graph-name="weekly-manhours" data-action="weekly-manhours">週別保全工数</option>
+                <option value="設備別工数" data-graph-name="manhours-by-machine" data-action="man-hours-by-machine">設備別工数</option>
+            </select>
+        </div>
+    </div>
+    <div class="right-content">
+        <div class="graph-container" id="graphContainer">
+            <canvas id="plannedMaintenanceGraph"></canvas>
+        </div>
+    </div>
+
+</div>
+
+
+
+<form method="post">
+    {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block script %}
+    <script type="module" src="{% static 'js/plannedMaintenance/plannedMaintenance.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,334 @@
+@import 'variables';
+@import 'common';
+
+.open-modal {
+    display: none;
+}
+
+.child-grid {
+    display: grid;
+    grid-template-columns: 150px 600px 1fr;
+    gap: 0px 25px;
+    grid-template-areas: "areaC areaA areaB";
+    padding-bottom: 20px;
+    height: 100%; //523追加
+    min-height: 0;
+    @include respond-to(sx){
+    }
+
+    @include respond-to(sm){
+    }
+
+    @include respond-to(md){
+    }
+
+    @include respond-to(lg){
+    }
+
+    @include respond-to(xl) {
+        grid-template-columns: 130px 620px 1fr;
+    }
+}
+
+.card-display {
+    grid-area: areaA;
+    display: grid;
+    grid-template-areas:
+    "areaAa"
+    "areaAaa"
+    "areaAb";
+    gap: 15px 0px;
+    //grid-template-rows:200px 60px 285px;
+    //grid-template-rows:240px 60px 245px;
+    grid-template-rows: 1fr 0.1fr 1fr;
+    grid-template-columns: 1fr;
+    font-size: 1em;
+    height: 100%;
+    min-height: 0;
+}
+
+.calendar-areas {
+    grid-area: areaB;
+    display: grid;
+    grid-template-areas: 
+    "areaBa"
+    "areaBb";
+    gap: 18px 0px;
+    grid-template-rows: 400px auto;
+    grid-template-columns: 1fr;
+    margin-top: 18px;
+    height: calc(100% - 20px);
+
+    #calendarLabel {
+        grid-area: areaBa;
+    }
+    #calendar {
+        grid-area: areaBa;
+        .fc-toolbar-title {
+            font-size: 1.2em;
+        }
+        .fc-view {
+            border-radius: 6.5px;
+            .fc-scrollgrid {
+                border-radius: 4.5px;
+            }
+        }
+    }
+}
+
+#card-table {
+    grid-area: areaAa;
+}
+
+#card-total {
+    grid-area: areaAaa;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-right: 13px;
+    label {
+        margin-right: 20px;
+        text-align: right;
+        border-bottom: 1px solid #ddd;
+    }
+}
+
+#card-detail{
+    grid-area: areaAb;
+}
+
+.table-container {
+    max-height: 300px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-y:auto;
+
+    table {
+        width: inherit;
+        border-collapse: collapse;
+
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.12);
+            text-align: left;
+            background-color: #fff;
+            
+
+            th {
+                padding-top: 30px;
+            }
+            tr {
+                height: 40px;
+            }
+        }
+        tbody {
+            tr {
+                line-height: 1.8;
+                transition: background-color 0.28s ease;
+                vertical-align: top;
+                cursor: pointer;
+
+                td {
+                    padding-top: 4px;
+                    padding-bottom: 4px;
+                }
+
+                &:hover {
+                    background-color: $focus-color;
+                }
+            }   
+        }
+
+    }
+}
+
+.filter-container {
+    grid-area: areaC;
+    width: 100%;
+    background-color:#ebeded;
+    position: relative;
+    //height: 575px;
+    height: 100%;
+    font-size: 1em;
+    overflow-y: hidden;
+    border-radius: 6.5px;
+    transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    z-index: 100;
+    &:hover {
+        width: 180%;
+        box-shadow: 5px 0px 12px rgba(0, 0, 0, 0.3);
+        overflow-y: auto;
+    };
+}
+
+
+.mybutton {
+    width: 80px;
+    cursor: pointer;
+    a {
+        display: block;   // ブロック要素として表示しつつ、コンテンツの幅に合わせてサイズ調整
+        width: 100%;
+        padding: 10px 8px;      // 内側の余白
+        border-radius: 8px;      // 角を丸くする
+        background-color: #032e4a; // ボタンの背景色
+        color: #ffffff;         // テキストの色
+        text-decoration: none;  // アンダーラインを削除
+        font-size: 0.8em;        // フォントサイズ
+        transition: background-color 0.3s ease, transform 0.3s ease; // 色とサイズの変化にアニメーション効果を追加
+        text-align: center;
+        &:hover {
+            background-color: #1483cd; // ホバー時の背景色
+        }
+    
+        &:active {
+            transform: scale(0.95);   // クリック時に少し縮小
+        }
+    }
+}
+
+
+.custom-select {
+    position: relative;
+    width: 100%;
+    .select-label {
+        display: block;
+        font-size: 1em;
+        color: #333;
+        padding-top: 15px;
+        padding-left: 4px;
+        cursor: pointer;
+        transition: color 0.08s ease, font-weight 0.08s ease;
+    }
+    select {
+        display :none;
+    }
+
+    .select-placeholder {
+        width: 90%;
+        padding-top: 15px;
+        padding-left: 8px;
+        padding-bottom: 2px;
+        margin-bottom: 15px;
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid $under-line-color;
+        cursor: pointer;
+        transition: color 0.08s ease, border-bottom 0.08s ease;
+    }
+
+    .select-options {
+        display: block;  // display を block に変更
+        opacity: 0;  // 初期状態の opacity を 0 に設定
+        position: absolute;
+        top: 100%;
+        z-index: 1000;
+        left: 0;
+        right: 0;
+        transform: translateY(-20px);
+        transition: opacity 0.2s, transform 0.2s;  // opacity と transform に対して transition を適用
+        pointer-events: none;  // 非表示時はクリックを無効に
+        background-color: #fff;
+        border: 1px solid #ddd;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        max-height: 170px;
+        overflow-y: auto;
+        .option {
+            padding: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            &:hover {
+                background-color: $focus-color;
+            }
+        }
+    }
+    &.open .select-options {  // .open クラスが追加されたときのスタイル
+        opacity: 1;  // opacity を 1 に変更
+        transform: translateY(0);  // transform を初期状態に
+        pointer-events: auto;  // クリックを有効に
+    }
+    &:hover {
+        .select-label{
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        .select-placeholder {
+            border-bottom: 1.3px solid #2c3e50;
+        }
+    }
+}
+
+.member-graph {
+    grid-area: areaBb;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 16px;
+    height: 100%;
+
+    .card {
+        background-color: rgba(206, 203, 255, 0.8);
+        padding: 16px;
+        border-radius: 6.5px;
+
+        .card-title {
+            font-size: 1em;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .card-content {
+            font-size: 1.4em;
+            text-align: center;
+            color: #555;
+        }
+    }
+
+    
+}
+
+.noneDisplay {
+    &:not(.display-none) {
+        font-size: 1.2em;
+        grid-area: areaBb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(204, 204, 204, 0.3);
+        border-radius: 6.5px;
+        color: #000000af;
+        font-weight: bold;
+        z-index: 100;
+    }
+}
+
+.modal-content {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    top: 3px;
+    right: 5px;
+}
+
+#modalMessage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    p {
+        margin: 0;
+    }
+}
+.mybutton {
+    margin-left: 20px;
+}
+
+form {
+    display: none;
+}

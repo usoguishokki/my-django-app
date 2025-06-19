@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}CardList{% endblock %}
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/mobileInspectionList.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block header %}
+{% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+
+{% include "carousel/carouselFilterIcon.html" %}
+<div class="carousel">
+    <div class="carousel-track-container">
+        <ul class="carousel-track">
+            {% for plan in plans %}
+            <li id="carouselSlide" class="carousel-slide"
+             data-title="{{ plan.wark_name }}"
+             data-index="{{ forloop.counter0 }}" 
+             data-line-name="{{ plan.control_no.line_name }}"
+             data-machine-name="{{ plan.control_no.machine }}"
+             data-status="{{ plan.status }}"
+             data-implementer="{{ plan.practitioner.pattern_name }}"
+             data-dayofweek="{{ plan.day_of_week }}"
+             data-manhour="{{ plan.man_hours }}">
+                <div class="card">
+                    <div class="content-tilte">
+                        <span class="title-number"></span>
+                    </div>  
+                    <div class="card-header">
+                        <h1 class="wark_name">
+                            <span class="part">{{ plan.control_no.machine }}</span>
+                            <span class="part">{{ plan.wark_name }}</span>
+                        </h1>
+                    </div>
+                    <div class="applicable-devices-wrappper">
+                        {% for device, data in plan.details_unique_devices.items %}
+                        <div class="applicable_devices">
+                            <div class="device">
+                               <p>{{ device }}</p>
+                            </div>
+                            <div class="wark-contents">
+                                {% for content, standard, method in data.details %}
+                                <p class="wark-contents-content">・{{ content }}({{ method }})</p>
+                                <p class="wark-contents-standard">‣{{ standard }}</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<div class="mask" id="mask"></div>
+<div class="detail-content overlay" id="detailContent">
+    <div id="detailStatus" class="card-item status base-font-size" >ステータス:  <span id="statusValue"></span></div>
+    <div id="detailImplementer" class="card-item implementer base-font-size">実施直:  <span id="implementerValue"></span></div>
+    <div id="detailDayOfWeek" class="card-item dayofweek base-font-size">実施曜日:  <span id="dayOfWeekVallue"></span></div>
+    <div id="detailManHour" class="card-item manHour base-font-size">工数:  <span id="manHourValue"></span></div>
+    <button id="closeOverlayButton">閉じる</button>
+</div>
+
+{% endblock %}
+{% block script %}
+    <script type="module" src="{% static 'js/mobileInspectionList/mobileInspectionList.js' %}"></script>
+{% endblock %}

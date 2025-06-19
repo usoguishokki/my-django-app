@@ -1,0 +1,148 @@
+@import 'common';
+
+/*
+.table-container {
+    display: none;
+}
+*/
+
+.table-scroll {
+    width:100%;
+    max-height: 560px;
+    overflow: auto;
+}
+
+table {
+    
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: $border-radius;
+    table-layout: fixed;
+
+    thead {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+
+        tr:first-child th {
+            position: sticky;
+            top: 0;
+            background-color: rgb(255, 255, 255);
+            border-right: 1px solid $border-color;
+            z-index: 101;
+        }
+
+        tr:nth-child(2) th {
+            position: sticky;
+            top: 40px;
+            background-color: rgb(255, 255, 255);
+            border-bottom: 1px solid #ccc;
+            z-index: 100; // 1行目より後ろ
+        }
+    }
+    thead th {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background-color: rgb(255, 255, 255);
+        border-right: 1px solid $border-color;
+    }
+    td, th {
+        white-space: nowrap; /* セル内での改行を防止 */
+        overflow: hidden; /* 内容が長い場合に隠す */
+        text-overflow: ellipsis; /* 内容が長い場合は「...」で切り詰め */
+        border-right: 1px solid $border-color;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        &:last-child {
+            border-right: none;
+        }
+    }
+
+
+}
+
+th {
+    color: black;
+    text-align: left;
+    padding: 5px;
+    height: 40px;
+    width: 60px;
+    &:first-child {
+        border-top-left-radius: 8px;
+    }
+
+    &:last-child {
+        border-top-right-radius: 8px;
+    }
+}
+
+td {
+    text-align: left;
+    padding-left: 5px;
+}
+
+tr > * {
+    border: none;
+    border-bottom: 1px solid $border-color;
+}
+
+
+
+.item-name-content {
+    width: 140px;
+}
+
+.week-of-content {
+    width: 65px;
+}
+
+.planned-maintenance-container {
+    display: flex;
+    position: relative;
+    height: 100%;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    overflow: hidden;
+    
+
+    .filter-container {
+        position: absolute;
+        z-index: 900;
+        background-color: #ebeded;
+        border-radius: 6.5px;
+        height: calc(100% - 40px);
+        width: 2.5vw;
+        margin-right: 6.5px;
+        margin-bottom: 20px;
+        transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        overflow: hidden;
+        box-sizing: border-box;
+        &:hover {
+            width: 20vw;
+            box-shadow: 5px 0px 12px rgba(0, 0, 0, 0.3);
+            overflow-y: auto; /* 必要に応じてスクロールを許可 */
+        }
+    }
+
+    .right-content {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-sizing: border-box;
+        padding-left: 12px;
+        margin-left: 2.5vw;
+        width: calc(100% - 2.5vw);
+        transition: margin-left 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); /* 過渡アニメーション */
+
+        .graph-container {
+            width: 100%;
+            height: 100%;
+            #plannedMaintenanceGraph {
+                height: 100%;
+            }
+        }
+
+    }
+}

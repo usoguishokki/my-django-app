@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}Home{% endblock %}
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/home.scss' %}" rel="stylesheet" type="text/css">
+    <link href="{% sass_src 'css/gantt.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block header %}
+    {% include "header.html" %}
+    <script type="module" src="{% static 'js/home/home.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+
+
+<div id="itemProgress" class="row1 progress-grid">
+    <div class="item-Progress-header">
+        <h4 class="grid-title t-left">全体</h4>
+    </div>
+    <div id="chartContainer" class="media-viewport item1-container chart-container">
+        <canvas id="myDonutChart"></canvas>
+    </div>
+</div>
+<div id="personalProgress" class="row1 personal-grid">
+    <div class="personal-progress-header">
+        <h4 class="grid-title t-left">今週の進捗</h4>
+        <div class="filter-item">
+            <select id="statusSelect" class="select-select" data-filter-attribute="data-status">
+                <option value="A班" data-shift-start="" data-shift-end="" data-affilation="A班">A組</option>
+                <option value="B班" data-shift-start="" data-shift-end="" data-affilation="B班">B組</option>
+                <option value="C班" data-shift-start="" data-shift-end="" data-affilation="C班">C組</option>
+                
+                {% for profile in team_profiles %}
+                    <option value="{{ profile.user }}"
+                        data-affilation="{{ profile.belongs.affilation }}"
+                        data-user-name="{{ profile.user.name }}"
+                        data-user-id="{{ profile.user }}"
+                        data-shift-start="{{ profile.shift_start_time|date:"Y-m-d\TH:i" }}"
+                        data-shift-end="{{ profile.shift_end_time|date:"Y-m-d\TH:i" }}">
+                        {{ profile.user.name }}
+                    </option>
+                {% endfor %}
+                
+            </select>
+        </div>
+    </div>
+    <div class="personal-progress-container">
+        <div id="progressRadio1" class="progress-radio">
+            <span class="progress-radio-label">組残り:</span>
+            <div class="progress-values">
+                <span id="denominator1"></span><span class="unit">枚</span>
+            </div>
+        </div>
+        <div id="progressRadio2" class="progress-radio">
+            <span class="progress-radio-label">個人残り:</span>
+            <div class="progress-values">
+                <span id="molecule2"></span><span class="unit">枚</span>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="itemList" class="row1 childlist-display">
+    <div class="header-and-buttons">
+        <div class="childlist-display-header-conteiner">
+            <h4 class="grid-title t-left">リスト_<span id="subTitle"></span></h4>
+        </div>
+        <div class="buttons-container">
+            <button id="btnWaiting" class="filter-btn tooltip" data-tooltip="配布待ち"><span class="count status-text"></span></button>
+            <button id="btnPending" class="filter-btn tooltip" data-tooltip="実施待ち"><span class="count status-text"></span></button>
+            <button id="btnApproval" class="filter-btn tooltip" data-tooltip="承認待ち"><span class="count status-text"></span></button>
+            <button id="btnDelayed" class="filter-btn tooltip" data-tooltip="遅れ"><span class="count status-text"></span></button>
+            <button id="btnCompletion" class="filter-btn tooltip" data-tooltip="完了"><span class="count status-text"></span></button>
+            <button id="btnRejected" class="filter-btn tooltip" data-tooltip="差戻し"><span class="count status-text"></span></button>
+        </div>
+    </div>
+    <div id="tableScroll" class="desktop-table item1-container table-scroll">
+
+        <table id="myTable">
+            <colgroup>
+                <col class="start-date-content" id="startDateCol">
+                <col class="start-time-content" id="startTimeCol">
+                <col class="id-content" id="idCol">
+                <col class="status-content" id="statusCol">
+                <col class="work-name-content" id="workNameCol">
+                <col class="time-zone-content" id="timeZoneCol">
+                <col class="man-hour-content" id="manHourCol">
+                <col class="control-name-content" id="controlNameCol">
+                <col class="comment-content" id="commentCol">
+                <col class="holder-name-content" id="holderCol">
+                <col class="practitioner-content" id="practitionerCol">
+            </colgroup>
+            <thead>
+                <tr class="table-th" id="tableTh">
+                    <th class="start-date-content start-date-column" id="startDate">日付</th>
+                    <th class="start-time-content start-time-column" id="startTime">時間</th>
+                    <th class="id-content id-column" id="idColumn">カードNo</th>
+                    <th class="status-content status-column" id="statusColumn">ステータス</th>
+                    <th class="work-name-content work-name-column" id="workNameColumn">作業名</th>
+                    <th class="time-zone-content time-zone-column" id="timeZoneColumn">時間帯</th>
+                    <th class="man-hour-content man-hour-column" id="manHourColumn">工数</th>
+                    <th class="control-name-content control-name-column" id="controlNameColumn">設備名</th>
+                    <th class="comment-content comment-column" id="commentColumn">コメント</th>
+                    <th class="holder-name-content holder-name-column" id="holderNameColumn">保持者</th>
+                    <th class="practitioner-name-content practitioner-name-column" id="practitionerNameColumn">実施者</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for card in cardAll %}
+                <tr data-plan-id="{{ card.plan_id }}"
+                    data-status="{{ card.status }}"
+                    data-start-time="{{ card.plan.plan_time|date:"Y-m-d\TH:i" }}"
+                    data-work-name="{{ card.plan.inspection_no.wark_name }}"
+                    data-man-hour="{{ card.plan.inspection_no.man_hours }}"
+                    data-holder-name="{{ card.plan.holder.name }}"
+                    data-holder-member-id="{{ card.plan.holder_id }}"
+                    data-this-week="{{ card.this_week }}"
+                    data-affilation="{{ card.affilation.affilation}}"
+                    data-time-zone="{{ card.time_zone }}"
+                    data-control-name="{{ card.plan.inspection_no.control_no.machine }}"
+                    data-practitioner-id="{{ card.practitioners|join:', ' }}"
+                    data-practitioner-name="{{ card.practitioners_name|join:', ' }}"
+                    data-comment="{{ card.plan.comment }}"
+                    data-plan-inspection-no="{{ card.plan.inspection_no.inspection_no }}"
+                    >
+                    <td class="start-date-content start-date-row">{{ card.plan.plan_time|date:"m月d日" }}</td>
+                    <td class="start-time-content start-time-row"> {{ card.plan.plan_time|date:"H:i" }} ~ <span class="start-time-line-break"></span></td>
+                    <td class="id-content card-no-row">{{ card.plan.inspection_no.inspection_no }}</td>
+                    <td class="status-content status-row">{{ card.status }}</td>
+                    <td class="work-name-content work-name-row">{{ card.plan.inspection_no.wark_name }}</td>
+                    <td class="time-zone-content time-zone-row">{{ card.plan.inspection_no.time_zone }}</td>
+                    <td class="man-hour-content man-hour-row">{{ card.plan.inspection_no.man_hours }}</td>
+                    <td class="control-name-content control-name-row">{{ card.plan.inspection_no.control_no.machine }}<span class="control-name-line-break"></span></td>
+                    <td class="comment-content comment-row">{{ card.plan.comment }}</td>
+                    <td class="holder-name-content holder-name-row">{{ card.plan.holder.name }}</td>
+                    <td class="practitioner-name-content practitioner-name-row">{{ card.practitioners_name|join:', ' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<div id="groupSchedule" class="row2 group-schedule">
+    <h4 id="groupScheduleTitle" class="grid-title t-left">グループスケジュール 
+        <span>(<span id="dayText"></span>)</span>
+        <span id="workContenxt"></span>
+    </h4>
+    <div class="gantt-container-parent">
+        <div class="assignee-container"></div>
+        <div id="gantt"></div>
+    </div>
+</div>
+
+<div class="mobile-content">
+    <section id="progress" aria-labelledby="progressTitle">
+        <h4 class="section-title progress-title t-left" id="progressTitle">進捗状況</h4>
+        <ul class="progress-ul">
+            <li id="modalThisWeek" class="progress-li">今週の点検カード:
+                <span class="maker" id="modalThisWeekMaker">
+                    <span class="progress-li-text" id="modalThisWeekText"></span>
+                    <span>枚</span>
+                </span>
+            </li>
+            <li id="modalDelay" class="progress-li">遅れ:
+                <span class="maker" id="modalDelayMaker">
+                    <span class="progress-li-text" id="modalDelayText"></span>
+                    <span>枚</span>
+                </span>
+            </li>
+        </ul>
+    </section>
+    <section id="taskTimeLine" aria-labelledby="taskTimeLineTitle">
+        <h4 class="section-title not-first task-time-line-title t-left" id="taskTimeLineTitle">タスクタイムライン
+            <span class="task-time-line-span-text" id="startDay"></span>
+        </h4>
+    </section>
+</div>
+
+
+
+<form method="post">
+    {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block script %}
+{% endblock %}

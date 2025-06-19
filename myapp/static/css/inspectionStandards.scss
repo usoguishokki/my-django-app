@@ -1,0 +1,145 @@
+@import 'common';
+
+
+.table-scroll {
+    width:100%;
+    height: 90%;
+    overflow-y: auto;
+}
+
+
+.table-container {
+    position: absolute;
+    top: 0;
+    left: calc(2.5vw);
+    height: 100%;
+    padding-top: 15px;
+    padding-left: 6.5px;
+    overflow: hidden;
+}
+
+
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: $border-radius;
+    table-layout: fixed;
+    thead th {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background-color: rgb(255, 255, 255);
+    }
+    td, th {
+        overflow: hidden; /* 内容が長い場合に隠す */
+        text-overflow: ellipsis; /* 内容が長い場合は「...」で切り詰め */
+    }
+    tr.odd {
+        background-color: rgb(255, 255, 255);
+    }
+    tr.even {
+        background-color: rgb(236, 253, 220);
+    }
+    tr.alarm {
+        background-color: rgb(255, 142, 142);
+    }
+
+    }
+
+th {
+    color: black;
+    text-align: left;
+    padding: 5px;
+    height: 40px;
+    &:first-child {
+        border-top-left-radius: 8px;
+    }
+
+    &:last-child {
+        border-top-right-radius: 8px;
+    }
+}
+
+td {
+    border: 1px solid $border-color;
+    vertical-align: middle;
+    text-align: left;
+    padding-left: 5px;
+    textarea {
+        display: block; /* ブロックレベル要素として表示 */
+        width: 100%;
+        box-sizing: border-box;
+        padding: 5px;
+        &:hover {
+            border: 1.5px solid #6b94e2;
+        }
+        &:focus {
+            border: 2px solid #6b94e2;
+            outline: none;
+        }
+    }
+}
+
+td[style*="display: none"] {
+    border: none; // 非表示セル間の線を消去
+}
+
+tbody tr > * {
+    border: none;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    &:not(.thick-top-border) {
+        border-top: 1px solid $border-color;
+    }
+    
+}
+
+.parent-filterarea {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.filter-container {
+    z-index: 900;
+    position: relative;
+    background-color: #ebeded;
+    border-radius: 6.5px;
+    width: 2.5vw;
+    margin-right: 6.5px;
+    transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); /* スムーズなアニメーション */
+    flex-shrink: 0; /* 幅を固定する */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden; /* 初期状態でスクロールバーを非表示 */
+    &:hover {
+        width: 20vw;
+        box-shadow: 5px 0px 12px rgba(0, 0, 0, 0.3);
+        overflow-y: auto; /* 必要に応じてスクロールを許可 */
+    }
+}
+
+
+
+.equipment-info {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .equipment-info-title {
+        font-size: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        text-align: left;
+        align-items: flex-start;
+        .equipment-name, .equipment-id {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    }
+
+}

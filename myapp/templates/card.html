@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}CardList{% endblock %}
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/mycard.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block header %}
+{% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+
+{% include "carousel/carouselFilterIcon.html" %}
+{% include "carousel/carouselCard.html" %}
+{% include "carousel/carouselCardInput.html" %}
+
+
+{% endblock %}
+{% block script %}
+    <script type="module" src="{% static 'js/card/card.js' %}"></script>
+{% endblock %}

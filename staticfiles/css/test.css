@@ -1,0 +1,39 @@
+.assignee-container {
+  position: fixed;
+  top: 0px;
+  left: 0px; }
+  .assignee-container .assignee-header {
+    position: absolute;
+    background-color: #ffffff;
+    top: 0px;
+    /* JavaScript controls */
+    left: 0px;
+    /* JavaScript controls */
+    width: 0px;
+    /* JavaScript controls */
+    height: 0px;
+    /* JavaScript controls */
+    border-bottom: 1px solid #ebeff2;
+    border-right: 1px solid #ebeff2; }
+  .assignee-container .assignee-names {
+    position: absolute;
+    background-color: #ffffff;
+    top: 0px;
+    /* JavaScript controls */
+    left: 0px;
+    /* JavaScript controls */
+    height: auto;
+    width: auto; }
+    .assignee-container .assignee-names .assignee-name {
+      display: flex;
+      align-items: flex-end;
+      background-color: #ffffff;
+      font-size: 14px;
+      padding-left: 10px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #ebeff2;
+      border-right: 1px solid #ebeff2; }
+    .assignee-container .assignee-names .assignee-name:nth-child(even) {
+      background-color: #f5f5f5; }
+
+/*# sourceMappingURL=test.css.map */

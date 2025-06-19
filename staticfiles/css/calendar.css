@@ -1,0 +1,438 @@
+@charset "UTF-8";
+button, select {
+  cursor: pointer; }
+
+.filter-item {
+  margin: 10px;
+  padding: 5px; }
+  .filter-item label {
+    display: block;
+    margin-bottom: 5px;
+    padding: 5px; }
+  .filter-item select {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer; }
+    .filter-item select:hover {
+      border: 1.5px solid #6b94e2; }
+    .filter-item select:focus {
+      border: 2px solid #6b94e2;
+      outline: none; }
+
+.filter-item-horizontal {
+  padding-top: 10px;
+  padding-left: 10px;
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  /* 必要に応じて上下の中央揃えも行う */ }
+  .filter-item-horizontal label {
+    display: inline-block;
+    margin-bottom: 0;
+    /* 横並びでは不要 */
+    margin-right: 10px;
+    /* labelとselectの間に適当な間隔を設定 */ }
+  .filter-item-horizontal select {
+    width: 50vw;
+    /* 横並びでは必要に応じて調整 */
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer; }
+    .filter-item-horizontal select:hover {
+      border: 1.5px solid #6b94e2; }
+    .filter-item-horizontal select:focus {
+      border: 2px solid #6b94e2;
+      outline: none; }
+
+/*
+.hidden {
+    display: none;
+}
+*/
+.display-none {
+  display: none; }
+
+.hidden {
+  opacity: 0;
+  /* 完全に透明 */
+  visibility: hidden;
+  /* 見えなくするが、DOMに残す */
+  transform: scale(0.9);
+  /* 少し縮小して非表示状態を演出 */
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  /* アニメーション */ }
+
+.visible {
+  opacity: 1;
+  /* 完全に表示 */
+  visibility: visible;
+  /* 見える状態にする */
+  transform: scale(1);
+  /* 元のサイズに拡大 */
+  transition: opacity 0.3s ease, transform 0.3s ease; }
+
+.disable-events {
+  pointer-events: none;
+  opacity: 0.5; }
+
+.margin-br {
+  display: block;
+  content: "";
+  margin-bottom: 12px; }
+
+.sticky {
+  position: sticky !important;
+  top: 60px;
+  background-color: white;
+  /* 必要に応じて背景色を設定 */
+  z-index: 1000;
+  /* 必要に応じて調整 */ }
+
+@keyframes border-glow {
+  0% {
+    mask-position: 0% 0%;
+    /* 左上 */ }
+  25% {
+    mask-position: 100% 0%;
+    /* 右上 */ }
+  50% {
+    mask-position: 100% 100%;
+    /* 右下 */ }
+  75% {
+    mask-position: 0% 100%;
+    /* 左下 */ }
+  100% {
+    mask-position: 0% 0%;
+    /* 左上に戻る */ } }
+
+.overlay-right {
+  visibility: hidden;
+  position: absolute;
+  right: -20%;
+  top: 5px;
+  width: 20%;
+  height: 98%;
+  background-color: #d8e6fc;
+  border-radius: 4px 4px 4px 4px;
+  z-index: 1000;
+  overflow: auto;
+  opacity: 0;
+  transition: visibility 0s linear 0.25s, opacity 0.15s linear, right 0.25s linear; }
+  .overlay-right.show {
+    visibility: visible;
+    opacity: 1;
+    right: 0;
+    transition-delay: 0s; }
+
+.overlay-left {
+  visibility: hidden;
+  position: absolute;
+  left: -20%;
+  top: 5px;
+  width: 20%;
+  height: 98%;
+  background-color: #d8e6fc;
+  border-radius: 0 4px 4px 4px;
+  z-index: 1000;
+  overflow: auto;
+  opacity: 0;
+  transition: visibility 0s linear 0.25s, opacity 0.15s linear, left 0.25s linear; }
+  .overlay-left.show {
+    visibility: visible;
+    opacity: 1;
+    left: 0;
+    transition-delay: 0s; }
+
+#closeOverlayButton {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  padding: 10px 20px;
+  border-radius: 4px;
+  background-color: #414141;
+  color: white;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2); }
+  #closeOverlayButton:hover {
+    background-color: #5b5b5b;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); }
+  #closeOverlayButton:active {
+    background-color: #2d2d2d;
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.3); }
+
+.tooltip {
+  z-index: 100; }
+  .tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 30%;
+    top: 100%;
+    transform: translateX(-70%);
+    padding: 5px 10px;
+    background-color: #333;
+    color: #fff;
+    border-radius: 5px;
+    white-space: nowrap;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none; }
+  .tooltip:hover::after {
+    opacity: 1; }
+  .tooltip.tooltip-hidden::after {
+    opacity: 0; }
+  .tooltip:active {
+    transform: scale(0.95); }
+
+/* 太いボーダーを定義 */
+.thick-top-border {
+  border-width: 1.5px 0px 0px 0px;
+  border-style: solid;
+  border-color: #2c3e50; }
+
+.base-font-size {
+  font-size: 18px; }
+
+.open-modal {
+  display: none; }
+
+.child-grid {
+  display: grid;
+  grid-template-columns: 150px 600px 1fr;
+  gap: 0px 25px;
+  grid-template-areas: "areaC areaA areaB";
+  padding-bottom: 20px;
+  height: 100%;
+  min-height: 0; }
+  @media (min-width: 1201px) {
+    .child-grid {
+      grid-template-columns: 130px 620px 1fr; } }
+.card-display {
+  grid-area: areaA;
+  display: grid;
+  grid-template-areas: "areaAa" "areaAaa" "areaAb";
+  gap: 15px 0px;
+  grid-template-rows: 1fr 0.1fr 1fr;
+  grid-template-columns: 1fr;
+  font-size: 1em;
+  height: 100%;
+  min-height: 0; }
+
+.calendar-areas {
+  grid-area: areaB;
+  display: grid;
+  grid-template-areas: "areaBa" "areaBb";
+  gap: 18px 0px;
+  grid-template-rows: 400px auto;
+  grid-template-columns: 1fr;
+  margin-top: 18px;
+  height: calc(100% - 20px); }
+  .calendar-areas #calendarLabel {
+    grid-area: areaBa; }
+  .calendar-areas #calendar {
+    grid-area: areaBa; }
+    .calendar-areas #calendar .fc-toolbar-title {
+      font-size: 1.2em; }
+    .calendar-areas #calendar .fc-view {
+      border-radius: 6.5px; }
+      .calendar-areas #calendar .fc-view .fc-scrollgrid {
+        border-radius: 4.5px; }
+
+#card-table {
+  grid-area: areaAa; }
+
+#card-total {
+  grid-area: areaAaa;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-right: 13px; }
+  #card-total label {
+    margin-right: 20px;
+    text-align: right;
+    border-bottom: 1px solid #ddd; }
+
+#card-detail {
+  grid-area: areaAb; }
+
+.table-container {
+  max-height: 300px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-y: auto; }
+  .table-container table {
+    width: inherit;
+    border-collapse: collapse; }
+    .table-container table thead {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.12);
+      text-align: left;
+      background-color: #fff; }
+      .table-container table thead th {
+        padding-top: 30px; }
+      .table-container table thead tr {
+        height: 40px; }
+    .table-container table tbody tr {
+      line-height: 1.8;
+      transition: background-color 0.28s ease;
+      vertical-align: top;
+      cursor: pointer; }
+      .table-container table tbody tr td {
+        padding-top: 4px;
+        padding-bottom: 4px; }
+      .table-container table tbody tr:hover {
+        background-color: #e8f4fc; }
+
+.filter-container {
+  grid-area: areaC;
+  width: 100%;
+  background-color: #ebeded;
+  position: relative;
+  height: 100%;
+  font-size: 1em;
+  overflow-y: hidden;
+  border-radius: 6.5px;
+  transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  z-index: 100; }
+  .filter-container:hover {
+    width: 180%;
+    box-shadow: 5px 0px 12px rgba(0, 0, 0, 0.3);
+    overflow-y: auto; }
+
+.mybutton {
+  width: 80px;
+  cursor: pointer; }
+  .mybutton a {
+    display: block;
+    width: 100%;
+    padding: 10px 8px;
+    border-radius: 8px;
+    background-color: #032e4a;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 0.8em;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    text-align: center; }
+    .mybutton a:hover {
+      background-color: #1483cd; }
+    .mybutton a:active {
+      transform: scale(0.95); }
+
+.custom-select {
+  position: relative;
+  width: 100%; }
+  .custom-select .select-label {
+    display: block;
+    font-size: 1em;
+    color: #333;
+    padding-top: 15px;
+    padding-left: 4px;
+    cursor: pointer;
+    transition: color 0.08s ease, font-weight 0.08s ease; }
+  .custom-select select {
+    display: none; }
+  .custom-select .select-placeholder {
+    width: 90%;
+    padding-top: 15px;
+    padding-left: 8px;
+    padding-bottom: 2px;
+    margin-bottom: 15px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #ccc;
+    cursor: pointer;
+    transition: color 0.08s ease, border-bottom 0.08s ease; }
+  .custom-select .select-options {
+    display: block;
+    opacity: 0;
+    position: absolute;
+    top: 100%;
+    z-index: 1000;
+    left: 0;
+    right: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 170px;
+    overflow-y: auto; }
+    .custom-select .select-options .option {
+      padding: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s; }
+      .custom-select .select-options .option:hover {
+        background-color: #e8f4fc; }
+  .custom-select.open .select-options {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto; }
+  .custom-select:hover .select-label {
+    color: #2c3e50;
+    font-weight: bold; }
+  .custom-select:hover .select-placeholder {
+    border-bottom: 1.3px solid #2c3e50; }
+
+.member-graph {
+  grid-area: areaBb;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 16px;
+  height: 100%; }
+  .member-graph .card {
+    background-color: rgba(206, 203, 255, 0.8);
+    padding: 16px;
+    border-radius: 6.5px; }
+    .member-graph .card .card-title {
+      font-size: 1em;
+      margin-bottom: 8px;
+      text-align: center; }
+    .member-graph .card .card-content {
+      font-size: 1.4em;
+      text-align: center;
+      color: #555; }
+
+.noneDisplay:not(.display-none) {
+  font-size: 1.2em;
+  grid-area: areaBb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(204, 204, 204, 0.3);
+  border-radius: 6.5px;
+  color: #000000af;
+  font-weight: bold;
+  z-index: 100; }
+
+.modal-content {
+  display: flex;
+  align-items: center;
+  position: relative; }
+
+.close {
+  position: absolute;
+  top: 3px;
+  right: 5px; }
+
+#modalMessage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px; }
+  #modalMessage p {
+    margin: 0; }
+
+.mybutton {
+  margin-left: 20px; }
+
+form {
+  display: none; }
+
+/*# sourceMappingURL=calendar.css.map */

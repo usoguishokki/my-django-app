@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}WorkContents{% endblock %}
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/achivements.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+{% block header %}
+{% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+
+<div id="parentFilterArea" class="parent-filterarea">
+    <div id="filterarea" class="filter-container" >
+        <div class="filter-item">
+            <label for="monthSelect">月:</label>
+            <select id="monthSelect" data-filter-attribute="month">
+                <option value="" data-month=""></option>
+                {% for month in months %}
+                <option value="{{ month }}" data-month="{{ month }}">{{ month }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <div class="right-content">
+        <div class="table-container" id="inspectionStandards">
+            <div class="table-scroll" id="tableScroll">
+                <table id="myTable">
+                    <colgroup>
+                        <col class="day-content" id="dayCol">
+                        <col class="hozen-calendar-content" id="hozenCalendarCol">
+                        <col class="operating-content" id="operatingCol">
+                        <col class="not-operating-content" id="notOperatingCol">
+                        <col class="total-number-content" id="totalNumberCol">
+                    </colgroup>
+                    <thead>
+                        <tr class="table-th" id="tableTh">
+                            <th class="day-content day-column" id="dayColumn">日付</th>
+                            <th class="hozen-calendar-content hozen-calendar-column" id="hozenCalendarColumn">保全カレンダー</th>
+                            <th class="operating-content operating-column" id="operatingColumn">定期点検(稼働)</th>
+                            <th class="not-operating-content not-operating-column" id="notOperatingColumn">定期点検(非稼働)</th>
+                            <th class="total-number-content total-number-column" id="totalNumberColumn">実施枚数</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for daliy_inf in daily_works_inf %}
+                            <tr data-day="{{ daliy_inf.date|date:'m月d日' }}"
+                                data-calendar="{{ daliy_inf.hozen_calendar }}"
+                                data-active-hours="{{ daliy_inf.active_hours }}"
+                                data-inactive-hours="{{ daliy_inf.inactive_hours }}"
+                                data-total-count="{{ daliy_inf.total_count }}">
+                                <td class="day-content day-row">{{ daliy_inf.date|date:"Y年m月d日" }}</td>
+                                <td class="hozen-calendar-content hozen-calendar-row" >{{ daliy_inf.hozen_calendar }}</td>
+                                <td class="operating-content operating-row" >{{ daliy_inf.active_hours }}分</td>
+                                <td class="not-operating-content not-operating-row" >{{ daliy_inf.inactive_hours }}分</td>
+                                <td class="total-number-content total-number-row">{{ daliy_inf.total_count }}枚</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>  
+        </div>
+    
+        <div class="graph-container" id="graphContainer">
+            <canvas id="myStackedBarChart"></canvas>
+        </div>
+
+    </div>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block script %}
+    <script type="module" src="{% static 'js/achivements/achivements.js' %}"></script>
+{% endblock %}

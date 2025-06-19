@@ -1,0 +1,996 @@
+Error: UserProfile matching query does not exist. - UserProfile matching query does not exist.
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\.\myapp\views.py", line 534, in calendar_view
+    user_dict = profile(cache_manager_if, login_number)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\.\myapp\views.py", line 177, in profile
+    result_dict['leader_profile'] = profiles.get(
+  File "c:\inetpub\wwwroot\sitefolder\django_iis_env\lib\site-packages\django\db\models\query.py", line 637, in get
+    raise self.model.DoesNotExist(
+myapp.models.UserProfile.DoesNotExist: UserProfile matching query does not exist.
+Internal Server Error: /calendar/
+Error: get() returned more than one UserProfile -- it returned 2! - get() returned more than one UserProfile -- it returned 2!
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\.\myapp\views.py", line 534, in calendar_view
+    user_dict = profile(cache_manager_if, login_number)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\.\myapp\views.py", line 177, in profile
+    result_dict['leader_profile'] = profiles.get(
+  File "c:\inetpub\wwwroot\sitefolder\django_iis_env\lib\site-packages\django\db\models\query.py", line 640, in get
+    raise self.model.MultipleObjectsReturned(
+myapp.models.UserProfile.MultipleObjectsReturned: get() returned more than one UserProfile -- it returned 2!
+Internal Server Error: /calendar/
+Watching for file changes with StatReloader
+"GET /home/ HTTP/1.1" 302 0
+"GET /login/?next=/home/ HTTP/1.1" 200 7912
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 200 545357
+"GET /static/css/home.css HTTP/1.1" 304 0
+"GET /static/img/achievements.png HTTP/1.1" 304 0
+"GET /static/js/home/home.js HTTP/1.1" 304 0
+"GET /static/img/plannedMaintenance.png HTTP/1.1" 304 0
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /static/js/calendar/calendar.js HTTP/1.1" 304 0
+"GET /static/css/calendar.css HTTP/1.1" 304 0
+"GET /static/js/calendar/calendarMappingConfig.js HTTP/1.1" 304 0
+"GET /static/js/manager/dropdownbox.js HTTP/1.1" 304 0
+Error: get() returned more than one UserProfile -- it returned 2! - get() returned more than one UserProfile -- it returned 2!
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 534, in calendar_view
+    user_dict = profile(cache_manager_if, login_number)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 177, in profile
+    result_dict['leader_profile'] = profiles.get(
+  File "c:\inetpub\wwwroot\sitefolder\django_iis_env\lib\site-packages\django\db\models\query.py", line 640, in get
+    raise self.model.MultipleObjectsReturned(
+myapp.models.UserProfile.MultipleObjectsReturned: get() returned more than one UserProfile -- it returned 2!
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 92
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+Error: get() returned more than one UserProfile -- it returned 2! - get() returned more than one UserProfile -- it returned 2!
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 534, in calendar_view
+    user_dict = profile(cache_manager_if, login_number)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 177, in profile
+    result_dict['leader_profile'] = profiles.get(
+  File "c:\inetpub\wwwroot\sitefolder\django_iis_env\lib\site-packages\django\db\models\query.py", line 640, in get
+    raise self.model.MultipleObjectsReturned(
+myapp.models.UserProfile.MultipleObjectsReturned: get() returned more than one UserProfile -- it returned 2!
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 92
+"GET /calendar/ HTTP/1.1" 200 36844
+Error: get() returned more than one UserProfile -- it returned 2! - get() returned more than one UserProfile -- it returned 2!
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 534, in calendar_view
+    user_dict = profile(cache_manager_if, login_number)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 177, in profile
+    result_dict['leader_profile'] = profiles.get(
+  File "c:\inetpub\wwwroot\sitefolder\django_iis_env\lib\site-packages\django\db\models\query.py", line 640, in get
+    raise self.model.MultipleObjectsReturned(
+myapp.models.UserProfile.MultipleObjectsReturned: get() returned more than one UserProfile -- it returned 2!
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 92
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+Error: get() returned more than one UserProfile -- it returned 2! - get() returned more than one UserProfile -- it returned 2!
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 534, in calendar_view
+    user_dict = profile(cache_manager_if, login_number)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 177, in profile
+    result_dict['leader_profile'] = profiles.get(
+  File "c:\inetpub\wwwroot\sitefolder\django_iis_env\lib\site-packages\django\db\models\query.py", line 640, in get
+    raise self.model.MultipleObjectsReturned(
+myapp.models.UserProfile.MultipleObjectsReturned: get() returned more than one UserProfile -- it returned 2!
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 92
+"GET /home/ HTTP/1.1" 200 545357
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+Error: get() returned more than one UserProfile -- it returned 2! - get() returned more than one UserProfile -- it returned 2!
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 534, in calendar_view
+    user_dict = profile(cache_manager_if, login_number)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 177, in profile
+    result_dict['leader_profile'] = profiles.get(
+  File "c:\inetpub\wwwroot\sitefolder\django_iis_env\lib\site-packages\django\db\models\query.py", line 640, in get
+    raise self.model.MultipleObjectsReturned(
+myapp.models.UserProfile.MultipleObjectsReturned: get() returned more than one UserProfile -- it returned 2!
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 92
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+Error: get() returned more than one UserProfile -- it returned 2! - get() returned more than one UserProfile -- it returned 2!
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 534, in calendar_view
+    user_dict = profile(cache_manager_if, login_number)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 177, in profile
+    result_dict['leader_profile'] = profiles.get(
+  File "c:\inetpub\wwwroot\sitefolder\django_iis_env\lib\site-packages\django\db\models\query.py", line 640, in get
+    raise self.model.MultipleObjectsReturned(
+myapp.models.UserProfile.MultipleObjectsReturned: get() returned more than one UserProfile -- it returned 2!
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 92
+"GET /calendar/ HTTP/1.1" 200 36843
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+Error: UserProfile matching query does not exist. - UserProfile matching query does not exist.
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 534, in calendar_view
+    user_dict = profile(cache_manager_if, login_number)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 177, in profile
+    result_dict['leader_profile'] = profiles.get(
+  File "c:\inetpub\wwwroot\sitefolder\django_iis_env\lib\site-packages\django\db\models\query.py", line 637, in get
+    raise self.model.DoesNotExist(
+myapp.models.UserProfile.DoesNotExist: UserProfile matching query does not exist.
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 76
+"GET /home/ HTTP/1.1" 200 545357
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+Error: get() returned more than one UserProfile -- it returned 2! - get() returned more than one UserProfile -- it returned 2!
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 534, in calendar_view
+    user_dict = profile(cache_manager_if, login_number)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 177, in profile
+    result_dict['leader_profile'] = profiles.get(
+  File "c:\inetpub\wwwroot\sitefolder\django_iis_env\lib\site-packages\django\db\models\query.py", line 640, in get
+    raise self.model.MultipleObjectsReturned(
+myapp.models.UserProfile.MultipleObjectsReturned: get() returned more than one UserProfile -- it returned 2!
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 92
+"GET /home/ HTTP/1.1" 200 545357
+"GET /calendar/ HTTP/1.1" 200 36843
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 4449
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 4449
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 4449
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+Error: get() returned more than one UserProfile -- it returned 2! - get() returned more than one UserProfile -- it returned 2!
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 534, in calendar_view
+    user_dict = profile(cache_manager_if, login_number)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 177, in profile
+    result_dict['leader_profile'] = profiles.get(
+  File "c:\inetpub\wwwroot\sitefolder\django_iis_env\lib\site-packages\django\db\models\query.py", line 640, in get
+    raise self.model.MultipleObjectsReturned(
+myapp.models.UserProfile.MultipleObjectsReturned: get() returned more than one UserProfile -- it returned 2!
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 92
+"GET /calendar/ HTTP/1.1" 200 36843
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 79
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\cache_manager.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /home/ HTTP/1.1" 200 545358
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\cache_manager.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /home/ HTTP/1.1" 200 545357
+"GET /static/img/Nika.png HTTP/1.1" 200 1998
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 79
+"GET /home/ HTTP/1.1" 200 545357
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 79
+"POST /calendar/ HTTP/1.1" 200 79
+"POST /calendar/ HTTP/1.1" 200 79
+"POST /calendar/ HTTP/1.1" 200 4449
+"GET /home/ HTTP/1.1" 200 545357
+"GET /calendar/ HTTP/1.1" 200 36843
+Error: UserProfile matching query does not exist. - UserProfile matching query does not exist.
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 534, in calendar_view
+    user_dict = profile(cache_manager_if, login_number)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 177, in profile
+    result_dict['leader_profile'] = profiles.get(
+  File "c:\inetpub\wwwroot\sitefolder\django_iis_env\lib\site-packages\django\db\models\query.py", line 637, in get
+    raise self.model.DoesNotExist(
+myapp.models.UserProfile.DoesNotExist: UserProfile matching query does not exist.
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 76
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"GET /home/ HTTP/1.1" 200 545357
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 79
+"POST /calendar/ HTTP/1.1" 200 79
+"POST /calendar/ HTTP/1.1" 200 79
+"POST /calendar/ HTTP/1.1" 200 79
+"GET /calendar/ HTTP/1.1" 200 36843
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 79
+"POST /calendar/ HTTP/1.1" 200 79
+"POST /calendar/ HTTP/1.1" 200 79
+"POST /calendar/ HTTP/1.1" 200 79
+"GET /home/ HTTP/1.1" 200 545357
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+Error: UserProfile matching query does not exist. - UserProfile matching query does not exist.
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 534, in calendar_view
+    user_dict = profile(cache_manager_if, login_number)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 177, in profile
+    result_dict['leader_profile'] = profiles.get(
+  File "c:\inetpub\wwwroot\sitefolder\django_iis_env\lib\site-packages\django\db\models\query.py", line 637, in get
+    raise self.model.DoesNotExist(
+myapp.models.UserProfile.DoesNotExist: UserProfile matching query does not exist.
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 76
+"GET /home/ HTTP/1.1" 200 545357
+"GET /logout/ HTTP/1.1" 302 0
+"GET /login/ HTTP/1.1" 200 7912
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 200 545361
+"GET /home/ HTTP/1.1" 200 545361
+"GET /calendar/ HTTP/1.1" 200 33216
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 215952
+"GET /logout/ HTTP/1.1" 302 0
+"GET /login/ HTTP/1.1" 200 7912
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 200 545357
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+"POST /calendar/ HTTP/1.1" 200 79
+Error: 'leader_profile' - 'leader_profile'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 495, in calendar_view
+    _plan.approver = user_dict["leader_profile"].user
+KeyError: 'leader_profile'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 50
+"GET /calendar/ HTTP/1.1" 200 36844
+"POST /calendar/ HTTP/1.1" 200 79
+"GET /home/ HTTP/1.1" 200 545357
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 79
+"GET /static/css/header.css.map HTTP/1.1" 304 0
+"GET /static/css/base.css.map HTTP/1.1" 304 0
+"GET /static/css/calendar.css.map HTTP/1.1" 304 0
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+"GET /static/css/home.css.map HTTP/1.1" 304 0
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 79
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+"GET /home/ HTTP/1.1" 200 545358
+"GET /calendar/ HTTP/1.1" 200 36843
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+Error: 'NoneType' object has no attribute 'user' - 'NoneType' object has no attribute 'user'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 496, in calendar_view
+    'members_with_profiles': team_profiles['profiles'],
+AttributeError: 'NoneType' object has no attribute 'user'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 200 4449
+- Broken pipe from ('127.0.0.1', 52179)
+Watching for file changes with StatReloader
+"GET /home/ HTTP/1.1" 200 545357
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 4449
+"GET /home/ HTTP/1.1" 200 545357
+"GET /calendar/ HTTP/1.1" 200 36843
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 79
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Error: 'NoneType' object has no attribute 'user' - 'NoneType' object has no attribute 'user'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 514, in calendar_view
+    _plan.holder = user_dict["user_profile"].user
+AttributeError: 'NoneType' object has no attribute 'user'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 75
+"GET /static/css/base.scss HTTP/1.1" 304 0
+Watching for file changes with StatReloader
+"GET /home/ HTTP/1.1" 200 545357
+"GET /static/css/base.css HTTP/1.1" 304 0
+"GET /static/js/header/header.js HTTP/1.1" 304 0
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 79
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 79
+Error: name 'mybelongs' is not defined - name 'mybelongs' is not defined
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 517, in calendar_view
+    set_leader_profile(profiles, mybelongs)
+NameError: name 'mybelongs' is not defined
+Error: name 'mybelongs' is not defined - name 'mybelongs' is not defined
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 517, in calendar_view
+    set_leader_profile(profiles, mybelongs)
+NameError: name 'mybelongs' is not defined
+Error: name 'mybelongs' is not defined - name 'mybelongs' is not defined
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 517, in calendar_view
+    set_leader_profile(profiles, mybelongs)
+NameError: name 'mybelongs' is not defined
+Internal Server Error: /calendar/
+Internal Server Error: /calendar/
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 65
+- Broken pipe from ('127.0.0.1', 56575)
+- Broken pipe from ('127.0.0.1', 56573)
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Error: name 'mybelongs' is not defined - name 'mybelongs' is not defined
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 517, in calendar_view
+    else:
+NameError: name 'mybelongs' is not defined
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 65
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Error: name 'profiles' is not defined - name 'profiles' is not defined
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 516, in calendar_view
+    profiles = team_profiles["profiles"]
+NameError: name 'profiles' is not defined
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 64
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Error: name 'mybelongs' is not defined - name 'mybelongs' is not defined
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 518, in calendar_view
+    leader_profile = set_leader_profile(profiles, mybelongs)
+NameError: name 'mybelongs' is not defined
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 65
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+Error: name 'a' is not defined - name 'a' is not defined
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 519, in calendar_view
+    a
+NameError: name 'a' is not defined
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 57
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /static/img/standard.png HTTP/1.1" 304 0
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"GET /home/ HTTP/1.1" 200 545357
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 79
+Error: Cannot assign "<UserProfile: 立川　貴大 (EX - 班長)>": "Plan_tb.approver" must be a "Member_tb" instance. - Cannot assign "<UserProfile: 立川　貴大 (EX - 班長)>": "Plan_tb.approver" must be a "Member_tb" instance.
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 519, in calendar_view
+    _plan.approver = leader_profile
+  File "c:\inetpub\wwwroot\sitefolder\django_iis_env\lib\site-packages\django\db\models\fields\related_descriptors.py", line 266, in __set__
+    raise ValueError(
+ValueError: Cannot assign "<UserProfile: 立川　貴大 (EX - 班長)>": "Plan_tb.approver" must be a "Member_tb" instance.
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 152
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Error: Cannot assign "<UserProfile: 立川　貴大 (EX - 班長)>": "Plan_tb.approver" must be a "Member_tb" instance. - Cannot assign "<UserProfile: 立川　貴大 (EX - 班長)>": "Plan_tb.approver" must be a "Member_tb" instance.
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 519, in calendar_view
+    _plan.approver = leader_profile.user
+  File "c:\inetpub\wwwroot\sitefolder\django_iis_env\lib\site-packages\django\db\models\fields\related_descriptors.py", line 266, in __set__
+    raise ValueError(
+ValueError: Cannot assign "<UserProfile: 立川　貴大 (EX - 班長)>": "Plan_tb.approver" must be a "Member_tb" instance.
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 152
+Watching for file changes with StatReloader
+"GET /calendar/ HTTP/1.1" 200 36844
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213736
+"POST /calendar/ HTTP/1.1" 200 79
+"POST /calendar/ HTTP/1.1" 200 21
+"POST /calendar/ HTTP/1.1" 200 21
+"GET /home/ HTTP/1.1" 200 545481
+"GET /logout/ HTTP/1.1" 302 0
+"GET /login/ HTTP/1.1" 200 7912
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 200 545485
+"GET /workContents/ HTTP/1.1" 200 38698
+"GET /static/css/workContents.css HTTP/1.1" 304 0
+"GET /static/js/workContents/workContents.js HTTP/1.1" 304 0
+"GET /static/js/workContents/workContentsMappingConfig.js HTTP/1.1" 304 0
+"GET /home/ HTTP/1.1" 200 545485
+- Broken pipe from ('127.0.0.1', 57285)
+"GET /card/?planId=9045 HTTP/1.1" 200 32728
+"GET /static/css/mycard.css HTTP/1.1" 304 0
+"GET /static/js/card/card.js HTTP/1.1" 304 0
+Error: 'NoneType' object has no attribute 'user' - 'NoneType' object has no attribute 'user'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 724, in card_view
+    plan_instance.approver = user_dict['leader_profile'].user
+AttributeError: 'NoneType' object has no attribute 'user'
+Internal Server Error: /card/
+"POST /card/ HTTP/1.1" 500 75
+"GET /home/ HTTP/1.1" 200 545485
+"GET /card/?planId=17445 HTTP/1.1" 200 31266
+Error: 'NoneType' object has no attribute 'user' - 'NoneType' object has no attribute 'user'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 724, in card_view
+    plan_instance.approver = user_dict['leader_profile'].user
+AttributeError: 'NoneType' object has no attribute 'user'
+Internal Server Error: /card/
+"POST /card/ HTTP/1.1" 500 75
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+"GET /home/ HTTP/1.1" 200 545485
+"GET /static/css/header.css HTTP/1.1" 200 4897
+"GET /static/css/base.css HTTP/1.1" 200 4656
+"GET /static/debug_toolbar/js/toolbar.js HTTP/1.1" 200 14601
+"GET /static/img/Nika.png HTTP/1.1" 200 1998
+"GET /static/img/home.png HTTP/1.1" 200 1757
+"GET /static/img/calendar.png HTTP/1.1" 200 6716
+"GET /static/img/check.png HTTP/1.1" 200 5831
+"GET /static/css/home.css HTTP/1.1" 200 13056
+"GET /static/js/common.js HTTP/1.1" 200 426
+"GET /static/debug_toolbar/css/toolbar.css HTTP/1.1" 200 16675
+"GET /static/css/gantt.css HTTP/1.1" 200 5701
+"GET /static/img/standard.png HTTP/1.1" 200 8097
+"GET /static/img/achievements.png HTTP/1.1" 200 7529
+"GET /static/img/plannedMaintenance.png HTTP/1.1" 200 9917
+"GET /static/img/logout.png HTTP/1.1" 200 5621
+"GET /static/js/home/home.js HTTP/1.1" 200 42064
+"GET /static/img/user.png HTTP/1.1" 200 10366
+"GET /static/js/header/header.js HTTP/1.1" 200 3077
+"GET /static/img/RAV4.png HTTP/1.1" 200 109866
+"GET /static/debug_toolbar/css/print.css HTTP/1.1" 200 43
+"GET /static/js/frappeGantt/NewFrappeGantt.js HTTP/1.1" 200 40670
+"GET /static/js/manager/TableManger.js HTTP/1.1" 200 12573
+"GET /static/js/manager/UIManger.js HTTP/1.1" 200 18932
+"GET /static/js/frappeGantt/svg_utils.js HTTP/1.1" 200 3468
+"GET /static/debug_toolbar/js/utils.js HTTP/1.1" 200 4742
+"GET /static/js/frappeGantt/data_utils.js HTTP/1.1" 200 6993
+"GET /static/js/manager/loadingManager.js HTTP/1.1" 200 1427
+"GET /static/js/home/chartSetup.js HTTP/1.1" 200 2884
+"GET /static/js/home/layout.js HTTP/1.1" 200 2828
+"GET /static/js/home/homeMappingConfig.js HTTP/1.1" 200 11866
+"GET /static/js/frappeGantt/popup.js HTTP/1.1" 200 2212
+"GET /static/js/manager/ModalManger.js HTTP/1.1" 200 2231
+"GET /static/js/frappeGantt/bar.js HTTP/1.1" 200 12443
+"GET /static/js/frappeGantt/arrow.js HTTP/1.1" 200 3247
+"GET /static/js/asyncCommunicator/asyncCommunicator.js HTTP/1.1" 200 1900
+"GET /static/img/Nika.png HTTP/1.1" 200 1998
+"GET /calendar/ HTTP/1.1" 200 33215
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 214474
+"POST /calendar/ HTTP/1.1" 200 829
+Error: 'NoneType' object has no attribute 'user' - 'NoneType' object has no attribute 'user'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 524, in calendar_view
+    _plan.approver = leader_profile.user
+AttributeError: 'NoneType' object has no attribute 'user'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 75
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Error: 'NoneType' object has no attribute 'user' - 'NoneType' object has no attribute 'user'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 524, in calendar_view
+    leader_profile = assign_fallback_leader_if_missing(_plan, request, cache_manager_if)
+AttributeError: 'NoneType' object has no attribute 'user'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 75
+Watching for file changes with StatReloader
+"POST /calendar/ HTTP/1.1" 200 21
+"GET /home/ HTTP/1.1" 200 545547
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /calendar/ HTTP/1.1" 200 33216
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213734
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /home/ HTTP/1.1" 200 545547
+"GET /calendar/ HTTP/1.1" 200 33216
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213734
+"POST /calendar/ HTTP/1.1" 200 1206
+"POST /calendar/ HTTP/1.1" 200 21
+"GET /home/ HTTP/1.1" 200 545609
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /calendar/ HTTP/1.1" 200 33215
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 212991
+"GET /home/ HTTP/1.1" 200 545609
+"GET /card/?planId=17445 HTTP/1.1" 200 31267
+"POST /card/ HTTP/1.1" 200 61
+"GET /home/ HTTP/1.1" 200 545609
+"GET /workContents/ HTTP/1.1" 200 41894
+"POST /workContents/ HTTP/1.1" 200 79
+"GET /home/ HTTP/1.1" 200 545602
+"GET /calendar/ HTTP/1.1" 200 33216
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 212991
+"POST /calendar/ HTTP/1.1" 200 1214
+Error: 'NoneType' object has no attribute 'items' - 'NoneType' object has no attribute 'items'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 631, in calendar_view
+    work_schedule_entry_ins.initFrame(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 147, in initFrame
+    self.insert_plan_schedule(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 160, in insert_plan_schedule
+    for key, frame in self.base_time_frame.items():
+AttributeError: 'NoneType' object has no attribute 'items'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 76
+"POST /calendar/ HTTP/1.1" 200 1214
+"POST /calendar/ HTTP/1.1" 200 786
+Error: 'NoneType' object has no attribute 'items' - 'NoneType' object has no attribute 'items'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 631, in calendar_view
+    work_schedule_entry_ins.initFrame(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 147, in initFrame
+    self.insert_plan_schedule(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 160, in insert_plan_schedule
+    for key, frame in self.base_time_frame.items():
+AttributeError: 'NoneType' object has no attribute 'items'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 76
+"POST /calendar/ HTTP/1.1" 200 834
+Error: 'NoneType' object has no attribute 'items' - 'NoneType' object has no attribute 'items'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 631, in calendar_view
+    work_schedule_entry_ins.initFrame(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 147, in initFrame
+    self.insert_plan_schedule(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 160, in insert_plan_schedule
+    for key, frame in self.base_time_frame.items():
+AttributeError: 'NoneType' object has no attribute 'items'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 76
+"POST /calendar/ HTTP/1.1" 200 834
+Error: 'NoneType' object has no attribute 'items' - 'NoneType' object has no attribute 'items'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 631, in calendar_view
+    work_schedule_entry_ins.initFrame(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 147, in initFrame
+    self.insert_plan_schedule(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 160, in insert_plan_schedule
+    for key, frame in self.base_time_frame.items():
+AttributeError: 'NoneType' object has no attribute 'items'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 76
+"POST /calendar/ HTTP/1.1" 200 834
+Error: 'NoneType' object has no attribute 'items' - 'NoneType' object has no attribute 'items'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 631, in calendar_view
+    work_schedule_entry_ins.initFrame(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 147, in initFrame
+    self.insert_plan_schedule(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 160, in insert_plan_schedule
+    for key, frame in self.base_time_frame.items():
+AttributeError: 'NoneType' object has no attribute 'items'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 76
+"POST /calendar/ HTTP/1.1" 200 834
+Error: 'NoneType' object has no attribute 'items' - 'NoneType' object has no attribute 'items'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 631, in calendar_view
+    work_schedule_entry_ins.initFrame(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 147, in initFrame
+    self.insert_plan_schedule(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 160, in insert_plan_schedule
+    for key, frame in self.base_time_frame.items():
+AttributeError: 'NoneType' object has no attribute 'items'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 76
+"POST /calendar/ HTTP/1.1" 200 834
+Error: 'NoneType' object has no attribute 'items' - 'NoneType' object has no attribute 'items'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 631, in calendar_view
+    work_schedule_entry_ins.initFrame(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 147, in initFrame
+    self.insert_plan_schedule(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 160, in insert_plan_schedule
+    for key, frame in self.base_time_frame.items():
+AttributeError: 'NoneType' object has no attribute 'items'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 76
+"POST /calendar/ HTTP/1.1" 200 834
+Error: 'NoneType' object has no attribute 'items' - 'NoneType' object has no attribute 'items'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 631, in calendar_view
+    work_schedule_entry_ins.initFrame(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 147, in initFrame
+    self.insert_plan_schedule(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 160, in insert_plan_schedule
+    for key, frame in self.base_time_frame.items():
+AttributeError: 'NoneType' object has no attribute 'items'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 76
+"POST /calendar/ HTTP/1.1" 200 834
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py changed, reloading.
+Error: 'start' - 'start'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 631, in calendar_view
+    work_schedule_entry_ins.initFrame(member_plans)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 154, in initFrame
+    'timeZone': '稼働中',
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 169, in insert_plan_schedule
+    'maxTime': [(self.target_inf.shift_lunch_time_start - self.target_inf.field_worker_lunch_time_end)]
+KeyError: 'start'
+Watching for file changes with StatReloader
+"GET /home/ HTTP/1.1" 200 545540
+"GET /calendar/ HTTP/1.1" 200 33216
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 213734
+"POST /calendar/ HTTP/1.1" 200 834
+"POST /calendar/ HTTP/1.1" 200 21
+"GET /calendar/ HTTP/1.1" 200 33215
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 212985
+"POST /calendar/ HTTP/1.1" 200 1227
+"POST /calendar/ HTTP/1.1" 200 21
+Watching for file changes with StatReloader
+"GET /calendar/ HTTP/1.1" 200 33216
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 212256
+"POST /calendar/ HTTP/1.1" 200 1593
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py changed, reloading.
+Error: 'NoneType' object has no attribute 'user' - 'NoneType' object has no attribute 'user'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 640, in calendar_view
+    registration_events = groupActualWorksByMachineBySave(target_plans, work_schedule_entry_ins, '稼動中', registration_events)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 320, in groupActualWorksByMachineBySave
+    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 231, in addTaskToSchedule
+    self.possible_process_dict = {work[0]: True for work in self.works}
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 291, in process_work_in_frame
+    self.maximumFreeTime(frame_name, self.plan_time_frame[frame_name])
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 317, in updatePlanObj
+AttributeError: 'NoneType' object has no attribute 'user'
+Watching for file changes with StatReloader
+"POST /calendar/ HTTP/1.1" 200 1593
+"GET /calendar/ HTTP/1.1" 200 33215
+"GET /static/css/base.css HTTP/1.1" 200 4656
+"GET /static/css/calendar.css HTTP/1.1" 200 10313
+"GET /static/img/RAV4.png HTTP/1.1" 200 109866
+"GET /static/img/Nika.png HTTP/1.1" 200 1998
+"GET /static/img/home.png HTTP/1.1" 200 1757
+"GET /static/img/calendar.png HTTP/1.1" 200 6716
+"GET /static/img/check.png HTTP/1.1" 200 5831
+"GET /static/js/common.js HTTP/1.1" 200 426
+"GET /static/debug_toolbar/css/toolbar.css HTTP/1.1" 200 16675
+"GET /static/css/header.css HTTP/1.1" 200 4897
+"GET /static/js/calendar/calendar.js HTTP/1.1" 200 25329
+"GET /static/debug_toolbar/js/toolbar.js HTTP/1.1" 200 14601
+"GET /static/img/standard.png HTTP/1.1" 200 8097
+"GET /static/img/achievements.png HTTP/1.1" 200 7529
+"GET /static/img/plannedMaintenance.png HTTP/1.1" 200 9917
+"GET /static/debug_toolbar/css/print.css HTTP/1.1" 200 43
+"GET /static/img/user.png HTTP/1.1" 200 10366
+"GET /static/img/logout.png HTTP/1.1" 200 5621
+"GET /static/js/header/header.js HTTP/1.1" 200 3077
+"GET /static/js/asyncCommunicator/asyncCommunicator.js HTTP/1.1" 200 1900
+"GET /static/js/manager/TableManger.js HTTP/1.1" 200 12573
+"GET /static/js/calendar/calendarMappingConfig.js HTTP/1.1" 200 3095
+"GET /static/js/manager/UIManger.js HTTP/1.1" 200 18932
+"GET /static/js/manager/ModalManger.js HTTP/1.1" 200 2231
+"GET /static/js/manager/dropdownbox.js HTTP/1.1" 200 5830
+"GET /static/debug_toolbar/js/utils.js HTTP/1.1" 200 4742
+"GET /static/js/manager/loadingManager.js HTTP/1.1" 200 1427
+"GET /static/img/Nika.png HTTP/1.1" 200 1998
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 212256
+"POST /calendar/ HTTP/1.1" 200 1593
+Error: 'WorkScheduleEntry' object has no attribute 'shift_change_time_start' - 'WorkScheduleEntry' object has no attribute 'shift_change_time_start'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 623, in calendar_view
+    work_schedule_entry_ins.set_time_frames()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 187, in set_time_frames
+    'maxTime':[(self.shift_change_time_start - self.target_inf.hot_time_end_b)]
+AttributeError: 'WorkScheduleEntry' object has no attribute 'shift_change_time_start'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 103
+"POST /calendar/ HTTP/1.1" 200 1593
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py changed, reloading.
+Watching for file changes with StatReloader
+Error: 'WorkScheduleEntry' object has no attribute 'shift_change_time_start' - 'WorkScheduleEntry' object has no attribute 'shift_change_time_start'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 623, in calendar_view
+    work_schedule_entry_ins.set_time_frames()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 187, in set_time_frames
+    'maxTime':[(self.shift_change_time_start - self.target_inf.hot_time_end_b)]
+AttributeError: 'WorkScheduleEntry' object has no attribute 'shift_change_time_start'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 103
+"POST /calendar/ HTTP/1.1" 200 1593
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py changed, reloading.
+Watching for file changes with StatReloader
+Error: 'NoneType' object has no attribute 'user' - 'NoneType' object has no attribute 'user'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 640, in calendar_view
+    registration_events = groupActualWorksByMachineBySave(target_plans, work_schedule_entry_ins, '稼動中', registration_events)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 320, in groupActualWorksByMachineBySave
+    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 239, in addTaskToSchedule
+    self.process_work_in_frame()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 299, in process_work_in_frame
+    self.updatePlanObj(update_data['start'], detail_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 325, in updatePlanObj
+    detail_data.approver = self.member_instance['leader_profile'].user
+AttributeError: 'NoneType' object has no attribute 'user'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 75
+"POST /calendar/ HTTP/1.1" 200 1593
+Error: 'NoneType' object has no attribute 'user' - 'NoneType' object has no attribute 'user'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 640, in calendar_view
+    registration_events = groupActualWorksByMachineBySave(target_plans, work_schedule_entry_ins, '稼動中', registration_events)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 320, in groupActualWorksByMachineBySave
+    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 239, in addTaskToSchedule
+    self.process_work_in_frame()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 299, in process_work_in_frame
+    self.updatePlanObj(update_data['start'], detail_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 325, in updatePlanObj
+    detail_data.approver = self.member_instance['leader_profile'].user
+AttributeError: 'NoneType' object has no attribute 'user'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 75
+"POST /calendar/ HTTP/1.1" 200 1593
+Error: 'NoneType' object has no attribute 'user' - 'NoneType' object has no attribute 'user'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 640, in calendar_view
+    registration_events = groupActualWorksByMachineBySave(target_plans, work_schedule_entry_ins, '稼動中', registration_events)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 320, in groupActualWorksByMachineBySave
+    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 239, in addTaskToSchedule
+    self.process_work_in_frame()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 299, in process_work_in_frame
+    self.updatePlanObj(update_data['start'], detail_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 325, in updatePlanObj
+    detail_data.approver = self.member_instance['leader_profile'].user
+AttributeError: 'NoneType' object has no attribute 'user'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 75
+"POST /calendar/ HTTP/1.1" 200 1593
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py changed, reloading.
+Error: 'NoneType' object has no attribute 'user' - 'NoneType' object has no attribute 'user'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 640, in calendar_view
+    registration_events = groupActualWorksByMachineBySave(target_plans, work_schedule_entry_ins, '稼動中', registration_events)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 320, in groupActualWorksByMachineBySave
+    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 239, in addTaskToSchedule
+    self.process_work_in_frame()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 299, in process_work_in_frame
+    self.updatePlanObj(update_data['start'], detail_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 325, in updatePlanObj
+    detail_data.approver = self.member_instance['leader_profile'].user
+AttributeError: 'NoneType' object has no attribute 'user'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 75
+Watching for file changes with StatReloader
+"POST /calendar/ HTTP/1.1" 200 1593
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py changed, reloading.
+Error: 'NoneType' object has no attribute 'user' - 'NoneType' object has no attribute 'user'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 640, in calendar_view
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 320, in groupActualWorksByMachineBySave
+    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 239, in addTaskToSchedule
+    self.process_work_in_frame()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 299, in process_work_in_frame
+    self.updatePlanObj(update_data['start'], detail_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 325, in updatePlanObj
+    if self.member_instance['leader_profile'] is None:
+AttributeError: 'NoneType' object has no attribute 'user'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 75
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py changed, reloading.
+Watching for file changes with StatReloader
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /calendar/ HTTP/1.1" 200 33215
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 212256
+"POST /calendar/ HTTP/1.1" 200 4449
+"GET /calendar/ HTTP/1.1" 200 33215
+"GET /calendar/ HTTP/1.1" 200 33216
+- Broken pipe from ('127.0.0.1', 61328)
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 212256
+"POST /calendar/ HTTP/1.1" 200 1593
+Error: '<=' not supported between instances of 'int' and 'datetime.timedelta' - '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 648, in calendar_view
+    registration_events = groupActualWorksByMachineBySave(target_plans, work_schedule_entry_ins, '停止中', registration_events)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 320, in groupActualWorksByMachineBySave
+    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 241, in addTaskToSchedule
+    self.process_work_in_frame()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 283, in process_work_in_frame
+    if work_total_man_hour <= maxTime:
+TypeError: '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 104
+"POST /calendar/ HTTP/1.1" 200 1593
+Error: '<=' not supported between instances of 'int' and 'datetime.timedelta' - '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 648, in calendar_view
+    registration_events = groupActualWorksByMachineBySave(target_plans, work_schedule_entry_ins, '停止中', registration_events)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 320, in groupActualWorksByMachineBySave
+    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 241, in addTaskToSchedule
+    self.process_work_in_frame()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 283, in process_work_in_frame
+    if work_total_man_hour <= maxTime:
+TypeError: '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 104
+"POST /calendar/ HTTP/1.1" 200 1593
+Error: '<=' not supported between instances of 'int' and 'datetime.timedelta' - '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 648, in calendar_view
+    registration_events = groupActualWorksByMachineBySave(target_plans, work_schedule_entry_ins, '停止中', registration_events)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 320, in groupActualWorksByMachineBySave
+    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 241, in addTaskToSchedule
+    self.process_work_in_frame()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 283, in process_work_in_frame
+    if work_total_man_hour <= maxTime:
+TypeError: '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 104
+"POST /calendar/ HTTP/1.1" 200 1593
+Error: '<=' not supported between instances of 'int' and 'datetime.timedelta' - '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 648, in calendar_view
+    registration_events = groupActualWorksByMachineBySave(target_plans, work_schedule_entry_ins, '停止中', registration_events)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 320, in groupActualWorksByMachineBySave
+    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 241, in addTaskToSchedule
+    self.process_work_in_frame()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 283, in process_work_in_frame
+    if work_total_man_hour <= maxTime:
+TypeError: '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 104
+"POST /calendar/ HTTP/1.1" 200 1593
+Error: '<=' not supported between instances of 'int' and 'datetime.timedelta' - '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 648, in calendar_view
+    registration_events = groupActualWorksByMachineBySave(target_plans, work_schedule_entry_ins, '停止中', registration_events)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 320, in groupActualWorksByMachineBySave
+    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 241, in addTaskToSchedule
+    self.process_work_in_frame()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 283, in process_work_in_frame
+    if work_total_man_hour <= maxTime:
+TypeError: '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 104
+"POST /calendar/ HTTP/1.1" 200 1593
+Error: '<=' not supported between instances of 'int' and 'datetime.timedelta' - '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 648, in calendar_view
+    registration_events = groupActualWorksByMachineBySave(target_plans, work_schedule_entry_ins, '停止中', registration_events)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 320, in groupActualWorksByMachineBySave
+    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 241, in addTaskToSchedule
+    self.process_work_in_frame()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 283, in process_work_in_frame
+    if work_total_man_hour <= maxTime:
+TypeError: '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 104
+"POST /calendar/ HTTP/1.1" 200 1593
+Error: '<=' not supported between instances of 'int' and 'datetime.timedelta' - '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 648, in calendar_view
+    registration_events = groupActualWorksByMachineBySave(target_plans, work_schedule_entry_ins, '停止中', registration_events)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 320, in groupActualWorksByMachineBySave
+    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 241, in addTaskToSchedule
+    self.process_work_in_frame()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 283, in process_work_in_frame
+    if work_total_man_hour <= maxTime:
+TypeError: '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 104
+"POST /calendar/ HTTP/1.1" 200 1593
+Error: '<=' not supported between instances of 'int' and 'datetime.timedelta' - '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 648, in calendar_view
+    registration_events = groupActualWorksByMachineBySave(target_plans, work_schedule_entry_ins, '停止中', registration_events)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 320, in groupActualWorksByMachineBySave
+    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 241, in addTaskToSchedule
+    self.process_work_in_frame()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 283, in process_work_in_frame
+    if work_total_man_hour <= maxTime:
+TypeError: '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 104
+"POST /calendar/ HTTP/1.1" 200 1593
+Error: '<=' not supported between instances of 'int' and 'datetime.timedelta' - '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Traceback (most recent call last):
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 648, in calendar_view
+    registration_events = groupActualWorksByMachineBySave(target_plans, work_schedule_entry_ins, '停止中', registration_events)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\views.py", line 320, in groupActualWorksByMachineBySave
+    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 241, in addTaskToSchedule
+    self.process_work_in_frame()
+  File "C:\inetpub\wwwroot\sitefolder\myproject\myapp\workScheduleEntry.py", line 283, in process_work_in_frame
+    if work_total_man_hour <= maxTime:
+TypeError: '<=' not supported between instances of 'int' and 'datetime.timedelta'
+Internal Server Error: /calendar/
+"POST /calendar/ HTTP/1.1" 500 104
+"POST /calendar/ HTTP/1.1" 200 1593
+Not Found: /favicon.ico
+Not Found: /apple-touch-icon.png
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /favicon.ico
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /apple-touch-icon.png
+Not Found: /favicon.ico
+Not Found: /apple-touch-icon.png
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /favicon.ico
+Not Found: /apple-touch-icon.png
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /favicon.ico
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /apple-touch-icon.png
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /favicon.ico
+Not Found: /apple-touch-icon.png
+Watching for file changes with StatReloader
+Not Found: /
+"GET / HTTP/1.1" 404 9193
+Not Found: /favicon.ico
+"GET /favicon.ico HTTP/1.1" 404 9244
+"GET /home/ HTTP/1.1" 302 0
+"GET /login/?next=/home/ HTTP/1.1" 200 7912
+"GET /static/css/login.css HTTP/1.1" 304 0
+"POST /login/ HTTP/1.1" 302 0
+"GET /home/ HTTP/1.1" 200 23504
+C:\inetpub\wwwroot\sitefolder\myproject\myapp\cache_manager.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /calendar/ HTTP/1.1" 200 33217
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 45
+"POST /calendar/ HTTP/1.1" 200 79
+"GET /home/ HTTP/1.1" 200 23503
+"GET /calendar/ HTTP/1.1" 200 33218
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 45
+"POST /calendar/ HTTP/1.1" 200 79
+"GET /home/ HTTP/1.1" 200 23503
+"GET /calendar/ HTTP/1.1" 200 33217
+"GET /api/non-matching-weekly-duties/ HTTP/1.1" 200 45
+"POST /calendar/ HTTP/1.1" 200 79
+"GET /home/ HTTP/1.1" 200 23503
+Not Found: /favicon.ico
+Not Found: /apple-touch-icon.png
+Not Found: /apple-touch-icon-precomposed.png

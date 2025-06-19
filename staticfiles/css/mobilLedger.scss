@@ -1,0 +1,30 @@
+.card-item {
+    padding: 24px 0;
+    padding-left: 8px;
+    border-bottom: 1px solid #e0e0e0; // 👈 薄いグレーの下線
+    color: #333;
+  }
+  
+
+.card-item:last-child {
+    border-bottom: none; // 最後の項目には下線を引かない
+}
+
+.inspection-link {
+    display: block;
+    background-color: #f8fbfe;
+    color: #5a6b7a;
+    font-weight: 500; 
+    text-decoration: none;
+    transition: background-color 0.2s ease-in-out;
+  
+    &:hover,
+    &:focus {
+      background-color: #d0e7f9;
+    }
+  
+    &:active {
+      background-color: #c0dff2;
+    }
+
+}

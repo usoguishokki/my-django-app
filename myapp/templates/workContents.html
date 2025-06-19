@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}WorkContents{% endblock %}
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/workContents.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+get_card_info
+{% block header %}
+{% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+
+<div id="parentFilterArea" class="parent-filterarea">
+    <div id="filterarea" class="filter-container" >
+        <div class="filter-item">
+            <label for="statusSelect">ステータス:</label>
+            <select id="statusSelect" data-filter-attribute="data-status">
+                <option value="">全て</option>
+                <option value="実施待ち">実施待ち</option>
+                <option value="承認待ち">承認待ち</option>
+                <option value="差戻し">差戻し</option>
+                <option value="遅れ">遅れ</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="resultSelect">結果:</label>
+            <select id="resultSelect" data-filter-attribute="data-result">
+                <option value="">全て</option>
+                <option value="NG">NG</option>
+                <option value="OK">OK</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="applicantSelect">申請者:</label>
+            <select id="applicantSelect" data-filter-attribute="data-applicant">
+                <option value="">全て</option>
+                {% for member in members %}
+                <option value="{{ member.user.name }}">
+                    {{ member.user.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="approverSelect">承認者:</label>
+            <select id="approverSelect" data-filter-attribute="data-approver">
+                <option value="">全て</option>
+                {% for member in members %}
+                    {% if member.job_title == '班長' %}
+                        <option value="{{ member.user.name}}">
+                            {{ member.user.name }}
+                        </option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div id="workcontents">
+        <div class="mask" id="mask"></div>
+        <div class="table-scroll" id="tableScroll">
+            <table id="myTable">
+                <colgroup>
+                    <col class="implementation-date-content" id="impleMentationCol">
+                    <col class="status-content" id="statusCol">
+                    <col class="work-name-content" id="workNameCol">
+                    <col class="implementation-content" id="implementationContentCol">
+                    <col class="result-content" id="resultCol">
+                    <col class="applicant-content" id="applicantCol">
+                    <col class="approver-content" id="approverCol">
+                    <col class="approve-reject-content" id="approveRejectCol">
+                    <col class="comment-content" id="commentCol">
+                </colgroup>
+                <thead>
+                    <tr class="table-th" id="tableTh">
+                        <th class="implementation-date-content implementation-date-column" id="impleMentationDateColumn">実施日</th>
+                        <th class="status-content status-column" id="statusColumn">ステータス</th>
+                        <th class="work-name-content work-name-column" id="workNameColumn">作業名</th>
+                        <th class="implementation-content implementation-content-column" id="implementationContentColumn">実施内容</th>
+                        <th class="result-content result-column" id="resultColumn">結果</th>
+                        <th class="applicant-content applicant-column" id="applicantColumn">申請者</th>
+                        <th class="approver-content approver-column" id="approverColumn">承認者</th>
+                        <th class="approve-reject-content approve-reject-column" id="approveRejectColumn">承認/棄却
+                            <button class="approve-button tooltip" id="approveButton" data-tooltip="結果OKのみ承認する" disabled>
+                                <svg class="" id="checkButtonSvg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="10" stroke="#d8d8d8" stroke-width="3.5" fill="none"/>
+                                    <path d="M8 12L11 15L16 9" stroke="#d8d8d8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                        </th>
+                        <th class="comment-content comment-column" id="commentColumn">コメント</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for application in applications_data_list %}
+                        <tr data-plan-id="{{ application.id }}"
+                            data-status="{{ application.status }}"
+                            data-result="{{ application.result }}"
+                            data-applicant="{{ application.applicant_name }}"
+                            data-approver="{{ application.approver_name }}"
+                            data-comment="{{ application.comment }}"
+                            data-implimentation-date="{{ application.implementation_date }}"
+                            >
+                            <!-- <td class="id-content id-row">{{ application.id }}</td> -->
+                            <td class="implementation-date-content implementation-date-row">{{ application.implementation_date|date:"m月d日" }}</td>
+                            <td class="status-content status-row">{{ application.status }}</td>
+                            <td class="work-name-content work-name-row">{{ application.work_name }}</td>
+                            <td class="implementation-content implementation-content-row">{{ application.points_to_note }}</td>
+                            <td class="result-content result-row" id="resultId">{{ application.result }}</td>
+                            <td class="applicant-content applicant-row">{{ application.applicant_name }}</td>
+                            <td class="approver-content approver-row">{{ application.approver_name }}</td>
+                            <td class="approve-reject-content approve-reject-row">
+                                <button type="button" class="btn btn-approve">承認</button>
+                                <button type="button" class="btn btn-reject">棄却</button>
+                            </td>
+                            <td class="comment-content comment-row">
+                                <label for="comment-{{ forloop.counter }}" class="visually-hidden">コメント</label>
+                                <textarea id="comment-{{ forloop.counter }}" rows="1" cols="30" name="comment-{ forloop.counter }">{{ application.comment }}</textarea>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>  
+    </div>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block script %}
+    <script type="module" src="{% static 'js/workContents/workContents.js' %}"></script>
+{% endblock %}

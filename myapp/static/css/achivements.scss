@@ -1,0 +1,124 @@
+@import 'common';
+
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: $border-radius;
+    table-layout: fixed;
+    thead th {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background-color: rgb(255, 255, 255);
+    }
+}
+
+th {
+    color: black;
+    text-align: left;
+    padding: 5px;
+    height: 40px;
+    &:first-child {
+        border-top-left-radius: 8px;
+    }
+
+    &:last-child {
+        border-top-right-radius: 8px;
+    }
+}
+
+td {
+    vertical-align: middle;
+    text-align: left;
+    padding-left: 5px;
+}
+
+tbody tr > * {
+    border: none;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    &:not(.thick-top-border) {
+        border-top: 1px solid $border-color;
+    }
+}
+
+.parent-filterarea {
+    display: flex;
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    padding-top: 20px;
+    padding-bottom: 20px;
+
+    .filter-container {
+        position: absolute;
+        z-index: 900;
+        background-color: #ebeded;
+        border-radius: 6.5px;
+        height: calc(100% - 40px);
+        width: 2.5vw;
+        margin-right: 6.5px;
+        margin-bottom: 20px;
+        transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); /* スムーズなアニメーション */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden; /* 初期状態でスクロールバーを非表示 */
+        box-sizing: border-box;
+        &:hover {
+            width: 20vw;
+            box-shadow: 5px 0px 12px rgba(0, 0, 0, 0.3);
+            overflow-y: auto; /* 必要に応じてスクロールを許可 */
+        }
+    }
+
+    .right-content {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-sizing: border-box;
+        padding-left: 12px;
+        margin-left: 2.5vw;
+        width: calc(100% - 2.5vw);
+        transition: margin-left 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); /* 過渡アニメーション */
+        .table-container {
+            height: 50%;
+            padding-bottom: 20px;
+            overflow: hidden;
+
+            .table-scroll {
+                width:100%;
+                height: 100%;
+                overflow-y: auto;
+
+                .operating-row {
+                    display: flex;
+                }
+            }
+            
+        }
+
+        .graph-container {
+            height: 50%;
+            #myStackedBarChart {
+                width: 100%;
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

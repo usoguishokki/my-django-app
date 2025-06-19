@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}equipmentLider{% endblock %}
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/mobilLedger.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block header %}
+{% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+<!--
+jsなどはcard.jsの使いまわしを考える
+card.jsのコードの分離カールセルを引きはがすなど
+部長フォローのためいったんお試し版を作成中↑↑マスト
+-->
+
+
+<div class="equipment-card">
+    <div class="card-item process-name base-font-size">工程:  {{ EquipmentInformation.line_name.line_name }}</div>
+    <div class="card-item equipment-name base-font-size">設備:  {{ EquipmentInformation.machine }}</div>
+    <div class="card-item equipment-number base-font-size">設備番号:  {{ EquipmentInformation.control_no }}</div>
+    <div class="card-item facility-installation-date base-font-size">設備設置年月:  2006年5月</div> 
+    <div class="card-item facility-manufacturer base-font-size">メーカ:  ジェイテクト</div> 
+    <div class="card-item facility-criticality-rank base-font-size">設備重要度ランク:  S</div> 
+    <a href="{% url 'card_by_control' EquipmentInformation.control_no %}" class="card-item inspection-link loading-link">
+        <span class="inspection-label">点検内容詳細</span>
+    </a>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block script %}
+   <script type="module" src="{% static 'js/mobileLedger/mobileLedger.js' %}"></script>
+{% endblock %}

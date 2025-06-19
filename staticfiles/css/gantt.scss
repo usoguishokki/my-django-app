@@ -1,0 +1,266 @@
+@import "./dark.scss";
+
+$bar-color: #416080 !default;
+$bar-stroke: #8D99A6 !default;
+$border-color: #e0e0e0 !default;
+$light-bg: #f5f5f5 !default;
+$light-border-color: #ebeff2 !default;
+$light-yellow: #fcf8e3 !default;
+$text-muted: #666 !default;
+$text-light: #555 !default;
+$text-color: #333 !default;
+$blue: #acacfa !default;
+$handle-color: #ddd !default;
+$light-blue: #c4c4e9 !default;
+$border-radius: 1.4px;
+$highlight: #0d4b8d;
+
+
+.hidden {
+	visibility: hidden;
+	opacity: 0;
+}
+
+.gantt-header-container {
+	//background-color: #9c9c9c;
+	.gantt-header-grid {
+		fill: #9c9c9c;
+	}
+	.lower-text, .upper-text {
+		font-size: 16px;
+		text-anchor: middle;
+	}
+	.upper-text {
+		fill: #ffffff;
+	}
+	.lower-text {
+		fill: #ffffff;
+		&:nth-of-type(1) {
+			display: none;
+		}
+	}
+}
+
+.assignee-container {
+	.assignee-names {
+		border-right: 1.6px solid rgba(107, 107, 107, 0.5);
+		.assignee-name {
+			display: flex;
+			align-items: center;
+			transition: background-color 0.3s ease, opacity 0.3s ease;
+			span {
+				padding-left: 8px;
+			}
+			&:nth-child(even) {
+				background-color: $light-bg;
+			}
+			&.row-highlight {
+				background-color: $highlight;
+				color: #ddd;
+				opacity: 0.8;
+			}
+		}
+	}
+}
+
+
+
+
+.gantt {
+	.grid-background {
+		fill: none;
+	}
+	.grid-header {
+		fill: #ffffff;
+		stroke: $border-color;
+		stroke-width: 1.4;
+	}
+	.grid-row {
+		fill: #ffffff;
+	}
+	.grid-row {
+		transition: fill 0.3s ease, opacity 0.3s ease, border-color 0.3s ease;
+		&:nth-child(even) {
+			fill: $light-bg;
+		}
+		&.row-highlight {
+			fill: $highlight;
+			opacity: 0.8;
+			border: 1.5px solid #ddd;
+		}
+	}
+	
+	.row-line {
+		stroke: $light-border-color;
+	}
+	.upper-grid{
+		stroke-width: 2.0;
+		stroke: $light-border-color;
+	}
+	.tick {
+		stroke: $border-color;
+		stroke-width: 0.2;//0.2
+		&.thick {
+			stroke-width: 2.0;
+		}
+
+		&.subthick {
+			stroke-width: 0.6;
+		}
+	}
+	.today-highlight {
+		fill: $light-yellow;
+		opacity: 0.5;
+	}
+
+	.week-highlight {
+		fill: $light-yellow;
+		opacity: 0.5;
+	}
+
+	.month-highlight {
+		fill: $light-yellow;
+		opacity: 0.5;
+	}
+
+	.year-highlight {
+		fill: $light-yellow;
+		opacity: 0.5;
+	}
+
+	.time-highlight {
+		fill: $highlight;
+	}
+
+	.arrow {
+		fill: none;
+		stroke: $text-muted;
+		stroke-width: 1.4;
+	}
+
+	.bar {
+		fill: $bar-color;
+		stroke: #ffffff;
+		stroke-width: 0.8;
+		transition: stroke-width .3s ease;
+		user-select: none;
+	}
+	.bar-progress {
+		fill: $blue;
+	}
+	.bar-expected-progress {
+		fill: $light-blue;
+	}
+	.bar-invalid {
+		fill: transparent;
+		stroke: $bar-stroke;
+		stroke-width: 1;
+		stroke-dasharray: 5;
+
+		&~.bar-label {
+			fill: $text-light;
+		}
+	}
+	.bar-label {
+		fill: #fff;
+		dominant-baseline: central;
+		text-anchor: middle;
+		stroke-width: 0;
+		font-size: 12px;
+		font-weight: lighter;
+		&.big {
+			fill: $text-light;
+			text-anchor: start;
+		}
+	}
+
+	.handle {
+		fill: $handle-color;
+		cursor: ew-resize;
+		opacity: 0;
+		visibility: hidden;
+		transition: opacity .3s ease;
+	}
+
+	.bar-wrapper {
+		cursor: pointer;
+		outline: none;
+
+		&:hover {
+			.bar {
+				fill: darken($bar-color, 5);
+			}
+
+			.bar-progress {
+				fill: darken($blue, 5);
+			}
+
+			.handle {
+				visibility: visible;
+				opacity: 1;
+			}
+		}
+
+		&.active {
+			.bar {
+				fill: darken($bar-color, 5);
+			}
+
+			.bar-progress {
+				fill: darken($blue, 5);
+			}
+		}
+	}
+
+	.lower-text, .upper-text {
+		font-size: 12px;
+		text-anchor: middle;
+	}
+	.upper-text {
+		fill: $text-light;
+	}
+	.lower-text {
+		fill: $text-color;
+		&:nth-of-type(1) {
+			display: none;
+		}
+	}
+
+	.hide {
+		display: none;
+	}
+}
+
+.gantt-container {
+	position: relative;
+	//overflow: auto;
+	font-size: 12px;
+
+	.popup-wrapper {
+		position: absolute;
+		top: 0;
+		left: 0;
+		background: rgba(0, 0, 0, 0.8);
+		padding: 0;
+		color: #959da5;
+		border-radius: 3px;
+
+		.title {
+			border-bottom: 3px solid $blue;
+			padding: 10px;
+		}
+
+		.subtitle {
+			padding: 10px;
+			color: #dfe2e5;
+		}
+
+		.pointer {
+			position: absolute;
+			height: 5px;
+			margin: 0 0 0 -5px;
+			border: 5px solid transparent;
+			border-top-color: rgba(0, 0, 0, 0.8);
+		}
+	}
+}

@@ -1,0 +1,62 @@
+{% load static %}
+{% load sass_tags %}
+
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/header.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+<header class="l-header">
+
+    <h1 class="m-site" tabindex="0">
+        <span class="site-name">Nika</span>
+        <img src="{% static 'img/Nika.png' %}" alt="icon" class="site-icon">
+
+        <div class="dynamic-links" aria-hidden="true">
+            <a class="home loading-link" href="{% url 'home' %}">
+                <img src="{% static 'img/home.png' %}" alt="ホームアイコン" class="icon">
+                ホーム
+            </a>
+            <a class="post-card loading-link" href="{% url 'calendar' %}">
+                <img src="{% static 'img/calendar.png' %}" alt="配布アイコン" class="icon">
+                配る
+            </a>
+            <a class="check loading-link" href="{% url 'workContets' %}">
+                <img src="{% static 'img/check.png' %}" alt="確認アイコン" class="icon">
+                確認
+            </a>
+            <a class="standards loading-link" href="{% url 'inspectionStadards' %}">
+                <img src="{% static 'img/standard.png' %}" alt="基準書アイコン" class="icon">
+                点検基準書
+            </a>
+            <a class="achievements loading-link" href="{% url 'achievements' %}">
+                <img src="{% static 'img/achievements.png' %}" alt="個人実績アイコン" class="icon">
+                実績
+            </a>
+            <a class="planned-maintenanc loading-linke" href="{% url 'plannedMaintenance' %}">
+                <img src="{% static 'img/plannedMaintenance.png' %}" alt="計画保全アイコン" class="icon">
+                計画
+            </a>
+            <a class="logout" href="{% url 'logout' %}">
+                <img src="{% static 'img/logout.png' %}" alt="ログアウトアイコン" class="icon">
+                logout
+            </a>
+        </div>
+    </h1>
+    
+    <div id="employeeName" class="employee-name" 
+        data-employee-id="{{ employee.user_id }}"
+        data-job-title="{{ employee.job_title }}"
+        data-affiliation="{{ employee.belongs.affilation}}">
+        <img src="{% static 'img/user.png' %}" alt="ユーザアイコン" class="icon user-icon">
+        <div id="userProfile" class="user-profile">
+            {{ employee.user.name }}
+        </div>
+    </div>
+    
+</header>
+
+{% block script %}
+    <script type="module" src="{% static 'js/header/header.js' %}"></script>
+{% endblock %}
+

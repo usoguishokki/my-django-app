@@ -1,0 +1,298 @@
+@charset "UTF-8";
+@import 'variables';
+@import 'mixins';
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+    /* ここにカスタムスタイルを記述 */
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    -webkit-text-fill-color: #000 !important;
+    background-color: white !important;
+    border-radius: 4px;
+}
+
+html {
+    font-size: clamp(15px, 1.1vw, 16px); // 全体を柔らかくスケーリング
+    font-family: 'Inter', 'Spectral', 'Space Mono', sans-serif;
+    line-height: 1.6;
+}
+
+h1 {
+    font-size: clamp(2rem, 3vw, 2.5rem); // 32〜40px
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+h2 {
+    font-size: clamp(1.75rem, 2.5vw, 2rem); // 28〜32px
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+
+h3 {
+    font-size: clamp(1.5rem, 2vw, 1.75rem); // 24〜28px
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+
+
+h4 {
+    font-size: 1.25rem; // 20px
+    font-weight: 500;
+}
+
+p {
+    font-size: 1rem; // 16px
+    font-weight: 400;
+    line-height: 1.6;
+}
+  
+/*全体のスタイル設定*/
+*, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  body, h1, h2, h3, h4, h5, h6, p, address, blockquote, pre, div, dl, dt, dd, ol, ul, li, th, td, form, fieldset, input, textarea {
+    margin: 0 0 0 0;
+    border: 0;
+    padding: 0 0 0 0;
+}
+
+body {
+    @include respond-to(xs) {
+        letter-spacing: 0.04em;
+    }
+    
+    @include respond-to(sm) {
+        letter-spacing: 0.04em;
+    }
+    
+    @include respond-to(md) {
+        letter-spacing: 0.03em;
+    }
+    
+    @include respond-to(lg) {
+        letter-spacing: 0.02em;
+    }
+    
+    @include respond-to(xl){
+        letter-spacing: 0.01em;
+    }
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4)
+}
+
+.modal-content {
+    background-color: $modal-color-default;
+    &.modal_green {
+        background-color: $modal-color-green;
+    }
+    &.modal_red {
+        background-color: $modal-color-red;
+    }
+    font-weight: $font-weight-semibold;
+    margin: 5% auto;
+    padding-top: 18px;
+    padding-left:15px;
+    padding-bottom: 10px;
+    padding-right: 15px;
+    border: 1px solid #888;
+    border-radius: 6px;
+    width: 80%;
+    p {
+        font-size: 18px;
+        color: $font-color-modal;
+        margin-bottom: 8px;
+    }
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+button {
+    cursor: pointer;
+    border :none;
+}
+
+ol, ul {
+    list-style: none;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    font-family:'Helvetia', serif;
+    font-size: clamp(15px, 1.1vw, 16px); // 全体を柔らかくスケーリング
+    line-height: 1.6;
+}
+
+.parent-grid {
+    //height: 100%;
+    //base.jsのsetVh()により--vhが動的に設定される。
+    height: calc(var(--vh, 1vh) * 100); // 実際のビューポート高
+    width: 100%;
+    display: grid;
+    visibility: hidden;
+    grid-template-columns: 0.5fr 80fr 0.5fr;
+    grid-template-rows: 8vh 92vh;
+    grid-template-areas:
+    "header header header"
+    ". main .";
+    background-color: white;
+}
+
+.child-grid {
+    grid-area: main;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+
+/* ローディング画面 */
+.loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    background-color: #ffffff; // 白ベース背景（UX向上）
+
+    opacity: 0;
+    transform: scale(1.1); // 少しズームアウト状態
+    pointer-events: none;
+    transition: opacity 0.7s ease, transform 0.7s ease; /* トランジションを1秒に拡張 */
+    
+    &.loading-active {
+        opacity: 1;
+        transform: scale(1);
+        pointer-events: all;
+    }
+
+     // 表示状態（JSで付与）
+    &.loading-hidden {
+        opacity: 0;
+        transform: scale(1.05); /* わずかに縮小 */
+        pointer-events: none;
+    }
+
+    .loading-text {
+        margin-top: 8px; /* 画像とテキストの間隔 */
+        padding-left: 1.6em;
+        font-size: 1.5rem; /* テキストサイズ */
+        font-weight: bold;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        .dots {
+            display: inline-block;
+            width: 1.5em;
+            text-align: left;
+            position: relative;
+        }
+
+        .dots::after {
+            content: '';
+            display: inline-block;
+            animation: loading-dots 1.5s steps(4, end) infinite
+        }
+    }
+}
+
+/* 車のデザイン */
+.car {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: bounce 0.5s infinite alternate ease-in-out; /* 軽い上下の動き */
+    .car-body {
+        width: 100%; /* 必要に応じて調整 */
+        height: auto;
+        img {
+            display: block; /* デフォルトのインライン要素をブロック要素に */
+            width: 100%; /* サイズ調整 */
+            max-width: 300px;
+            height: auto;
+            margin: 0 auto; /* 中央揃えの補助 */
+        }
+        
+    }
+}
+
+/* 車のボディ */
+
+/* 車の軽い上下運動 */
+@keyframes bounce {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-10px);
+    }
+}
+
+/* ドットのアニメーション */
+@keyframes loading-dots {
+    0% {
+        content: ''; /* ドットなし */
+    }
+    25% {
+        content: '.'; /* ドット1つ */
+    }
+    50% {
+        content: '..'; /* ドット2つ */
+    }
+    75% {
+        content: '...'; /* ドット3つ */
+    }
+    100% {
+        content: ''; /* ドットなしに戻る */
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
