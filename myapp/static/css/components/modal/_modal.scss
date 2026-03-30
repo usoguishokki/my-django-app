@@ -1,0 +1,217 @@
+@charset "UTF-8";
+@import 'mixins';
+@import 'foundation/typography.scss';
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+  
+    &__content {
+        @include type-ui-regular;
+      
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      
+        width: 100%;
+        max-width: 660px;
+        margin: 6vh auto 0;
+        padding: 20px 18px 16px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 10px;
+        background-color: $modal-color-default;
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+      
+        &--default {
+            background-color: $modal-color-default;
+        }
+      
+        &--green {
+            background-color: $modal-color-green;
+        }
+      
+        &--red {
+            background-color: #fdecec;
+        }
+      
+        &--blue {
+            background-color: #eaf4ff;
+        }
+      
+        &--yellow {
+            background-color: #fff8db;
+        }
+    }
+
+    &__actionRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        min-width: 0;
+    }
+    
+    &__actionSlot {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    
+    &__message {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding-right: 26px;
+        min-width: 0;
+      
+        p {
+            @include type-td;
+            margin: 0;
+            color: $font-color-modal;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+    
+        .modal__actionRow & {
+            flex: 1;
+            padding-right: 0;
+        }
+    }
+
+  
+    &__confirmBody {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    } 
+  
+    &__confirmMessage {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    } 
+  
+    &__confirmActions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      padding-top: 4px;
+    }
+  
+    &__confirmBtn {
+        @include type-ui;
+      
+        min-width: 104px;
+        padding: 10px 16px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        cursor: pointer;
+        transition:
+            background-color 0.18s ease,
+            border-color 0.18s ease,
+            transform 0.12s ease,
+            box-shadow 0.18s ease;
+
+        &:hover {
+            transform: translateY(-1px);
+        }
+      
+        &:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.28);
+            outline-offset: 2px;
+        }
+      
+        &:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+        }
+      
+        &--ok {
+            color: #fff;
+            background-color: #2563eb;
+            border-color: #2563eb;
+        
+            &:hover {
+                background-color: #1d4ed8;
+                border-color: #1d4ed8;
+            }
+        }
+      
+        &--cancel {
+            color: #1f2937;
+            background-color: #fff;
+            border-color: rgba(31, 41, 55, 0.18);
+        
+            &:hover {
+              background-color: #f3f4f6;
+              border-color: rgba(31, 41, 55, 0.24);
+            }
+        }
+    }
+    &__loading {
+      display: flex;
+      align-items: center;
+    }
+
+    &__loadingStack {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    &__loadingText {
+        margin: 0;
+        white-space: nowrap;
+    }
+    .close {
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        border: none;
+        background: transparent;
+        color: #6b7280;
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+        transition: color 0.16s ease, transform 0.12s ease;
+    
+        &:hover,
+        &:focus {
+          color: #111827;
+          transform: scale(1.06);
+          text-decoration: none;
+        }
+    
+        &:focus-visible {
+          outline: 3px solid rgba(59, 130, 246, 0.28);
+          outline-offset: 2px;
+          border-radius: 6px;
+        }
+    }
+
+}
+
+.registration-modal__loading {
+    display: flex;
+    align-items: center;
+  
+    .loading-stack {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+  
+    .loading-text {
+      margin: 0;
+      white-space: nowrap;
+    }
+}
+

@@ -3,12 +3,8 @@ from django.contrib import admin
 from django.contrib.auth.views import LogoutView
 from django.urls import include, path, re_path
 from django.http import HttpResponse
-from myapp.views import (login_view, home_view, calendar_view, 
-                         card_view, workContents_view, test_view, 
-                         non_matching_weekly_duties_view, inspectionStadards_view,
-                         achievements_view, planned_maintenance_view, get_chart_data_view,
-                         get_employee, equipment_ledger_view, card_by_control_view
-                        )
+
+from myapp import views
 from urllib.parse import urljoin
 from django.conf import settings
 from django.shortcuts import redirect
@@ -36,23 +32,31 @@ def dev_redirect_view(request):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('login/', login_view, name='login'),
-    path('home/', home_view, name='home'),
-    path('calendar/', calendar_view, name='calendar'),
-    path('card/', card_view, name='card'),
-    path('workContents/', workContents_view, name='workContets'),
-    path('card/<str:control_no>/', card_by_control_view, name='card_by_control'),
-    path('inspectionStadards/', inspectionStadards_view, name='inspectionStadards'),
-    path('achievements/', achievements_view, name='achievements'),
-    path('plannedMaintenance/', planned_maintenance_view, name='plannedMaintenance'),
-    path('mobileLider/', equipment_ledger_view, name='mobileLider'),
+    path('login/', views.login_view, name='login'),
+    path('home/', views.home_view, name='home'),
+    path('calendar/', views.calendar_view, name='calendar'),
+    path('card/', views.card_view, name='card'),
+    path('workContents/', views.workContents_view, name='workContets'),
+    path('card/<str:control_no>/', views.card_by_control_view, name='card_by_control'),
+    path('inspectionStadards/', views.inspectionStadards_view, name='inspectionStadards'),
+    path('inspectionHistory/', views.inspectionHistory_view, name='inspectionHistory'),
+    path('achievements/', views.achievements_view, name='achievements'),
+    path('plannedMaintenance/', views.planned_maintenance_view, name='plannedMaintenance'),
+    path('mobileLider/', views.equipment_ledger_view, name='mobileLider'),
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
-    path('test/', test_view, name='test'),
+    path("api/wd/", views.api_wd_rows, name="api_wd_rows"),
+    path("api/user_change/", views.api_user_change, name="api_user_change"),
+    path("api/group-schedule/", views.api_group_schedule, name="api_group_schedule"),
+    path("api/plans/<int:plan_id>/time/", views.api_update_plan_time, name="api_update_plan_time"),
+    path('api/plans/', views.api_plans, name='api_plans'),
+    path("api/", include("myapp.urls_api")),
+    path('csv-download/', views.csv_download_page, name='csvDownloadPage'),
+    path('schedule/', views.schedule_page, name='schedulePage'),
+    
     
 #API
-    path('api/get-chart-data/', get_chart_data_view, name='get_chart_data'),
-    path('api/non-matching-weekly-duties/', non_matching_weekly_duties_view, name='non_matching_weekly_duties'),
-    path('api/employee/', get_employee, name='get_employee'),
+    path('api/get-chart-data/', views.get_chart_data_view, name='get_chart_data'),
+    path('api/employee/', views.get_employee, name='get_employee'),
 #React用
     #re_path(r'^nika/.*$', nika_app_view, name='nika_app_view') 本番用
     #re_path(r'^nika/.*$', nika_app_view, name='nika_app_view'), #開発用

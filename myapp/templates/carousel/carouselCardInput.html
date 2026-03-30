@@ -1,25 +1,112 @@
+{% load static %}
 <button id="implementation-button" class="fixed-button txt-color-white action-btn base-font-size">実施結果入力</button>
 
+<!-- ovrLay root -->
+<div class="filter-overlay" id="filterOverlay" aria-hidden="true">
+    <!-- backdrop -->
+    <div class="filter-overlay__backdrop" data-overlay-close></div>
 
-<div class="mask" id="mask"></div>
+    <!-- dialog -->
+    <section
+        class="filter-dialog"
+        id="filterContent"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="filterTitle"
+    >
 
-<div class="filter-content overlay" id="filterContent">
-    <h1 class="title">フィルター条件</h1>
-    <div class="filter-items" id="filterItems">
-        <div class="filter-item">
-            <label for="lineNameSelect">工程</label>
-            <select id="lineNameSelect" data-filter-attribute="data-line-name">
-                <!--オプションは動的に生成-->
-            </select>
+        <!-- header -->
+        <header class="filter-dialog__header">
+            <h1 class="filter-dialog__title" id="filterTitle">フィルター条件</h1>
+            <button
+                class="filter-dialog__icon-btn"
+                type="button"
+                id="closeOverlayButton"
+                aria-label="フィルターを閉じる"
+                data-overlay-close
+            >
+                <span aria-hidden="true">×</span>
+            </button>
+        </header>
+
+        <!-- body -->
+        <div class="filter-dialog__body">
+            <div class="filter-items" id="filterItems">
+                <div class="filter-item">
+                    <label class="filter-item__label" for="datetimeSelect">日時</label>
+            
+                    <div class="filter-item__control">
+                        <select
+                            class="filter-item__select"
+                            id="datetimeSelect"
+                            data-filter-attribute="data-datetime"
+                    >
+                        <!-- オプションは動的に生成 -->
+                        </select>
+              
+                        <span class="filter-item__chevron" aria-hidden="true">▾</span>
+                    </div>
+                </div>
+
+                <div class="filter-item">
+                    <label class="filter-item__label" for="lineNameSelect">工程</label>
+            
+                    <div class="filter-item__control">
+                        <select
+                            class="filter-item__select"
+                            id="lineNameSelect"
+                            data-filter-attribute="data-line-name"
+                    >
+                        <!-- オプションは動的に生成 -->
+                        </select>
+              
+                        <span class="filter-item__chevron" aria-hidden="true">▾</span>
+                    </div>
+                </div>
+          
+                <div class="filter-item">
+                    <label class="filter-item__label" for="machineSelect">設備名</label>
+            
+                    <div class="filter-item__control">
+                        <select
+                            class="filter-item__select"
+                            id="machineSelect"
+                            data-filter-attribute="data-machine-name"
+                    >
+                        <!-- オプションは動的に生成 -->
+                        </select>
+              
+                        <span class="filter-item__chevron" aria-hidden="true">▾</span>
+                    </div>
+                </div>
+
+                <div class="filter-item">
+                    <label class="filter-item__label" for="statusSelect">ステータス</label>
+            
+                    <div class="filter-item__control">
+                        <select
+                            class="filter-item__select"
+                            id="statusSelect"
+                            data-filter-attribute="data-inspection-status"
+                    >
+                        </select>
+              
+                        <span class="filter-item__chevron" aria-hidden="true">▾</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="filter-item">
-            <label for="machineSelect">設備名</label>
-            <select id="machineSelect" data-filter-attribute="data-machine-name">
-                <!--オプションは動的に生成-->
-            </select>
-        </div>
-    </div>
-    <button id="closeOverlayButton">閉じる</button>
+        <!-- footer -->
+        <footer class="filter-dialog__footer">
+            <button class="filter-btn filter-btn--ghost" type="button" id="resetFilterButton">
+                リセット
+            </button>
+  
+            <button class="filter-btn filter-btn--primary" type="button" id="applyFilterButton">
+                適用
+            </button>
+        </footer>
+    </section>
 </div>
 
 <form id="post-form">
@@ -72,20 +159,30 @@
                 </fieldset>
                 <fieldset>
                     <div class="titGrayBelt" id="memberSelectLabel">
-                        <div class="backbtn nav-item">
+                        <div class="backbtn nav-item" role="button" tabindex="0" aria-label="実施者を選択">
                             <span class="executor base-font-size">実施者:</span>
                             <span id="selectedMemberText" class="base-font-size">選択者なし</span>
-                            <svg class="backbtn select-backbtn" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M30 20 L70 50 L30 80" stroke="#818181" stroke-width="5" fill="none"/>
-                            </svg>
+                            <img
+                                class="select-chevron"
+                                src="{% static 'img/カスタムセレクト矢印.svg' %}"
+                                alt=""
+                                aria-hidden="true"
+                            >
                         </div>
                     </div>
                 </fieldset>
                 <fieldset>
                     <div class="man-hours">
-                        <label for="selected-manhours" class="base-font-size">工数:</label>
-                        {{ form.manhours }}
-                         分
+                        <label for="selected-manhours" class="base-font-size">工数(分):</label>
+                        <div class="select-wrap">
+                            {{ form.manhours }}
+                            <img
+                                class="select-chevron"
+                                src="{% static 'img/カスタムセレクト矢印.svg' %}"
+                                alt=""
+                                aria-hidden="true"
+                            >
+                        </div>
                     </div>
                 </fieldset>
                 <fieldset>

@@ -1,47 +1,46 @@
-export function asynchronousCommunication(options) {
-    const headers = {
-        'X-Requested-With': 'XMLHttpRequest',
-        //'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-    };
+// static/js/asyncCommunicator/asynchronousCommunication.js
 
-    //GETリクエストの場合はContent-Typeを設定しない
-    if (options.method !== 'GET') {
-        headers['Content-Type'] = 'application/json';
+import { request } from './request.js';
 
-         // CSRFトークンを追加
-        headers['X-CSRFToken'] = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+export async function asynchronousCommunication(options = {}) {
+    const response = await request({
+        ...options,
+        accept: 'application/json',
+    });
+
+    if (!response) {
+        return null;
     }
 
-    return fetch(options.url, {
-        method: options.method,
-        headers: headers,
-        body: options.method !== 'GET' ? JSON.stringify(options.data) : null //GETリクエストの場合はbodyを送信しない
-    })
-    .then(response => {
-        if (response.status === 401 || response.status === 403) {
-            alert('セッションが切れました。再度ログインして下さい。');
-            window.location.href = '/login/';
-            return;
+    if (response.status === 204) {
+        return null;
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+
+    if (!contentType.includes('application/json')) {
+        const text = await response.text().catch(() => '');
+        console.warn('Non-JSON response:', text);
+
+        if (!response.ok) {
+            throw new Error(text || `HTTP ${response.status}`);
         }
-        return response.text().then(text => {
-            try {
-                const data = JSON.parse(text);
-                if (!response.ok) {
-                    throw new Error(data.message || 'Network response was not ok');
-                }
-                if (data.status != 'success') {
-                    alert('There was a problem fetching data:' + data.message);
-                    throw new Error(data.message || 'Data fetch was not successful');
-                }
-                return data
-            } catch (error) {
-                console.error('Error parsing JSON:', text);
-                throw new Error('Response was not valid JSON: ' + text);
-            }
-        });
-    })
-    .catch(error => {
-        alert('There was problem with fetch operation:' + error.message);
-        console.log('Fetch error:', error);
+
+        throw new Error('Expected JSON but got non-JSON response');
+    }
+
+    const payload = await response.json().catch(() => {
+        throw new Error('Invalid JSON response');
     });
+
+    if (!response.ok) {
+        const message = payload?.message || `HTTP ${response.status}`;
+        throw new Error(message);
+    }
+
+    if (payload?.status && payload.status !== 'success') {
+        throw new Error(payload?.message || 'Server returned non-success status');
+    }
+
+    return payload;
 }

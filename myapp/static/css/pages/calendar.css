@@ -1,0 +1,1579 @@
+@charset "UTF-8";
+.u-hidden {
+  display: none !important; }
+
+.scrollbar-nice::-webkit-scrollbar {
+  width: 10px;
+  height: 10px; }
+
+.scrollbar-nice::-webkit-scrollbar-track {
+  background: rgba(243, 244, 246, 0.85);
+  border-radius: 999px; }
+
+.scrollbar-nice::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.9);
+  border-radius: 999px;
+  border: 2px solid rgba(243, 244, 246, 0.85); }
+
+button, select {
+  cursor: pointer; }
+
+.button {
+  cursor: pointer;
+  display: block;
+  width: 110px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  background-color: #032e4a;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.8em;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  text-align: center; }
+  .button.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: default; }
+  .button:hover {
+    background-color: #1483cd; }
+  .button:active {
+    transform: scale(0.95); }
+
+.space {
+  margin: 0 3px;
+  display: inline-block; }
+
+.filter-item {
+  margin: 5px;
+  padding: 5px; }
+  .filter-item label {
+    display: block;
+    margin-bottom: 5px;
+    padding: 5px;
+    color: #ffffff; }
+  .filter-item select {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer; }
+    .filter-item select:hover {
+      border: 1.5px solid #6b94e2; }
+    .filter-item select:focus {
+      border: 2px solid #6b94e2;
+      outline: none; }
+
+.filter-item-horizontal {
+  padding-top: 10px;
+  padding-left: 10px;
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  /* 必要に応じて上下の中央揃えも行う */ }
+  .filter-item-horizontal label {
+    display: inline-block;
+    margin-bottom: 0;
+    /* 横並びでは不要 */
+    margin-right: 10px;
+    /* labelとselectの間に適当な間隔を設定 */ }
+  .filter-item-horizontal select {
+    width: 50vw;
+    /* 横並びでは必要に応じて調整 */
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer; }
+    .filter-item-horizontal select:hover {
+      border: 1.5px solid #6b94e2; }
+    .filter-item-horizontal select:focus {
+      border: 2px solid #6b94e2;
+      outline: none; }
+
+.display-none {
+  display: none !important; }
+
+.hidden {
+  opacity: 0;
+  /* 完全に透明 */
+  visibility: hidden;
+  /* 見えなくするが、DOMに残す */
+  transform: scale(0.9);
+  /* 少し縮小して非表示状態を演出 */
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  /* アニメーション */ }
+
+.visible {
+  opacity: 1;
+  /* 完全に表示 */
+  visibility: visible;
+  /* 見える状態にする */
+  transform: scale(1);
+  /* 元のサイズに拡大 */
+  transition: opacity 0.3s ease, transform 0.3s ease; }
+
+.disable-events {
+  pointer-events: none;
+  opacity: 0.5; }
+
+.margin-br {
+  display: block;
+  content: "";
+  margin-bottom: 12px; }
+
+.sticky {
+  position: sticky !important;
+  top: 60px;
+  background-color: white;
+  /* 必要に応じて背景色を設定 */
+  z-index: 1000;
+  /* 必要に応じて調整 */ }
+
+@keyframes border-glow {
+  0% {
+    mask-position: 0% 0%;
+    /* 左上 */ }
+  25% {
+    mask-position: 100% 0%;
+    /* 右上 */ }
+  50% {
+    mask-position: 100% 100%;
+    /* 右下 */ }
+  75% {
+    mask-position: 0% 100%;
+    /* 左下 */ }
+  100% {
+    mask-position: 0% 0%;
+    /* 左上に戻る */ } }
+
+.overlay-right {
+  visibility: hidden;
+  position: absolute;
+  right: -20%;
+  top: 5px;
+  width: 20%;
+  height: 98%;
+  background-color: #d8e6fc;
+  border-radius: 4px 4px 4px 4px;
+  z-index: 1000;
+  overflow: auto;
+  opacity: 0;
+  transition: visibility 0s linear 0.25s, opacity 0.15s linear, right 0.25s linear; }
+  .overlay-right.show {
+    visibility: visible;
+    opacity: 1;
+    right: 0;
+    transition-delay: 0s; }
+
+.overlay-left {
+  visibility: hidden;
+  position: absolute;
+  left: -20%;
+  top: 5px;
+  width: 20%;
+  height: 98%;
+  background-color: #d8e6fc;
+  border-radius: 0 4px 4px 4px;
+  z-index: 1000;
+  overflow: auto;
+  opacity: 0;
+  transition: visibility 0s linear 0.25s, opacity 0.15s linear, left 0.25s linear; }
+  .overlay-left.show {
+    visibility: visible;
+    opacity: 1;
+    left: 0;
+    transition-delay: 0s; }
+
+#closeOverlayButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 120ms ease, background 120ms ease; }
+  #closeOverlayButton:hover {
+    background: rgba(0, 0, 0, 0.03); }
+  #closeOverlayButton:active {
+    transform: scale(0.98); }
+  #closeOverlayButton:focus-visible {
+    outline: 3px solid rgba(0, 120, 255, 0.35);
+    outline-offset: 2px; }
+
+.tooltip {
+  z-index: 100; }
+  .tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 30%;
+    top: 100%;
+    transform: translateX(-70%);
+    padding: 5px 10px;
+    background-color: #333;
+    color: #fff;
+    border-radius: 5px;
+    white-space: nowrap;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none; }
+  .tooltip:hover::after {
+    opacity: 1; }
+  .tooltip.tooltip-hidden::after {
+    opacity: 0; }
+  .tooltip:active {
+    transform: scale(0.95); }
+
+/* 太いボーダーを定義 */
+.thick-top-border {
+  border-top: 1.5px solid #2c3e50; }
+
+.base-font-size {
+  font-size: 1.0rem; }
+
+/* =========================
+   レイアウト：フィルタ + テーブル
+   ========================= */
+.filter-container {
+  z-index: 900;
+  position: absolute;
+  left: 0;
+  height: 100%;
+  width: clamp(28px, 2.5vw, 40px);
+  /* 2.5vwより安定（画面幅で極端にならない） */
+  margin-right: 10px;
+  border-radius: var(--radius-lg);
+  /* ガラス風 */
+  background: linear-gradient(180deg, rgba(107, 108, 127, 0.78), #c4c4c4);
+  border: 1px solid rgba(196, 196, 196, 0.35);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+  transition: width 420ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 420ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* “細い状態でも存在感”のための縦ハイライト */
+  /* スクロールバーを“最近のUI”っぽく */ }
+  .filter-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.1), transparent 45%, rgba(34, 197, 94, 0.08));
+    pointer-events: none;
+    opacity: 0.9; }
+  .filter-container:hover {
+    width: calc(22vw);
+    max-width: 320px;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(2px);
+    overflow-y: auto; }
+  .filter-container::-webkit-scrollbar {
+    width: 10px;
+    height: 10px; }
+  .filter-container::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 999px; }
+  .filter-container::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.18);
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.55); }
+
+/* ==========================================================================
+  Typography Tokens (Readable-first)
+  --------------------------------------------------------------------------
+  @doc
+  - 目的: 文字サイズ/行間/太さを“用途”で標準化し、画面間のブレを無くす
+  - 方針: 「読みやすさ優先」(業務UIでの可読性を最優先)
+  - 使い方:
+      1) 基本はトークン（$fs-*, $lh-*, $fw-*）を参照して指定
+      2) 可能なら mixin（type-td/type-th/type-ui...）経由で当てる
+  - 禁止:
+      - 個別SCSSで font-size をベタ書き乱発しない（例外: 微調整が必要な特殊UIのみ）
+  @example
+    .table td { font-size: $fs-td; line-height: $lh-relaxed; font-weight: $fw-regular; }
+========================================================================== */
+/* --------------------------------------------------------------------------
+  Font Size Scale
+  --------------------------------------------------------------------------
+  @doctag typography.font-size
+  @rule
+    - base(1rem) を基準に、用途ごとの“意味”でトークンを選ぶ
+    - 迷ったら: UI = $fs-ui / 表本文 = $fs-td / 見出し = $fs-th
+--------------------------------------------------------------------------- */
+/** @doctag typography.token
+ *  @name $fs-base
+ *  @type font-size
+ *  @use 画面全体の基準サイズ。body / root container の基準に使う。
+ *  @when 「この画面の標準文字」を決めたいとき
+ *  @example body { font-size: $fs-base; }
+ */
+/** @doctag typography.token
+  *  @name $fs-label
+  *  @type font-size
+  *  @use ラベル/補助見出し用（filterラベル、フォーム項目名、セクション注釈）
+  *  @when “主情報より弱く”見せたいとき（ただし読めるサイズ）
+  *  @example .select-label { font-size: $fs-label; }
+  */
+/** @doctag typography.token
+  *  @name $fs-th
+  *  @type font-size
+  *  @use テーブルヘッダ/カード見出し用（th、card-title）
+  *  @when 情報の「列の意味」や「見出し」を強調したいとき
+  *  @example thead th { font-size: $fs-th; }
+  */
+/** @doctag typography.token
+  *  @name $fs-td
+  *  @type font-size
+  *  @use テーブル本文（最重要の“読む”領域）
+  *  @when 一覧を目で追う、長時間読む、現場で使うUI（可読性優先）
+  *  @example tbody td { font-size: $fs-td; }
+  */
+/** @doctag typography.token
+  *  @name $fs-ui
+  *  @type font-size
+  *  @use UI操作系（ボタン、input、select、カレンダー操作ボタン、補助UI）
+  *  @when クリック/タップ対象で“読めること”が重要なとき
+  *  @example .button { font-size: $fs-ui; }
+  */
+/** @doctag typography.token
+  *  @name $fs-title
+  *  @type font-size
+  *  @use タイトル（モーダルのh3、セクション主見出し）
+  *  @when 画面/モーダル内の「主題」を示したいとき
+  *  @example .modal h3 { font-size: $fs-title; }
+  */
+/** @doctag typography.token
+  *  @name $fs-kpi
+  *  @type font-size
+  *  @use KPI/数値カードの強調表示（card-content、合計値など）
+  *  @when “パッと見で数字を把握”させたいとき（ただし暴れない範囲）
+  *  @example .kpi { font-size: $fs-kpi; }
+  */
+/* --------------------------------------------------------------------------
+   Line Height
+   --------------------------------------------------------------------------
+   @doctag typography.line-height
+   @rule
+     - 読みやすさ優先: 本文は $lh-relaxed を基本にする
+     - UIラベル/ボタン等は詰めすぎない範囲で $lh-normal
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $lh-tight
+  *  @type line-height
+  *  @use 見出し・短いラベル向け（詰まり過ぎ防止に注意）
+  *  @when 1行で完結する見出し/ヘッダ
+  */
+/** @doctag typography.token
+  *  @name $lh-normal
+  *  @type line-height
+  *  @use UI一般（ボタン、input、短文）
+  *  @when UIが間延びしないバランスを取りたいとき
+  */
+/** @doctag typography.token
+  *  @name $lh-relaxed
+  *  @type line-height
+  *  @use 長時間読む領域（テーブル本文、説明文、一覧）
+  *  @when “目が疲れない”を優先したいとき（業務画面は基本これ）
+  */
+/* --------------------------------------------------------------------------
+   Font Weight
+   --------------------------------------------------------------------------
+   @doctag typography.font-weight
+   @rule
+     - 本文は $fw-regular（軽め）で読み疲れを減らす
+     - 見出し/重要値は $fw-strong（ただし太すぎ注意）
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $fw-regular
+  *  @type font-weight
+  *  @use 本文の基本（テーブルtd、説明文）
+  *  @when “読む量が多い”ところは基本これ
+  */
+/** @doctag typography.token
+  *  @name $fw-strong
+  *  @type font-weight
+  *  @use 見出し/強調（th、タイトル、KPI）
+  *  @when 情報の階層を明確にしたいとき
+  */
+/* @doctag typography.usage-map
+  - Label        : $fs-label / $fw-strong / $lh-tight
+  - Table head   : $fs-th    / $fw-strong / $lh-tight
+  - Table body   : $fs-td    / $fw-regular / $lh-relaxed
+  - UI controls  : $fs-ui    / $fw-strong or $fw-regular / $lh-normal
+  - Modal title  : $fs-title / $fw-strong / $lh-tight
+  - KPI number   : $fs-kpi   / $fw-strong / $lh-tight
+*/
+/* =========================
+   Mixins（事故防止用）
+   ========================= */
+/* 説明文・補足テキスト（uppercase無し） */
+/* ==========================================================================
+  Table System (Standard: calendar table)
+  --------------------------------------------------------------------------
+  @doc
+  - 標準テーブル: calendar.scss の table-container を基準に統一
+  - 目的: 画面間で table の padding/文字/hover/sticky がブレないようにする
+  - 使い方:
+      1) table コンテナに .table-container を付ける（推奨）
+      2) table 要素に .ui-table を付ける（推奨）
+      3) 既存HTMLを変えられない場合は mixin を親セレクタに当てる
+========================================================================== */
+/* -----------------------------
+  Tokens (table-only)
+------------------------------ */
+/* -----------------------------
+  Container (scroll + frame)
+------------------------------ */
+/* -----------------------------
+  Table base
+------------------------------ */
+/* -----------------------------
+  Utility: HTMLを変えられない場合用
+  例) .table-container { @include apply-table-standard; }
+------------------------------ */
+/* -----------------------------
+  推奨クラス版（HTML側で付けられるなら）
+------------------------------ */
+.table-container.is-standard {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  position: relative; }
+  .table-container.is-standard .ui-table {
+    width: 100%;
+    border-collapse: collapse; }
+    .table-container.is-standard .ui-table thead {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      text-align: left;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.98), rgba(243, 244, 246, 0.98));
+      box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+      /* “ヘッダー帯”としての境界を明確に */
+      border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+      /* 少しだけ余裕を持たせる */ }
+      .table-container.is-standard .ui-table thead tr {
+        height: 42px; }
+      .table-container.is-standard .ui-table thead th {
+        padding: 14px 14px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        line-height: 1.3;
+        color: rgba(30, 41, 59, 0.95);
+        /* 読みやすさ優先：字間は少し弱めに */
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+        vertical-align: middle;
+        /* セルとしての境界（ヘッダー内の上下） */
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) inset;
+        /* 列境界：うっすら縦線 */ }
+        .table-container.is-standard .ui-table thead th + th {
+          border-left: 1px solid rgba(15, 23, 42, 0.08); }
+    .table-container.is-standard .ui-table tbody tr {
+      transition: background-color 0.18s ease;
+      vertical-align: top;
+      cursor: pointer; }
+      .table-container.is-standard .ui-table tbody tr td {
+        background: transparent; }
+      .table-container.is-standard .ui-table tbody tr.is-even td {
+        background: rgba(15, 23, 42, 0.02); }
+      .table-container.is-standard .ui-table tbody tr.is-odd td {
+        background: transparent; }
+      .table-container.is-standard .ui-table tbody tr:hover td {
+        background: rgba(219, 234, 254, 0.55); }
+      .table-container.is-standard .ui-table tbody tr td {
+        padding: 10px 14px;
+        font-size: 0.94rem;
+        font-weight: 400;
+        line-height: 1.7;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 520;
+        letter-spacing: 0.01em;
+        color: rgba(11, 18, 32, 0.9);
+        border-bottom: 1px solid rgba(15, 23, 42, 0.08); }
+    .table-container.is-standard .ui-table tbody tr:last-child td {
+      border-bottom: none; }
+    .table-container.is-standard .ui-table tbody tr.dragging {
+      opacity: .35; }
+      .table-container.is-standard .ui-table tbody tr.dragging:hover td {
+        background: inherit; }
+    .table-container.is-standard .ui-table tbody tr.drag-placeholder td {
+      padding: 0 !important;
+      height: 38px;
+      background: rgba(0, 0, 0, 0.04);
+      border-bottom: none; }
+    .table-container.is-standard .ui-table td.is-right,
+    .table-container.is-standard .ui-table th.is-right {
+      text-align: right; }
+
+/* foundation/_toggle.scss */
+/* カラートークン */
+/* ネイビー */
+/* 本体（囲み無し） */
+.toggle,
+.drawer-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 6px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  font-size: 0;
+  line-height: 0;
+  transition: transform 120ms ease; }
+
+.toggle:active:not(:disabled),
+.drawer-toggle:active:not(:disabled) {
+  transform: translateY(1px); }
+
+/* track */
+.toggle::before,
+.drawer-toggle::before {
+  content: "";
+  width: 40px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.16);
+  transition: background-color 160ms ease, box-shadow 160ms ease; }
+
+/* knob */
+.toggle::after,
+.drawer-toggle::after {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(2, 6, 23, 0.18), 0 0 0 1px rgba(2, 6, 23, 0.06);
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  translate: 0 -50%;
+  transform: translateX(0);
+  transition: transform 160ms cubic-bezier(0.2, 0.9, 0.2, 1); }
+
+/* hover */
+.toggle:hover:not(:disabled)::before,
+.drawer-toggle:hover:not(:disabled)::before {
+  background: rgba(100, 116, 139, 0.4); }
+
+/* ON */
+.toggle[aria-pressed="true"]::before,
+.toggle[data-checked="1"]::before,
+.drawer-toggle[aria-pressed="true"]::before,
+.drawer-toggle[data-checked="1"]::before {
+  background: #3c8ce1;
+  box-shadow: inset 0 0 0 1px #3c8ce1; }
+
+.toggle[aria-pressed="true"]::after,
+.toggle[data-checked="1"]::after,
+.drawer-toggle[aria-pressed="true"]::after,
+.drawer-toggle[data-checked="1"]::after {
+  transform: translateX(16px); }
+
+/* focus */
+.toggle:focus-visible::before,
+.drawer-toggle:focus-visible::before {
+  box-shadow: inset 0 0 0 1px #3c8ce1, 0 0 0 3px rgba(32, 148, 231, 0.956); }
+
+/* disabled */
+.toggle:disabled,
+.toggle[aria-disabled="true"],
+.drawer-toggle:disabled,
+.drawer-toggle[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed; }
+
+/* ==========================================================================
+  Typography Tokens (Readable-first)
+  --------------------------------------------------------------------------
+  @doc
+  - 目的: 文字サイズ/行間/太さを“用途”で標準化し、画面間のブレを無くす
+  - 方針: 「読みやすさ優先」(業務UIでの可読性を最優先)
+  - 使い方:
+      1) 基本はトークン（$fs-*, $lh-*, $fw-*）を参照して指定
+      2) 可能なら mixin（type-td/type-th/type-ui...）経由で当てる
+  - 禁止:
+      - 個別SCSSで font-size をベタ書き乱発しない（例外: 微調整が必要な特殊UIのみ）
+  @example
+    .table td { font-size: $fs-td; line-height: $lh-relaxed; font-weight: $fw-regular; }
+========================================================================== */
+/* --------------------------------------------------------------------------
+  Font Size Scale
+  --------------------------------------------------------------------------
+  @doctag typography.font-size
+  @rule
+    - base(1rem) を基準に、用途ごとの“意味”でトークンを選ぶ
+    - 迷ったら: UI = $fs-ui / 表本文 = $fs-td / 見出し = $fs-th
+--------------------------------------------------------------------------- */
+/** @doctag typography.token
+ *  @name $fs-base
+ *  @type font-size
+ *  @use 画面全体の基準サイズ。body / root container の基準に使う。
+ *  @when 「この画面の標準文字」を決めたいとき
+ *  @example body { font-size: $fs-base; }
+ */
+/** @doctag typography.token
+  *  @name $fs-label
+  *  @type font-size
+  *  @use ラベル/補助見出し用（filterラベル、フォーム項目名、セクション注釈）
+  *  @when “主情報より弱く”見せたいとき（ただし読めるサイズ）
+  *  @example .select-label { font-size: $fs-label; }
+  */
+/** @doctag typography.token
+  *  @name $fs-th
+  *  @type font-size
+  *  @use テーブルヘッダ/カード見出し用（th、card-title）
+  *  @when 情報の「列の意味」や「見出し」を強調したいとき
+  *  @example thead th { font-size: $fs-th; }
+  */
+/** @doctag typography.token
+  *  @name $fs-td
+  *  @type font-size
+  *  @use テーブル本文（最重要の“読む”領域）
+  *  @when 一覧を目で追う、長時間読む、現場で使うUI（可読性優先）
+  *  @example tbody td { font-size: $fs-td; }
+  */
+/** @doctag typography.token
+  *  @name $fs-ui
+  *  @type font-size
+  *  @use UI操作系（ボタン、input、select、カレンダー操作ボタン、補助UI）
+  *  @when クリック/タップ対象で“読めること”が重要なとき
+  *  @example .button { font-size: $fs-ui; }
+  */
+/** @doctag typography.token
+  *  @name $fs-title
+  *  @type font-size
+  *  @use タイトル（モーダルのh3、セクション主見出し）
+  *  @when 画面/モーダル内の「主題」を示したいとき
+  *  @example .modal h3 { font-size: $fs-title; }
+  */
+/** @doctag typography.token
+  *  @name $fs-kpi
+  *  @type font-size
+  *  @use KPI/数値カードの強調表示（card-content、合計値など）
+  *  @when “パッと見で数字を把握”させたいとき（ただし暴れない範囲）
+  *  @example .kpi { font-size: $fs-kpi; }
+  */
+/* --------------------------------------------------------------------------
+   Line Height
+   --------------------------------------------------------------------------
+   @doctag typography.line-height
+   @rule
+     - 読みやすさ優先: 本文は $lh-relaxed を基本にする
+     - UIラベル/ボタン等は詰めすぎない範囲で $lh-normal
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $lh-tight
+  *  @type line-height
+  *  @use 見出し・短いラベル向け（詰まり過ぎ防止に注意）
+  *  @when 1行で完結する見出し/ヘッダ
+  */
+/** @doctag typography.token
+  *  @name $lh-normal
+  *  @type line-height
+  *  @use UI一般（ボタン、input、短文）
+  *  @when UIが間延びしないバランスを取りたいとき
+  */
+/** @doctag typography.token
+  *  @name $lh-relaxed
+  *  @type line-height
+  *  @use 長時間読む領域（テーブル本文、説明文、一覧）
+  *  @when “目が疲れない”を優先したいとき（業務画面は基本これ）
+  */
+/* --------------------------------------------------------------------------
+   Font Weight
+   --------------------------------------------------------------------------
+   @doctag typography.font-weight
+   @rule
+     - 本文は $fw-regular（軽め）で読み疲れを減らす
+     - 見出し/重要値は $fw-strong（ただし太すぎ注意）
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $fw-regular
+  *  @type font-weight
+  *  @use 本文の基本（テーブルtd、説明文）
+  *  @when “読む量が多い”ところは基本これ
+  */
+/** @doctag typography.token
+  *  @name $fw-strong
+  *  @type font-weight
+  *  @use 見出し/強調（th、タイトル、KPI）
+  *  @when 情報の階層を明確にしたいとき
+  */
+/* @doctag typography.usage-map
+  - Label        : $fs-label / $fw-strong / $lh-tight
+  - Table head   : $fs-th    / $fw-strong / $lh-tight
+  - Table body   : $fs-td    / $fw-regular / $lh-relaxed
+  - UI controls  : $fs-ui    / $fw-strong or $fw-regular / $lh-normal
+  - Modal title  : $fs-title / $fw-strong / $lh-tight
+  - KPI number   : $fs-kpi   / $fw-strong / $lh-tight
+*/
+/* =========================
+   Mixins（事故防止用）
+   ========================= */
+/* 説明文・補足テキスト（uppercase無し） */
+/* ==========================================================================
+  UI Button System
+  - 画面横断で使い回す汎用ボタン
+========================================================================== */
+/* danger */
+/* ベース */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.55;
+  transition: background-color .14s ease, box-shadow .14s ease, transform .06s ease, opacity .14s ease;
+  /* ✅ hoverは「有効時のみ」影を付ける */
+  /* ✅ focus ring は hover shadow と“共存”できるようにする */ }
+  .ui-btn:not(:disabled):not(.is-disabled):hover {
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12); }
+  .ui-btn:active {
+    transform: translateY(1px); }
+  .ui-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22); }
+  .ui-btn:not(:disabled):not(.is-disabled):focus-visible:hover {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22), 0 8px 18px rgba(0, 0, 0, 0.12); }
+  .ui-btn.is-disabled, .ui-btn:disabled {
+    pointer-events: none;
+    opacity: .45;
+    filter: grayscale(20%);
+    box-shadow: none;
+    transform: none; }
+
+/* サイズ（typographyに寄せる） */
+.ui-btn--sm {
+  height: 36px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.55; }
+
+.ui-btn--md {
+  height: 48px;
+  padding: 0 14px;
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.55; }
+
+/* バリアント */
+.ui-btn--primary {
+  background: #032e4a;
+  color: #ffffff; }
+  .ui-btn--primary:not(:disabled):not(.is-disabled):hover {
+    background-color: #1483cd;
+    /* hoverは青 */ }
+
+.ui-btn--ghost {
+  background: transparent;
+  color: #0b1220;
+  border-color: rgba(15, 23, 42, 0.14); }
+  .ui-btn--ghost:not(:disabled):not(.is-disabled):hover {
+    background: rgba(15, 23, 42, 0.04); }
+
+.ui-btn--danger {
+  background: #b91c1c;
+  color: #ffffff; }
+  .ui-btn--danger:not(:disabled):not(.is-disabled):hover {
+    background-color: #991b1b;
+    /* hoverは濃い赤 */ }
+
+.ui-btn--outline {
+  background: #ffffff;
+  color: #1f2937;
+  border-color: rgba(15, 23, 42, 0.14); }
+  .ui-btn--outline:not(:disabled):not(.is-disabled):hover {
+    background: #f8fafc;
+    border-color: #c4cfdd; }
+
+.ui-btn--icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 999px; }
+
+.ui-btn--round {
+  border-radius: 999px; }
+
+/* ==========================================================================
+  Typography Tokens (Readable-first)
+  --------------------------------------------------------------------------
+  @doc
+  - 目的: 文字サイズ/行間/太さを“用途”で標準化し、画面間のブレを無くす
+  - 方針: 「読みやすさ優先」(業務UIでの可読性を最優先)
+  - 使い方:
+      1) 基本はトークン（$fs-*, $lh-*, $fw-*）を参照して指定
+      2) 可能なら mixin（type-td/type-th/type-ui...）経由で当てる
+  - 禁止:
+      - 個別SCSSで font-size をベタ書き乱発しない（例外: 微調整が必要な特殊UIのみ）
+  @example
+    .table td { font-size: $fs-td; line-height: $lh-relaxed; font-weight: $fw-regular; }
+========================================================================== */
+/* --------------------------------------------------------------------------
+  Font Size Scale
+  --------------------------------------------------------------------------
+  @doctag typography.font-size
+  @rule
+    - base(1rem) を基準に、用途ごとの“意味”でトークンを選ぶ
+    - 迷ったら: UI = $fs-ui / 表本文 = $fs-td / 見出し = $fs-th
+--------------------------------------------------------------------------- */
+/** @doctag typography.token
+ *  @name $fs-base
+ *  @type font-size
+ *  @use 画面全体の基準サイズ。body / root container の基準に使う。
+ *  @when 「この画面の標準文字」を決めたいとき
+ *  @example body { font-size: $fs-base; }
+ */
+/** @doctag typography.token
+  *  @name $fs-label
+  *  @type font-size
+  *  @use ラベル/補助見出し用（filterラベル、フォーム項目名、セクション注釈）
+  *  @when “主情報より弱く”見せたいとき（ただし読めるサイズ）
+  *  @example .select-label { font-size: $fs-label; }
+  */
+/** @doctag typography.token
+  *  @name $fs-th
+  *  @type font-size
+  *  @use テーブルヘッダ/カード見出し用（th、card-title）
+  *  @when 情報の「列の意味」や「見出し」を強調したいとき
+  *  @example thead th { font-size: $fs-th; }
+  */
+/** @doctag typography.token
+  *  @name $fs-td
+  *  @type font-size
+  *  @use テーブル本文（最重要の“読む”領域）
+  *  @when 一覧を目で追う、長時間読む、現場で使うUI（可読性優先）
+  *  @example tbody td { font-size: $fs-td; }
+  */
+/** @doctag typography.token
+  *  @name $fs-ui
+  *  @type font-size
+  *  @use UI操作系（ボタン、input、select、カレンダー操作ボタン、補助UI）
+  *  @when クリック/タップ対象で“読めること”が重要なとき
+  *  @example .button { font-size: $fs-ui; }
+  */
+/** @doctag typography.token
+  *  @name $fs-title
+  *  @type font-size
+  *  @use タイトル（モーダルのh3、セクション主見出し）
+  *  @when 画面/モーダル内の「主題」を示したいとき
+  *  @example .modal h3 { font-size: $fs-title; }
+  */
+/** @doctag typography.token
+  *  @name $fs-kpi
+  *  @type font-size
+  *  @use KPI/数値カードの強調表示（card-content、合計値など）
+  *  @when “パッと見で数字を把握”させたいとき（ただし暴れない範囲）
+  *  @example .kpi { font-size: $fs-kpi; }
+  */
+/* --------------------------------------------------------------------------
+   Line Height
+   --------------------------------------------------------------------------
+   @doctag typography.line-height
+   @rule
+     - 読みやすさ優先: 本文は $lh-relaxed を基本にする
+     - UIラベル/ボタン等は詰めすぎない範囲で $lh-normal
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $lh-tight
+  *  @type line-height
+  *  @use 見出し・短いラベル向け（詰まり過ぎ防止に注意）
+  *  @when 1行で完結する見出し/ヘッダ
+  */
+/** @doctag typography.token
+  *  @name $lh-normal
+  *  @type line-height
+  *  @use UI一般（ボタン、input、短文）
+  *  @when UIが間延びしないバランスを取りたいとき
+  */
+/** @doctag typography.token
+  *  @name $lh-relaxed
+  *  @type line-height
+  *  @use 長時間読む領域（テーブル本文、説明文、一覧）
+  *  @when “目が疲れない”を優先したいとき（業務画面は基本これ）
+  */
+/* --------------------------------------------------------------------------
+   Font Weight
+   --------------------------------------------------------------------------
+   @doctag typography.font-weight
+   @rule
+     - 本文は $fw-regular（軽め）で読み疲れを減らす
+     - 見出し/重要値は $fw-strong（ただし太すぎ注意）
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $fw-regular
+  *  @type font-weight
+  *  @use 本文の基本（テーブルtd、説明文）
+  *  @when “読む量が多い”ところは基本これ
+  */
+/** @doctag typography.token
+  *  @name $fw-strong
+  *  @type font-weight
+  *  @use 見出し/強調（th、タイトル、KPI）
+  *  @when 情報の階層を明確にしたいとき
+  */
+/* @doctag typography.usage-map
+  - Label        : $fs-label / $fw-strong / $lh-tight
+  - Table head   : $fs-th    / $fw-strong / $lh-tight
+  - Table body   : $fs-td    / $fw-regular / $lh-relaxed
+  - UI controls  : $fs-ui    / $fw-strong or $fw-regular / $lh-normal
+  - Modal title  : $fs-title / $fw-strong / $lh-tight
+  - KPI number   : $fs-kpi   / $fw-strong / $lh-tight
+*/
+/* =========================
+   Mixins（事故防止用）
+   ========================= */
+/* 説明文・補足テキスト（uppercase無し） */
+/* ==========================================================================
+  UI Input System
+  - 画面横断で使い回す汎用 input（text/date/time/datetime-local）
+  - class="ui-input" を付ければ統一される
+========================================================================== */
+/* tokens */
+/* base */
+.ui-input {
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  background: #ffffff;
+  color: rgba(11, 18, 32, 0.92);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.55;
+  font-weight: 400;
+  outline: none;
+  transition: border-color .14s ease, box-shadow .14s ease, background-color .14s ease, transform .06s ease, opacity .14s ease;
+  /* iOS/Chromium の date/time の見た目ブレ対策 */
+  -webkit-appearance: none;
+  appearance: none; }
+  .ui-input:hover {
+    border-color: rgba(20, 131, 205, 0.55); }
+  .ui-input:focus, .ui-input:focus-visible {
+    border-color: #1483cd;
+    box-shadow: 0 0 0 3px rgba(20, 131, 205, 0.25); }
+  .ui-input:disabled, .ui-input.is-disabled {
+    background: rgba(15, 23, 42, 0.03);
+    color: rgba(11, 18, 32, 0.45);
+    border-color: rgba(15, 23, 42, 0.1);
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.95; }
+
+/* size */
+.ui-input--sm {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.55;
+  font-weight: 400; }
+
+.ui-input--md {
+  height: 36px;
+  padding: 0 12px; }
+
+/* type-specific minor adjustments */
+.ui-input--date,
+.ui-input--time,
+.ui-input--datetime-local {
+  /* 数字が揃って見えて気持ちいい */
+  font-variant-numeric: tabular-nums; }
+
+/* optional: focus時に少しだけ“触ってる感” */
+.ui-input:active {
+  transform: translateY(1px); }
+
+.open-modal {
+  display: none; }
+
+.calendar-container {
+  display: grid;
+  gap: 0px 25px;
+  grid-template-rows: 1fr auto;
+  grid-template-areas: "areaC areaA areaB";
+  min-height: 0;
+  height: 100%;
+  grid-template-columns: 150px minmax(820px, 1fr) minmax(340px, 520px); }
+  @media (max-width: 1399px) {
+    .calendar-container {
+      grid-template-columns: 130px minmax(800px, 1fr) minmax(340px, 520px); } }
+.card-display {
+  grid-area: areaA;
+  display: grid;
+  grid-template-areas: "areaAaa" "areaAa";
+  gap: 15px;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 1fr;
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.55;
+  min-height: 0; }
+
+.calendar-areas {
+  grid-area: areaB;
+  display: grid;
+  /* 2段 → 1段へ */
+  grid-template-areas: "areaBa";
+  grid-template-rows: 1fr;
+  gap: 0;
+  min-height: 0;
+  height: 100%; }
+  .calendar-areas #calendarLabel {
+    grid-area: areaBa; }
+  .calendar-areas #calendar {
+    grid-area: areaBa;
+    min-height: 0; }
+
+#card-table {
+  grid-area: areaAa;
+  min-height: 0; }
+
+.table-container {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  position: relative;
+  overflow-x: hidden; }
+  .table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; }
+    .table-container table thead {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      text-align: left;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.98), rgba(243, 244, 246, 0.98));
+      box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+      /* “ヘッダー帯”としての境界を明確に */
+      border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+      /* 少しだけ余裕を持たせる */ }
+      .table-container table thead tr {
+        height: 42px; }
+      .table-container table thead th {
+        padding: 14px 14px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        line-height: 1.3;
+        color: rgba(30, 41, 59, 0.95);
+        /* 読みやすさ優先：字間は少し弱めに */
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+        vertical-align: middle;
+        /* セルとしての境界（ヘッダー内の上下） */
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) inset;
+        /* 列境界：うっすら縦線 */ }
+        .table-container table thead th + th {
+          border-left: 1px solid rgba(15, 23, 42, 0.08); }
+    .table-container table tbody tr {
+      transition: background-color 0.18s ease;
+      vertical-align: top;
+      cursor: pointer; }
+      .table-container table tbody tr td {
+        background: transparent; }
+      .table-container table tbody tr.is-even td {
+        background: rgba(15, 23, 42, 0.02); }
+      .table-container table tbody tr.is-odd td {
+        background: transparent; }
+      .table-container table tbody tr:hover td {
+        background: rgba(219, 234, 254, 0.55); }
+      .table-container table tbody tr td {
+        padding: 10px 14px;
+        font-size: 0.94rem;
+        font-weight: 400;
+        line-height: 1.7;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 520;
+        letter-spacing: 0.01em;
+        color: rgba(11, 18, 32, 0.9);
+        border-bottom: 1px solid rgba(15, 23, 42, 0.08); }
+    .table-container table tbody tr:last-child td {
+      border-bottom: none; }
+    .table-container table tbody tr.dragging {
+      opacity: .35; }
+      .table-container table tbody tr.dragging:hover td {
+        background: inherit; }
+    .table-container table tbody tr.drag-placeholder td {
+      padding: 0 !important;
+      height: 38px;
+      background: rgba(0, 0, 0, 0.04);
+      border-bottom: none; }
+    .table-container table td.is-right,
+    .table-container table th.is-right {
+      text-align: right; }
+
+#card-total.card-total {
+  grid-area: areaAaa;
+  display: flex;
+  align-items: stretch;
+  gap: 40px;
+  margin-right: 8px;
+  min-height: 52px; }
+  #card-total.card-total .card-total__group {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    min-width: 0; }
+  #card-total.card-total .card-total__group--distributed {
+    flex: 0 0 auto; }
+  #card-total.card-total .card-total__group--visible {
+    flex: 0 0 auto;
+    margin-left: auto; }
+  #card-total.card-total .card-total__action {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center; }
+  #card-total.card-total .card {
+    background: rgba(206, 203, 255, 0.8);
+    border-radius: 6.5px;
+    padding: 8px 10px;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    align-content: center; }
+  #card-total.card-total .card--distribution-completed {
+    min-width: 240px; }
+  #card-total.card-total .card--compact {
+    min-width: 220px; }
+  #card-total.card-total .card-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.3;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; }
+  #card-total.card-total .card-content {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.3;
+    font-variant-numeric: tabular-nums; }
+  #card-total.card-total .total {
+    display: inline-block; }
+
+.filter-container {
+  grid-area: areaC;
+  width: 100%;
+  background-color: #ebeded;
+  height: 100%;
+  font-size: 1em;
+  border-radius: 6.5px;
+  transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  will-change: width;
+  z-index: 21;
+  font-size: 0.96rem;
+  overflow-y: hidden; }
+  .filter-container.is-open {
+    width: 180%;
+    box-shadow: 5px 0 12px rgba(0, 0, 0, 0.3);
+    overflow-y: auto; }
+
+.custom-select {
+  position: relative;
+  width: 100%; }
+  .custom-select .select-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    line-height: 1.3;
+    color: rgba(71, 85, 105, 0.95);
+    padding-top: 15px;
+    padding-left: 6px;
+    cursor: pointer;
+    white-space: nowrap; }
+  .custom-select select {
+    display: none; }
+  .custom-select .select-placeholder {
+    width: 90%;
+    padding-top: 12px;
+    padding-left: 8px;
+    padding-bottom: 6px;
+    margin-bottom: 15px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #ccc;
+    cursor: pointer;
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.55;
+    font-weight: 700;
+    transition: color 0.08s ease, border-bottom 0.08s ease; }
+  .custom-select .select-options {
+    display: block;
+    opacity: 0;
+    position: absolute;
+    top: 100%;
+    z-index: 1000;
+    left: 0;
+    right: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 170px;
+    overflow-y: auto; }
+    .custom-select .select-options .option {
+      padding: 8px 10px;
+      font-size: 0.96rem;
+      font-weight: 700;
+      line-height: 1.55;
+      cursor: pointer;
+      transition: background-color 0.2s; }
+      .custom-select .select-options .option:hover {
+        background-color: #e8f4fc; }
+  .custom-select.open .select-options {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto; }
+  .custom-select:hover .select-label {
+    color: #2c3e50;
+    font-weight: bold; }
+  .custom-select:hover .select-placeholder .select-label {
+    color: #2c3e50;
+    font-weight: 800; }
+  .custom-select:hover .select-placeholder .select-placeholder {
+    border-bottom: 1.3px solid #2c3e50; }
+
+.member-graph {
+  grid-area: areaBb;
+  min-height: 52px;
+  display: grid;
+  gap: 8px;
+  height: 100%; }
+  .member-graph .card {
+    height: 100%;
+    padding: 6px;
+    border-radius: 6.5px; }
+    .member-graph .card .card-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      line-height: 1.3;
+      text-align: center; }
+    .member-graph .card .card-content {
+      font-size: 1.45rem;
+      font-weight: 700;
+      line-height: 1.3;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+      margin-top: 14px;
+      line-height: 1.1; }
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999; }
+
+.registration-modal {
+  position: fixed;
+  top: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 250;
+  /* サイズ & 余白をコンパクトに */
+  width: 520px;
+  max-width: 92vw;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid #e6e8eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 2px 10px rgba(0, 0, 0, 0.06);
+  /* タイトル */
+  /* フォーム行：ラベル左・入力右の2カラムにして間延び防止 */
+  /* コンパクトなラベル */
+  /* 入力を小ぶり＆フラットに */
+  /* アクション行は右寄せ＆上に薄い仕切り */ }
+  .registration-modal h3 {
+    margin: 0 0 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+    color: #111827; }
+  .registration-modal__row {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    /* 2列 */
+    grid-template-rows: auto auto;
+    /* 2行 */
+    gap: 10px 12px;
+    align-items: center;
+    margin: 8px 0 14px; }
+  .registration-modal__label {
+    width: auto;
+    text-align: right;
+    white-space: nowrap;
+    color: #475569;
+    padding-right: 4px;
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.55; }
+  .registration-modal__input {
+    height: 36px;
+    padding: 0 10px;
+    width: 100%;
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.55;
+    color: #111827;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color .16s ease, box-shadow .16s ease, background .16s ease; }
+    .registration-modal__input:hover {
+      background: #f3f4f6; }
+    .registration-modal__input:focus {
+      border-color: #6366f1;
+      /* お好みでブランド色に */
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+      background: #fff; }
+  .registration-modal__loading {
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center; }
+    .registration-modal__loading .loading-stack {
+      display: flex;
+      align-items: center;
+      gap: 12px; }
+      .registration-modal__loading .loading-stack .loading-text {
+        font-size: 1.125rem;
+        font-weight: 600;
+        line-height: 1.35;
+        letter-spacing: .01em; }
+  .registration-modal .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding-top: 12px;
+    border-top: 1px solid #eef1f4;
+    margin-top: 6px;
+    /* 既存の .button を少しだけ洗練 */
+    /* 無効ボタン */ }
+    .registration-modal .modal-actions .button, .registration-modal .modal-actions a.button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 88px;
+      height: 34px;
+      padding: 0 14px;
+      border-radius: 8px;
+      font-size: 0.96rem;
+      font-weight: 700;
+      line-height: 1.55;
+      line-height: 1.55;
+      text-decoration: none;
+      cursor: pointer;
+      background: #032e4a;
+      color: #fff;
+      transition: transform .06s ease, box-shadow .16s ease, opacity .16s ease; }
+      .registration-modal .modal-actions .button:hover, .registration-modal .modal-actions a.button:hover {
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12); }
+      .registration-modal .modal-actions .button:active, .registration-modal .modal-actions a.button:active {
+        transform: translateY(1px); }
+    .registration-modal .modal-actions .is-disabled {
+      pointer-events: none;
+      opacity: .45;
+      filter: grayscale(25%); }
+
+.calendar-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2; }
+
+.calendar-overlay:not(.display-none) {
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.4); }
+
+.table-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2; }
+
+#external-events {
+  width: 100%;
+  height: 100%; }
+
+.table-overlay:not(.display-none) {
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.4); }
+
+/* ========== DnD: カスタムドラッグゴースト（ルート階層に追加） ========== */
+#external-events tr.fc-event > td {
+  position: relative; }
+
+/* セル全面を覆う透明ハンドル。見た目は変えずに“どこでも掴める” */
+.dnd-handle {
+  position: absolute;
+  inset: 0;
+  /* top:0; right:0; bottom:0; left:0; と同義 */
+  cursor: grab;
+  opacity: 0;
+  /* 透明 */
+  /* あると良い：タッチ端末の気まぐれ対策 */
+  -webkit-user-drag: element; }
+
+tr.fc-event.dragging {
+  opacity: .15; }
+
+.fc-event.dragging .dnd-handle {
+  cursor: grabbing; }
+
+.hide-fc-mirror .fc-mirror {
+  opacity: 0 !important;
+  visibility: hidden !important; }
+
+/* 消去アニメーション用 */
+tr.fc-event.removing {
+  opacity: 0;
+  transition: opacity .18s ease, height .18s ease, margin .18s ease, padding .18s ease; }
+
+/* 高さを潰す（collapse は JS 側で付与） */
+tr.fc-event.removing.collapse {
+  height: 0 !important;
+  margin: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border: 0 !important;
+  overflow: hidden; }
+
+/* ゴースト（画面外に置く。display:noneはNG） */
+.drag-ghost {
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
+  z-index: 9999;
+  pointer-events: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+  background: #14624c;
+  color: #fff;
+  font-size: 0.96rem;
+  line-height: 1.55; }
+
+.noneDisplay:not(.display-none) {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  grid-area: areaBb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(204, 204, 204, 0.3);
+  border-radius: 6.5px;
+  color: #000000af;
+  font-weight: bold;
+  z-index: 20; }
+
+.spinner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999; }
+
+#modalMessage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.55; }
+  #modalMessage p {
+    margin: 0; }
+
+#screenDim {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: -1; }
+
+/* 表示時 */
+#screenDim.is-active {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible; }
+
+#filterarea {
+  position: relative; }
+
+form {
+  display: none; }
+
+.click-card {
+  position: fixed;
+  z-index: 9999;
+  max-width: 320px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); }
+  .click-card__content {
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.55;
+    line-height: 1.4; }
+
+.fc .fc-toolbar-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.3; }
+
+/*# sourceMappingURL=calendar.css.map */

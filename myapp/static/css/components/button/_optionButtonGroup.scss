@@ -1,0 +1,103 @@
+@import 'foundation/typography';
+
+/* ==========================================================================
+  UI Option Button Group
+  - 排他的単一選択用のボタングループ
+  - Button とは責務を分離した汎用コンポーネント
+========================================================================== */
+
+$option-btn-radius: 9999px !default;
+$option-btn-gap: 8px !default;
+
+$option-btn-bg: #ffffff !default;
+$option-btn-fg: #0b1220 !default;
+$option-btn-border: rgba(15, 23, 42, 0.14) !default;
+
+$option-btn-hover-bg: rgba(15, 23, 42, 0.04) !default;
+$option-btn-hover-shadow: 0 8px 18px rgba(0, 0, 0, 0.12) !default;
+
+$option-btn-selected-bg: #e8f3ff !default;
+$option-btn-selected-fg: #032e4a !default;
+$option-btn-selected-border: #1483cd !default;
+
+$option-btn-focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.22) !default;
+
+/* グループ */
+.ui-optionGroup {
+  display: inline-flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: $option-btn-gap;
+}
+
+/* ボタン本体 */
+.ui-optionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 44px;
+  padding: 0 16px;
+
+  border: 1px solid $option-btn-border;
+  border-radius: $option-btn-radius;
+
+  background: $option-btn-bg;
+  color: $option-btn-fg;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+
+  @include type-ui;
+
+  transition:
+    background-color 0.14s ease,
+    border-color 0.14s ease,
+    color 0.14s ease,
+    box-shadow 0.14s ease,
+    transform 0.06s ease,
+    opacity 0.14s ease;
+
+  &:not(:disabled):not(.is-disabled):hover {
+    background: $option-btn-hover-bg;
+    box-shadow: $option-btn-hover-shadow;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: $option-btn-focus-ring;
+  }
+
+  &:not(:disabled):not(.is-disabled):focus-visible:hover {
+    box-shadow: $option-btn-focus-ring, $option-btn-hover-shadow;
+  }
+
+  &.is-selected,
+  &[aria-checked='true'] {
+    background: $option-btn-selected-bg;
+    color: $option-btn-selected-fg;
+    border-color: $option-btn-selected-border;
+  }
+
+  &.is-disabled,
+  &:disabled {
+    pointer-events: none;
+    opacity: 0.45;
+    filter: grayscale(20%);
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+.ui-optionButton__label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  @include type-ui;
+}

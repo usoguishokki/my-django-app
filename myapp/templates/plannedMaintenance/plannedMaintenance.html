@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}WorkContents{% endblock %}
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/pages/plannedMaintenance.scss' %}" rel="stylesheet" type="text/css">
+    <link href="{% sass_src 'css/components/drawer/_drawer.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+{% block header %}
+{% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="planned-maintenance-container" data-ui-root="drawer">
+    <div class="right-content">
+        <div class="kpi-top-controls">
+            <div class="kpi-top-controls__group kpi-top-controls__group--period">
+                <span class="kpi-top-controls__label">期間</span>
+                <div class="kpi-top-controls__buttons">
+                    <button class="kpi-btn is-active" data-view="month">月</button>
+                    <button class="kpi-btn" data-view="week">週</button>
+                    <button class="kpi-btn" data-view="day">日</button>
+                </div>
+            </div>
+        
+            <div class="kpi-top-controls__group kpi-top-controls__group--target">
+                <span class="kpi-top-controls__label">対象</span>
+                <div class="kpi-top-controls__buttons">
+                    <button class="kpi-btn is-active" data-view="team">班</button>
+                </div>
+            </div>
+
+            <div class="kpi-top-controls__update">
+                <button class="kpi-btn kpi-btn--primary" data-action="refresh">
+                  更新
+                </button>
+            </div>
+        </div>
+        
+          <!-- 月 × 班 マトリクス（上：月ヘッダ、下：班ヘッダ） -->
+        <div class="kpi-matrix matrix--soft">
+            <div class="kpi-matrix__wrapper" id="kpiMatrixWrapper">
+                <table class="kpi-matrix__table" id="kpiMatrixTable">
+            
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% include "includes/components/drawer_stack.html" with panels_template="../../plannedMaintenance/drawer_panels__plannedMaintenance.html" %}
+
+</div>
+
+
+
+<form method="post">
+    {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block script %}
+    <script type="module" src="{% static 'js/plannedMaintenance/plannedMaintenance.js' %}"></script>
+{% endblock %}

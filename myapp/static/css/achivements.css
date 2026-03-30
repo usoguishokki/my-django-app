@@ -1,6 +1,44 @@
 @charset "UTF-8";
+.scrollbar-nice::-webkit-scrollbar {
+  width: 10px;
+  height: 10px; }
+
+.scrollbar-nice::-webkit-scrollbar-track {
+  background: rgba(243, 244, 246, 0.85);
+  border-radius: 999px; }
+
+.scrollbar-nice::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.9);
+  border-radius: 999px;
+  border: 2px solid rgba(243, 244, 246, 0.85); }
+
 button, select {
   cursor: pointer; }
+
+.button {
+  cursor: pointer;
+  display: block;
+  width: 110px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  background-color: #032e4a;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.8em;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  text-align: center; }
+  .button.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: default; }
+  .button:hover {
+    background-color: #1483cd; }
+  .button:active {
+    transform: scale(0.95); }
+
+.space {
+  margin: 0 3px;
+  display: inline-block; }
 
 .filter-item {
   margin: 10px;
@@ -8,7 +46,8 @@ button, select {
   .filter-item label {
     display: block;
     margin-bottom: 5px;
-    padding: 5px; }
+    padding: 5px;
+    color: #ffffff; }
   .filter-item select {
     width: 100%;
     padding: 5px;
@@ -47,13 +86,8 @@ button, select {
       border: 2px solid #6b94e2;
       outline: none; }
 
-/*
-.hidden {
-    display: none;
-}
-*/
 .display-none {
-  display: none; }
+  display: none !important; }
 
 .hidden {
   opacity: 0;
@@ -147,21 +181,22 @@ button, select {
     transition-delay: 0s; }
 
 #closeOverlayButton {
-  position: absolute;
-  right: 5px;
-  bottom: 5px;
-  padding: 10px 20px;
-  border-radius: 4px;
-  background-color: #414141;
-  color: white;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2); }
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 120ms ease, background 120ms ease; }
   #closeOverlayButton:hover {
-    background-color: #5b5b5b;
-    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); }
+    background: rgba(0, 0, 0, 0.03); }
   #closeOverlayButton:active {
-    background-color: #2d2d2d;
-    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.3); }
+    transform: scale(0.98); }
+  #closeOverlayButton:focus-visible {
+    outline: 3px solid rgba(0, 120, 255, 0.35);
+    outline-offset: 2px; }
 
 .tooltip {
   z-index: 100; }
@@ -189,12 +224,69 @@ button, select {
 
 /* 太いボーダーを定義 */
 .thick-top-border {
-  border-width: 1.5px 0px 0px 0px;
-  border-style: solid;
-  border-color: #2c3e50; }
+  border-top: 1.5px solid #2c3e50; }
 
 .base-font-size {
-  font-size: calc(1.5vw + 0.7rem); }
+  font-size: 1.0rem; }
+
+/* =========================
+   レイアウト：フィルタ + テーブル
+   ========================= */
+.parent-filterarea {
+  position: relative;
+  display: flex;
+  /* 左:フィルタ / 右:テーブル */
+  height: 100%;
+  overflow: hidden;
+  padding: 20px 0;
+  /* 上下だけ余白 */
+  gap: clamp(12px, 1.2vw, 20px);
+  /* ← ここで横の間隔をコントロール */ }
+
+.filter-container {
+  z-index: 900;
+  position: absolute;
+  top: 20px;
+  /* ← 単位pxを忘れず */
+  left: 0;
+  height: calc(100% - 40px);
+  width: clamp(28px, 2.5vw, 40px);
+  /* 2.5vwより安定（画面幅で極端にならない） */
+  margin-right: 10px;
+  border-radius: var(--radius-lg);
+  /* ガラス風 */
+  background: linear-gradient(180deg, rgba(107, 108, 127, 0.78), #c4c4c4);
+  border: 1px solid rgba(196, 196, 196, 0.35);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+  transition: width 420ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 420ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* “細い状態でも存在感”のための縦ハイライト */
+  /* スクロールバーを“最近のUI”っぽく */ }
+  .filter-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.1), transparent 45%, rgba(34, 197, 94, 0.08));
+    pointer-events: none;
+    opacity: 0.9; }
+  .filter-container:hover {
+    width: calc(22vw);
+    max-width: 320px;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(2px);
+    overflow-y: auto; }
+  .filter-container::-webkit-scrollbar {
+    width: 10px;
+    height: 10px; }
+  .filter-container::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 999px; }
+  .filter-container::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.18);
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.55); }
 
 table {
   width: 100%;

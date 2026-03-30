@@ -2,6 +2,7 @@ from .models import WeeklyDuty
 from datetime import datetime, timedelta
 from django.shortcuts import get_object_or_404
 from django.db.models.functions import Concat
+from zoneinfo import ZoneInfo
 
 class CacheManagerIF:
     _instance = None
@@ -133,16 +134,31 @@ class CacheManagerIF:
     def get_affiliation_pattern_times_dict(self, user_profile, profiles=None):
         self.cache['affiliation_cache'] = self.cache_manager.affilation_pattern_times_key(user_profile.organization.organization)
         affiliation_pattern_times_dict = self.cache_manager.get(self.cache['affiliation_cache']['cache_key'])
-        if affiliation_pattern_times_dict is None or all(value is None for value in affiliation_pattern_times_dict.values()):
-            affiliation_pattern_times_dict = self.set_common_data(profiles)
+        if affiliation_pattern_times_dict is None or any(value is None for value in affiliation_pattern_times_dict.values()):
+            affiliation_pattern_times_dict, profiles = self.set_common_data(profiles)
         else:
             user_belong_id = user_profile.belongs_id
             user_affilation_pattern_times = affiliation_pattern_times_dict[user_belong_id]
             shift_end_datetime = user_affilation_pattern_times.end_date_time
-            adjusted_shift_end_datetime = shift_end_datetime + timedelta(hours=8)
-            if adjusted_shift_end_datetime < datetime.today():
-                 affiliation_pattern_times_dict = self.set_common_data(profiles)
-        return affiliation_pattern_times_dict
+            adjusted_shift_end_datetime = shift_end_datetime + timedelta(hours=13)
+            shift_start_time = None
+            shift_end_time = None
+            if profiles:
+                matched_profile = next(
+                    (profile for profile in profiles if profile.pk == user_profile.pk),
+                    None
+                )
+
+                if matched_profile is None:
+                    shift_start_time = None
+                    shift_end_time = None
+                else:
+                    shift_start_time = matched_profile.shift_start_time
+                    shift_end_time = matched_profile.shift_end_time
+            
+            if (adjusted_shift_end_datetime < datetime.today()) or (shift_end_datetime != shift_end_time):
+                 affiliation_pattern_times_dict, profiles = self.set_common_data(profiles)
+        return affiliation_pattern_times_dict, profiles
 
     def Hozen_calendar_week(self, today):
         hozen_calendar = self.middlewares_cache['hozen_calendars'].get(h_date=today)
@@ -181,10 +197,31 @@ class CacheManagerIF:
             'pattern__end_time',
         ).distinct()
         return calendar_entries
-       
+    
+    def build_shift_span_for_access(self, start_time, end_time):
+        today = datetime.now(ZoneInfo("Asia/Tokyo"))
+        crosses_midnight = end_time <= start_time
+        if crosses_midnight:
+            if today.time() < end_time: #現在<時間が終了時間より(例:0:00 < 07:05)
+                shift_start_date = today - timedelta(days=1)
+                shift_end_date = today
+            else:
+                shift_start_date = today
+                shift_end_date = today + timedelta(days=1)
+        else:
+            shift_start_date = today
+            shift_end_date = today
+
+        start_dt = datetime.combine(shift_start_date, start_time)
+        end_dt = datetime.combine(shift_end_date, end_time)
+        
+        return start_dt, end_dt
+            
+            
+        
+               
     def fetch_affilation_pattern_tims_dict(self, calendar_entries):
         affiliation_pattern_times_dict = {}
-        today_date = datetime.today()
         shift_patterns = self.get_shift_pattern()
         for entry in calendar_entries:
             affiliation_id = entry['affilation_id']
@@ -193,17 +230,10 @@ class CacheManagerIF:
             if shift_pattern_obj is not None:
                 shift_pattern_obj.obj = shift_pattern_obj
                 shift_pattern_obj.affiliation = entry['affilation__affilation']
+                shift_pattern_obj.shift_pattern_name = _shift_pattern_name
                 start_time = shift_pattern_obj.shift_start_time
                 end_time = shift_pattern_obj.shift_end_time
-                adjusted_date = today_date
-                if start_time > end_time:
-                    date_end = adjusted_date + timedelta(days=1)
-                else:
-                    date_end = today_date
-                shift_start_datetime = datetime.combine(adjusted_date, start_time)
-                shift_end_datetime = datetime.combine(date_end, end_time)
-                shift_pattern_obj.start_date_time = shift_start_datetime
-                shift_pattern_obj.end_date_time = shift_end_datetime
+                shift_pattern_obj.start_date_time, shift_pattern_obj.end_date_time = self.build_shift_span_for_access(start_time, end_time)
             affiliation_pattern_times_dict[affiliation_id] = shift_pattern_obj
         return affiliation_pattern_times_dict
     
@@ -211,9 +241,10 @@ class CacheManagerIF:
         for user_profile in profiles:
             affiliation_id = user_profile.belongs_id
             pattern_times = affiliation_pattern_times_dict.get(affiliation_id, {})
-            if pattern_times is not None:
+            if pattern_times is not None or (user_profile.shift_start_time != pattern_times.start_date_time):
                 user_profile.shift_start_time = pattern_times.start_date_time
                 user_profile.shift_end_time = pattern_times.end_date_time
+                user_profile.shift_pattern_name = pattern_times.shift_pattern_name
         return profiles
 
     def set_common_data(self, profiles):
@@ -224,13 +255,15 @@ class CacheManagerIF:
             timeout=self.cache['affiliation_cache']['timeout']
         )
 
-        self.cache_manager.set(
+        
+        profiles = self.cache_manager.set(
             self.cache['profile_cache']['cache_key'],
             lambda: self.update_user_profiles_with_times(profiles, affiliation_pattern_times_dict), 
             timeout=self.cache['profile_cache']['timeout']
         )
         
-        return affiliation_pattern_times_dict
+        
+        return affiliation_pattern_times_dict, profiles
     
     def get_current_data_infomation(self, profiles):
         updateflg = False
@@ -263,8 +296,8 @@ class CacheManagerIF:
         return weekly_duties
         """
         weekly_duties = WeeklyDuty.objects.filter(
-            affilation_id = affiliation_ids,
-            plan__inspection_no__control_no__line_name__organization=organization
+            affilation_id=affiliation_ids,
+            plan__inspection_no__control_no__line_name__organization__organization=organization
         ).select_related(
             'plan',
             'plan__inspection_no',
@@ -290,6 +323,8 @@ class CacheManagerIF:
             obj = getattr(obj, attr)
         return True
     
+    #個別登録
+    
     def update_weekly_duties_cache(self, cache_key, instance):
         weekly_duties = list(self.cache_manager.get(cache_key))
         if not weekly_duties:
@@ -298,6 +333,22 @@ class CacheManagerIF:
             if duty.pk == instance.pk:
                 weekly_duties[idx] = instance
                 break
+        weekly_duties_cache_inf = self.cache_manager.weekly_duties_key(cache_key)
+        self.cache_manager.set(weekly_duties_cache_inf['cache_key'], weekly_duties, weekly_duties_cache_inf['timeout'])
+    
+    
+    #一括登録
+    def bulk_update_weekly_duties_cache(self, cache_key, instance_list):
+        weekly_duties = list(self.cache_manager.get(cache_key))
+        if not weekly_duties:
+            raise Exception(f"キャッシュが存在しません: {cache_key}" )
+            
+        instance_map = {ins.pk: ins for ins in instance_list}
+        
+        for idx, duty in enumerate(weekly_duties):
+            if duty.pk in instance_map:
+                weekly_duties[idx] = instance_map[duty.pk]
+                
         weekly_duties_cache_inf = self.cache_manager.weekly_duties_key(cache_key)
         self.cache_manager.set(weekly_duties_cache_inf['cache_key'], weekly_duties, weekly_duties_cache_inf['timeout'])
 

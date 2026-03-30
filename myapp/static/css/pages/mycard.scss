@@ -1,0 +1,1378 @@
+@import 'common';
+@import 'foundation/typography';
+
+
+// ===============================
+// Tokens
+// ===============================
+$bp-desktop: 1000px;
+
+$brand: #21026b;
+$navy: #07395a;
+
+$white: #fff;
+$text: rgba(0, 0, 0, 0.88);
+$muted: rgba(0, 0, 0, 0.58);
+$border: rgba(0, 0, 0, 0.10);
+
+$radius-sm: 8px;
+$radius-md: 14px;
+$radius-lg: 16px;
+
+$shadow-float: 0 20px 60px rgba(0, 0, 0, 0.22);
+
+$tap: transparent;
+
+// ===============================
+// Mixins
+// ===============================
+@mixin desktop {
+  @media (min-width: $bp-desktop) {
+    @content;
+  }
+}
+
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 3px solid rgba(0, 120, 255, 0.35);
+    outline-offset: 3px;
+  }
+}
+
+// ===============================
+// Animations
+// ===============================
+@keyframes slideInRight {
+  from { transform: translateX(90%); opacity: 0; }
+  to   { transform: translateX(0);   opacity: 1; }
+}
+
+// 「右へ退場」になっていなかったので修正
+@keyframes slideOutRight {
+  from { transform: translateX(0);   opacity: 1; }
+  to   { transform: translateX(90%); opacity: 0; }
+}
+
+.animated { animation: slideInRight 0.3s ease-in forwards; }
+.slide-out { animation: slideOutRight 0.3s ease-out forwards; }
+
+// ===============================
+// Utilities
+// ===============================
+.txt-color-white { color: $white; }
+
+#alert {
+  @include type-ui;
+  color: rgb(255, 0, 0);
+}
+
+// ===============================
+// Icons / Buttons
+// ===============================
+.filter-icon {
+  position: fixed;
+  top: 70px;
+  left: 10px;
+  width: 40px;
+  height: 40px;
+  z-index: 100;
+  cursor: pointer;
+
+  border-radius: 50%;
+  background-color: #2c3e50;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  svg {
+    width: 60%;
+    height: 60%;
+    object-fit: contain;
+
+    line { stroke: #e8f4fc; }
+    circle { fill: #e8f4fc; }
+  }
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  &:active {
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.backbtn {
+  cursor: pointer;
+  svg { width: 30px; height: 30px; }
+}
+.back-ico { width: 30px; height: 30px; z-index: 10000; }
+
+.select-backbtn { position: relative; top: -6px; }
+.header-back-btn { position: relative; top: -2.6px; left: -5px; }
+
+// ===============================
+// Floating CTA Button
+// ===============================
+.action-btn {
+  @include type-ui;
+  position: fixed;
+  left: 4vw;
+  right: 4vw;
+  width: calc(100% - 8vw);
+  bottom: calc(12px + env(safe-area-inset-bottom));
+
+  min-height: 52px;
+  padding: 12px 18px;
+
+  border: none;
+  border-radius: $radius-md;
+
+  background: rgba(0, 120, 255, 0.98);
+  border-color: rgba(0, 120, 255, 0.98);
+  color: $white;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  letter-spacing: 0.02em;
+
+  cursor: pointer;
+  -webkit-tap-highlight-color: $tap;
+  touch-action: manipulation;
+  user-select: none;
+
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.22) inset;
+
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+
+  &:hover {
+    background: rgba(0, 120, 255, 0.90);
+    border-color: rgba(0, 120, 255, 0.90);
+    filter: brightness(1.05);
+    box-shadow:
+      0 10px 22px rgba(0, 0, 0, 0.20),
+      0 1px 0 rgba(255, 255, 255, 0.22) inset;
+  }
+
+  &:active {
+    transform: translateY(1px) scale(0.99);
+    filter: brightness(0.98);
+    box-shadow:
+      0 6px 14px rgba(0, 0, 0, 0.18),
+      0 1px 0 rgba(255, 255, 255, 0.22) inset;
+  }
+
+  @include focus-ring;
+
+  &:disabled,
+  &[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.55;
+    filter: grayscale(0.2);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+  }
+
+  @media (min-width: 1000px) {
+    left: 10vw;
+    right: 10vw;
+    width: calc(100% - 20vw);
+    max-width: 720px;
+    margin: 0 auto;
+  }
+}
+
+// ===============================
+// Form: textarea floating label
+// ===============================
+textarea {
+  @include type-ui-regular;
+  width: 100%;
+  height: 25vw;
+  padding: 15px 10px;
+  border-radius: 5px;
+  border: 1px solid #c6c6c6;
+  cursor: pointer;
+
+  &:focus,
+  &:hover {
+    outline: none;
+    border-color: $brand;
+  }
+
+  &:focus ~ .textarea-label,
+  &:not(:placeholder-shown) ~ .textarea-label {
+    transform: translate(0, -28px);
+    padding: 0 10px;
+    font-size: 0.75em;
+    background-color: $white;
+    color: #000;
+  }
+
+  @include desktop { height: 8vw; }
+}
+
+.textarea-label {
+  @include type-small;
+  position: absolute;
+  top: 20px;
+  left: 5px;
+  color: rgba(0, 0, 0, 0.6);
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+// ===============================
+// Carousel (ネスト浅く)
+// ===============================
+.carousel {
+  position: relative;
+  width: 98vw;
+  height: 100%;
+
+  .carousel-track-container { 
+    position: relative; 
+    width: 100%;
+    height: 100%;
+  }
+
+  .carousel-track {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.5s;
+  }
+
+  .carousel-slide {
+    flex: 0 0 100%; 
+    &.is-daily-inspection{
+      background: rgba(255, 245, 196, 0.7);
+    }
+
+    &.is-daily-inspection {
+      background: rgba(255, 245, 196, 0.72);
+    }
+    
+    &.is-periodic-inspection {
+      background: rgba(255, 255, 255, 0.72);
+    }
+  }
+
+  .card {
+    position: relative;
+    margin: 0 1vw;
+    text-align: left;
+
+    @include type-td;
+
+    @include desktop {
+      padding: 20px 10vw;
+    }
+  }
+
+  .card-header {
+    position: relative;
+    z-index: 1;
+    padding-top: 15px;
+    padding-bottom: 15px;
+
+    box-shadow: 0 10px 14px -14px rgba(0, 0, 0, 0.35);
+  }
+
+  .title-number {
+    @include type-small;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+
+    opacity: 0.7;
+    white-space: nowrap;
+    margin-right: 3px;
+    margin-bottom: 3px;
+  }
+
+  .wark_name {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  
+
+    .part {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+  
+      @include type-ui;
+      opacity: 0.8;
+      margin-bottom: 6px;
+    }
+  }
+
+  .applicable_devices {
+    @include type-td;
+
+    .device p {
+      margin: 0;
+      padding: 8px 5px;
+      border-radius: 8px;
+      background-color: rgba(34, 139, 34, 0.3);
+    }
+  }
+
+  // carousel buttons
+  #carouselButtonLeft,
+  #carouselButtonRight {
+    position: absolute;
+    top: 0;
+    width: 5vw;
+    height: 100%;
+    z-index: 10;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+  }
+  #carouselButtonLeft { left: 0; }
+  #carouselButtonRight { right: 0; }
+
+  .carousel-button:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+  }
+}
+
+@media (max-width: 768px) {
+  .carousel-button { display: none; }
+}
+
+// ===============================
+// Over modal
+// ===============================
+.over-modal {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  position: fixed;
+  inset: 0;
+
+  background-color: rgba(0, 0, 0, 0.93);
+  z-index: 9999;
+
+  svg {
+    width: 250px;
+    height: 250px;
+    transform: translateY(-30%);
+  }
+
+  .submit-message {
+    @include type-title;
+    position: relative;
+    top: -10%;
+    color: #009900;
+    letter-spacing: 0.12em;
+    line-height: 1.8;
+  }
+}
+
+// ===============================
+// Opt modal
+// ===============================
+.opt-modal {
+  @include type-ui-regular;
+  position: fixed;
+  inset: 0;
+  transform: none;
+
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow: hidden;
+
+  z-index: 1000;
+  border-radius: 0;
+  background-color: $white;
+
+  .opt-modal-content {
+    @include type-ui-regular;
+
+    margin: 10px 20px 20px;
+    padding: 14px 0 24px;
+    display: block;
+
+    .form-top {
+      margin-top: 0;
+    }
+
+    > fieldset {
+      border: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    > fieldset + fieldset {
+      margin-top: 28px;
+    }
+
+    legend {
+      @include type-title;
+      margin: 0 0 12px;
+      color: $text;
+    }
+
+    .form-row,
+    .man-hours {
+      display: grid;
+      grid-template-columns: 84px minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+    }
+
+    .form-row > label,
+    .man-hours > label,
+    .result-label,
+    .executor {
+      @include type-label;
+      color: $muted;
+      letter-spacing: 0.04em;
+    }
+
+    input[type="datetime-local"],
+    .selected-item {
+      @include type-ui-regular;
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid rgba(0, 0, 0, 0.14);
+      border-radius: 12px;
+      background: $white;
+      color: $text;
+      padding: 0 12px;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+
+      &:hover {
+        border-color: rgba(0, 0, 0, 0.24);
+      }
+
+      &:focus {
+        outline: none;
+        border-color: rgba(0, 120, 255, 0.55);
+        box-shadow: 0 0 0 4px rgba(0, 120, 255, 0.14);
+      }
+    }
+
+    .custom-radio {
+      @include type-ui-regular;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      column-gap: 18px;
+      row-gap: 10px;
+      margin-bottom: 0;
+
+      .result-label {
+        min-width: 84px;
+        margin-right: 0;
+      }
+
+      label {
+        @include type-ui-regular;
+        display: inline-flex;
+        align-items: center;
+        position: relative;
+        cursor: pointer;
+        margin-right: 0;
+        padding-left: 28px;
+        padding-right: 6px;
+        color: $text;
+
+        &:before,
+        &:after {
+          content: '';
+          position: absolute;
+        }
+
+        &:before {
+          left: 0;
+          top: 50%;
+          width: 20px;
+          height: 20px;
+          border: 2px solid #d6d6d6;
+          border-radius: 50%;
+          background-color: $white;
+          transform: translateY(-50%);
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        &:after {
+          top: 50%;
+          left: 5px;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background-color: $brand;
+          transform: translateY(-50%) scale(0);
+          transition: transform 0.2s ease;
+        }
+      }
+
+      input[type="radio"] {
+        position: absolute;
+        width: 0;
+        height: 0;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+
+        &:checked + label:before {
+          border-color: $brand;
+        }
+
+        &:checked + label:after {
+          transform: translateY(-50%) scale(1);
+        }
+
+        &:focus-visible + label:before {
+          box-shadow: 0 0 0 4px rgba(0, 120, 255, 0.14);
+        }
+      }
+
+      @include desktop {
+        label {
+          padding-left: 24px;
+        }
+
+        label:before {
+          width: 16px;
+          height: 16px;
+          left: 0;
+        }
+
+        label:after {
+          left: 4px;
+          width: 8px;
+          height: 8px;
+        }
+      }
+    }
+
+    #result-content {
+      .custom-radio {
+        margin-bottom: 14px;
+      }
+    }
+
+    .issueDatailsContainer,
+    .comment {
+      position: relative;
+      display: block;
+      margin-top: 14px;
+    }
+
+    textarea {
+      min-height: 50px;
+      height: 90px;
+      padding: 18px 14px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 0, 0, 0.14);
+      background: rgba(255, 255, 255, 0.96);
+      resize: vertical;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+
+      &:hover {
+        border-color: rgba(0, 0, 0, 0.24);
+      }
+
+      &:focus {
+        outline: none;
+        border-color: rgba(0, 120, 255, 0.55);
+        box-shadow: 0 0 0 4px rgba(0, 120, 255, 0.14);
+      }
+    }
+
+    .textarea-label {
+      left: 12px;
+      top: 16px;
+    }
+
+    .issueDatailsContainer .text-insert-button-container {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+
+      .toppatsu-button {
+        @include type-ui-sm;
+        min-height: 34px;
+        padding: 6px 12px;
+        border: 1px solid rgba(33, 2, 107, 0.22);
+        border-radius: 999px;
+        background-color: rgba(33, 2, 107, 0.05);
+        color: $brand;
+        transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
+
+        &:hover {
+          background-color: rgba(33, 2, 107, 0.09);
+          border-color: rgba(33, 2, 107, 0.32);
+        }
+
+        &:active {
+          transform: scale(0.98);
+        }
+      }
+    }
+
+    .titGrayBelt {
+      padding: 0;
+      border-radius: 0;
+      max-width: none;
+    }
+
+    #memberSelectLabel {
+      .nav-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        min-height: 48px;
+        padding: 0 44px 0 14px;
+        border: 1px solid rgba(0, 0, 0, 0.14);
+        border-radius: 12px;
+        background: rgba(248, 250, 252, 0.88);
+        cursor: pointer;
+        transition:
+          border-color 120ms ease,
+          background-color 120ms ease,
+          box-shadow 120ms ease,
+          transform 120ms ease;
+    
+        &:hover {
+          border-color: rgba(0, 0, 0, 0.24);
+          background: rgba(241, 245, 249, 0.96);
+        }
+    
+        &:active {
+          transform: scale(0.995);
+        }
+    
+        &:focus-visible {
+          outline: none;
+          border-color: rgba(0, 120, 255, 0.55);
+          box-shadow: 0 0 0 4px rgba(0, 120, 255, 0.14);
+        }
+      }
+    
+      .executor {
+        @include type-label;
+        flex: 0 0 auto;
+        color: $muted;
+        letter-spacing: 0.04em;
+      }
+    
+      #selectedMemberText {
+        @include type-ui-regular;
+        flex: 1 1 auto;
+        min-width: 0;
+        padding-left: 0;
+        color: $text;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    
+      .select-chevron {
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        width: 16px;
+        height: 16px;
+        transform: translateY(-50%);
+        pointer-events: none;
+        opacity: 0.72;
+      }
+    }
+
+    .man-hours {
+      .select-wrap {
+        position: relative;
+        width: 100%;
+        max-width: 180px;
+      }
+    
+      .selected-item {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+    
+        width: 100%;
+        max-width: none;
+        min-height: 44px;
+        margin-left: 0;
+        margin-right: 0;
+        padding: 0 40px 0 12px;
+        cursor: pointer;
+      }
+    
+      .select-chevron {
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        width: 16px;
+        height: 16px;
+        transform: translateY(-50%);
+        pointer-events: none;
+        opacity: 0.72;
+      }
+    }
+  }
+}
+
+
+
+// ===============================
+// Mobile
+// ===============================
+@media (max-width: 640px) {
+  .opt-modal {
+    .opt-modal-content {
+      padding: 16px 0 28px;
+    }
+
+    .opt-modal-content > fieldset {
+      margin: 0;
+      padding: 0;
+    }
+
+    .opt-modal-content > fieldset + fieldset {
+      margin-top: 18px;
+    }
+
+    .opt-modal-content .form-row,
+    .opt-modal-content .man-hours {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .opt-modal-content .custom-radio {
+      align-items: flex-start;
+      row-gap: 12px;
+      column-gap: 16px;
+
+      .result-label {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        margin-bottom: 4px;
+      }
+    }
+
+    .opt-modal-content #memberSelectLabel .nav-item {
+      min-height: 52px;
+      padding: 0 40px 0 12px;
+    }
+
+    .opt-modal-content 
+    .man-hours {
+      .select-wrap {
+        max-width: 100%;
+      }
+  
+      .selected-item {
+        max-width: 100%;
+      }
+  
+      .select-chevron {
+        right: 12px;
+        width: 15px;
+        height: 15px;
+      }
+    }
+  }
+}
+
+
+// ===============================
+// Checkbox list
+// ===============================
+input[type="checkbox"] { display: none; }
+
+.select-member-content {
+  label {
+    @include type-ui-regular;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 15px 5px;
+  }
+
+  .member-list {
+    border-bottom: 1px solid #f3f3f3;
+    cursor: pointer;
+  }
+
+  .ico-checkbox {
+    position: relative;
+    width: 20px;
+    height: 20px;
+
+    &::before {
+      content: '';
+      position: absolute;
+      width: 10px;
+      height: 18px;
+      top: -3px;
+      left: 15px;
+      border: solid rgba(214, 214, 214, 0.5);
+      border-width: 0 3px 3px 0;
+      transform: rotate(45deg);
+    }
+  }
+
+  .txt {
+    @include type-td;
+    padding-left: 30px;
+  }
+
+  input[type="checkbox"]:checked + .ico-checkbox::before {
+    border-color: $brand;
+  }
+}
+
+// ===============================
+// Title gray belt
+// ===============================
+.titGrayBelt {
+  display: flex;
+  padding: 8px 10px 8px 0;
+  border-radius: 5px;
+  max-width: 100%;
+
+  .nav-item {
+    display: flex;
+    max-width: 100%;
+
+    .executor {
+      @include type-ui;
+      display: inline;
+      writing-mode: horizontal-tb;
+    }
+
+    #selectedMemberText {
+      @include type-small;
+      padding-left: 20px;
+      display: block;
+      color: #818181;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: left;
+      max-width: 100%;
+    }
+  }
+}
+
+// ===============================
+// Panel nav
+// ===============================
+.panel-nav {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  padding-top: 50px;
+  padding-bottom: 80px;
+  z-index: 100;
+}
+
+.panelNavbar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  z-index: 101;
+  background-color: $navy;
+}
+
+
+.panelNavbarRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 50px;
+}
+
+.panelNavbarBack,
+.panelNavbarTitle,
+.panelNavTool {
+  display: flex;
+  align-items: center;
+}
+
+.panelNavbarBack {
+  width: 20%;
+  text-align: left;
+  @include type-ui;
+
+  @include desktop { width: 7%; }
+
+  svg { padding-left: 8px; }
+}
+
+.panelNavbarTitle {
+  @include type-title;
+  width: 60%;
+  display: block;
+  justify-content: center;
+  text-align: center;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @include desktop { width: 86%; }
+}
+
+.panelNavTool {
+  width: 20%;
+  @include desktop { width: 7%; }
+}
+
+.panel-container.panel-nav {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.panel-content { 
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
+.panel-nav-action-col {
+  display: flex;
+  width: 100%;
+  height: 80px;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  justify-content: center;
+  align-items: center;
+
+  padding-bottom: env(safe-area-inset-bottom);
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.82));
+  backdrop-filter: blur(6px);
+}
+
+// ===============================
+// Old overlay (保持しつつアニメ修正)
+// ===============================
+.overlay.show {
+  display: block;
+  position: fixed;
+  left: 0;
+  top: 0;
+
+  opacity: 1;
+  background-color: $white;
+  z-index: 1000;
+
+  border-radius: $radius-sm;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+
+  animation: slideInRight 0.3s ease-in forwards;
+
+  .title {
+    @include type-title;
+    display: flex;
+    background-color: $navy;
+    color: $white;
+    padding: 14px 0 12px;
+    justify-content: center;
+  }
+
+  .filter-items {
+    height: 100vh;
+
+    .filter-item {
+      padding: 12px 0;
+    }
+  }
+
+  #closeOverlayButton {
+    position: absolute;
+    width: calc(100% - 26px);
+    bottom: 10px;
+    margin: 0 13px;
+
+    padding: 10px 20px;
+    border-radius: $radius-sm;
+
+    background-color: rgb(65, 65, 65);
+    color: $white;
+
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+
+    &:hover {
+      background-color: lighten(rgb(65, 65, 65), 10%);
+      box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    &:active {
+      background-color: rgb(45, 45, 45);
+      box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.3);
+    }
+  }
+}
+
+.filter-content { display: none; }
+
+// ===============================
+// Filter Overlay UI (新UI)
+// ===============================
+.filter-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: grid;
+  place-items: center;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 160ms ease, visibility 160ms ease;
+
+  &.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+
+    .filter-dialog {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  &__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(6px);
+  }
+}
+
+.filter-dialog {
+  position: relative;
+  width: clamp(320px, calc(100vw - 24px), 720px);
+  max-height: calc(100vh - 24px);
+
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+
+  background: $white;
+  border: 1px solid $border;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-float;
+
+  transform: translateY(10px);
+  opacity: 0;
+  transition: transform 180ms ease, opacity 180ms ease;
+
+  padding-bottom: env(safe-area-inset-bottom);
+
+  &__header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 18px 18px 12px;
+    background: $white;
+    border-bottom: 1px solid $border;
+    border-radius: $radius-lg $radius-lg 0 0;
+  }
+
+  &__title {
+    @include type-title;
+    margin: 0;
+    color: $text;
+    letter-spacing: 0.02em;
+  }
+
+  &__body {
+    padding: 16px 18px;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  &__footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+
+    padding: 12px 18px 18px;
+    background: $white;
+    border-top: 1px solid $border;
+    border-radius: 0 0 $radius-lg $radius-lg;
+  }
+}
+
+.filter-items { display: grid; gap: 7px; }
+
+.filter-dialog .filter-item {
+  &__label {
+    @include type-label;
+    display: block;
+    color: $text;
+    margin-bottom: 8px;
+  }
+
+  &__control {
+    position: relative;
+    display: grid;
+    align-items: center;
+  }
+
+  &__select {
+    @include type-ui-regular;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    height: 46px;
+    padding: 0 44px 0 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.14);
+    background: $white;
+    color: $text;
+    transition: box-shadow 120ms ease, border-color 120ms ease;
+
+    &:hover { border-color: rgba(0, 0, 0, 0.22); }
+
+    &:focus {
+      outline: none;
+      border-color: rgba(0, 120, 255, 0.55);
+      box-shadow: 0 0 0 4px rgba(0, 120, 255, 0.16);
+    }
+
+    &:disabled {
+      background: rgba(0, 0, 0, 0.03);
+      color: rgba(0, 0, 0, 0.45);
+      cursor: not-allowed;
+    }
+  }
+
+  &__chevron {
+    @include type-small;
+    position: absolute;
+    right: 14px;
+    pointer-events: none;
+    color: rgba(0, 0, 0, 0.55);
+  }
+
+  &__hint {
+    @include type-small;
+    margin: 8px 0 0;
+    color: $muted;
+  }
+}
+
+.filter-btn {
+  @include type-ui;
+  height: 46px;
+  border-radius: $radius-md;
+  border: 1px solid $border;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+
+  &:active { transform: scale(0.99); }
+  @include focus-ring;
+
+  &--ghost {
+    background: $white;
+    &:hover { background: rgba(0, 0, 0, 0.03); }
+  }
+
+  &--primary {
+    background: rgba(0, 120, 255, 0.98);
+    border-color: rgba(0, 120, 255, 0.98);
+    color: $white;
+
+    &:hover {
+      background: rgba(0, 120, 255, 0.90);
+      border-color: rgba(0, 120, 255, 0.90);
+    }
+  }
+}
+
+// 下から出るシート感
+@media (max-width: 640px) {
+  .filter-overlay { place-items: end center; }
+
+  .filter-dialog {
+    width: 100vw;
+    max-height: 94vh;
+    border-radius: 18px 18px 0 0;
+    transform: translateY(14px);
+
+    &__header { border-radius: 18px 18px 0 0; }
+  }
+}
+
+// motion配慮
+@media (prefers-reduced-motion: reduce) {
+  .filter-overlay,
+  .filter-dialog {
+    transition: none;
+  }
+}
+
+// ===============================
+// Applicable devices UI (既存の後半を維持)
+// ===============================
+.carousel {
+  .applicable-devices-wrappper {
+    display: grid;
+    gap: 16px;
+  }
+
+  .work-unit {
+    border-radius: $radius-md;
+    border: none;
+    overflow: hidden;
+  }
+
+  .work-unit__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 12px 12px 0;
+    background: transparent;
+    border: none;
+  }
+
+  .work-unit__badge {
+    @include type-label;
+    color: rgba(0, 0, 0, 0.62);
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(34, 139, 34, 0.16);
+  }
+
+  .work-unit__device {
+    @include type-ui;
+    margin: 0;
+    color: rgba(0, 0, 0, 0.92);
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .work-unit .applicable_devices {
+    padding: 10px 12px 12px;
+  }
+
+  .work-item {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.92);
+    border: none;
+
+    box-shadow:
+      0 1px 0 rgba(0, 0, 0, 0.04),
+      0 8px 18px rgba(0, 0, 0, 0.05);
+
+    & + .work-item { margin-top: 12px; }
+
+    @media (min-width: 640px) {
+      grid-template-columns: 1.1fr 0.9fr;
+      align-items: start;
+      gap: 10px 12px;
+    }
+  }
+
+  .work-item .wark-contents-content {
+    @include type-td;
+    margin: 0;
+    color: rgba(0, 0, 0, 0.92);
+    text-indent: -0.9em;
+    padding-left: 0.9em;
+
+
+    @media (min-width: 640px) {
+      padding-top: 8px;
+    }
+  }
+
+  .work-item .wark-contents-standard {
+    @include type-small;
+    margin: 0;
+    color: rgba(0, 0, 0, 0.78);
+    position: relative;
+    padding: 10px 12px 10px 14px;
+    border-radius: 12px;
+    background: rgba(0, 120, 255, 0.07);
+    border: none;
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 10px;
+      bottom: 10px;
+      width: 4px;
+      border-radius: 4px;
+      background: rgba(0, 120, 255, 0.62);
+    }
+
+    @media (min-width: 640px) {
+      padding-top: 8px;
+
+      &::before {
+        top: 8px;
+        bottom: 8px;
+      }
+    }
+  }
+}
+

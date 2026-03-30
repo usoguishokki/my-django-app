@@ -1,61 +1,178 @@
-import { UIManger } from '../manager/UIManger.js'
+import { UIManger } from '../manager/UIManger.js';
 
 export class ModalManger {
     static myModal = null;
     static modalContent = null;
 
     static initializeModal() {
-        this.myModal = document.getElementById("myModal");
-        this.modalContent = this.myModal ? this.myModal.querySelector('.modal-content') : null;
+        this.myModal = document.getElementById('myModal');
+        this.modalContent = this.myModal
+            ? this.myModal.querySelector('.modal__content')
+            : null;
+    }
+
+    static ensureInitialized() {
+        if (!this.myModal || !this.modalContent) {
+            this.initializeModal();
+        }
+
+        if (!this.modalContent) {
+            console.warn('モーダルが初期化されていません。');
+            return false;
+        }
+
+        return true;
+    }
+
+    static getOrCreateModalMessage() {
+        let modalMessage = document.getElementById('modalMessage');
+
+        if (!modalMessage) {
+            modalMessage = document.createElement('div');
+            modalMessage.id = 'modalMessage';
+            modalMessage.className = 'modal__message';
+            this.modalContent.appendChild(modalMessage);
+        }
+
+        return modalMessage;
+    }
+
+    static resetModalContentClass() {
+        if (!this.modalContent) return;
+        this.modalContent.className = 'modal__content';
+    }
+
+    static openModalWithColor(color = 'default') {
+        this.resetModalContentClass();
+        this.modalContent.classList.add(`modal__content--${color}`);
+        this.myModal.style.display = 'block';
+    }
+
+    static bindCloseButton(onClose = () => {}) {
+        const closeSpan = this.myModal?.querySelector('.close');
+        if (!closeSpan) return;
+
+        closeSpan.onclick = () => this.closeModal(onClose);
     }
 
     /**
-     * messageの内容を画面上部に表示する
-     * @param {string} message -表示する内容
-     * @param {string} color -モーダルの色('default', 'green', 'red', 'blue')
-     * @param {boolean} autoClose -モーダルを自動で閉じるかの制御するフラグ
-     * @param {Fuction} onClose -モーダルが閉じたときに実行されるコールバック関数
+     * 通知用モーダル
+     * @param {string} message
+     * @param {string} color
+     * @param {boolean} autoClose
+     * @param {Function} onClose
      */
-
-
     static async showModal(message, color = 'default', autoClose = false, onClose = () => {}) {
-        UIManger.addActionElement('.modal-content', 'div', 'mybutton pull-back-button', null);
-        if (!this.myModal || this.modalContent) {
-            this.initializeModal();
-        }
-        const modalMessage = document.getElementById("modalMessage");
-        const closeSpan = document.querySelector(".close");
-        const modalDisplayTime = 1700;
+        if (!this.ensureInitialized()) return;
 
-        //メッセージ設定
-        if (message == 'success') {
-            message = '処理が完了しました。'
+        const modalMessage = this.getOrCreateModalMessage();
+
+        if (message === 'success') {
+            message = '処理が完了しました。';
         }
+
         modalMessage.innerHTML = message;
 
-        //モーダルの色を設定
-        this.modalContent.classList.add(`modal_${color}`);
-
-        //モーダル表示
-        this.myModal.style.display = "block";
-
-        //クローズボタンでモーダルを閉じるイベントハンドラー
-        closeSpan.onclick = () => this.closeModal(onClose);
+        this.openModalWithColor(color);
+        this.bindCloseButton(onClose);
 
         if (autoClose) {
             setTimeout(() => {
-                this.closeModal(onClose)
-            }, modalDisplayTime);
+                this.closeModal(onClose);
+            }, 1700);
         }
     }
 
     /**
-     * モーダルを閉じる処理
-     * @param {Fuction} onClose -モーダルを閉じた後に呼び出されるコールバック関数
+     * 確認用モーダル
+     * @param {Object} args
+     * @param {string} args.message
+     * @param {string} [args.color='default']
+     * @param {string} [args.confirmText='OK']
+     * @param {string} [args.cancelText='キャンセル']
+     * @returns {Promise<boolean>}
+     */
+    static showConfirmModal({
+        message,
+        color = 'default',
+        confirmText = 'OK',
+        cancelText = 'キャンセル',
+    }) {
+        return new Promise((resolve) => {
+            if (!this.ensureInitialized()) {
+                resolve(false);
+                return;
+            }
+    
+            const modalMessage = this.getOrCreateModalMessage();
+    
+            modalMessage.innerHTML = `
+                <div class="modal__confirmBody">
+                    <div class="modal__confirmMessage">${message}</div>
+                    <div class="modal__confirmActions">
+                        <button
+                            type="button"
+                            class="modal__confirmBtn modal__confirmBtn--ok"
+                            data-role="modal-confirm-ok"
+                        >
+                            ${UIManger.escapeHtml(confirmText)}
+                        </button>
+                        <button
+                            type="button"
+                            class="modal__confirmBtn modal__confirmBtn--cancel"
+                            data-role="modal-confirm-cancel"
+                        >
+                            ${UIManger.escapeHtml(cancelText)}
+                        </button>
+                    </div>
+                </div>
+            `;
+    
+            this.openModalWithColor(color);
+    
+            const finish = (result) => {
+                this.closeModal();
+                resolve(result);
+            };
+    
+            const closeSpan = this.myModal?.querySelector('.close');
+            if (closeSpan) {
+                closeSpan.onclick = () => finish(false);
+            }
+    
+            const okButton = modalMessage.querySelector('[data-role="modal-confirm-ok"]');
+            const cancelButton = modalMessage.querySelector('[data-role="modal-confirm-cancel"]');
+    
+            okButton?.addEventListener('click', () => finish(true), { once: true });
+            cancelButton?.addEventListener('click', () => finish(false), { once: true });
+        });
+    }
+
+    /**
+     * モーダルを閉じる
+     * @param {Function} onClose
      */
     static closeModal(onClose = () => {}) {
-        this.myModal.style.display = "none";
-        this.modalContent.className = 'modal-content'
+        if (!this.myModal || !this.modalContent) return;
+
+        this.myModal.style.display = 'none';
+        this.resetModalContentClass();
+
+        const modalMessage = document.getElementById('modalMessage');
+        if (modalMessage) {
+            modalMessage.innerHTML = '';
+        }
+
         onClose();
+    }
+
+    static apiLoadingOverlayShow() {
+        document.querySelector('.api-loading')?.classList.add('api-loading--visible');
+        document.querySelector('.api-loading')?.classList.remove('api-loading--hidden');
+    }
+
+    static apiLoadingOverlayHide() {
+        document.querySelector('.api-loading')?.classList.add('api-loading--hidden');
+        document.querySelector('.api-loading')?.classList.remove('api-loading--visible');
     }
 }

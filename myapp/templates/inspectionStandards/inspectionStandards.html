@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}点検基準書{% endblock %}
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/pages/inspectionStandards.scss' %}" rel="stylesheet" type="text/css">
+    <link href="{% sass_src 'css/components/drawer/_drawer.scss' %}" rel="stylesheet" type="text/css">
+
+{% endblock %}
+
+{% block header %}
+{% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+
+<div id="parentFilterArea" class="planned-maintenance-container" data-ui-root="drawer">
+
+    <div class="equipment-info" id="controlNo">
+      <div class="equipment-info__bar">
+
+        <div class="equipment-info__left">
+          <label class="equipment-info__field">
+            <span class="equipment-info__titleLabel">設備名</span>
+            <select
+              id="controlNameSelect"
+              class="equipment-info__select"
+              aria-label="設備名を選択"
+            >
+              <option class="is-placeholder-option" value="" selected disabled hidden>選択してください</option>
+              {% for c in controls %}
+                <option
+                  value="{{ c.machine }}"
+                  data-machine="{{ c.machine }}"
+                  data-control-no="{{ c.control_no }}"
+                >
+                  {{ c.machine }}
+                </option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+
+        <div class="equipment-info__right">
+          <label class="equipment-info__field">
+            <span class="equipment-info__metaLabel">管理番号</span>
+            <select
+              id="controlNoSelect"
+              class="equipment-info__select"
+              aria-label="管理番号を選択"
+            >
+              <option class="is-placeholder-option" value="" selected disabled hidden>選択してください</option>
+              {% for c in controls %}
+                <option
+                  value="{{ c.control_no }}"
+                  data-machine="{{ c.machine }}"
+                  data-control-no="{{ c.control_no }}"
+                >
+                  {{ c.control_no }}
+                </option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="table-scroll" id="tableScroll">
+      <table id="myTable">
+        <colgroup>
+          <col class="inspection-no-content" id="inspectionNoCol">
+          <col class="work-name-content" id="workNameCol">
+          <col class="applicable-device-content" id="applicableDeviceCol">
+          <col class="method-content" id="methodCol">
+          <col class="contents-content" id="contentsCol">
+          <col class="period-content" id="periodCol">
+          <col class="timezone-content" id="timezoneCol">
+          <col class="standard-content" id="standardCol">
+          <col class="remarks-content" id="remarksCol">
+        </colgroup>
+
+        <thead>
+          <tr class="table-th" id="tableTh">
+            <th class="inspection-no-content inspection-no-column" id="inspectionNoColumn">カードNo</th>
+            <th class="work-name-content work-name-column" id="workNameColumn">作業名</th>
+            <th class="applicable-device-content applicable-device-column" id="applicableDeviceColumn">該当装置</th>
+            <th class="method-content method-column" id="methodColumn">方法</th>
+            <th class="contents-content contents-column" id="contentsColumn">点検方法</th>
+            <th class="period-content period-column" id="periodColumn">周期</th>
+            <th class="timezone-content timezone-column" id="timezoneColumn">時間帯</th>
+            <th class="standard-content standard-column" id="standardColumn">基準処置</th>
+            <th class="remarks-content remarks-column" id="remarksColumn">備考</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for application in applications_data_list %}
+            <tr>
+              <td class="inspection-no-content inspection-no-row">{{ application.id }}</td>
+              <td class="work-name-content work-name-row">{{ application.status }}</td>
+              <td class="applicable-device-content applicable-device-row">{{ application.work_name }}</td>
+              <td class="method-content method-row">{{ application.points_to_note }}</td>
+              <td class="contents-content contents-row">{{ application.result }}</td>
+              <td class="period-content period-row">{{ application.applicant_name }}</td>
+              <td class="timezone-content timezone-row">{{ application.approver_name }}</td>
+              <td class="standard-content standard-row"></td>
+              <td class="remarks-content remarks-row"></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+
+      </table>
+    </div>
+    {% include "includes/components/drawer_stack.html" with panels_template="../../inspectionStandards/drawer_panels__inspectionStandards.html" %}
+
+</div> <!-- /#parentFilterArea -->
+
+<form method="post">
+    {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block script %}
+    <script type="module" src="{% static 'js/inspectionStandards/inspectionStandards.js' %}"></script>
+{% endblock %}

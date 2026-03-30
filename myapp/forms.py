@@ -23,7 +23,7 @@ class CardForm(forms.Form):
     
     manhours = forms.TypedChoiceField(
         coerce=int,
-        choices=[(i, i) for i in range(5, 505, 5)],
+        choices=[(1, 1), (3, 3)] + [(i, i) for i in range(5, 505, 5)],
         label='工数',
         widget=forms.Select(attrs={
             'id': 'selected-manhours',

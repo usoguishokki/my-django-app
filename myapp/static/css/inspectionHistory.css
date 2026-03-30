@@ -1,0 +1,395 @@
+@charset "UTF-8";
+button, select {
+  cursor: pointer; }
+
+.button {
+  cursor: pointer;
+  display: block;
+  width: 110px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  background-color: #032e4a;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.8em;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  text-align: center; }
+  .button.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: default; }
+  .button:hover {
+    background-color: #1483cd; }
+  .button:active {
+    transform: scale(0.95); }
+
+.space {
+  margin: 0 3px;
+  display: inline-block; }
+
+.filter-item {
+  margin: 10px;
+  padding: 5px; }
+  .filter-item label {
+    display: block;
+    margin-bottom: 5px;
+    padding: 5px;
+    color: #ffffff; }
+  .filter-item select {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer; }
+    .filter-item select:hover {
+      border: 1.5px solid #6b94e2; }
+    .filter-item select:focus {
+      border: 2px solid #6b94e2;
+      outline: none; }
+
+.filter-item-horizontal {
+  padding-top: 10px;
+  padding-left: 10px;
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  /* 必要に応じて上下の中央揃えも行う */ }
+  .filter-item-horizontal label {
+    display: inline-block;
+    margin-bottom: 0;
+    /* 横並びでは不要 */
+    margin-right: 10px;
+    /* labelとselectの間に適当な間隔を設定 */ }
+  .filter-item-horizontal select {
+    width: 50vw;
+    /* 横並びでは必要に応じて調整 */
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer; }
+    .filter-item-horizontal select:hover {
+      border: 1.5px solid #6b94e2; }
+    .filter-item-horizontal select:focus {
+      border: 2px solid #6b94e2;
+      outline: none; }
+
+.display-none {
+  display: none !important; }
+
+.hidden {
+  opacity: 0;
+  /* 完全に透明 */
+  visibility: hidden;
+  /* 見えなくするが、DOMに残す */
+  transform: scale(0.9);
+  /* 少し縮小して非表示状態を演出 */
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  /* アニメーション */ }
+
+.visible {
+  opacity: 1;
+  /* 完全に表示 */
+  visibility: visible;
+  /* 見える状態にする */
+  transform: scale(1);
+  /* 元のサイズに拡大 */
+  transition: opacity 0.3s ease, transform 0.3s ease; }
+
+.disable-events {
+  pointer-events: none;
+  opacity: 0.5; }
+
+.margin-br {
+  display: block;
+  content: "";
+  margin-bottom: 12px; }
+
+.sticky {
+  position: sticky !important;
+  top: 60px;
+  background-color: white;
+  /* 必要に応じて背景色を設定 */
+  z-index: 1000;
+  /* 必要に応じて調整 */ }
+
+@keyframes border-glow {
+  0% {
+    mask-position: 0% 0%;
+    /* 左上 */ }
+  25% {
+    mask-position: 100% 0%;
+    /* 右上 */ }
+  50% {
+    mask-position: 100% 100%;
+    /* 右下 */ }
+  75% {
+    mask-position: 0% 100%;
+    /* 左下 */ }
+  100% {
+    mask-position: 0% 0%;
+    /* 左上に戻る */ } }
+
+.overlay-right {
+  visibility: hidden;
+  position: absolute;
+  right: -20%;
+  top: 5px;
+  width: 20%;
+  height: 98%;
+  background-color: #d8e6fc;
+  border-radius: 4px 4px 4px 4px;
+  z-index: 1000;
+  overflow: auto;
+  opacity: 0;
+  transition: visibility 0s linear 0.25s, opacity 0.15s linear, right 0.25s linear; }
+  .overlay-right.show {
+    visibility: visible;
+    opacity: 1;
+    right: 0;
+    transition-delay: 0s; }
+
+.overlay-left {
+  visibility: hidden;
+  position: absolute;
+  left: -20%;
+  top: 5px;
+  width: 20%;
+  height: 98%;
+  background-color: #d8e6fc;
+  border-radius: 0 4px 4px 4px;
+  z-index: 1000;
+  overflow: auto;
+  opacity: 0;
+  transition: visibility 0s linear 0.25s, opacity 0.15s linear, left 0.25s linear; }
+  .overlay-left.show {
+    visibility: visible;
+    opacity: 1;
+    left: 0;
+    transition-delay: 0s; }
+
+#closeOverlayButton {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  padding: 10px 20px;
+  border-radius: 4px;
+  background-color: #414141;
+  color: white;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2); }
+  #closeOverlayButton:hover {
+    background-color: #5b5b5b;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); }
+  #closeOverlayButton:active {
+    background-color: #2d2d2d;
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.3); }
+
+.tooltip {
+  z-index: 100; }
+  .tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 30%;
+    top: 100%;
+    transform: translateX(-70%);
+    padding: 5px 10px;
+    background-color: #333;
+    color: #fff;
+    border-radius: 5px;
+    white-space: nowrap;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none; }
+  .tooltip:hover::after {
+    opacity: 1; }
+  .tooltip.tooltip-hidden::after {
+    opacity: 0; }
+  .tooltip:active {
+    transform: scale(0.95); }
+
+/* 太いボーダーを定義 */
+.thick-top-border {
+  border-top: 1.5px solid #2c3e50; }
+
+.base-font-size {
+  font-size: 1.0rem; }
+
+/* =========================
+   レイアウト：フィルタ + テーブル
+   ========================= */
+.parent-filterarea {
+  position: relative;
+  display: flex;
+  /* 左:フィルタ / 右:テーブル */
+  height: 100%;
+  overflow: hidden;
+  padding: 20px 0;
+  /* 上下だけ余白 */
+  gap: clamp(12px, 1.2vw, 20px);
+  /* ← ここで横の間隔をコントロール */ }
+
+.filter-container {
+  z-index: 900;
+  position: absolute;
+  top: 20px;
+  /* ← 単位pxを忘れず */
+  left: 0;
+  height: calc(100% - 40px);
+  width: clamp(28px, 2.5vw, 40px);
+  /* 2.5vwより安定（画面幅で極端にならない） */
+  margin-right: 10px;
+  border-radius: var(--radius-lg);
+  /* ガラス風 */
+  background: linear-gradient(180deg, rgba(107, 108, 127, 0.78), #c4c4c4);
+  border: 1px solid rgba(196, 196, 196, 0.35);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+  transition: width 420ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 420ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* “細い状態でも存在感”のための縦ハイライト */
+  /* スクロールバーを“最近のUI”っぽく */ }
+  .filter-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.1), transparent 45%, rgba(34, 197, 94, 0.08));
+    pointer-events: none;
+    opacity: 0.9; }
+  .filter-container:hover {
+    width: calc(22vw);
+    max-width: 320px;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(2px);
+    overflow-y: auto; }
+  .filter-container::-webkit-scrollbar {
+    width: 10px; }
+  .filter-container::-webkit-scrollbar-track {
+    background: transparent; }
+  .filter-container::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.18);
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.55); }
+
+/* タイトルバー（表題）をテーブルの上に固定 */
+.equipment-info {
+  position: sticky;
+  top: 0;
+  /* thead を sticky にするなら、thead の top をこの高さに合わせて */
+  z-index: 200;
+  /* thead(100) より前面 */
+  background: #fff;
+  border-bottom: 2px solid #e5e7eb;
+  padding-block: 10px;
+  padding-inline: var(--page-gutter);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04); }
+
+/* 見出し本体 */
+.equipment-info-title {
+  margin: 0;
+  font-size: clamp(1.1rem, 1.2vw, 1.35rem);
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  /* レイアウト：モバイル1列 → PCで2列 */
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: 6px;
+  column-gap: 16px;
+  /* 省略記号が効くように */ }
+  .equipment-info-title > * {
+    min-width: 0; }
+
+/* ラベルと値を“ひとかたまり”で整列＆間隔は gap で付与 */
+.equipment-name,
+.equipment-id {
+  display: inline-flex;
+  align-items: baseline;
+  /* コロンと値のベースラインを揃える */
+  gap: .5em;
+  /* ← “前スペース”はココで調整（.25–.75em 推奨） */
+  min-width: 0; }
+
+/* ラベル側：1行固定・中強調 */
+.equipment-name .label,
+.equipment-id .label {
+  color: #111827;
+  white-space: nowrap; }
+
+/* 値側：強調＆長文は省略（…） */
+.equipment-name .value,
+.equipment-id .value {
+  color: #111827;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* 複数行にしたい場合は normal に */ }
+
+#inspectionHistorycontents {
+  position: relative;
+  height: 100%;
+  background-color: white;
+  overflow: hidden;
+  padding-inline: 11px;
+  /* === 行高さ（密度）用の変数 === */
+  --row-py: 6px;
+  /* ← セル左右の余白をガターにほんのり追従（強すぎない係数） */
+  --cell-px: clamp(10px, calc(var(--page-gutter) * 0.7), 16px);
+  --row-line-height: 1.45;
+  /* 密度プリセット（data-density 切替で行高を調整） */ }
+  #inspectionHistorycontents[data-density="compact"] {
+    --row-py: 2px;
+    --row-line-height: 1.35; }
+  #inspectionHistorycontents[data-density="cozy"] {
+    --row-py: 6px;
+    --row-line-height: 1.45; }
+  #inspectionHistorycontents[data-density="comfortable"] {
+    --row-py: 10px;
+    --row-line-height: 1.55; }
+
+.table-scroll {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto; }
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 4px;
+  table-layout: fixed;
+  /* まずは共通の行高を定義（ここで高さが決まる） */
+  /* 偶奇色など */ }
+  table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #fff;
+    border-bottom: 3px solid #2c3e50;
+    padding: var(--row-py) var(--cell-px);
+    line-height: 1.3; }
+  table tbody td {
+    padding: var(--row-py) var(--cell-px);
+    line-height: var(--row-line-height);
+    border-bottom: 1px solid #ccc;
+    vertical-align: middle; }
+  table tr.odd {
+    background: #fff; }
+  table tr.even {
+    background: #ecfddc; }
+  table tr.alarm {
+    background: #ff8e8e; }
+  table td, table th {
+    white-space: nowrap;
+    /* セル内での改行を防止 */
+    overflow: hidden;
+    /* 内容が長い場合に隠す */
+    text-overflow: ellipsis;
+    /* 内容が長い場合は「...」で切り詰め */
+    text-align: left; }
+
+#inspectionHistorycontents table td.result_man-row {
+  text-align: right; }
+
+/*# sourceMappingURL=inspectionHistory.css.map */

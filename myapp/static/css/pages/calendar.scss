@@ -1,0 +1,611 @@
+@import 'common';
+@import 'components/table/table';
+@import 'components/toggle/toggle';
+@import 'components/button/button';
+@import 'components/input/input';
+
+
+
+// ==============================
+// Calendar layout tokens（DRY）
+// ==============================
+$cal-col-filter: 150px;
+$cal-col-filter-xl: 130px;
+
+// card-display（広げたい）
+$cal-col-card-min: 820px;   // 現状の基準
+$cal-col-card-min-xl: 800px;
+
+// calendar-areas（狭めたい）
+$cal-col-areas-min: 340px;  // これ以上は潰れない
+$cal-col-areas-max: 520px;  // ✅ 上限を設けて “細く” 保つ
+
+$calendar-bottom-row-min: 52px;
+
+.open-modal {
+    display: none;
+}
+
+.calendar-container {
+    display: grid;
+    gap: 0px 25px;
+    grid-template-rows: 1fr auto;
+    grid-template-areas: "areaC areaA areaB";
+    min-height: 0;
+    height: 100%;
+    grid-template-columns:
+        $cal-col-filter
+        minmax($cal-col-card-min, 1fr)
+        minmax($cal-col-areas-min, $cal-col-areas-max);
+
+
+    @include respond-to(xs){
+    }
+
+    @include respond-to(sm){
+    }
+
+    @include respond-to(md){
+    }
+
+    @include respond-to(lg){
+    }
+
+    @include respond-to(xl) {
+        grid-template-columns:
+            $cal-col-filter-xl
+            minmax($cal-col-card-min-xl, 1fr)
+            minmax($cal-col-areas-min, $cal-col-areas-max);
+    }
+}
+
+.card-display {
+    grid-area: areaA;
+    display: grid;
+    grid-template-areas:
+    "areaAaa"
+    "areaAa";
+    gap: 15px;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 1fr;
+    @include type-ui;
+    min-height: 0;
+}
+
+.calendar-areas {
+    grid-area: areaB;
+    display: grid;
+  
+    /* 2段 → 1段へ */
+    grid-template-areas: "areaBa";
+    grid-template-rows: 1fr;
+  
+    gap: 0;        // 下段が無いので余白も不要なら0
+    min-height: 0;
+    height: 100%;  // 念のため
+  
+    #calendarLabel {
+      grid-area: areaBa;
+    }
+  
+    #calendar {
+      grid-area: areaBa;
+      min-height: 0;  // これ重要（親がgridのときスクロール系の崩れ防止）
+    }
+  }
+
+#card-table {
+    grid-area: areaAa;
+    min-height: 0;
+}
+
+
+
+.table-container {
+    @include apply-table-standard;
+    overflow-x: hidden;
+}
+
+#card-total.card-total {
+    grid-area: areaAaa;
+  
+    display: flex;
+    align-items: stretch;
+    gap: 40px; // グループ間
+    margin-right: 8px;
+    min-height: 52px;
+  
+    .card-total__group {
+      display: flex;
+      align-items: stretch;
+      gap: 12px; // グループ内
+      min-width: 0;
+    }
+  
+    .card-total__group--distributed {
+      flex: 0 0 auto;
+    }
+  
+    .card-total__group--visible {
+      flex: 0 0 auto;
+      margin-left: auto; // 右グループを右へ
+    }
+  
+    .card-total__action {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+    }
+  
+    .card {
+      background: rgba(206, 203, 255, 0.8);
+      border-radius: 6.5px;
+      padding: 8px 10px;
+  
+      display: grid;
+      grid-template-rows: auto 1fr;
+      align-content: center;
+    }
+  
+    .card--distribution-completed {
+      min-width: 240px;
+    }
+  
+    .card--compact {
+      min-width: 220px;
+    }
+  
+    .card-title {
+      @include type-th;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  
+    .card-content {
+      @include type-th;
+      font-variant-numeric: tabular-nums;
+    }
+  
+    .total {
+      display: inline-block;
+    }
+}
+
+
+.filter-container {
+    grid-area: areaC;
+    width: 100%;
+    background-color:#ebeded;
+    height: 100%;
+    font-size: 1em;
+    border-radius: 6.5px;
+    transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    will-change: width;
+    z-index: 21;
+
+    font-size: $fs-ui;
+
+    overflow-y: hidden;
+  
+    &.is-open {
+        width: 180%;
+        box-shadow: 5px 0 12px rgba(0, 0, 0, 0.3);
+        overflow-y: auto;
+    }
+}
+
+.custom-select {
+    position: relative;
+    width: 100%;
+    .select-label {
+        @include type-label;
+        color: rgba(71, 85, 105, 0.95);
+        padding-top: 15px;
+        padding-left: 6px;
+        cursor: pointer;
+        white-space: nowrap;
+    
+    }
+    select {
+        display :none;
+    }
+
+    .select-placeholder {
+        width: 90%;
+        padding-top: 12px;
+        padding-left: 8px;
+        padding-bottom: 6px;
+        margin-bottom: 15px;
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid $under-line-color;
+        cursor: pointer;
+    
+        @include type-ui;
+        font-weight: 700;
+    
+        transition: color 0.08s ease, border-bottom 0.08s ease;
+    }
+
+    .select-options {
+        display: block;  // display を block に変更
+        opacity: 0;  // 初期状態の opacity を 0 に設定
+        position: absolute;
+        top: 100%;
+        z-index: 1000;
+        left: 0;
+        right: 0;
+        transform: translateY(-20px);
+        transition: opacity 0.2s, transform 0.2s;  // opacity と transform に対して transition を適用
+        pointer-events: none;  // 非表示時はクリックを無効に
+        background-color: #fff;
+        border: 1px solid #ddd;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        max-height: 170px;
+        overflow-y: auto;
+        .option {
+            padding: 8px 10px;
+            @include type-ui;
+            cursor: pointer;
+            transition: background-color 0.2s;
+      
+            &:hover { background-color: $focus-color; }
+        }
+    }
+    &.open .select-options {  // .open クラスが追加されたときのスタイル
+        opacity: 1;  // opacity を 1 に変更
+        transform: translateY(0);  // transform を初期状態に
+        pointer-events: auto;  // クリックを有効に
+    }
+    &:hover {
+        .select-label{
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        .select-placeholder {
+            .select-label { color: #2c3e50; font-weight: 800; }
+            .select-placeholder { border-bottom: 1.3px solid #2c3e50; }
+        }
+    }
+}
+
+.member-graph {
+    grid-area: areaBb;
+    min-height: $calendar-bottom-row-min;
+
+    display: grid;
+    gap: 8px;
+    height: 100%;
+
+    .card {
+        height: 100%;  
+        padding: 6px;
+        border-radius: 6.5px;
+
+        .card-title {
+            @include type-th;
+            text-align: center;
+        }
+
+        .card-content {
+            @include type-kpi;
+            text-align: center;
+            margin-top: 14px;
+            line-height: 1.1;
+        }
+    }
+
+    
+}
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+.registration-modal {
+    position: fixed;
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 250;
+  
+    /* サイズ & 余白をコンパクトに */
+    width: 520px;
+    max-width: 92vw;
+    padding: 16px 18px;
+  
+    background: #fff;
+    border: 1px solid #e6e8eb;
+    border-radius: 12px;
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.12),
+        0 2px 10px rgba(0,0,0,.06);
+  
+    /* タイトル */
+    h3 {
+        margin: 0 0 10px;
+        @include type-title;
+        color: #111827;
+    }
+  
+    /* フォーム行：ラベル左・入力右の2カラムにして間延び防止 */
+    &__row {
+        display: grid;
+        grid-template-columns: 110px 1fr;/* 2列 */
+        grid-template-rows: auto auto;    /* 2行 */
+        gap: 10px 12px;
+        align-items: center;
+        margin: 8px 0 14px;
+    }
+  
+    /* コンパクトなラベル */
+    &__label {
+        width: auto;
+        text-align: right;
+        white-space: nowrap;
+        color: #475569;
+        padding-right: 4px;
+        @include type-ui;
+    }
+  
+    /* 入力を小ぶり＆フラットに */
+    &__input {
+        height: 36px;
+        padding: 0 10px;
+        width: 100%;
+        @include type-ui;
+        color: #111827;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        outline: none;
+        transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+  
+        &:hover {
+            background: #f3f4f6;
+        }
+        &:focus {
+            border-color: #6366f1;             /* お好みでブランド色に */
+            box-shadow: 0 0 0 3px rgba(99,102,241,.18);
+            background: #fff;
+        }
+    }
+
+    &__loading {
+        min-height: 140px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        .loading-stack {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            .loading-text {
+                font-size: 1.125rem;
+                font-weight: 600;
+                line-height: 1.35;
+                letter-spacing: .01em;
+            }
+        }
+    }
+  
+    /* アクション行は右寄せ＆上に薄い仕切り */
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
+        padding-top: 12px;
+        border-top: 1px solid #eef1f4;
+        margin-top: 6px;
+  
+        /* 既存の .button を少しだけ洗練 */
+        .button, a.button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 88px;
+            height: 34px;
+            padding: 0 14px;
+            border-radius: 8px;
+            @include type-ui;
+            line-height: $lh-normal;
+            text-decoration: none;
+            cursor: pointer;
+            background: #032e4a;
+            color: #fff;
+            transition: transform .06s ease, box-shadow .16s ease, opacity .16s ease;
+  
+            &:hover { box-shadow: 0 6px 14px rgba(0,0,0,.12); }
+            &:active { transform: translateY(1px); }
+        }
+  
+        /* 無効ボタン */
+        .is-disabled {
+            pointer-events: none;
+            opacity: .45;
+            filter: grayscale(25%);
+        }
+    }
+}
+
+.calendar-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+}
+
+.calendar-overlay:not(.display-none) {
+    display: grid;
+    place-items: center;
+    background: rgba(255,255,255,.4);
+}
+
+
+
+.table-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+}
+
+#external-events {
+    width: 100%;
+    height: 100%;
+}
+
+.table-overlay:not(.display-none) {
+    display: grid;
+    place-items: center;
+    background: rgba(255,255,255,.4);
+}
+
+/* ========== DnD: カスタムドラッグゴースト（ルート階層に追加） ========== */
+#external-events tr.fc-event > td {
+    position: relative;
+}
+
+/* セル全面を覆う透明ハンドル。見た目は変えずに“どこでも掴める” */
+.dnd-handle {
+    position: absolute;
+    inset: 0;               /* top:0; right:0; bottom:0; left:0; と同義 */
+    cursor: grab;
+    opacity: 0;             /* 透明 */
+    /* あると良い：タッチ端末の気まぐれ対策 */
+    -webkit-user-drag: element;
+}
+
+tr.fc-event.dragging {
+    opacity: .15;           
+}
+.fc-event.dragging .dnd-handle { cursor: grabbing; }
+
+.hide-fc-mirror .fc-mirror {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* 消去アニメーション用 */
+tr.fc-event.removing {
+    opacity: 0;
+    transition:
+    opacity .18s ease,
+    height .18s ease,
+    margin .18s ease,
+    padding .18s ease;
+}
+  
+  /* 高さを潰す（collapse は JS 側で付与） */
+tr.fc-event.removing.collapse {
+    height: 0 !important;
+    margin: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border: 0 !important;
+    overflow: hidden;
+}
+
+/* ゴースト（画面外に置く。display:noneはNG） */
+.drag-ghost {
+    position: fixed;
+    top: -9999px; left: -9999px;
+    z-index: 9999;
+    pointer-events: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.2);
+    background: #14624c;
+    color: #fff;  
+    font-size: $fs-ui;
+    line-height: $lh-normal;
+}
+
+
+
+.noneDisplay {
+    &:not(.display-none) {
+        @include type-title; 
+        grid-area: areaBb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(204, 204, 204, 0.3);
+        border-radius: 6.5px;
+        color: #000000af;
+        font-weight: bold;
+        z-index: 20;
+    }
+}
+
+.spinner-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    //background-color: rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+#modalMessage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    @include type-ui;
+    p {
+        margin: 0;
+    }
+}
+
+#screenDim {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    z-index: -1;    
+}
+  
+/* 表示時 */
+#screenDim.is-active {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+}
+
+#filterarea {
+    position: relative;
+}
+
+
+form {
+    display: none;
+}
+
+
+.click-card {
+    @include ui-card();
+  
+    &__content {
+        @include type-ui;
+        line-height: 1.4;
+    }
+}
+
+.fc .fc-toolbar-title  {
+    @include type-title;
+}

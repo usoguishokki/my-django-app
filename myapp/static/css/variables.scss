@@ -13,7 +13,7 @@ $click-color:  #d3d3d3;
 $font-size-small: 12px;
 $font-size-regular: 14px;
 $font-size-medium: 16px;
-$font-size-large: 18px;
+$font-size-large: 17.5px;
 $font-size-xlarge: 24px;
 $font-size-xxlarge: 32px;
 
@@ -30,7 +30,7 @@ $font-weight-black: 900; // 最太字
 $border-color: #ccc;
 $border-color-hover: #6b94e2;
 $border-radius: 4px;
-$margin: 10px;
+$margin: 5px;
 $padding: 5px;
 
 
@@ -40,6 +40,14 @@ $breakpoint-sm: 768px;
 $breakpoint-md: 992px;
 $breakpoint-lg: 1200px;
 $breakpoint-xl: 1400px;
+
+$bps: (
+    xs: $breakpoint-xs,
+    sm: $breakpoint-sm,
+    md: $breakpoint-md,
+    lg: $breakpoint-lg,
+    xl: $breakpoint-xl
+);
 
 //改行のマージン
 $margin-br: 12px;

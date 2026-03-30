@@ -93,11 +93,11 @@ export class inspectionStandardManager {
                     workNameCol: {visible: true, width: '11.1%'}, 
                     applicableDeviceCol: {visible: true, width: '11.1%'}, 
                     methodCol: {visible: true, width: '11.1%'}, 
-                    contentsCol: {visible: true, width: '11.1%'}, 
+                    contentsCol: {visible: true, width: '17.2%'}, 
                     periodCol: {visible: true, width: '11.1%'}, 
-                    timezoneCol: {visible: true, width: '11.1%'},
-                    standardCol: {visible: true, width: '11.%'},
-                    remarksCol: {visible: true, width: '11.%'},
+                    timezoneCol: {visible: true, width: '5%'},
+                    standardCol: {visible: true, width: '11.1%'},
+                    remarksCol: {visible: true, width: '11.1%'},
                 }
             }
         }

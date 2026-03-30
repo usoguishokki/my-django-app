@@ -81,7 +81,7 @@ export default class Bar {
 
     draw_bar() {
         if (this.y === undefined) {
-            debugger
+            debugger;
         }
         this.$bar = createSVG('rect', {
             x: this.x,
@@ -170,11 +170,13 @@ export default class Bar {
 
     show_popup() {
         if (this.gantt.bar_being_dragged) return;
-        const start_hour = this.task._start.getHours();
-        const start_minutes = this.task._start.getMinutes();
-        const end_hour = this.task._end.getHours();
-        const end_minutes = this.task._end.getMinutes();
-        const title_name = `${start_hour}:${start_minutes}-${end_hour}:${end_minutes} ${this.task.name}`;
+
+        const fmtHM = (d) => {
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            return `${hh}:${mm}`;
+        }
+        const title_name = `${fmtHM(this.task._start)}-${fmtHM(this.task._end)} ${this.task.name}`;
         this.gantt.show_popup(title_name)
     }
 

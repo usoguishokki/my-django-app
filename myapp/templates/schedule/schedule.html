@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}タイムスケジュール{% endblock %}
+
+{% block extra_css %}
+<link href="{% sass_src 'css/pages/schedule.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block header %}
+{% endblock %}
+
+{% block content %}
+<section class="schedule-page" data-page="schedule">
+  <header class="schedule-page__header">
+    <div class="schedule-page__nav">
+      <div class="schedule-page__teamButtons" data-role="schedule-team-buttons">
+        <button
+          type="button"
+          class="ui-btn ui-btn--sm ui-btn--outline schedule-page__teamButton is-active"
+          data-ui-action="schedule:change-team"
+          data-ui-group="schedule-team"
+          data-value="A"
+          aria-pressed="true"
+        >
+          A班
+        </button>
+        <button
+          type="button"
+          class="ui-btn ui-btn--sm ui-btn--outline schedule-page__teamButton"
+          data-ui-action="schedule:change-team"
+          data-ui-group="schedule-team"
+          data-value="B"
+          aria-pressed="false"
+        >
+          B班
+        </button>
+        <button
+          type="button"
+          class="ui-btn ui-btn--sm ui-btn--outline schedule-page__teamButton"
+          data-ui-action="schedule:change-team"
+          data-ui-group="schedule-team"
+          data-value="C"
+          aria-pressed="false"
+        >
+          C班
+        </button>
+        <button
+          type="button"
+          class="ui-btn ui-btn--sm ui-btn--outline schedule-page__teamButton"
+          data-ui-action="schedule:change-team"
+          data-ui-group="schedule-team"
+          data-value="DAY"
+          aria-pressed="false"
+        >
+          常昼
+        </button>
+      </div>
+    
+      <div class="schedule-page__titleGroup">
+        <h1 class="schedule-page__title" data-role="schedule-title"></h1>
+    
+        <div class="schedule-page__navButtons">
+          <button
+            type="button"
+            class="ui-btn ui-btn--outline ui-btn--icon schedule-page__navButton schedule-page__navButton--prev"
+            data-role="schedule-prev-day"
+            aria-label="前日へ"
+          >
+            <img class="schedule-page__navIcon" src="{% static 'img/arrow.svg' %}" alt="">
+          </button>
+    
+          <button
+            type="button"
+            class="ui-btn ui-btn--outline ui-btn--icon schedule-page__navButton schedule-page__navButton--next"
+            data-role="schedule-next-day"
+            aria-label="翌日へ"
+          >
+            <img class="schedule-page__navIcon" src="{% static 'img/arrow.svg' %}" alt="">
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <div class="schedule-page__body">
+    <section
+      class="schedule-page__panel"
+      data-role="time-view-root"
+    ></section>
+  </div>
+</section>
+{% endblock %}
+
+{% block script %}
+<script type="module" src="{% static 'js/schedule/pages/schedulePage.js' %}"></script>
+{% endblock %}

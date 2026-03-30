@@ -1,9 +1,22 @@
 import { asynchronousCommunication } from '../asyncCommunicator/asyncCommunicator.js';
 import { UIManger } from '../manager/UIManger.js'
+
+import { toDateTimeLocalString, parseUiDateTimeLike } from '../utils/dateTime.js'
+
 import { dropdownManger } from '../manager/dropdownbox.js';
 
 import { initializeLoadingScreen, showLoadingScreen } from '../manager/loadingManager.js';
 
+const SLIDE_STATE_CLASSES = [
+    'is-daily-inspection',
+    'is-periodic-inspection',
+    'is-stopped-timezone',
+  ];
+  
+  const INSPECTION_STATUS_DAILY = '日常点検';
+  const INSPECTION_STATUS_PERIODIC = '定期点検';
+  const TIME_ZONE_STOPPED = '停止中';
+  
 class ModalStateManger {
     constructor() {
         this.savedRadioState = null;
@@ -50,19 +63,70 @@ class ModalHandler {
         this.animationflg = false;
         this.setSubmitElementListener();
 
-        const itemSelector = "#carouselSlide"
+        const itemSelector = ".carousel-slide"
+
         this.dropdowns = {
-            'lineNameSelect' : 'data-line-name',
-            'machineSelect': 'data-machine-name',
+            'datetimeSelect': { attr: 'data-plan-time', hideByUnique: true  },
+            'lineNameSelect' : { attr: 'data-line-name', hideByUnique: true  },
+            'machineSelect': { attr: 'data-machine-name', hideByUnique: true  },
+            'statusSelect': { attr: 'data-inspection-status', hideByUnique: true},
         };
-        //this.dropdownManger = new dropdownManger(this.dropdowns, '',itemSelector, this.carousel.setupCarousel.bind(this.carousel));
-        this.dropdownManger = new dropdownManger(this.dropdowns, '', itemSelector);
+
+        this.dropdownManger = new dropdownManger(this.dropdowns, '', itemSelector, '', { globalShowCount: true });
         this.initialize();
     }
 
     addEventListeners() {
-        const filterOverlay = document.getElementById('filterContent');
-        const mask = document.getElementById('mask');
+        // ✅ 重複登録防止（initializeが複数回呼ばれても安全）
+        if (this._listenersBound) return;
+        this._listenersBound = true;
+
+        // フィルターUI関連
+        const overlay = document.getElementById('filterOverlay');
+        const applyBtn = document.getElementById('applyFilterButton');
+        const resetBtn = document.getElementById('resetFilterButton');
+        const clBtn = document.getElementById('closeOverlayButton');
+
+
+        if (applyBtn) {
+          applyBtn.addEventListener('click', () => {
+            // ✅ 適用ボタンを押した時だけフィルター適用
+            this.carousel.applyCarouselFilter();
+            this.dropdownManger.refreshOptionsOnly(); // Apply後の候補整合
+            this.hideFilterOverlay();
+          });
+        }
+
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                ['datetimeSelect','lineNameSelect','machineSelect','statusSelect'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = '';
+                  });
+                
+                  this.carousel.applyCarouselFilter();
+                  this.dropdownManger.refreshOptionsOnly();
+            });
+        }
+
+        // ✅ overlay閉じる（背景・✕・Esc）では「適用しない」＝閉じるだけ
+        document.addEventListener('click', (e) => {
+          if (e.target.matches('[data-overlay-close]')) {
+            this.hideFilterOverlay();
+          }
+        });
+
+        if (clBtn) {
+            clBtn.addEventListener('click', () => {
+                this.hideFilterOverlay();
+            })
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.hideFilterOverlay();
+        });
+
+
         this.implementationButton.addEventListener('click', () => {
             if(!this.animationflg) {
                 this.currentIndex = this.carousel.getCurrentIndex();
@@ -109,19 +173,15 @@ class ModalHandler {
                 this.animationflg = false
             }
         });
-        const closeOverlayButton = document.getElementById('closeOverlayButton');
-        closeOverlayButton.addEventListener('click', () => {
-            mask.style.display = 'none';
-            UIManger.toggleClass(filterOverlay, 'show', 'remove');
-            this.carousel.setupCarousel()
-            if (this.carousel.indices.length > 0) {
-                const buttonImplementation = document.getElementById('implementation-button');
-                if (buttonImplementation && buttonImplementation.style.visibility !== '') {
-                    buttonImplementation.style.visibility = '';
-                }
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('[data-overlay-close]')) {
+              this.hideFilterOverlay();
             }
-            
-        });
+          });
+          
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.hideFilterOverlay();
+          });
 
         const textarea = document.getElementById('issueDetails');
         const buttonContainer = document.getElementById('textInsertButtonContainer');
@@ -143,22 +203,16 @@ class ModalHandler {
 
     initialize() {
         this.hideModalUIs();
-        //this.dropdownManger.liInitDropdowns(true);
-        this.dropdownManger.initDropdownsWithAttributes()
-
-        this.dropdownManger.setChangeListener('lineNameSelect', () => {
-            this.dropdownManger.filterChaineDropdowns([
-                { id: 'lineNameSelect' },
-                { id: 'machineSelect', filterAttr: 'data-line-name', idAttr: 'data-machine-name' }
-            ]);
+        this.dropdownManger.initDropdownsWithAttributes();
+      
+        // change時：カードは消さず候補だけ更新
+        ['datetimeSelect', 'lineNameSelect', 'machineSelect', 'statusSelect'].forEach(id => {
+            this.dropdownManger.setChangeListener(id, () => {
+              this.dropdownManger.refreshOptionsOnly();
+            });
         });
-        
-        /*
-        this.dropdownManger.setupDropdowns(async (event, attribute) => {
-            await this.carousel.setupCarousel()
-        });
-        */
-
+    
+        // ここ重要：イベントは一度だけ登録
         this.addEventListeners();
     }
 
@@ -169,13 +223,15 @@ class ModalHandler {
     }
 
     showFilterOverlay() {
-        const mask = document.getElementById('mask');
-        const filterOverlay = document.getElementById('filterContent');
+        const overlay = document.getElementById('filterOverlay');
+        overlay.classList.add('is-open');
+        overlay.setAttribute('aria-hidden', 'false');
+    }
 
-        mask.style.display = 'block';
-        requestAnimationFrame(() => {
-            filterOverlay.classList.add('show');
-        });
+    hideFilterOverlay() {
+        const overlay = document.getElementById('filterOverlay');
+        overlay.classList.remove('is-open');
+        overlay.setAttribute('aria-hidden', 'true');
     }
 
     getPlanId(cardIndex) {
@@ -187,7 +243,7 @@ class ModalHandler {
 
     getDatetimeValue() {
         const now = new Date();
-        const formattedNow = UIManger.formatDateStringToISO(now);
+        const formattedNow = toDateTimeLocalString(now);
         document.getElementById('datetime').value = formattedNow
     }
 
@@ -305,7 +361,7 @@ class ModalHandler {
         showElement.style.display = 'block';
         showElement.classList.add('slide-out');
         showElement.addEventListener('animationend', () => {
-            //showElement.classList.remove('slide-out');
+            showElement.classList.remove('slide-out');
             this.animationflg = false;
         }, { once: true });
 
@@ -334,9 +390,16 @@ class ModalHandler {
             showAlert("メンバーを選択してください。");
             return false;
         }
+
+        const dt = document.getElementById("datetime").value;
+        if (!parseUiDateTimeLike(dt)){
+            showAlert("実施日を正しく入力してください。");
+            return false;
+        }
+
         this.form = document.getElementById('post-form');
         const formData = new FormData(this.form);
-        formData.append('checkedCheckboxes', JSON.stringify(this.selectedValues));
+        formData.append('checkedCheckboxes', JSON.stringify(this.selectedValues))
         asynchronousCommunication({
             url: '/card/',
             method: 'POST',
@@ -399,6 +462,7 @@ class ModalHandler {
         })
         .catch(error => {
             console.log('Error', error);
+            showAlert(error?.message || "サーバーエラーが発生しました。");          
         })
     }
 
@@ -503,17 +567,27 @@ class Carousel {
         this.slide = document.querySelectorAll('.carousel-slide');
         this.container = document.querySelector('.carousel-track');
         this.trackContainer = document.querySelector('.carousel-track-container');
+      
         this.totalSlides = this.slide.length;
         this.currentIndex = 0;
         this.newIndexPosition = 0;
         this.slideWidth = this.trackContainer.getBoundingClientRect().width;
-        
+      
         this.touchStartX = 0;
         this.touchCurrentX = 0;
-        this.calculateSlideHeights();
-        this.setupCarousel();
-        this.addEventListeners();
+
         this.ModalHandler = new ModalHandler(this);
+      
+        this.addEventListeners();
+      
+        // ③ 初期表示の準備
+        this.updateVisibleSlidesLayout();
+        this.setupCarousel();
+      
+        window.addEventListener('resize', () => {
+          this.slideWidth = this.trackContainer.getBoundingClientRect().width;
+          this.updateSlidePosition(0);
+        });
     }
 
     addEventListeners() {
@@ -534,37 +608,65 @@ class Carousel {
 
     setupCarousel() {
         if (this.totalSlides > 0) {
-            if (this.ModalHandler) {
-                this.updateCalsesCarousel();
-            }
-            this.updateSlideIndices()
-            this.initialize()
-            
+          // 初回/モーダル準備時のUI更新
+          this.updateSlideIndices();
+          this.initialize();
         } else {
-            this.handleNoSlidesAvailable();
+          this.handleNoSlidesAvailable();
         }
     }
 
-    updateCalsesCarousel() {
+    applyCarouselFilter() {
         const carousels = document.querySelectorAll('.carousel-slide');
-        //carousels.forEach(carousel => UIManger.toggleClass(carousel, 'hidden', 'remove'));
-        carousels.forEach(carousel => UIManger.toggleClass(carousel, 'display-none', 'remove'));
-        const dropdowns = this.ModalHandler.dropdownManger.dropdowns;
-        Object.keys(dropdowns).forEach(dropdownId => {
-            const dropdownElement = document.getElementById(dropdownId);
-            const dataAttribute = dropdowns[dropdownId];
-            const selectedValue = dropdownElement.value;
 
-            if (selectedValue) {
-                carousels.forEach(carousel => {
-                    if (carousel.getAttribute(dataAttribute) !== selectedValue) {
-                        //UIManger.toggleClass(carousel, 'hidden', 'add');
-                        UIManger.toggleClass(carousel, 'display-none', 'add');
-                    }
-                });
+        // まず全部表示
+        carousels.forEach(c => UIManger.toggleClass(c, 'display-none', 'remove'));
+      
+        const ddMgr = this?.ModalHandler?.dropdownManger;
+        const dropdowns = ddMgr?.dropdowns ?? {};
+      
+        for (const dropdownId of Object.keys(dropdowns)) {
+          const el = document.getElementById(dropdownId);
+          if (!el) continue;
+      
+          const dataAttr = ddMgr.getDropdownMappedAttribute(dropdownId);
+          const selected = el.value;
+          if (!selected) continue;
+      
+          carousels.forEach(c => {
+            if (c.getAttribute(dataAttr) !== selected) {
+              UIManger.toggleClass(c, 'display-none', 'add');
+            }
+          });
+        }
+      
+        // --- ここからが超重要：表示対象が変わった後の整合処理 ---
+        this.updateSlideIndices();
+      
+        if (this.indices.length === 0) {
+          this.handleNoSlidesAvailable();
+          return;
+        }
+      
+        this.removeNoSlidesMessage();   // 以前の「表示なし」メッセージがあれば消す
+        this.restoreCarouselControls();
+        this.currentIndex = 0;          // 適用時は先頭へ（好みで維持も可）
+        this.updateSlidePosition(0);    // 0 = インデックス丸め＆位置更新
+        this.changeText();              // 1/xx の更新
+    }
+
+    restoreCarouselControls() {
+        const buttonsToShow = ['carouselButtonLeft', 'carouselButtonRight', 'implementation-button'];
+    
+        buttonsToShow.forEach((buttonId) => {
+            const button = document.getElementById(buttonId);
+            if (button) {
+                button.style.visibility = '';
             }
         });
     }
+
+    
 
     initStyles() {
         const filterModal = document.getElementById('optMyModal');
@@ -590,35 +692,60 @@ class Carousel {
         const cardApplicable = slide.querySelector('.applicable-devices-wrappper');
         if (!cardApplicable) return null;
     
-        const availableHeight = layoutHeights.windowHeight - (layoutHeights.headerHeight + cardHeaderHeight + layoutHeights.buttonHeight);
+        const availableHeight = layoutHeights.windowHeight - (layoutHeights.headerHeight + cardHeaderHeight + layoutHeights.buttonHeight)-28;
         const actualContentHeight = cardApplicable.scrollHeight;
     
         cardApplicable.style.maxHeight = `${availableHeight}px`;
         cardApplicable.dataset.maxHeight = `${availableHeight}`;
-        cardApplicable.style.overflowY = actualContentHeight + 30 > availableHeight ? 'auto' : 'hidden';
+        cardApplicable.style.overflowY = actualContentHeight > availableHeight ? 'auto' : 'hidden';
 
-        const minRequiredHeight = actualContentHeight + 30;
+        const minRequiredHeight = actualContentHeight;
         return Math.max(minRequiredHeight, availableHeight);
     }
 
     getVisiblesSlides() {
-        //return document.querySelectorAll('.carousel-slide:not(.hidden)')
         return document.querySelectorAll('.carousel-slide:not(.display-none)')
     }
 
     
-    calculateSlideHeights() {
+    updateVisibleSlidesLayout() {
         this.heights = {};
+
         const slides = this.getVisiblesSlides()
         const layoutHeights = this.getFixedLayoutHeights();
         slides.forEach((slide) => {
-            const calculateHeight = this.calculateSlideHeight(slide, layoutHeights);
-            /*
-            if (calculateHeight !== null) {
-                const index = slide.dataset.index;
-            }
-            */
+            this.calculateSlideHeight(slide, layoutHeights);
+
+            this.applyInspectionStatusClass(slide);
+
         });
+    }
+
+    applyInspectionStatusClass(slide) {
+        // 1) 一旦すべて外す（排他制御の基本）
+        slide.classList.remove(...SLIDE_STATE_CLASSES);
+
+        const inspectionStatus = slide?.dataset?.inspectionStatus ?? '';
+        const timeZone = slide?.dataset?.timeZone ?? '';
+
+        // 2) 条件に合うクラスを1つだけ決定
+        let nextClass = null;
+
+        if (inspectionStatus === INSPECTION_STATUS_DAILY) {
+            slide.classList.add('is-daily-inspection');
+        }
+          
+        if (inspectionStatus === INSPECTION_STATUS_PERIODIC && timeZone === TIME_ZONE_STOPPED) {
+            slide.classList.add('is-stopped-timezone');
+
+        }
+          
+        if (inspectionStatus === INSPECTION_STATUS_PERIODIC) {
+            slide.classList.add('is-periodic-inspection');
+        }
+
+        // 3) 1つだけ付与（該当なしなら何もしない）
+        if (nextClass) slide.classList.add(nextClass);
     }
     
 
@@ -690,9 +817,24 @@ class Carousel {
     }
 
     updateSlidePosition(direction) {
-        if (direction !== 0) {
-            this.currentIndex = (this.currentIndex + direction + this.indices.length)  % this.indices.length
+        const len = this.indices.length;
+        if (len === 0) {
+            // 念のため
+            this.handleNoSlidesAvailable();
+            return;
         }
+    
+        if (direction !== 0) {
+            this.currentIndex = (this.currentIndex + direction + len) % len;
+        }
+    
+        // ★ここが重要：direction=0でも範囲外なら丸める
+        if (this.currentIndex >= len) {
+            this.currentIndex = len - 1;   // 最後へ戻す
+            // 1枚目に戻したいなら：this.currentIndex = 0;
+        }
+        if (this.currentIndex < 0) this.currentIndex = 0;
+    
         const newLeft = -this.currentIndex * this.slideWidth;
         this.container.style.transform = `translateX(${newLeft}px)`;
     }
@@ -740,4 +882,5 @@ const showAlert = (message) => {
 document.addEventListener('DOMContentLoaded', () => {
     initializeLoadingScreen();
     new Carousel();
+    window.dispatchEvent(new Event('app:ready'));
 });

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}CSVダウンロード{% endblock %}
+
+{% block extra_css %}
+<link href="{% sass_src 'css/pages/csvDownload.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block header %}
+    {% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+<section class="csv-download" data-page="csv-download">
+    <header class="csv-download__header">
+        <h1 class="csv-download__title">CSVダウンロード</h1>
+        <p class="csv-download__description">
+            出力したいデータの種類を選択し、必要な条件を指定してください。
+        </p>
+    </header>
+
+    <form
+        method="post"
+        class="csv-download__form"
+        data-role="csv-download-form"
+        data-ui-submit-action="submitCsvDownload"
+    >
+        {% csrf_token %}
+        <input
+            type="hidden"
+            name="control_no"
+            value=""
+            data-role="inspection-standard-control-no"
+        >
+
+        <section class="csv-download__section">
+            <h2 class="csv-download__sectionTitle">1. ダウンロード種別</h2>
+
+            <div class="csv-download__typeGrid">
+                <label class="csv-download__typeCard">
+                    <input
+                        type="radio"
+                        name="download_type"
+                        value="inspection_standard"
+                        class="csv-download__typeInput"
+                        data-role="download-type"
+                        data-ui-action="selectDownloadType"
+                    >
+                    <span class="csv-download__typeBody">
+                        <span class="csv-download__typeTitle">点検基準書</span>
+                        <span class="csv-download__typeText">
+                            設備ごとの点検基準書をCSV形式で出力します。
+                        </span>
+                    </span>
+                </label>
+
+                <label class="csv-download__typeCard">
+                    <input
+                        type="radio"
+                        name="download_type"
+                        value="inspection_plan_result"
+                        class="csv-download__typeInput"
+                        data-role="download-type"
+                        data-ui-action="selectDownloadType"
+                    >
+                    <span class="csv-download__typeBody">
+                        <span class="csv-download__typeTitle">点検計画・実績</span>
+                        <span class="csv-download__typeText">
+                            指定した期間の点検計画・実績をCSV形式で出力します。
+                        </span>
+                    </span>
+                </label>
+            </div>
+        </section>
+
+        <section class="csv-download__section">
+            <h2 class="csv-download__sectionTitle">2. 出力条件</h2>
+
+            <div
+                id="inspectionStandardFields"
+                 class="csv-download__conditionalFields"
+                 data-role="inspection-standard-fields"
+                 hidden
+            >
+            {% include "components/forms/custom_combobox_field.html" with combobox_key="machine" label="設備名" required=1 hidden_id="machineName" field_name="machine_name" trigger_id="machineNameTrigger" listbox_id="machineNameListbox" placeholder="設備を選択してください" help_text="出力対象の設備を選択してください。" disabled=1 change_action="updateDownloadConditions" only %}
+            </div>
+
+            <div
+                id="inspectionPlanResultFields"
+                class="csv-download__conditionalFields"
+                data-role="inspection-plan-result-fields"
+                hidden
+            >
+                <div
+                    class="csv-download__optionArea"
+                    data-role="inspection-plan-result-option-area"
+                ></div>
+
+                <div
+                class="csv-download__dateRangeFields"
+                data-role="inspection-plan-result-date-range"
+                hidden
+                >
+                    <div class="csv-download__fieldGrid">
+                        {% include "components/forms/custom_combobox_field.html" with combobox_key="start-month" label="開始月" required=1 hidden_id="startMonth" field_name="start_month" trigger_id="startMonthTrigger" listbox_id="startMonthListbox" placeholder="開始月を選択してください" disabled=1 change_action="updateDownloadConditions" only %}
+                    
+                        {% include "components/forms/custom_combobox_field.html" with combobox_key="end-month" label="終了月" required=1 hidden_id="endMonth" field_name="end_month" trigger_id="endMonthTrigger" listbox_id="endMonthListbox" placeholder="終了月を選択してください" disabled=1 change_action="updateDownloadConditions" only %}
+                    </div>
+                </div>
+                <p class="csv-download__help">
+                    出力条件を選択してください。
+                </p>
+            </div>
+
+            <div
+                id="downloadTypeGuide"
+                class="csv-download__guide"
+                data-role="download-type-guide"
+            >
+                ダウンロード種別を選択すると、必要な条件が表示されます。
+            </div>
+        </section>
+
+        <div class="csv-download__actions">
+            <button type="submit" class="csv-download__submit ui-btn ui-btn--primary ui-btn--md" disabled>
+                CSVをダウンロード
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}
+
+{% block script %}
+<script type="module" src="{% static 'js/csvDownload/csvDownload.js' %}"></script>
+{% endblock %}

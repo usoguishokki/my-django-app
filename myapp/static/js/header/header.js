@@ -2,8 +2,9 @@
 import { setupLoadingOnLinkClick, showLoadingScreen  } from '../manager/loadingManager.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    setupLoadingOnLinkClick ()
+    setupLoadingOnLinkClick();
     const siteHeader = document.querySelector(".m-site");
+    const lHeader = document.querySelector('.l-header');
     const dynamicLinks = siteHeader.querySelector(".dynamic-links");
     const employeeName = document.getElementById("employeeName");
     const userProfile = employeeName.querySelector(".user-profile");

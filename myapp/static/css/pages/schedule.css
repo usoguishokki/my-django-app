@@ -1,0 +1,991 @@
+@charset "UTF-8";
+.u-hidden {
+  display: none !important; }
+
+.scrollbar-nice::-webkit-scrollbar {
+  width: 10px;
+  height: 10px; }
+
+.scrollbar-nice::-webkit-scrollbar-track {
+  background: rgba(243, 244, 246, 0.85);
+  border-radius: 999px; }
+
+.scrollbar-nice::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.9);
+  border-radius: 999px;
+  border: 2px solid rgba(243, 244, 246, 0.85); }
+
+button, select {
+  cursor: pointer; }
+
+.button {
+  cursor: pointer;
+  display: block;
+  width: 110px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  background-color: #032e4a;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.8em;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  text-align: center; }
+  .button.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: default; }
+  .button:hover {
+    background-color: #1483cd; }
+  .button:active {
+    transform: scale(0.95); }
+
+.space {
+  margin: 0 3px;
+  display: inline-block; }
+
+.filter-item {
+  margin: 5px;
+  padding: 5px; }
+  .filter-item label {
+    display: block;
+    margin-bottom: 5px;
+    padding: 5px;
+    color: #ffffff; }
+  .filter-item select {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer; }
+    .filter-item select:hover {
+      border: 1.5px solid #6b94e2; }
+    .filter-item select:focus {
+      border: 2px solid #6b94e2;
+      outline: none; }
+
+.filter-item-horizontal {
+  padding-top: 10px;
+  padding-left: 10px;
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  /* 必要に応じて上下の中央揃えも行う */ }
+  .filter-item-horizontal label {
+    display: inline-block;
+    margin-bottom: 0;
+    /* 横並びでは不要 */
+    margin-right: 10px;
+    /* labelとselectの間に適当な間隔を設定 */ }
+  .filter-item-horizontal select {
+    width: 50vw;
+    /* 横並びでは必要に応じて調整 */
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer; }
+    .filter-item-horizontal select:hover {
+      border: 1.5px solid #6b94e2; }
+    .filter-item-horizontal select:focus {
+      border: 2px solid #6b94e2;
+      outline: none; }
+
+.display-none {
+  display: none !important; }
+
+.hidden {
+  opacity: 0;
+  /* 完全に透明 */
+  visibility: hidden;
+  /* 見えなくするが、DOMに残す */
+  transform: scale(0.9);
+  /* 少し縮小して非表示状態を演出 */
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  /* アニメーション */ }
+
+.visible {
+  opacity: 1;
+  /* 完全に表示 */
+  visibility: visible;
+  /* 見える状態にする */
+  transform: scale(1);
+  /* 元のサイズに拡大 */
+  transition: opacity 0.3s ease, transform 0.3s ease; }
+
+.disable-events {
+  pointer-events: none;
+  opacity: 0.5; }
+
+.margin-br {
+  display: block;
+  content: "";
+  margin-bottom: 12px; }
+
+.sticky {
+  position: sticky !important;
+  top: 60px;
+  background-color: white;
+  /* 必要に応じて背景色を設定 */
+  z-index: 1000;
+  /* 必要に応じて調整 */ }
+
+@keyframes border-glow {
+  0% {
+    mask-position: 0% 0%;
+    /* 左上 */ }
+  25% {
+    mask-position: 100% 0%;
+    /* 右上 */ }
+  50% {
+    mask-position: 100% 100%;
+    /* 右下 */ }
+  75% {
+    mask-position: 0% 100%;
+    /* 左下 */ }
+  100% {
+    mask-position: 0% 0%;
+    /* 左上に戻る */ } }
+
+.overlay-right {
+  visibility: hidden;
+  position: absolute;
+  right: -20%;
+  top: 5px;
+  width: 20%;
+  height: 98%;
+  background-color: #d8e6fc;
+  border-radius: 4px 4px 4px 4px;
+  z-index: 1000;
+  overflow: auto;
+  opacity: 0;
+  transition: visibility 0s linear 0.25s, opacity 0.15s linear, right 0.25s linear; }
+  .overlay-right.show {
+    visibility: visible;
+    opacity: 1;
+    right: 0;
+    transition-delay: 0s; }
+
+.overlay-left {
+  visibility: hidden;
+  position: absolute;
+  left: -20%;
+  top: 5px;
+  width: 20%;
+  height: 98%;
+  background-color: #d8e6fc;
+  border-radius: 0 4px 4px 4px;
+  z-index: 1000;
+  overflow: auto;
+  opacity: 0;
+  transition: visibility 0s linear 0.25s, opacity 0.15s linear, left 0.25s linear; }
+  .overlay-left.show {
+    visibility: visible;
+    opacity: 1;
+    left: 0;
+    transition-delay: 0s; }
+
+#closeOverlayButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 120ms ease, background 120ms ease; }
+  #closeOverlayButton:hover {
+    background: rgba(0, 0, 0, 0.03); }
+  #closeOverlayButton:active {
+    transform: scale(0.98); }
+  #closeOverlayButton:focus-visible {
+    outline: 3px solid rgba(0, 120, 255, 0.35);
+    outline-offset: 2px; }
+
+.tooltip {
+  z-index: 100; }
+  .tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 30%;
+    top: 100%;
+    transform: translateX(-70%);
+    padding: 5px 10px;
+    background-color: #333;
+    color: #fff;
+    border-radius: 5px;
+    white-space: nowrap;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none; }
+  .tooltip:hover::after {
+    opacity: 1; }
+  .tooltip.tooltip-hidden::after {
+    opacity: 0; }
+  .tooltip:active {
+    transform: scale(0.95); }
+
+/* 太いボーダーを定義 */
+.thick-top-border {
+  border-top: 1.5px solid #2c3e50; }
+
+.base-font-size {
+  font-size: 1.0rem; }
+
+/* =========================
+   レイアウト：フィルタ + テーブル
+   ========================= */
+.filter-container {
+  z-index: 900;
+  position: absolute;
+  left: 0;
+  height: 100%;
+  width: clamp(28px, 2.5vw, 40px);
+  /* 2.5vwより安定（画面幅で極端にならない） */
+  margin-right: 10px;
+  border-radius: var(--radius-lg);
+  /* ガラス風 */
+  background: linear-gradient(180deg, rgba(107, 108, 127, 0.78), #c4c4c4);
+  border: 1px solid rgba(196, 196, 196, 0.35);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+  transition: width 420ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 420ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* “細い状態でも存在感”のための縦ハイライト */
+  /* スクロールバーを“最近のUI”っぽく */ }
+  .filter-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.1), transparent 45%, rgba(34, 197, 94, 0.08));
+    pointer-events: none;
+    opacity: 0.9; }
+  .filter-container:hover {
+    width: calc(22vw);
+    max-width: 320px;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(2px);
+    overflow-y: auto; }
+  .filter-container::-webkit-scrollbar {
+    width: 10px;
+    height: 10px; }
+  .filter-container::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 999px; }
+  .filter-container::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.18);
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.55); }
+
+/* ==========================================================================
+  Typography Tokens (Readable-first)
+  --------------------------------------------------------------------------
+  @doc
+  - 目的: 文字サイズ/行間/太さを“用途”で標準化し、画面間のブレを無くす
+  - 方針: 「読みやすさ優先」(業務UIでの可読性を最優先)
+  - 使い方:
+      1) 基本はトークン（$fs-*, $lh-*, $fw-*）を参照して指定
+      2) 可能なら mixin（type-td/type-th/type-ui...）経由で当てる
+  - 禁止:
+      - 個別SCSSで font-size をベタ書き乱発しない（例外: 微調整が必要な特殊UIのみ）
+  @example
+    .table td { font-size: $fs-td; line-height: $lh-relaxed; font-weight: $fw-regular; }
+========================================================================== */
+/* --------------------------------------------------------------------------
+  Font Size Scale
+  --------------------------------------------------------------------------
+  @doctag typography.font-size
+  @rule
+    - base(1rem) を基準に、用途ごとの“意味”でトークンを選ぶ
+    - 迷ったら: UI = $fs-ui / 表本文 = $fs-td / 見出し = $fs-th
+--------------------------------------------------------------------------- */
+/** @doctag typography.token
+ *  @name $fs-base
+ *  @type font-size
+ *  @use 画面全体の基準サイズ。body / root container の基準に使う。
+ *  @when 「この画面の標準文字」を決めたいとき
+ *  @example body { font-size: $fs-base; }
+ */
+/** @doctag typography.token
+  *  @name $fs-label
+  *  @type font-size
+  *  @use ラベル/補助見出し用（filterラベル、フォーム項目名、セクション注釈）
+  *  @when “主情報より弱く”見せたいとき（ただし読めるサイズ）
+  *  @example .select-label { font-size: $fs-label; }
+  */
+/** @doctag typography.token
+  *  @name $fs-th
+  *  @type font-size
+  *  @use テーブルヘッダ/カード見出し用（th、card-title）
+  *  @when 情報の「列の意味」や「見出し」を強調したいとき
+  *  @example thead th { font-size: $fs-th; }
+  */
+/** @doctag typography.token
+  *  @name $fs-td
+  *  @type font-size
+  *  @use テーブル本文（最重要の“読む”領域）
+  *  @when 一覧を目で追う、長時間読む、現場で使うUI（可読性優先）
+  *  @example tbody td { font-size: $fs-td; }
+  */
+/** @doctag typography.token
+  *  @name $fs-ui
+  *  @type font-size
+  *  @use UI操作系（ボタン、input、select、カレンダー操作ボタン、補助UI）
+  *  @when クリック/タップ対象で“読めること”が重要なとき
+  *  @example .button { font-size: $fs-ui; }
+  */
+/** @doctag typography.token
+  *  @name $fs-title
+  *  @type font-size
+  *  @use タイトル（モーダルのh3、セクション主見出し）
+  *  @when 画面/モーダル内の「主題」を示したいとき
+  *  @example .modal h3 { font-size: $fs-title; }
+  */
+/** @doctag typography.token
+  *  @name $fs-kpi
+  *  @type font-size
+  *  @use KPI/数値カードの強調表示（card-content、合計値など）
+  *  @when “パッと見で数字を把握”させたいとき（ただし暴れない範囲）
+  *  @example .kpi { font-size: $fs-kpi; }
+  */
+/* --------------------------------------------------------------------------
+   Line Height
+   --------------------------------------------------------------------------
+   @doctag typography.line-height
+   @rule
+     - 読みやすさ優先: 本文は $lh-relaxed を基本にする
+     - UIラベル/ボタン等は詰めすぎない範囲で $lh-normal
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $lh-tight
+  *  @type line-height
+  *  @use 見出し・短いラベル向け（詰まり過ぎ防止に注意）
+  *  @when 1行で完結する見出し/ヘッダ
+  */
+/** @doctag typography.token
+  *  @name $lh-normal
+  *  @type line-height
+  *  @use UI一般（ボタン、input、短文）
+  *  @when UIが間延びしないバランスを取りたいとき
+  */
+/** @doctag typography.token
+  *  @name $lh-relaxed
+  *  @type line-height
+  *  @use 長時間読む領域（テーブル本文、説明文、一覧）
+  *  @when “目が疲れない”を優先したいとき（業務画面は基本これ）
+  */
+/* --------------------------------------------------------------------------
+   Font Weight
+   --------------------------------------------------------------------------
+   @doctag typography.font-weight
+   @rule
+     - 本文は $fw-regular（軽め）で読み疲れを減らす
+     - 見出し/重要値は $fw-strong（ただし太すぎ注意）
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $fw-regular
+  *  @type font-weight
+  *  @use 本文の基本（テーブルtd、説明文）
+  *  @when “読む量が多い”ところは基本これ
+  */
+/** @doctag typography.token
+  *  @name $fw-strong
+  *  @type font-weight
+  *  @use 見出し/強調（th、タイトル、KPI）
+  *  @when 情報の階層を明確にしたいとき
+  */
+/* @doctag typography.usage-map
+  - Label        : $fs-label / $fw-strong / $lh-tight
+  - Table head   : $fs-th    / $fw-strong / $lh-tight
+  - Table body   : $fs-td    / $fw-regular / $lh-relaxed
+  - UI controls  : $fs-ui    / $fw-strong or $fw-regular / $lh-normal
+  - Modal title  : $fs-title / $fw-strong / $lh-tight
+  - KPI number   : $fs-kpi   / $fw-strong / $lh-tight
+*/
+/* =========================
+   Mixins（事故防止用）
+   ========================= */
+/* 説明文・補足テキスト（uppercase無し） */
+/* ==========================================================================
+  Typography Tokens (Readable-first)
+  --------------------------------------------------------------------------
+  @doc
+  - 目的: 文字サイズ/行間/太さを“用途”で標準化し、画面間のブレを無くす
+  - 方針: 「読みやすさ優先」(業務UIでの可読性を最優先)
+  - 使い方:
+      1) 基本はトークン（$fs-*, $lh-*, $fw-*）を参照して指定
+      2) 可能なら mixin（type-td/type-th/type-ui...）経由で当てる
+  - 禁止:
+      - 個別SCSSで font-size をベタ書き乱発しない（例外: 微調整が必要な特殊UIのみ）
+  @example
+    .table td { font-size: $fs-td; line-height: $lh-relaxed; font-weight: $fw-regular; }
+========================================================================== */
+/* --------------------------------------------------------------------------
+  Font Size Scale
+  --------------------------------------------------------------------------
+  @doctag typography.font-size
+  @rule
+    - base(1rem) を基準に、用途ごとの“意味”でトークンを選ぶ
+    - 迷ったら: UI = $fs-ui / 表本文 = $fs-td / 見出し = $fs-th
+--------------------------------------------------------------------------- */
+/** @doctag typography.token
+ *  @name $fs-base
+ *  @type font-size
+ *  @use 画面全体の基準サイズ。body / root container の基準に使う。
+ *  @when 「この画面の標準文字」を決めたいとき
+ *  @example body { font-size: $fs-base; }
+ */
+/** @doctag typography.token
+  *  @name $fs-label
+  *  @type font-size
+  *  @use ラベル/補助見出し用（filterラベル、フォーム項目名、セクション注釈）
+  *  @when “主情報より弱く”見せたいとき（ただし読めるサイズ）
+  *  @example .select-label { font-size: $fs-label; }
+  */
+/** @doctag typography.token
+  *  @name $fs-th
+  *  @type font-size
+  *  @use テーブルヘッダ/カード見出し用（th、card-title）
+  *  @when 情報の「列の意味」や「見出し」を強調したいとき
+  *  @example thead th { font-size: $fs-th; }
+  */
+/** @doctag typography.token
+  *  @name $fs-td
+  *  @type font-size
+  *  @use テーブル本文（最重要の“読む”領域）
+  *  @when 一覧を目で追う、長時間読む、現場で使うUI（可読性優先）
+  *  @example tbody td { font-size: $fs-td; }
+  */
+/** @doctag typography.token
+  *  @name $fs-ui
+  *  @type font-size
+  *  @use UI操作系（ボタン、input、select、カレンダー操作ボタン、補助UI）
+  *  @when クリック/タップ対象で“読めること”が重要なとき
+  *  @example .button { font-size: $fs-ui; }
+  */
+/** @doctag typography.token
+  *  @name $fs-title
+  *  @type font-size
+  *  @use タイトル（モーダルのh3、セクション主見出し）
+  *  @when 画面/モーダル内の「主題」を示したいとき
+  *  @example .modal h3 { font-size: $fs-title; }
+  */
+/** @doctag typography.token
+  *  @name $fs-kpi
+  *  @type font-size
+  *  @use KPI/数値カードの強調表示（card-content、合計値など）
+  *  @when “パッと見で数字を把握”させたいとき（ただし暴れない範囲）
+  *  @example .kpi { font-size: $fs-kpi; }
+  */
+/* --------------------------------------------------------------------------
+   Line Height
+   --------------------------------------------------------------------------
+   @doctag typography.line-height
+   @rule
+     - 読みやすさ優先: 本文は $lh-relaxed を基本にする
+     - UIラベル/ボタン等は詰めすぎない範囲で $lh-normal
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $lh-tight
+  *  @type line-height
+  *  @use 見出し・短いラベル向け（詰まり過ぎ防止に注意）
+  *  @when 1行で完結する見出し/ヘッダ
+  */
+/** @doctag typography.token
+  *  @name $lh-normal
+  *  @type line-height
+  *  @use UI一般（ボタン、input、短文）
+  *  @when UIが間延びしないバランスを取りたいとき
+  */
+/** @doctag typography.token
+  *  @name $lh-relaxed
+  *  @type line-height
+  *  @use 長時間読む領域（テーブル本文、説明文、一覧）
+  *  @when “目が疲れない”を優先したいとき（業務画面は基本これ）
+  */
+/* --------------------------------------------------------------------------
+   Font Weight
+   --------------------------------------------------------------------------
+   @doctag typography.font-weight
+   @rule
+     - 本文は $fw-regular（軽め）で読み疲れを減らす
+     - 見出し/重要値は $fw-strong（ただし太すぎ注意）
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $fw-regular
+  *  @type font-weight
+  *  @use 本文の基本（テーブルtd、説明文）
+  *  @when “読む量が多い”ところは基本これ
+  */
+/** @doctag typography.token
+  *  @name $fw-strong
+  *  @type font-weight
+  *  @use 見出し/強調（th、タイトル、KPI）
+  *  @when 情報の階層を明確にしたいとき
+  */
+/* @doctag typography.usage-map
+  - Label        : $fs-label / $fw-strong / $lh-tight
+  - Table head   : $fs-th    / $fw-strong / $lh-tight
+  - Table body   : $fs-td    / $fw-regular / $lh-relaxed
+  - UI controls  : $fs-ui    / $fw-strong or $fw-regular / $lh-normal
+  - Modal title  : $fs-title / $fw-strong / $lh-tight
+  - KPI number   : $fs-kpi   / $fw-strong / $lh-tight
+*/
+/* =========================
+   Mixins（事故防止用）
+   ========================= */
+/* 説明文・補足テキスト（uppercase無し） */
+/* ==========================================================================
+  UI Button System
+  - 画面横断で使い回す汎用ボタン
+========================================================================== */
+/* danger */
+/* ベース */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.55;
+  transition: background-color .14s ease, box-shadow .14s ease, transform .06s ease, opacity .14s ease;
+  /* ✅ hoverは「有効時のみ」影を付ける */
+  /* ✅ focus ring は hover shadow と“共存”できるようにする */ }
+  .ui-btn:not(:disabled):not(.is-disabled):hover {
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12); }
+  .ui-btn:active {
+    transform: translateY(1px); }
+  .ui-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22); }
+  .ui-btn:not(:disabled):not(.is-disabled):focus-visible:hover {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22), 0 8px 18px rgba(0, 0, 0, 0.12); }
+  .ui-btn.is-disabled, .ui-btn:disabled {
+    pointer-events: none;
+    opacity: .45;
+    filter: grayscale(20%);
+    box-shadow: none;
+    transform: none; }
+
+/* サイズ（typographyに寄せる） */
+.ui-btn--sm {
+  height: 36px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.55; }
+
+.ui-btn--md {
+  height: 48px;
+  padding: 0 14px;
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.55; }
+
+/* バリアント */
+.ui-btn--primary {
+  background: #032e4a;
+  color: #ffffff; }
+  .ui-btn--primary:not(:disabled):not(.is-disabled):hover {
+    background-color: #1483cd;
+    /* hoverは青 */ }
+
+.ui-btn--ghost {
+  background: transparent;
+  color: #0b1220;
+  border-color: rgba(15, 23, 42, 0.14); }
+  .ui-btn--ghost:not(:disabled):not(.is-disabled):hover {
+    background: rgba(15, 23, 42, 0.04); }
+
+.ui-btn--danger {
+  background: #b91c1c;
+  color: #ffffff; }
+  .ui-btn--danger:not(:disabled):not(.is-disabled):hover {
+    background-color: #991b1b;
+    /* hoverは濃い赤 */ }
+
+.ui-btn--outline {
+  background: #ffffff;
+  color: #1f2937;
+  border-color: rgba(15, 23, 42, 0.14); }
+  .ui-btn--outline:not(:disabled):not(.is-disabled):hover {
+    background: #f8fafc;
+    border-color: #c4cfdd; }
+
+.ui-btn--icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 999px; }
+
+.ui-btn--round {
+  border-radius: 999px; }
+
+/* ==============================
+   Tokens
+   ============================== */
+/* ==============================
+   Page
+   ============================== */
+.schedule-page {
+  padding: 16px;
+  color: #1f2937; }
+  .schedule-page__header {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 16px; }
+  .schedule-page__nav {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px; }
+  .schedule-page__teamButtons {
+    grid-column: 1;
+    justify-self: start;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    min-width: 0;
+    flex-wrap: wrap; }
+  .schedule-page__teamButton {
+    border-radius: 999px;
+    background: #ffffff;
+    border-color: #d9e0ea;
+    color: #1f2937;
+    font-weight: 700;
+    line-height: 1; }
+  .schedule-page__teamButton.is-active {
+    background: #eff6ff;
+    border-color: rgba(37, 99, 235, 0.35);
+    color: #2563eb;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08); }
+  .schedule-page__titleGroup {
+    grid-column: 2;
+    justify-self: center;
+    display: flex;
+    align-items: center;
+    gap: 50px;
+    min-width: 0; }
+  .schedule-page__title {
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.55;
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-align: center;
+    color: #1f2937;
+    letter-spacing: 0.01em;
+    white-space: nowrap; }
+  .schedule-page__navButtons {
+    display: flex;
+    align-items: center;
+    gap: 20px; }
+  .schedule-page__navIcon {
+    width: 18px;
+    height: 18px;
+    display: block; }
+  .schedule-page__navButton--prev .schedule-page__navIcon {
+    transform: rotate(180deg); }
+  .schedule-page__body {
+    min-width: 0; }
+  .schedule-page__panel {
+    min-width: 0; }
+
+/* ==============================
+   Time schedule
+   ============================== */
+.time-schedule {
+  overflow: auto;
+  max-height: 75vh;
+  border: 1px solid #d9e0ea;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06); }
+  .time-schedule__layout {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    min-width: 720px;
+    height: var(--time-schedule-height);
+    position: relative;
+    box-sizing: border-box; }
+  .time-schedule__axis {
+    position: relative;
+    height: 100%;
+    border-right: 1px solid #e7ebf1;
+    background: #f8fafc;
+    z-index: 5; }
+  .time-schedule__axisLabel {
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.55;
+    position: absolute;
+    left: 0;
+    width: 100%;
+    padding-right: 10px;
+    transform: translateY(-50%);
+    text-align: right;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #6b7280;
+    white-space: nowrap;
+    pointer-events: none; }
+  .time-schedule__membersArea {
+    display: grid;
+    grid-template-rows: 44px 30px minmax(0, 1fr);
+    min-width: 0;
+    height: 100%; }
+  .time-schedule__memberHeaderRow {
+    display: grid;
+    grid-template-columns: repeat(var(--member-count), minmax(0, 1fr));
+    min-width: 0;
+    background: #f8fafc;
+    position: sticky;
+    top: 0;
+    z-index: 4; }
+  .time-schedule__currentRow {
+    display: grid;
+    grid-template-columns: repeat(var(--member-count), minmax(0, 1fr));
+    min-width: 0;
+    border-bottom: 1px solid #d9e0ea;
+    position: sticky;
+    top: 44px;
+    background: #fcfdff;
+    z-index: 3; }
+  .time-schedule__currentCell {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    padding: 6px 8px;
+    border-right: 1px solid #e7ebf1;
+    background: #fcfdff; }
+    .time-schedule__currentCell:last-child {
+      border-right: 0; }
+    .time-schedule__currentCell.is-empty {
+      color: #6b7280;
+      background: #fafbfc; }
+  .time-schedule__currentTime {
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.55;
+    margin-bottom: 2px;
+    min-width: 0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #2563eb;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; }
+  .time-schedule__currentTitle {
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.55;
+    min-width: 0;
+    font-size: 0.74rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; }
+  .time-schedule__memberHeader {
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.55;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    padding: 0 8px;
+    border-right: 1px solid #e7ebf1;
+    background: #f8fafc;
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #1f2937;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; }
+    .time-schedule__memberHeader:last-child {
+      border-right: 0; }
+  .time-schedule__grid {
+    position: relative;
+    height: 100%;
+    min-width: 0;
+    background: #ffffff; }
+  .time-schedule__lines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0; }
+  .time-schedule__gridLine {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e7ebf1; }
+    .time-schedule__gridLine:first-child {
+      background: #d9e0ea; }
+    .time-schedule__gridLine.is-hour {
+      height: 2px;
+      background: #d9e0ea; }
+  .time-schedule__memberColumns {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(var(--member-count), minmax(0, 1fr));
+    z-index: 0;
+    pointer-events: none; }
+  .time-schedule__memberColumn {
+    border-right: 1px solid #e7ebf1; }
+    .time-schedule__memberColumn:last-child {
+      border-right: 0; }
+  .time-schedule__events {
+    position: absolute;
+    inset: 0;
+    z-index: 1; }
+  .time-schedule__event {
+    position: absolute;
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: 6px 8px;
+    border-left: 4px solid #2563eb;
+    border-radius: 8px;
+    background: #eef2ff;
+    color: #1e3a8a;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.1); }
+    .time-schedule__event:hover {
+      filter: brightness(0.98); }
+  .time-schedule__eventTime {
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.55;
+    margin-bottom: 2px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #2563eb;
+    white-space: nowrap; }
+  .time-schedule__eventTitle {
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.55;
+    overflow: hidden;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: #1f2937;
+    word-break: break-word; }
+  .time-schedule__empty {
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.55;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 240px;
+    padding: 24px 16px;
+    color: #6b7280;
+    text-align: center;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.85); }
+
+/* ==============================
+   Utilities
+   ============================== */
+.display-none {
+  display: none !important; }
+
+/* ==============================
+   Responsive
+   ============================== */
+@media (max-width: 900px) {
+  .schedule-page {
+    padding: 12px; }
+    .schedule-page__title {
+      font-size: 1.1rem; }
+    .schedule-page__navButton {
+      min-width: 40px;
+      min-height: 40px;
+      padding: 6px 10px; }
+    .schedule-page__modeButton {
+      min-height: 34px;
+      padding: 7px 12px; }
+  .calendar__weekLabel {
+    padding: 10px 4px;
+    font-size: 0.82rem; }
+  .calendar__weekRow {
+    min-height: 112px; }
+  .calendar__cell {
+    min-height: 112px;
+    padding: 6px; }
+  .calendar__dateNumber {
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+    margin-bottom: 6px; }
+  .calendar__event {
+    padding: 3px 5px;
+    font-size: 0.66rem;
+    gap: 4px; }
+  .time-schedule__item {
+    grid-template-columns: 84px minmax(0, 1fr);
+    min-height: 64px; }
+  .time-schedule__time, .time-schedule__content {
+    padding: 12px; } }
+
+@media (max-width: 640px) {
+  .schedule-page__header {
+    gap: 10px; }
+  .schedule-page__nav {
+    gap: 8px; }
+  .schedule-page__title {
+    font-size: 1rem; }
+  .schedule-page__modeSwitch {
+    width: 100%;
+    justify-content: space-between; }
+  .schedule-page__modeButton {
+    flex: 1 1 0;
+    text-align: center; }
+  .calendar__weekRow {
+    min-height: 96px; }
+  .calendar__cell {
+    min-height: 96px;
+    padding: 4px; }
+  .calendar__weekLabel {
+    font-size: 0.76rem; }
+  .calendar__dateNumber {
+    width: 24px;
+    height: 24px;
+    font-size: 0.8rem; }
+  .calendar__events {
+    gap: 3px; }
+  .calendar__event {
+    padding: 2px 4px;
+    font-size: 0.62rem; }
+  .calendar__eventTime {
+    display: none; }
+  .time-schedule__item {
+    grid-template-columns: 1fr; }
+  .time-schedule__time {
+    justify-content: flex-start;
+    border-right: 0;
+    border-bottom: 1px solid #e7ebf1;
+    padding: 10px 12px 8px; }
+  .time-schedule__content {
+    padding: 10px 12px 12px; } }
+
+/*# sourceMappingURL=schedule.css.map */

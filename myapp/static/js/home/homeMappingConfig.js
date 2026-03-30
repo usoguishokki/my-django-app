@@ -1,4 +1,5 @@
 import { UIManger } from "../manager/UIManger.js";
+import { formatDate, isValidDate, removeTrailingZ } from '../utils/dateTime.js';
 
 export class HomeColumnManager {
     constructor() {
@@ -14,7 +15,7 @@ export class HomeColumnManager {
             status: { datasetKey: 'status' },
             plan__plan_time: {
                 datasetKey: 'startTime',
-                formatFn: (value) => value ? UIManger.removeZFromISODate(value) : ''
+                formatFn: (value) => value ? removeTrailingZ(value) : ''
             },
             plan__inspection_no__wark_name: { datasetKey: 'workName' },
             plan__inspection_no__man_hours: { datasetKey: 'manHour' },
@@ -39,8 +40,6 @@ export class HomeColumnManager {
     }
 
     getTrInf() {
-        const isValidDate = (item) => UIManger.isValidDate(item);
-        const formatDate = (item, format) => UIManger.formatDate(item, format);
         return [
             {
                 id: 'startDate',

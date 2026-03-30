@@ -1,0 +1,25 @@
+<article class="drawer {% if modifier %}drawer--{{ modifier }}{% endif %}"
+         data-panel="{{ key }}"
+         aria-hidden="true">
+
+  <header class="drawer__header">
+    <div class="drawer__titleGroup">
+      <span class="drawer__title" data-role="title">-</span>
+    </div>
+    <button type="button"
+            class="drawer__close"
+            data-action="close"
+            aria-label="閉じる">×</button>
+  </header>
+
+  <div class="drawer__body">
+    <p class="drawer__placeholder" data-role="empty"></p>
+    <div class="drawer__content" data-role="body"></div>
+    {% if with_table %}
+      <div class="drawer__tableTop" data-role="tableTop" style="display:none;"></div>
+      <div class="drawer__tableWrap">
+        <table class="drawer__table" data-role="table"></table>
+      </div>
+    {% endif %}
+  </div>
+</article>

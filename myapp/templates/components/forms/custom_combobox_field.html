@@ -1,0 +1,16 @@
+<div class="csv-download__field" data-role="combobox-field">
+    <label for="{{ trigger_id }}" class="csv-download__label">
+        {{ label }}
+        {% if required %}
+            <span class="csv-download__required">必須</span>
+        {% endif %}
+    </label>
+
+    {% include "components/forms/custom_combobox.html" with combobox_key=combobox_key hidden_id=hidden_id field_name=field_name trigger_id=trigger_id listbox_id=listbox_id placeholder=placeholder disabled=disabled value=value change_action=change_action only %}
+
+    {% if help_text %}
+        <p class="csv-download__help">
+            {{ help_text }}
+        </p>
+    {% endif %}
+</div>

@@ -1,0 +1,56 @@
+<div
+    class="custom-dropdown"
+    data-role="combobox"
+    data-combobox-key="{{ combobox_key }}"
+    data-state="closed"
+    {% if change_action %}data-ui-action="{{ change_action }}"{% endif %}
+>
+    <input
+        type="hidden"
+        id="{{ hidden_id }}"
+        name="{{ field_name }}"
+        value="{{ value|default:'' }}"
+        data-role="combobox-hidden"
+        {% if disabled %}disabled{% endif %}
+    >
+
+    <button
+        type="button"
+        id="{{ trigger_id }}"
+        class="custom-dropdown__trigger"
+        data-role="combobox-trigger"
+        aria-haspopup="listbox"
+        aria-expanded="false"
+        aria-controls="{{ listbox_id }}"
+        {% if disabled %}disabled{% endif %}
+    >
+        <span
+            class="custom-dropdown__triggerText"
+            data-role="combobox-trigger-text"
+        >
+            {{ placeholder }}
+        </span>
+
+        <span
+            class="custom-dropdown__triggerIcon"
+            aria-hidden="true"
+        >
+            ▾
+        </span>
+    </button>
+
+    <div
+        class="custom-dropdown__panel"
+        data-role="combobox-panel"
+        hidden
+    >
+        <ul
+            id="{{ listbox_id }}"
+            class="custom-dropdown__list"
+            data-role="combobox-list"
+            role="listbox"
+            aria-labelledby="{{ trigger_id }}"
+        >
+        </ul>
+    </div>
+</div>

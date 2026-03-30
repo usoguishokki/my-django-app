@@ -1,0 +1,722 @@
+@import 'common';
+@import 'mixins';
+@import 'foundation/typography';
+
+/* 既存のアニメーションを流用 */
+@keyframes skeleton-loading {
+  0%   { background-position: 100% 50%; opacity: .7; }
+  100% { background-position:   0% 50%; opacity: 1; }
+}
+
+$border-radius: 3px;
+$border-color: rgb(204, 204, 204);
+$highlight: #0d4b8d;
+$light-bg: #f5f5f5 !default;
+
+/* =========================
+   Base
+   ========================= */
+
+.status-text {
+  @include type-ui-sm;
+}
+
+form {
+  display: none;
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+
+  thead th {
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid rgb(240, 237, 237);
+    background-color: white;
+    color: black;
+  }
+
+  tr.alarm {
+    background-color: rgb(255, 142, 142);
+  }
+}
+
+th {
+  @include type-th;
+  position: relative;
+  text-align: left;
+  padding: 15px 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+td {
+  @include type-td;
+  text-align: left;
+  padding: 15px 5px 15px 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+tr > *:last-child {
+  border-right: none;
+}
+
+tbody tr:hover {
+  cursor: pointer;
+  background-color: $focus-color;
+}
+
+button {
+  @include type-ui;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  text-align: center;
+
+  &:hover {
+    background-color: $focus-color;
+    color: $font-color-modal;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.desktop-table {
+  tr:hover {
+    background-color: $focus-color;
+  }
+
+  .no-touch {
+    pointer-events: none;
+    color: rgba(0, 0, 0, 0.3);
+    cursor: not-allowed;
+  }
+}
+
+.resizer {
+  width: 5px;
+  height: 100%;
+  position: absolute;
+  right: 0;
+  top: 0;
+  cursor: col-resize;
+  user-select: none;
+}
+
+.grid-title {
+  @include type-title;
+  margin: 0.8em 0;
+  color: #333;
+}
+
+.t-center {
+  text-align: center;
+  margin: 0.8em 0;
+}
+
+.t-left {
+  text-align: left;
+}
+
+/* =========================
+   Layout
+   ========================= */
+
+.child-grid {
+  display: grid;
+
+  #itemProgress {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  #chartContainer {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  #myDonutChart {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100%;
+    max-height: 100%;
+  }
+}
+
+.row1,
+.row2 {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow:
+    3px 3px 6px rgba(0, 0, 0, 0.1),
+    6px 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.row1 {
+  grid-row: 1;
+}
+
+.row2 {
+  grid-row: 2;
+}
+
+.progress-grid,
+.personal-grid {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.personal-grid {
+  position: relative;
+  height: 100%;
+
+  .personal-progress-header {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+.personal-progress-container {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  transform: translate(-45%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 20px;
+  border-radius: 10px;
+
+  .unit {
+    @include type-ui;
+    margin-left: 3px;
+  }
+}
+
+.progress-radio {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+
+  .progress-radio-label {
+    @include type-title;
+    width: 250px;
+    text-align: right;
+    margin-right: 10px;
+  }
+
+  .progress-values {
+    @include type-title;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+#itemList.is-loading {
+  pointer-events: none;
+  user-select: none;
+  cursor: progress;
+}
+
+.childlist-display {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-bottom: 10px;
+}
+
+.header-and-buttons {
+  display: flex;
+  align-items: center;
+}
+
+.childlist-display-header-conteiner {
+  flex: 1;
+}
+
+.buttons-container {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  .filter-btn[disabled] {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.filter-btn {
+  @include type-ui-sm;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  margin: 5px;
+  position: relative;
+  padding: 0;
+
+  .count {
+    @include type-ui-sm;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    line-height: 1;
+  }
+}
+
+#btnWaiting {
+  background-color: rgba(173, 173, 173, 0.2);
+
+  &.active {
+    background-color: rgb(173, 173, 173);
+  }
+}
+
+#btnPending {
+  background-color: rgba(0, 204, 102, 0.2);
+
+  &.active {
+    background-color: rgb(0, 204, 102);
+  }
+}
+
+#btnApproval {
+  background-color: rgba(255, 215, 0, 0.2);
+
+  &.active {
+    background-color: rgb(255, 215, 0);
+  }
+}
+
+#btnDelayed {
+  background-color: rgba(221, 53, 53, 0.2);
+
+  &.active {
+    background-color: rgb(221, 53, 53);
+  }
+}
+
+#btnCompletion {
+  background-color: rgba(9, 101, 193, 0.2);
+
+  &.active {
+    background-color: rgb(9, 101, 193);
+  }
+}
+
+#btnRejected {
+  background-color: rgba(255, 153, 153, 0.2);
+
+  &.active {
+    background-color: rgb(255, 153, 153);
+  }
+}
+
+.glow-border::before {
+  @extend %glow-border;
+}
+
+#tableScroll {
+  overflow: auto;
+}
+
+.practitioner-name-row {
+  overflow-x: auto;
+  white-space: nowrap;
+  display: inline-block;
+  text-overflow: clip;
+}
+
+.group-schedule {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  padding: 0 18px;
+}
+
+.gantt-header-viewport {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  box-sizing: border-box;
+  height: 50px;
+}
+
+#groupScheduleTitle {
+  @include type-title;
+  padding-left: 8px;
+}
+
+#workContenxt {
+  @include type-small;
+  padding-left: 16px;
+}
+
+.gantt-container-parent {
+  display: flex;
+  overflow: hidden;
+  height: 100%;
+}
+
+#gantt {
+  flex: 1 1 auto;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+#gantt,
+.assignee-container {
+  flex-grow: 1;
+}
+
+.grid-title {
+  flex: 1.4;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  margin: 0;
+
+  .select-label {
+    @include type-label;
+    margin: 0;
+    padding-right: 5px;
+    text-align: right;
+  }
+
+  .select-select,
+  .schedule-select {
+    @include type-ui-regular;
+    width: 100%;
+  }
+
+  .schedule-label,
+  .schedule-label {
+    flex: 0 0 auto;
+  }
+
+  .select-select,
+  .schedule-select {
+    flex: 1;
+  }
+}
+
+@include respond-to(xs, down) {
+  .child-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    padding: 8px;
+
+    #itemProgress {
+      display: none;
+    }
+
+    .row1,
+    .row2 {
+      display: none;
+    }
+  }
+}
+
+@include respond-to(lg, up) {
+  .child-grid {
+    grid-template-columns: 0.6fr 0.4fr 1fr;
+    grid-template-rows: minmax(0, 2.5fr) minmax(0, 3fr);
+    padding: 15px;
+    gap: 15px;
+    height: calc(100vh - var(--header-h, 64px));
+
+    .chart-container {
+      padding-bottom: 10px;
+    }
+
+    .mobile-content {
+      display: none;
+    }
+  }
+}
+
+@include respond-to(xl, up) {
+  .child-grid {
+    grid-template-columns: 0.6fr 0.4fr 1fr;
+    grid-template-rows: minmax(0, 2.5fr) minmax(0, 3fr);
+    padding: 15px;
+    gap: 15px;
+    height: calc(100vh - var(--header-h, 64px));
+
+    .chart-container {
+      padding-bottom: 10px;
+    }
+
+    .mobile-content {
+      display: none;
+    }
+  }
+}
+
+.child-grid > * {
+  min-width: 0;
+  min-height: 0;
+}
+
+.mobile-content {
+  height: calc(100dvh - var(--header-h));
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+
+  #progress {
+    flex: 0 0 auto;
+  }
+
+  .section-title {
+    @include type-title;
+    position: relative;
+    padding-left: 12px;
+    padding-bottom: 12px;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1px;
+      background-color: $under-line-color;
+    }
+
+    &.not-first {
+      padding-top: 20px;
+    }
+  }
+
+  .progress-ul {
+    position: relative;
+    padding-left: 17px;
+    list-style-type: none;
+
+    .progress-li {
+      @include type-ui-regular;
+      position: relative;
+      padding-top: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px dashed $under-line-color;
+      transition: background-color 0.2s ease;
+
+      &.active {
+        background-color: $click-color;
+      }
+
+      .maker {
+        padding-right: 12px;
+        background: linear-gradient(transparent 65%, #a8d4ff 65%);
+
+        &.maker-alarm {
+          background: linear-gradient(transparent 65%, #fc5858 65%);
+        }
+      }
+
+      .progress-li-text {
+        @include type-ui;
+        display: inline-block;
+        margin-left: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+    }
+  }
+
+  h3 {
+    @include type-title;
+  }
+}
+
+/* 親をflexコンテナにする */
+#taskTimeLine {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+}
+
+#taskTimeLineTitle.section-title {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fff;
+  margin: 0;
+  padding: 12px;
+}
+
+#mobileList {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-left: 17px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  position: relative;
+  z-index: 1;
+
+  .card-line1 {
+    .skeleton-block {
+      margin-bottom: 6px;
+    }
+  }
+
+  .card-line2 {
+    @include type-small;
+    color: #676666;
+    padding-top: 3px;
+  }
+
+  .mobile-card {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #ccc;
+
+    :last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+/* テーブル用スケルトン */
+.skeleton-row .skeleton-cell {
+  padding: 8px 12px;
+}
+
+.skeleton-block {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e9ecef 25%, #f5f6f7 37%, #e9ecef 63%);
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.05s ease-in-out infinite;
+  display: block;
+}
+
+.skeleton-w-40 { width: 40%; }
+.skeleton-w-60 { width: 60%; }
+.skeleton-w-80 { width: 80%; }
+
+#groupSchedule {
+  --gantt-skel-bar-height: 20px;
+  --gantt-skel-row-gap: 8px;
+  --gantt-skel-head-h: 34px;
+  --gantt-skel-left-w: 180px;
+}
+
+.gantt-header-container.loading {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gantt-container-parent.loading #gantt,
+.gantt-container-parent.loading .assignee-container {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.assignee-container {
+  position: relative;
+}
+
+.assignee-skeleton {
+  position: absolute;
+  top: var(--gantt-skel-head-h);
+  left: 0;
+  right: auto;
+  bottom: 0;
+  width: var(--gantt-skel-left-w);
+  pointer-events: none;
+}
+
+.assignee-skeleton .assignee-skel-row {
+  display: flex;
+  align-items: center;
+  height: calc(var(--gantt-skel-bar-height) + var(--gantt-skel-row-gap));
+  padding: 0 10px;
+}
+
+.assignee-skeleton .assignee-skel-block {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e9ecef 25%, #f5f6f7 37%, #e9ecef 63%);
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.05s ease-in-out infinite;
+  display: block;
+  width: 100%;
+}
+
+.gantt-skeleton-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--gantt-skel-left-w);
+  pointer-events: none;
+  display: grid;
+  grid-template-rows: var(--gantt-skel-head-h) 1fr;
+  z-index: 20;
+}
+
+#groupSchedule .gantt-container-parent {
+  position: relative;
+}
+
+.gantt-skel-header {
+  border-bottom: 1px solid rgba(0, 0, 0, .06);
+  padding: 6px 10px;
+  animation: skeleton-loading 1.05s ease-in-out infinite;
+}
+
+.gantt-skel-header .skeleton-block {
+  height: 10px;
+  border-radius: 6px;
+}
+
+.gantt-skel-body {
+  overflow: hidden;
+}
+
+.gantt-skel-row {
+  display: flex;
+  align-items: center;
+  height: calc(var(--gantt-skel-bar-height) + var(--gantt-skel-row-gap));
+  padding: 0 10px;
+}
+
+.gantt-skel-bar {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e9ecef 25%, #f5f6f7 37%, #e9ecef 63%);
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.05s ease-in-out infinite;
+}
+
+.gantt-skel-w-20 { width: 20%; }
+.gantt-skel-w-35 { width: 35%; }
+.gantt-skel-w-50 { width: 50%; }
+.gantt-skel-w-65 { width: 65%; }
+.gantt-skel-w-80 { width: 80%; }

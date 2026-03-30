@@ -25,18 +25,28 @@
                 <img src="{% static 'img/check.png' %}" alt="確認アイコン" class="icon">
                 確認
             </a>
+            <a class="planned-maintenance loading-linke" href="{% url 'plannedMaintenance' %}">
+                <img src="{% static 'img/plannedMaintenance.png' %}" alt="計画保全アイコン" class="icon">
+                計画
+            </a>
             <a class="standards loading-link" href="{% url 'inspectionStadards' %}">
                 <img src="{% static 'img/standard.png' %}" alt="基準書アイコン" class="icon">
                 点検基準書
             </a>
+
+            <!--
             <a class="achievements loading-link" href="{% url 'achievements' %}">
                 <img src="{% static 'img/achievements.png' %}" alt="個人実績アイコン" class="icon">
                 実績
             </a>
-            <a class="planned-maintenanc loading-linke" href="{% url 'plannedMaintenance' %}">
-                <img src="{% static 'img/plannedMaintenance.png' %}" alt="計画保全アイコン" class="icon">
-                計画
+            -->
+
+            <a class="output-csv loading-linke" href="{% url 'csvDownloadPage' %}">
+                <img src="{% static 'img/outputCsv.png' %}" alt="CSVダウンロードアイコン" class="icon">
+                CSV_DL
             </a>
+
+
             <a class="logout" href="{% url 'logout' %}">
                 <img src="{% static 'img/logout.png' %}" alt="ログアウトアイコン" class="icon">
                 logout

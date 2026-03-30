@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}WorkContents{% endblock %}
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/plannedMaintenance.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+{% block header %}
+{% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="planned-maintenance-container">
+    <div class="right-content">
+        <div class="kpi-top-controls">
+            <div class="kpi-top-controls__group kpi-top-controls__group--period">
+                <span class="kpi-top-controls__label">期間</span>
+                <div class="kpi-top-controls__buttons">
+                    <button class="kpi-btn is-active" data-view="month">月</button>
+                    <button class="kpi-btn" data-view="week">週</button>
+                    <button class="kpi-btn" data-view="day">日</button>
+                </div>
+            </div>
+        
+            <div class="kpi-top-controls__group kpi-top-controls__group--target">
+                <span class="kpi-top-controls__label">対象</span>
+                <div class="kpi-top-controls__buttons">
+                    <button class="kpi-btn is-active" data-view="team">班</button>
+                </div>
+            </div>
+
+            <div class="kpi-top-controls__update">
+                <button class="kpi-btn kpi-btn--primary" data-action="refresh">
+                  更新
+                </button>
+            </div>
+        </div>
+        
+          <!-- 月 × 班 マトリクス（上：月ヘッダ、下：班ヘッダ） -->
+        <div class="kpi-matrix matrix--soft">
+            <div class="kpi-matrix__wrapper" id="kpiMatrixWrapper">
+                <table class="kpi-matrix__table" id="kpiMatrixTable">
+            
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="planned-maintenance-subviews" id="plannedMaintenanceSubviews">
+
+      <!-- ① セル詳細（既存） -->
+      <div id="plannedMaintenanceSubview" class="planned-maintenance-subview" aria-hidden="true">
+        <div class="planned-maintenance-subview__header">
+          <div class="planned-maintenance-subview__title-group">
+            <span id="cellDetailTitle" class="planned-maintenance-subview__title">-</span>
+          </div>
+          <button type="button" id="plannedMaintenanceSubviewClose"
+                  class="planned-maintenance-subview__close">×</button>
+        </div>
+  
+        <div class="planned-maintenance-subview__body">
+          <p id="cellDetailEmptyMessage" class="planned-maintenance-subview__placeholder">
+            セルをクリックすると詳細が表示されます。
+          </p>
+  
+          <div class="planned-maintenance-subview__table-wrapper">
+            <table class="planned-maintenance-subview__table" id="cellDetailTable"></table>
+          </div>
+        </div>
+      </div>
+  
+      <!-- ② 行クリックで開く：Plan詳細（追加） -->
+      <div id="plannedMaintenanceSubviewPlan" class="planned-maintenance-subview planned-maintenance-subview--plan" aria-hidden="true">
+        <div class="planned-maintenance-subview__header">
+          <div class="planned-maintenance-subview__title-group">
+            <span id="planDetailTitle" class="planned-maintenance-subview__title">-</span>
+          </div>
+          <button type="button" id="plannedMaintenanceSubviewPlanClose"
+                  class="planned-maintenance-subview__close">×</button>
+        </div>
+  
+        <div class="planned-maintenance-subview__body">
+          <p id="planDetailEmptyMessage" class="planned-maintenance-subview__placeholder">
+            行をクリックすると詳細が表示されます。
+          </p>
+  
+          <!-- まずは仮：必要になったらテーブル/フォームに置き換え -->
+          <div id="planDetailBody"></div>
+        </div>
+      </div>
+  
+      <!-- ③ 行クリックで開く：さらに詳細（追加。例：作業/設備/履歴など） -->
+      <div id="plannedMaintenanceSubviewExtra" class="planned-maintenance-subview planned-maintenance-subview--extra" aria-hidden="true">
+        <div class="planned-maintenance-subview__header">
+          <div class="planned-maintenance-subview__title-group">
+            <span id="extraDetailTitle" class="planned-maintenance-subview__title">-</span>
+          </div>
+          <button type="button" id="plannedMaintenanceSubviewExtraClose"
+                  class="planned-maintenance-subview__close">×</button>
+        </div>
+  
+        <div class="planned-maintenance-subview__body">
+          <p id="extraDetailEmptyMessage" class="planned-maintenance-subview__placeholder">
+            2枚目の詳細に連動して表示します。
+          </p>
+          <div id="extraDetailBody"></div>
+        </div>
+      </div>
+  
+    </div>
+
+</div>
+
+
+
+<form method="post">
+    {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block script %}
+    <script type="module" src="{% static 'js/plannedMaintenance/plannedMaintenance.js' %}"></script>
+{% endblock %}

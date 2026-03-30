@@ -1,0 +1,41 @@
+@import 'foundation/typography';
+
+/* ==========================================================================
+  UI Field (label + input)
+========================================================================== */
+
+.ui-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ui-field__label {
+  @include type-ui-sm;
+  white-space: nowrap;
+  color: rgba(71, 85, 105, 0.95);
+}
+
+/* ==========================================================================
+  UI Field Group (date+time など複数inputをまとめる)
+========================================================================== */
+
+.ui-fieldGroup {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ui-fieldGroup__label {
+  @include type-ui-sm;
+  white-space: nowrap;
+  color: rgba(71, 85, 105, 0.95);
+  padding-bottom: 2px;
+}
+
+/* よく使うバリエーション */
+.ui-fieldGroup--datetime {
+  align-items: flex-end;
+}

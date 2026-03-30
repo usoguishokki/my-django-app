@@ -1,0 +1,356 @@
+@import 'common';
+@import 'foundation/typography';
+
+/* =========================
+   equipment-info（上部バー：KPI header 風にリッチ化）
+   ========================= */
+
+$ei-border: rgba(15, 23, 42, 0.10);
+$ei-text-strong: #0b1220;
+$ei-text-muted: #475569;
+
+$placeholder-color: rgba(11, 18, 32, 0.45);
+
+$row-py: 10px;
+$cell-px: 14px;
+
+.planned-maintenance-container {
+  display: flex;
+  height: 100%;     // ★これでbodyスクロールから卒業
+  min-height: 0;
+  flex-direction: column;
+  gap: 12px;
+} 
+
+
+/* 下段スクロール本体 */
+.table-scroll {
+  flex: 1 1 auto; 
+  min-height: 0;          /* ← これ重要 */
+  overflow: auto;         /* ← これが無いとスクロールしない */
+  position: relative;
+
+  background: rgba(255,255,255,0.65);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 14px 30px rgba(15, 23, 42, 0.12);
+  padding: 8px;
+}
+
+
+/* =========================
+   表題（設備名・管理番号）: 情報バー化
+   ========================= */
+/* =========================
+   equipment-info：select対応
+   ========================= */
+.equipment-info {
+  flex: 0 0 auto;
+  position: sticky; 
+  top: 0;
+  z-index: 10;
+  padding: 12px 12px;              // ← ここで高さを出す
+  background: transparent;          // bar 側で作る
+}
+  
+.equipment-info__bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* ← 左詰めで横並び */
+  gap: 16px;
+
+  padding: 14px 14px;
+  border-radius: 14px;
+
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.92),
+    rgba(243, 244, 246, 0.92)
+  );
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  border: 1px solid $ei-border;
+
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 14px 30px rgba(15, 23, 42, 0.12),
+    0 1px 0 rgba(255, 255, 255, 0.65) inset;
+}
+
+.equipment-info__right {
+  justify-self: auto;
+  margin-left: 0;
+}
+
+/* label + select を縦に並べて “UIっぽく” */
+.equipment-info__field {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 6px;
+  min-width: 0;
+  position: relative;
+}
+
+/* label（kpi-top-controls__label に寄せる） */
+.equipment-info__titleLabel,
+.equipment-info__metaLabel {
+  @include type-label;
+  text-transform: uppercase;
+  color: $ei-text-muted;
+  padding-left: 6px;               // KPIっぽい “少し内側”
+  white-space: nowrap;
+}
+  
+/* select 本体：ボタン/ピルに寄せる */
+.equipment-info__select {
+  appearance: auto;
+  -webkit-appearance: menulist;
+  -moz-appearance: menulist;
+
+  background-image: none;
+
+  // もし背景グラデは残したいならこれだけ復活
+  background: linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(243,244,246,0.90));
+
+  height: 42px;                    // ← 高くする
+  padding: 0 40px 0 14px;          // 右は矢印分
+  border-radius: 999px;            // ← KPIボタンに寄せる
+
+  border: 1px solid rgba(15, 23, 42, 0.14);
+
+  color: $ei-text-strong;
+  @include type-ui;
+  font-weight: $fw-strong;
+
+  min-width: 260px;              
+  max-width: 46vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 10px 22px rgba(15, 23, 42, 0.10);
+
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 120ms ease,
+    background-color 160ms ease;
+
+    &.is-placeholder {
+      color: $placeholder-color; // 初期表示だけ薄く
+    }
+  
+    // ▼ これが重要：ドロップダウンの候補は常に通常色に固定
+    option {
+      color: $ei-text-strong;
+    }
+  
+    // placeholder option だけ薄く（※hiddenなので主に保険）
+    option.is-placeholder-option {
+      color: $placeholder-color;
+    }
+}
+  
+/* 設備名は少しだけ強調 */
+.equipment-info__left .equipment-info__select {
+  font-size: clamp(1.02rem, 1.0vw, 1.16rem);
+  line-height: $lh-normal;
+}
+
+/* hover / focus */
+.equipment-info__select:hover {
+  border-color: rgba(37, 99, 235, 0.45);
+  box-shadow:
+    0 0 0 2px rgba(37, 99, 235, 0.10),  // ← 薄く小さく
+    0 10px 22px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
+}
+
+.equipment-info__select:focus {
+  outline: none;
+}
+
+.equipment-info__select:focus-visible {
+  border-color: rgba(37, 99, 235, 0.55);
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.18),
+    0 14px 26px rgba(15, 23, 42, 0.14);
+}
+
+.equipment-info__select.is-placeholder:hover {
+  border-color: rgba(37, 99, 235, 0.60);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+.equipment-info__select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+.equipment-info__field::after { content: none; }
+
+
+  
+/* 小さめ画面は1列に落とす（崩れ防止） */
+@media (max-width: 860px) {
+  .equipment-info__bar {
+    grid-template-columns: 1fr;
+  }
+  .equipment-info__right {
+    justify-self: start;
+  }
+  .equipment-info__select {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+
+
+/* =========================
+   テーブル
+   ========================= */
+#tableScroll {
+  table {
+    width: 100%;
+    border-collapse: separate;      /* sticky との相性〇 */
+    border-spacing: 0;
+    border-radius: $border-radius;
+    table-layout: fixed;            /* セル幅を安定 */
+    border-radius: 14px;
+  }
+
+  thead { position: sticky; top: 0; z-index: 15; }
+  thead th:last-child { border-right: none; }
+
+  td, th {
+    white-space: nowrap;            /* セル内での改行を防止 */
+    overflow: hidden;               /* はみ出し隠す */
+    text-overflow: ellipsis;        /* はみ出しは … */
+    text-align: left;
+  }
+
+  tbody td {
+    padding:  $row-py $cell-px;
+    @include type-td;                /* font-size + line-height を統一 */
+    font-weight: $fw-regular;
+    color: rgba(11, 18, 32, 0.90);
+    letter-spacing: 0.01em;
+
+
+    background: #fff;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+
+    white-space: normal;         /* ← 折り返しOK */
+    overflow: visible;           /* ← 省略しない */
+    text-overflow: clip;         /* ← …やめる */
+    overflow-wrap: anywhere;     /* ← 長い英数字でも折る */
+    word-break: break-word;      /* ← 保険 */
+    
+
+    border-bottom: 1px solid $border-color; /* ←維持 */
+
+  }
+
+  /* 行の状態色（必要に応じて） */
+  table tbody tr.odd  > td { background: rgba(255, 255, 255, 0.92); }
+  table tbody tr.even > td { background: rgba(15, 23, 42, 0.03); }
+  table tbody tr.alarm > td { background: rgba(239, 68, 68, 0.14); }
+  table tbody tr:hover > td {
+    background-color: rgba(219, 234, 254, 0.45);
+  }
+
+  table tbody tr.is-clickable > td,
+  table tbody tr.is-hover-group > td {
+    background-color: rgba(219, 234, 254, 0.60);
+  }
+
+  /* thead は .table-scroll 内で sticky に張り付く */
+  table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 120;
+    text-align: left;
+  
+    @include type-th;          /* ← font-size を統一 */
+    font-weight: $fw-strong;
+    letter-spacing: 0.08em;
+    color: rgba(55, 65, 81, 0.92);
+    line-height: $lh-tight;
+  
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 1),
+      rgba(243, 244, 246, 1)
+    );
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  
+    border-right: 1px solid rgba(15, 23, 42, 0.06);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+
+    box-shadow:
+      0 -10px 18px rgba(255, 255, 255, 0.95), /* 上方向の“白い幕” */
+      0  10px 18px rgba(15, 23, 42, 0.10);    /* 下方向の通常影 */
+    padding: 14px $cell-px;   // ← 左右も揃える
+
+    white-space: nowrap;
+    vertical-align: middle;
+  
+    &:first-child { border-top-left-radius: 12px; }
+    &:last-child  { border-top-right-radius: 12px; }
+  }
+
+  /* 左右ボーダー不要なら */
+  table td {
+    border-left: none;
+    border-right: none;
+  }
+
+  /* style="display:none" のセルはボーダーも消す */
+  td[style*="display: none"] {
+    border: none;
+  }
+
+  /* 任意：フェードイン演出 */
+  .fade-enter { opacity: 0; transform: translateY(6px); }
+  .fade-enter-active {
+    transition: opacity .28s ease-out, transform .28s ease-out;
+    opacity: 1; transform: translateY(0);
+  }
+  
+  @include nice-scrollbar();
+}
+
+/* 列幅（セル詳細テーブル用：必要なら “drawer内のtable” にだけ効かせる） */
+[data-ui-root="drawer"].planned-maintenance-container {
+  .drawer__table {
+    th:nth-child(7), td:nth-child(7) { 
+      width: 70px;
+      text-align: right;
+      white-space: nowrap;
+     }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+

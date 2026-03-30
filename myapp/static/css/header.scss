@@ -2,6 +2,8 @@
 @import 'variables';
 @import 'mixins';
 
+:root { --header-h: 8vh; }
+
 .l-header {
     position: fixed;
     grid-area: header;
@@ -215,6 +217,10 @@
             }
 
             .planned-maintenance {
+                display: none;
+            }
+
+            .output-csv {
                 display: none;
             }
         }

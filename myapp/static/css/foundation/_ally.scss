@@ -1,0 +1,39 @@
+/* ==========================================================================
+  Accessibility Utilities (A11y)
+  --------------------------------------------------------------------------
+  @doc
+  - 目的: 視覚的には非表示だが、スクリーンリーダーには読み上げさせる要素を提供する
+  - 用途:
+      - textarea / input の label を「表示したくないがアクセシビリティ的に必要」な場合
+      - アイコンのみボタンの説明テキスト（例: 閉じる/削除）
+      - テーブル内の操作UIに説明を付けたいが、UIは崩したくない場合
+  - 注意:
+      - display:none / visibility:hidden は読み上げ対象から外れるため基本NG
+        （※支援技術に情報が届かなくなる）
+      - “見えないけど存在する” ので、位置調整目的で使わない
+  - 使い方:
+      1) label に .visually-hidden を付ける（推奨）
+         <label class="visually-hidden" for="id">説明</label>
+      2) アイコンボタン内に説明テキストとして入れる
+         <button><span class="visually-hidden">閉じる</span>×</button>
+========================================================================== */
+
+/* --------------------------------------------------------------------------
+  Visually Hidden (Screen Reader Only)
+  --------------------------------------------------------------------------
+  @doctag a11y.visually-hidden
+  @rule
+    - 視覚的には隠すが、DOM上に残し読み上げ可能にする
+--------------------------------------------------------------------------- */
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }

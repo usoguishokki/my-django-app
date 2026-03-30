@@ -1,6 +1,9 @@
 from django.db import models
+from django.db.models import Q
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.conf import settings
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
 """
 初期のmakemigrationsの実行後に作成される、initial.pyに以下のコードを追加する必要ある。(カスタムマイグレーション)
 なぜ？ Menber_tb menber_idとpasswordを同じにするため。
@@ -39,6 +42,46 @@ class Migration(migrations.Migration):
         ),
         migrations.RunPython(set_initial_password),  # カスタムマイグレーション関数の追加
 """
+class WeekSlot(models.IntegerChoices):
+    W1 = 1, "1週目"
+    W2 = 2, "2週目"
+    W3 = 3, "3週目"
+    W4 = 4, "4週目"
+    RESERVE = 6, "予備週"
+    
+class DayOfWeek(models.IntegerChoices):
+    MON = 0, "月"
+    TUE = 1, "火"
+    WED = 2, "水"
+    THU = 3, "木"
+    FRI = 4, "金"
+    SAT = 5, "土"
+    SUN = 6, "日"
+    
+class CheckStatus(models.TextChoices):
+    PERIODIC = "定期点検", "定期点検"
+    MAKER = "メーカ", "メーカ"
+    ABOLISHED = "廃止", "廃止"
+    DAILY = "日常点検", "日常点検"
+    AUTOMATE = "自動化", "自動化"
+    SYMPTOM_MGMT = "兆候管理", "兆候管理"
+    
+class TimeZoneStatus(models.TextChoices):
+    RUNNING = "稼働中", "稼働中"
+    STOPPED = "停止中", "停止中"
+    
+class PlanStatus(models.TextChoices):
+    WAITING = "配布待ち", "配布待ち"
+    IN_PROGRESS = "実施待ち", "実施待ち"
+    APPROVAL_WAITING = "承認待ち", "承認待ち"
+    COMPLETED = "完了", "完了"
+    SENT_BACK = "差戻し", "差戻し"
+    DELAYED = "遅れ", "遅れ"
+    
+
+class DateTag(models.TextChoices):
+    LONG_HOLIDAY = "LONG_HOLIDAY", "連休"
+
 class DateFilterManger(models.Manager):
     def filter_by_date(self, queryset, dates):
         filter_key = queryset.model.date_filter_field + '__in'
@@ -173,7 +216,114 @@ class ShiftPattan_tb(models.Model):
     def __str__(self):
         return self.pattern_name
 
-checkStatusFlag = [('', ''), ('メーカ', 'メーカ'), ('自動化', '自動化'), ('日常点検', '日常点検'), ('廃止', '廃止'), ('差戻し', '差戻し')]
+
+class PlanScheduleRule(models.Model):
+    """
+    plan_schedule_rule（周期ルールマスタ）
+    例:
+      - 平日: unit=D, interval=1
+      - 毎週: unit=W, interval=1
+      - 2か月ごと: unit=M, interval=2
+    """
+    class Unit(models.TextChoices):
+        DAY = "D", "Day"
+        WEEK = "W", "Week"
+        MONTH = "M", "Month"
+        YEAR = "Y", "Year"
+    
+    name = models.CharField(max_length=64, unique=True)
+    unit = models.CharField(max_length=1, choices=Unit.choices)
+    interval = models.PositiveBigIntegerField()
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    
+    class Meta:
+        db_table = "plan_schedule_rule"
+        verbose_name = "Plan Schedule Rule"
+        verbose_name_plural = "Plan Schedule Rules"
+        indexes = [
+            models.Index(fields=["unit", "interval"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(interval__gte=1),
+                name="plan_schedule_rule_interval_gte_1",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.id}:{self.name} ({self.unit}{self.interval})"
+    
+
+class PlanRuleCondition(models.Model):
+    """
+    plan_rule_condition（ルール条件マスタ）
+    例:
+      - rule=1, cond_type=DAY_OF_WEEK, op=IN, value_json=[1,2,3,4,5]
+      - rule=15, cond_type=DATE_TAG,   op=EQ, value_json="LONG_HOLIDAY"
+    """
+
+    class CondType(models.TextChoices):
+        DAY_OF_WEEK = "DAY_OF_WEEK", "Day of week"
+        WEEK_PARITY = "WEEK_PARITY", "Week parity"
+        DATE_TAG = "DATE_TAG", "Date tag"
+        NEXT_DATE_TAG = "NEXT_DATE_TAG", "Next date tag"
+
+    class Op(models.TextChoices):
+        EQ = "EQ", "Equals"
+        IN = "IN", "In"
+
+    rule = models.ForeignKey(
+        PlanScheduleRule,
+        on_delete=models.CASCADE,   # ルールが消えたら条件も消す（マスタとして自然）
+        related_name="conditions",
+        db_column="rule_id",        # DB列名を rule_id に寄せたい場合
+    )
+    cond_type = models.CharField(max_length=32, choices=CondType.choices)
+    op = models.CharField(max_length=8, choices=Op.choices)
+    value_json = models.JSONField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "plan_rule_condition"
+        verbose_name = "Plan Rule Condition"
+        verbose_name_plural = "Plan Rule Conditions"
+        indexes = [
+            models.Index(fields=["rule", "cond_type"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["rule", "cond_type", "op"],
+                name="uniq_rule_condtype_op",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"rule={self.rule_id} {self.cond_type} {self.op} {self.value_json}"
+
+    def clean(self):
+        """
+        最低限の型チェック（DBに変なJSONが入る事故を防ぐ）
+        """
+        super().clean()
+
+        if self.cond_type == self.CondType.DAY_OF_WEEK and self.op == self.Op.IN:
+            if not isinstance(self.value_json, list) or not all(isinstance(x, int) for x in self.value_json):
+                raise ValidationError({"value_json": "DAY_OF_WEEK + IN は整数配列を期待します (例: [1,2,3])."})
+        if self.cond_type == self.CondType.WEEK_PARITY and self.op == self.Op.IN:
+            if not isinstance(self.value_json, list) or not all(isinstance(x, int) for x in self.value_json):
+                raise ValidationError({"value_json": "WEEK_PARITY + IN は整数配列を期待します (例: [1,3])."})
+        if self.cond_type == self.CondType.DATE_TAG and self.op == self.Op.EQ:
+            if not isinstance(self.value_json, str):
+                raise ValidationError({"value_json": 'DATE_TAG + EQ は文字列を期待します (例: "LONG_HOLIDAY").'})
+
+
+
+#週の考え方: 1:1週目, :1:1週目, 2:2週目, 3:3週目, 4:4週目, 6:予備週
 class Check_tb(models.Model):
     id = models.AutoField(primary_key=True)
     inspection_no = models.CharField('inspection_no', unique=True, blank=True, null=True, max_length=20)
@@ -185,7 +335,30 @@ class Check_tb(models.Model):
         blank=True, null=True, 
         related_name="checks"
     )
-    day_of_week = models.CharField('day_of_week', blank=True, null=True,max_length=5)
+    
+    rule = models.ForeignKey(
+        PlanScheduleRule,
+        on_delete=models.PROTECT,   # マスタなので通常はPROTECT推奨（誤削除防止）
+        related_name="checks",
+    )
+    
+    anchor_year = models.IntegerField('anchor_year', blank=True, null=True)
+    anchor_month = models.PositiveSmallIntegerField(
+        'anchor_month',
+        blank=True, null=True,
+    )
+    week_of_month = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        choices=WeekSlot.choices,
+    )
+    
+    day_of_week = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        choices=DayOfWeek.choices,
+    )
+    
     practitioner = models.ForeignKey(
         to=ShiftPattan_tb, 
         on_delete=models.CASCADE,
@@ -193,10 +366,54 @@ class Check_tb(models.Model):
         null=True, 
         related_name="practitioners"
     )
-    time_zone = models.CharField('time_zone', blank=True, null=True,max_length=3)
-    status = models.CharField('status', max_length=20, choices=checkStatusFlag, default='')#ステータス
+    
+    time_zone = models.CharField(
+        max_length=10,
+        choices=TimeZoneStatus.choices,
+        blank=False,
+        null=False,
+        default=TimeZoneStatus.RUNNING
+    )
+    
+    status = models.CharField(
+        max_length=16,
+        choices=CheckStatus.choices,
+        default=CheckStatus.PERIODIC,  # 運用に合わせて 
+    )
+    
+    safe_point = models.CharField(
+        max_length = 32,
+        default='', 
+        blank=True
+    )
+    
     registration = models.DateField('registration', null=True)#登録日
     last_updated = models.DateField('last_updated', null=True)#登録日
+    
+    
+    class Meta:
+        constraints = [
+            # anchor_month は NULL か 1..12
+            models.CheckConstraint(
+                check=Q(anchor_month__isnull=True) | (Q(anchor_month__gte=1) & Q(anchor_month__lte=12)),
+                name="check_tb_anchor_month_null_or_1_12",
+            ),
+            # anchor_year は NULL か >= 1（必要なら範囲を狭めてもOK）
+            models.CheckConstraint(
+                check=Q(anchor_year__isnull=True) | Q(anchor_year__gte=1),
+                name="check_tb_anchor_year_null_or_gte_1",
+            ),
+            # week_of_month は NULL か choices の値（DBによっては choices だけでは守れないため）
+            models.CheckConstraint(
+                check=Q(week_of_month__isnull=True) | Q(week_of_month__in=[1, 2, 3, 4, 6]),
+                name="check_tb_week_of_month_null_or_valid",
+            ),
+            
+            models.CheckConstraint(
+                check=Q(day_of_week__isnull=True) | Q(day_of_week__in=[0, 1, 2, 3, 4, 5, 6]),
+                name="check_tb_day_of_week_null_or_0_6",
+            ),
+        ]
     
     def __str__(self):
         return f"{self.inspection_no} - {self.wark_name}"
@@ -216,6 +433,11 @@ class Db_details_tb(models.Model):
     standard = models.CharField('standard', blank=True, null=True, max_length=200)
     remarks = models.CharField('remarks', blank=True, null=True, max_length=200)
     inspection_man_hours = models.IntegerField('inspection_man_hours', blank=True, null=True, default=1)
+    status = models.CharField(
+        max_length=16,
+        choices=CheckStatus.choices,
+        default=CheckStatus.PERIODIC,
+    )
     
     def __str__(self):
         return f"{self.applicable_device} - {self.contents}"
@@ -223,16 +445,46 @@ class Db_details_tb(models.Model):
 class Hozen_calendar_tb(models.Model):
     h_id = models.AutoField('h_id', primary_key=True)
     h_date = models.DateField('h_date', null=True, unique=True)
-    h_day_of_week = models.CharField('h_day_of_week', null=True, max_length=2)
-    h_month = models.IntegerField('h_month')
-    h_week = models.IntegerField('h_week')
-    date_alias = models.CharField('date_alias', blank=True, null=True, max_length=10)
+    h_day_of_week = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        choices=DayOfWeek.choices,
+    )
+    
+    h_month = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(12)]
+    )
+    
+    
+    h_week =  models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        choices=WeekSlot.choices,
+    )
+    
+    date_alias = models.CharField(blank=True, null=True, max_length=20)
+    
+    date_tag = models.CharField(
+        max_length=32,
+        blank=True,
+        null=True,
+        choices=DateTag.choices,
+    )
+
+    # ★追加2：連休グループ（GW/SV/WVなど）
+    holiday_group_id = models.CharField(
+        max_length=16,
+        blank=True,
+        null=True,
+        db_index=True,
+    )
+
+    def __str__(self):
+        return f"{self.h_date} ({self.date_alias})"
+
     
     def __str__(self):
         return f"{self.h_date} ({self.date_alias})"
     
-
-status_flag = [('配布待ち', '配布待ち'), ('実施待ち', '実施待ち'), ('承認待ち', '承認待ち'), ('完了', '完了'), ('差戻し', '差戻し'), ('遅れ', '遅れ')]
 class Plan_tb(DateFilterable): #DateFilterableが'models.Modelを継承しているのでmodels.Modelに出なくて大丈夫
     date_filter_field = 'p_date'
     plan_time_field = 'plan_time'
@@ -254,12 +506,13 @@ class Plan_tb(DateFilterable): #DateFilterableが'models.Modelを継承してい
         related_name="plans_by_date"
     )#計画日(点検カードを実施する日)
     plan_time = models.DateTimeField('plan_time', null=True)#タイムテーブルで日付を指定して配った日
-    implementation_date = models.DateField('implementation_date', null=True)#実施日
+    implementation_date =  models.DateTimeField('implementation_date', null=True, blank=True)#実施日
     result_man_hours = models.IntegerField('man_hours', null=True, blank=True)#実施時間
     result = models.CharField('result', null=True, blank=True, max_length=20)#結果
     points_to_note = models.CharField('points_to_pointed_out', null=True, blank=True, max_length=500)#指摘事項
-    status = models.CharField('status', max_length=20, choices=status_flag, default='配布待ち')#ステータス
+    status = models.CharField('status', max_length=20, choices=PlanStatus.choices, default=PlanStatus.WAITING)#ステータス
     comment = models.CharField('comment', max_length=300, null=True, blank=True)#コメント
+    
     approver = models.ForeignKey(
         Member_tb, 
         null=True, 
@@ -281,6 +534,7 @@ class Plan_tb(DateFilterable): #DateFilterableが'models.Modelを継承してい
         on_delete=models.CASCADE,
         related_name='applied_plans'
     )#申請者
+    
     
     def __str__(self):
         return f"Plan {self.plan_id} ({self.status})"
@@ -304,7 +558,7 @@ class WeeklyDuty(DateFilterable): #DateFilterableが'models.Modelを継承して
         on_delete=models.CASCADE, 
         related_name='weekly_duties'
     )
-    status = status = models.CharField('status', max_length=20, choices=status_flag, default='配布待ち')#ステータス
+    status = status = models.CharField('status', max_length=20, choices=PlanStatus.choices, default=PlanStatus.WAITING)#ステータス
     this_week = models.BooleanField('this_week' ,default=False)
     
     def __str__(self):

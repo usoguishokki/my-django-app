@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}カレンダー{% endblock %}
+
+{% block head %}
+<!-- jQuery (3.x以上) -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.5/main.min.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.5/main.min.js'></script>
+{% endblock %}
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/pages/calendar.scss' %}" rel="stylesheet" type="text/css">
+    <link href="{% sass_src 'css/components/drawer/_drawer.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block header %}
+    {% include "header.html" %}
+
+{% endblock %}
+
+{% block content %}
+<div id="calendarContainer" class="calendar-container" data-ui-root="drawer">
+    <div class="card-display">
+        <div id="card-table" class="table-container">
+            <div id="cardDetailSpinner" class="table-overlay display-none"></div>
+            <table  id="myTable">
+                <colgroup>
+                    <col class="line-content" id="lineCol">
+                    <col class="machine-content" id="machineCol">
+                    <col class="work-name-content" id="workNameCol">
+                    <col class="work-period-content" id="workPeriodCol">
+                    <col class="man-hour-content" id="manHourCol">
+                </colgroup>
+                <thead>
+                    <tr class="table-th" id="tableTh">
+                        <th class="line-content line-column" id="lineColumn">ライン名</th>
+                        <th class="machine-content machine-column" id="machineColumn">設備名</th>
+                        <th class="work-name-content work-name-column" id="workNameColumn">作業名</th>
+                        <th class="work-period-content work-period" id="workPeriodColumn">周期</th>
+                        <th class="man-hour-content man-hour-column is-right" id="manHourColumn">工数</th>
+                    </tr>
+                </thead>
+                <tbody id="external-events">
+                    {% for plan in plan_data %}
+                    <tr class="fc-event"
+                    data-plan-id="{{ plan.plan_id }}"
+                    data-status="{{ plan.status }}"
+                    data-work-name="{{ plan.inspection_no.wark_name }}"
+                    data-man-hour="{{ plan.inspection_no.man_hours }}"
+                    data-affilation="{{ plan.calendar_affiliation_name }}"
+                    data-time-zone="{{ plan.inspection_no.time_zone }}"
+                    data-control-name="{{ plan.inspection_no.control_no.machine }}"
+                    data-plan-inspection-no="{{ plan.inspection_no.inspection_no }}"                    
+                    data-line = "{{ plan.inspection_no.control_no.line_name.line_name }}"
+                    data-plan-week-of-day="{{ plan.p_date.h_day_of_week }}"
+                    data-event='{"title": "Plan ID: {{ plan.plan_id }}", "id": "{{ plan.plan_id }}"}'
+                    data-week="{{ plan.p_date.date_alias }}"
+                    data-period="{{ plan.inspection_no.rule.interval }}{{ plan.inspection_no.rule.unit }}"
+                    data-check-status="{{ plan.inspection_no.status }}"
+                    >
+                        <td class="line-content line-row">{{ plan.inspection_no.control_no.line_name.line_name }}</td>
+                        <td class="machine-content machine-row">{{ plan.inspection_no.control_no.machine }}</td>
+                        <td class="work-name-content work-name-row">{{ plan.inspection_no.wark_name }}</td>
+                        <td class="work-name-content work-period-row">
+                            {{ plan.inspection_no.rule.interval }}{{ plan.inspection_no.rule.unit }}
+                        </td>
+                        <td class="man-hour-content man-hour-row is-right">{{ plan.inspection_no.man_hours }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div id="card-total" class="card-total">
+            <div class="card-total__group card-total__group--distributed">
+                <!-- 配布済みカード（枚/分） -->
+                <div class="card card--distribution-completed"
+                     role="region"
+                     aria-labelledby="distributedSummaryTitle"
+                     aria-describedby="distributedSummaryValue">
+                    <div class="card-title" id="distributedSummaryTitle">
+                        配布済みカード（枚/分）
+                    </div>
+        
+                    <div class="card-content" id="distributedSummaryValue">
+                        <span id="distributedCards" data-count="0">0</span>
+                        <span class="card-sep">/</span>
+                        <span id="distributedMinutes" data-minutes="0">0</span>
+                    </div>
+                </div>
+        
+                <!-- 一括引戻し -->
+                <div id="buttonPullback"
+                     class="mybutton disable-events card-total__action">
+                    <a class="button">一括引戻し</a>
+                </div>
+            </div>
+        
+            <div class="card-total__group card-total__group--visible">
+                <!-- 表示中の合計 -->
+                <div class="card card--compact"
+                     role="region"
+                     aria-label="テーブル表示中の合計">
+                    <div class="card-title">テーブル表示中（枚/分）</div>
+                    <div class="card-content">
+                        <span id="totalCount" data-count="0" class="total">0</span>
+                        <span class="card-sep">/</span>
+                        <span id="manHours" data-count="0" class="total">0</span>
+                    </div>
+                </div>
+        
+                <!-- 一括登録 -->
+                <div id="buttonRegistration"
+                     class="mybutton disable-events card-total__action">
+                    <a class="button">一括登録</a>
+                </div>
+            </div>
+        </div>
+        
+        
+    </div>
+
+
+    <div id="filterarea" 
+        class="filter-container" 
+        data-current-team="{{ filters.selected.team_name }}" 
+        data-current-weekday="{{ filters.selected.day_of_week }}"
+    >
+        <div class="filter-item">
+            <label for="memberSelect">メンバー</label>
+            <select id="memberSelect" data-filter-attribute="data-member">
+              <option id="memberSelectPlaceholder" value="" selected disabled hidden>選択してください。</option>
+              <option id="allMember" class="display-none" value="">全て</option>
+            
+              {% for member in filters.members_with_profiles %}
+              <option value="{{ member.user.name }}"
+                data-team="{{ member.belongs.affilation }}"
+                data-login-number="{{ member.user_id }}"
+                data-shift-start-time="{{ member.shift_start_time|date:"Y-m-d\TH:i" }}"
+                data-shift-end-time="{{ member.shift_end_time|date:"Y-m-d\TH:i" }}">
+                {{ member.user.name }}
+              </option>
+              {% endfor %}
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="teamSelect">班</label>
+            <select id="teamSelect" data-filter-attribute="data-team">
+                <option value="">全て</option>
+                {% for team, meta in filters.team_shifts.items %}
+                    {% with t=team|stringformat:"s" %}
+                        <option value="{{ t }}" 
+                            data-affilation="{{ meta.affilation }}"
+                            data-affilation-id="{{ meta.affilation_id }}"
+                            data-shift-pattern="{{ meta.shift_pattern }}"
+                            {% if t == filters.selected.team_name %}selected{% endif %}>
+                            {{ team }}
+                        </option> 
+                    {% endwith %}
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="weekSelect">週</label>
+            <select id="weekSelect" data-filter-attribute="data-week">
+                {% for w in filters.hozen_week_names.hozen_week %}
+                    <option value="{{ w }}" {% if w == filters.selected.data_alias %}selected{% endif %}>
+                        {{ w }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="inspectionTypeSelect">点検種類</label>
+            <select id="inspectionTypeSelect" data-filter-attribute="data-check-status">
+                <option value="">全て</option>
+                <option value="日常点検">日常点検</option>
+                <option value="定期点検">定期点検</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="lineSelect">ライン名</label>
+            <select id="lineSelect" data-filter-attribute="data-line">
+                <option value="">全て</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="machineSelect">設備名</label>
+            <select id="machineSelect" data-filter-attribute="data-machine">
+                <option value="">全て</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="periodSelect">周期</label>
+            <select id="periodSelect" data-filter-attribute="data-period">
+                <option value="">全て</option>
+            </select>
+        </div>
+
+
+        <div class="filter-item">
+            <label for="daySelect">曜日</label>
+            <select id="daySelect" data-filter-attribute="data-weekday">
+                {% with sel=filters.selected.day_of_week|stringformat:"s" %}
+                <option value="" {% if sel == "" %}selected{% endif %}>全て</option>
+                {% for opt in filters.day_options %}
+                    {% with v=opt.value|stringformat:"s" %}
+                        <option value="{{ v }}" {% if v == sel %}selected{% endif %}>
+                            {{ opt.label }}
+                        </option>
+                    {% endwith %}
+                {% endfor %}
+              {% endwith %}
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="timezoneSelect">時間帯</label>
+            <select id="timezoneSelect" data-filter-attribute="data-timezone">
+                <option value="">全て</option>
+                {% for tz in filters.time_zone %}
+                <option value="{{ tz }}">
+                    {{ tz }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    
+
+    <div class="calendar-areas" id="calendarAreas">
+        <div id="calendarSpinner" class="calendar-overlay display-none"></div>
+        <label id="calendarLabel" class="noneDisplay">No members selected</label>
+        <div id="calendar" class="noMember"></div>
+    </div>
+
+    {% include "includes/components/drawer_stack.html" with panels_template="../../calendar/drawer_panels__calendar.html" %}
+
+    <div id="screenDim" class="screen-dim"></div>
+    <div id="modalOverlay" class="modal-overlay"></div>
+</div>
+    <form method="post">
+        {% csrf_token %}
+    </form>
+{% endblock %}
+{% block script %}
+    {{ filters.selected|json_script:"ssr-initialSelections" }}
+    <script type="module" src="{% static 'js/calendar/calendar.js' %}"></script>
+{% endblock %}

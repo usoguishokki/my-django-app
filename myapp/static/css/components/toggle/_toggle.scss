@@ -1,0 +1,123 @@
+/* foundation/_toggle.scss */
+
+/* カラートークン */
+$toggle-off: rgba(100, 116, 139, 0.30);
+$toggle-off-border: rgba(15, 23, 42, 0.16);
+
+$toggle-on: #3c8ce1;         /* ネイビー */
+$toggle-on-border: #3c8ce1;
+
+$toggle-focus: rgba(32, 148, 231, 0.956);
+
+/* 本体（囲み無し） */
+.toggle,
+.drawer-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+
+  border: 0;
+  background: transparent;
+
+  padding: 6px;
+  margin: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  position: relative;
+
+  font-size: 0;
+  line-height: 0;
+
+  transition: transform 120ms ease;
+}
+
+.toggle:active:not(:disabled),
+.drawer-toggle:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* track */
+.toggle::before,
+.drawer-toggle::before {
+  content: "";
+
+  width: 40px;
+  height: 20px;
+
+  border-radius: 999px;
+
+  background: $toggle-off;
+  box-shadow: inset 0 0 0 1px $toggle-off-border;
+
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+/* knob */
+.toggle::after,
+.drawer-toggle::after {
+  content: "";
+
+  width: 16px;
+  height: 16px;
+
+  border-radius: 999px;
+  background: #fff;
+
+  box-shadow:
+    0 1px 2px rgba(2, 6, 23, 0.18),
+    0 0 0 1px rgba(2, 6, 23, 0.06);
+
+  position: absolute;
+  top: 50%;
+  left: 10px;
+
+  translate: 0 -50%;
+
+  transform: translateX(0);
+
+  transition: transform 160ms cubic-bezier(.2,.9,.2,1);
+}
+
+/* hover */
+.toggle:hover:not(:disabled)::before,
+.drawer-toggle:hover:not(:disabled)::before {
+  background: rgba(100,116,139,0.40);
+}
+
+/* ON */
+.toggle[aria-pressed="true"]::before,
+.toggle[data-checked="1"]::before,
+.drawer-toggle[aria-pressed="true"]::before,
+.drawer-toggle[data-checked="1"]::before {
+  background: $toggle-on;
+  box-shadow: inset 0 0 0 1px $toggle-on-border;
+}
+
+.toggle[aria-pressed="true"]::after,
+.toggle[data-checked="1"]::after,
+.drawer-toggle[aria-pressed="true"]::after,
+.drawer-toggle[data-checked="1"]::after {
+  transform: translateX(16px);
+}
+
+/* focus */
+.toggle:focus-visible::before,
+.drawer-toggle:focus-visible::before {
+  box-shadow:
+    inset 0 0 0 1px $toggle-on-border,
+    0 0 0 3px $toggle-focus;
+}
+
+/* disabled */
+.toggle:disabled,
+.toggle[aria-disabled="true"],
+.drawer-toggle:disabled,
+.drawer-toggle[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

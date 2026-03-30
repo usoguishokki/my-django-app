@@ -1,0 +1,526 @@
+@import 'foundation/typography';
+@import 'components/table/table';
+
+/* theme tokens（共通） */
+$dr-surface: #ffffff;
+$dr-bg: #f6f8fb;
+$dr-border: rgba(15, 23, 42, 0.10);
+
+$dr-text-strong: #020617;
+$dr-text-main:   #0b1220;
+$dr-muted:       #475569;
+
+/* drawer width tokens */
+$drawer-default-width: 380px;
+$drawer-default-maxvw: 32vw;
+
+$drawer-level1: clamp(320px, 33vw, 520px);     // 1枚時の通常幅
+$drawer-wide:   clamp(620px, 70vw, 1000px);    // 1枚時 wide 幅
+
+@mixin drawerFixedWidth($w) {
+  flex: 0 0 $w;
+  width: $w;
+  max-width: $w;
+  min-width: 0;
+}
+
+.drawer__tableWrap { display: none; }
+.drawer__content { display: none; }
+
+/* ==============================
+   Dock
+   ============================== */
+.drawer-stack {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  left: 8px;
+  height: calc(100% - 16px);
+
+  display: flex;
+  gap: 8px;
+  z-index: 30;
+
+  pointer-events: none;
+  justify-content: flex-start; // 複数枚は基本左詰め
+}
+
+/* open 状態（左右共通） */
+[data-ui-root="drawer"].page--drawer-right-open,
+[data-ui-root="drawer"].page--drawer-left-open {
+  .drawer-stack { pointer-events: auto; }
+}
+
+/* stack direction */
+.drawer-stack--right { flex-direction: row; }
+.drawer-stack--left  { flex-direction: row-reverse; }
+
+/* 2枚目・3枚目の“入ってくる”遅延 */
+.drawer-stack .drawer.is-open:nth-child(2) { animation-delay: 40ms; }
+.drawer-stack .drawer.is-open:nth-child(3) { animation-delay: 80ms; }
+
+/* ==============================
+   Drawer shell
+   ============================== */
+.drawer {
+  position: relative;
+  width: $drawer-default-width;
+  max-width: $drawer-default-maxvw;
+  height: 100%;
+
+  background: $dr-surface;
+  border-left: 1px solid $dr-border;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
+  border-radius: 10px;
+
+  display: none; // 閉じてる間はレイアウトから消す
+  flex-direction: column;
+
+  pointer-events: none;
+  will-change: transform, opacity;
+
+  transition:
+    flex-basis 240ms cubic-bezier(.2,.9,.2,1),
+    max-width 240ms cubic-bezier(.2,.9,.2,1);
+}
+
+.drawer.is-open {
+  display: flex;
+  pointer-events: auto;
+
+  width: auto;
+  max-width: none;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* opening（1回だけ） */
+.drawer.is-opening {
+  animation-name: drPanelIn;
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(.2,.9,.2,1);
+  animation-fill-mode: both;
+}
+.drawer-stack--left .drawer.is-opening {
+  animation-name: drPanelInLeft;
+}
+
+/* closing（閉じる直前の見た目維持） */
+.drawer.is-closing {
+  display: flex;        // display:none 対策
+  pointer-events: none;
+
+  position: absolute;
+  inset: 0 auto 0 auto; // top/bottom を固定して高さブレ防止
+
+  /* 右stackのclosingは右に“固定してから”退場 */
+  right: 8px;
+  left: auto;
+
+  /* 幅が inherit だとブレることがあるので、ここは「open時ルール」を優先させる */
+  width: auto;
+  max-width: none;
+
+  animation-name: drPanelOut;
+  animation-duration: 180ms;
+  animation-timing-function: cubic-bezier(.2,.9,.2,1);
+  animation-fill-mode: both;
+}
+
+.drawer-stack--left .drawer.is-closing {
+  left: 8px;
+  right: auto;
+
+  animation-name: drPanelOutLeft;
+}
+
+/* keyframes（定義は1回だけ） */
+@keyframes drPanelIn {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes drPanelInLeft {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* 右に退場 */
+@keyframes drPanelOut {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to   { opacity: 0; transform: translateX(18px) scale(0.98); }
+}
+
+@keyframes drPanelOutLeft {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to   { opacity: 0; transform: translateX(-18px) scale(0.98); }
+}
+
+/* ==============================
+   level rules（左右統一）
+   ============================== */
+[data-ui-root="drawer"].page--drawer-right-level-1,
+[data-ui-root="drawer"].page--drawer-left-level-1 {
+  .drawer-stack {
+    pointer-events: auto;
+    justify-content: flex-end;
+  }
+
+  .drawer-stack > .drawer.is-open {
+    @include drawerFixedWidth($drawer-level1);
+  }
+
+  .drawer-stack > .drawer.drawer--wide.is-open {
+    @include drawerFixedWidth($drawer-wide);
+  }
+}
+
+[data-ui-root="drawer"].page--drawer-right-level-3,
+[data-ui-root="drawer"].page--drawer-left-level-3 {
+  .drawer-stack {
+    pointer-events: auto;
+    justify-content: flex-start;
+  }
+}
+
+/* ==============================
+   Drawer inner（BEM）
+   ============================== */
+.drawer {
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 10px 14px;
+    border-bottom: 1px solid $dr-border;
+    background: linear-gradient(to bottom, #eef2f7, #e9eef6);
+  }
+
+  &__titleGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__title {
+    @include type-ui;
+    font-weight: $fw-strong;
+    color: $dr-text-strong;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.01em;
+  }
+
+  &__close {
+    border: none;
+    background: transparent;
+
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #6b7280;
+
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+
+    &:hover { background: #e5e7eb; color: #111827; transform: translateY(-1px); }
+    &:active { transform: translateY(0); }
+  }
+
+  &__body {
+    display: flex;              /* ✅ 必須：子の flex を効かせる */
+    flex-direction: column;     /* ✅ 縦積み */
+    gap: 10px;                  /* 任意：placeholder/tableTop/content の間隔 */
+
+    flex: 1 1 auto;
+    min-height: 0;              /* ✅ 必須：子スクロールを成立させる */
+    padding: 12px 14px;
+    overflow: hidden;           /* ✅ body自体はスクロールしない */
+
+    @include type-td;
+    font-weight: $fw-regular;
+    color: $dr-text-main;
+    background: $dr-bg;
+  }
+
+  /* ✅ content も tableWrap と同格の「スクロール領域」にする */
+  &__content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  &__placeholder {
+    flex: 0 0 auto;
+    margin: 0;
+    @include type-label;
+    color: #9ca3af;
+    letter-spacing: 0.02em;
+  }
+
+  &__tableWrap {
+    @include table-container-standard;
+
+    flex: 1 1 auto;
+    min-height: 0;
+
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+
+  &__tableTop {
+    flex: 0 0 auto;
+  }
+
+  &__table {
+    @include table-standard;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    min-width: 700px;
+    background: $dr-surface;
+
+    thead {
+      background-color: #eef2f7;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      border-bottom: 1px solid $dr-border;
+    }
+
+    th, td {
+      padding: 6px 8px;
+      border-bottom: 1px solid $dr-border;
+      white-space: nowrap;
+      color: $dr-text-main;
+    }
+
+    th {
+      @include type-th;
+      font-weight: $fw-strong;
+      text-align: left;
+      color: $dr-text-strong;
+    }
+
+    td {
+      @include type-td;
+      font-weight: $fw-regular;
+    }
+
+    tr.is-disabled {
+      opacity: 0.45;
+    }
+    
+    tr.is-disabled .toggle {
+      pointer-events: auto;
+    }
+  }
+}
+
+.drawer__table {
+  table-layout: fixed;
+  td.is-right,
+  th.is-right {
+    text-align: right;
+  }
+
+  td.is-center,
+  th.is-center {
+    text-align: center;
+  }
+
+  td.is-left,
+  th.is-left {
+    text-align: left;
+  }
+}
+
+/* click row */
+.drawer .drawer__table tbody tr.is-clickable {
+  cursor: pointer;
+  transition: background-color 0.12s ease, box-shadow 0.12s ease, transform 0.08s ease;
+}
+.drawer .drawer__table tbody tr.is-clickable:hover {
+  background: #dbeafe;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  transform: translateY(-1px);
+}
+.drawer .drawer__table tbody tr.is-selected {
+  background: #dbeafe;
+  box-shadow: inset 3px 0 0 #2563eb, inset 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+.drawer .drawer__table tbody tr.is-selected:hover {
+  background: rgba(219, 234, 254, 0.9);
+}
+.drawer .drawer__table tbody tr.is-clickable:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.45);
+  outline-offset: -2px;
+}
+
+.drawer .drawer__table.drawer__table--no-rowclick tbody tr {
+  cursor: default;
+}
+
+/* hover / selected の見た目も無効にしたいなら */
+.drawer .drawer__table.drawer__table--no-rowclick tbody tr.is-clickable:hover {
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+/* tr に pointer-events:none 方式にする場合は、操作要素だけ戻す */
+.drawer .drawer__table.drawer__table--no-rowclick tbody tr {
+  pointer-events: none;
+}
+
+/* toggle/button/link だけはクリック可能に戻す（必要なものだけ列挙） */
+.drawer .drawer__table.drawer__table--no-rowclick .toggle,
+.drawer .drawer__table.drawer__table--no-rowclick button,
+.drawer .drawer__table.drawer__table--no-rowclick a {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* detail cards（任意） */
+.detail-cards { display: flex; flex-direction: column; gap: 12px; }
+.detail-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 10px;
+  border: 1px solid $dr-border;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 10px 22px rgba(15, 23, 42, 0.10);
+  overflow: hidden;
+
+  &__header {
+    padding: 10px 14px;
+    background: linear-gradient(to bottom, #eef2f7, #e9eef6);
+    border-bottom: 1px solid $dr-border;
+  }
+  &__title {
+    @include type-th;
+    font-weight: $fw-strong;
+    color: $dr-text-strong;
+  }
+  &__body {
+    padding: 12px 14px;
+    display: grid;
+    gap: 10px;
+  }
+}
+.detail-item {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 10px;
+  align-items: start;
+
+  &__label {
+    @include type-label;
+    font-weight: $fw-strong;
+    color: $dr-muted;
+  }
+  &__value {
+    @include type-label;
+    color: $dr-text-main;
+  }
+}
+
+.drawerTableTop {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 20px;
+
+  justify-content: flex-end; /* ✅ 右詰め */
+}
+
+.drawerTableTop__range {
+  flex: 0 1 auto;      /* ✅ 伸びすぎない */
+  min-width: 0;
+}
+
+.drawerTableTop__group {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.ui-fieldGroup__label {
+  @include type-ui-sm;
+  white-space: nowrap;
+  color: rgba(71, 85, 105, 0.95);
+  padding-bottom: 2px; // 入力の下端に揃えやすい
+}
+
+.ui-fieldGroup.ui-fieldGroup--datetime {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.ui-fieldGroup.ui-fieldGroup--datetime .ui-field {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+}
+
+.ui-fieldGroup.ui-fieldGroup--datetime .ui-input--date {
+  width: 150px;
+  max-width: 100%;
+}
+
+.ui-fieldGroup.ui-fieldGroup--datetime .ui-input--time {
+  width: 110px;
+  max-width: 100%;
+}
+
+
+.drawerTableTop__sep {
+  align-self: flex-end;
+  padding: 0 4px 2px;
+  user-select: none;
+  color: #64748b;
+  @include type-ui;
+}
+
+
+/* ラベル+time を横で整える */
+.drawerTableTop__field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.drawerTableTop__label {
+  white-space: nowrap;
+}
+
+/* input が潰れないように */
+.drawerTableTop__time {
+  width: 120px;
+  max-width: 100%;
+}
+
+/* ボタン群を右寄せ */
+.drawerTableTop__actions {
+  flex: 0 0 auto;
+}
+
+/* ボタン見た目（既にあるなら不要） */
+.drawerTableTop__btn {
+  white-space: nowrap;
+}

@@ -1,0 +1,613 @@
+@import 'common';
+// =======================================
+// KPIマトリクス用のカラーバリエーション
+// =======================================
+$kpi-border-color: #e5e7eb;
+$kpi-header-bg:   #ebeded;
+$kpi-header-text: #374151;
+$kpi-body-text:   #111827;
+$kpi-row-stripe:  #f9fafb;
+$kpi-section-color: #ffffff;
+
+$kpi-count-accent: #9dffc4;
+$kpi-mh-accent: #79d5ff;      
+
+
+// 今月ハイライト用
+$kpi-current-bg:        #f9edd1; // 薄いオレンジ
+$kpi-current-header-bg: #f6b81b;
+$kpi-current-header-text: #ffffff;
+
+$kpi-rowlabel-pad-left: 12px;
+
+.planned-maintenance-container {
+    display: flex;
+    position: relative;
+    height: 100%;
+    width: 100%;
+    padding: 8px;
+    overflow: visible;
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.28); // ちょっと暗いネイビー系
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease-out;
+      z-index: 10; // subview よりは下、右コンテンツよりは上
+    }
+  
+    &.planned-maintenance-container--subview-open::before {
+      opacity: 1;
+      pointer-events: auto; // 背景クリックを無効化したい時
+    }
+
+    .right-content {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-sizing: border-box;
+        width: 100%;
+
+        flex: 1 1 auto;
+        min-height: 0; 
+
+        // ==============================
+        // 上部ボタンエリア
+        // ==============================
+        .kpi-top-controls {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-end;
+            gap: 24px;
+            margin-bottom: 4px;
+            padding-bottom: 8px;
+        }
+
+        .kpi-top-controls__group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            &--target {
+                padding-left: 16px;              // period から少し離す
+                margin-left: 8px;
+                border-left: 1px solid $kpi-border-color; // period / target の区切り線
+            }
+        }
+
+        .kpi-top-controls__label {
+            margin-left: 6px;
+            font-size: 0.75rem;
+            color: #6b7280;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .kpi-top-controls__buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        // 右端の更新ボタンを右寄せしたいとき用
+        .kpi-top-controls__update {
+            padding-top: 6px;
+            padding-left: 16px;
+            margin-left: 8px;
+            border-left: 1px solid $kpi-border-color;
+        }
+
+        .kpi-btn {
+            border-radius: 999px;
+            border: 1px solid transparent;
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            background: #f3f4f6;
+            color: #111827;
+            cursor: pointer;
+            line-height: 1.2;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition:
+                background-color 0.15s ease,
+                color 0.15s ease,
+                border-color 0.15s ease,
+                box-shadow 0.15s ease,
+                transform 0.08s ease;
+
+            &:not(:disabled):not(.kpi-btn--disabled):hover {
+              background: #e5e7eb;
+              transform: translateY(-1px);
+              box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15)
+            }
+
+            &:not(:disabled):not(.kpi-btn--disabled):active {
+              transform: translateY(0);
+              box-shadow: none;
+            }
+
+            &.kpi-btn--disabled,
+            &.disabled,
+            &:disabled {
+              opacity: 0.45;
+              cursor: not-allowed;
+              background: #e5e7eb;
+              color: #9ca3af;
+              border-color: #d1d5db;
+              box-shadow: none;
+              transform: none;
+            }
+
+            &.is-active {
+              background: #2563eb;
+              color: #ffffff;
+              border-color: #1d4ed8;
+              box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+            }
+      }
+
+    .kpi-btn--primary {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #1d4ed8;
+
+      &:not(:disabled):not(.kpi-btn--disabled):hover {
+        background: #1d4ed8;
+      }
+    }
+
+    // ==============================
+    // KPIマトリクス本体
+    // ==============================
+    .kpi-matrix {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      padding-bottom: 16px;
+    
+      &__wrapper {
+        flex: 1 1 auto;
+        min-height: 0;
+        margin-top: 8px;
+        padding: 0 0 6px;
+        overflow-x: auto;
+        overflow-y: auto;
+        position: relative;
+        max-height: 100%;
+        isolation: isolate; // ★ stickyの重なりを安定させる
+        z-index: 0;
+    
+        --th-row1-h: 40px; // 初期値。JSで上書きする
+      }
+    
+      &__table {
+        border-collapse: separate;
+        border-spacing: 0;
+        min-width: 960px;
+        color: $kpi-body-text;
+    
+        th, td { white-space: nowrap; }
+    
+        // ===== ヘッダ全体（上に固定） =====
+        thead {
+          position: sticky;
+          top: 0;
+          z-index: 10;
+          background: transparent; // ←セル側で背景を作る
+        }
+
+        // =========================================
+        // Header Base（共通）
+        // 使い方：th に "kpi-matrix__header" を付ける
+        // 例）kpi-matrix__header kpi-matrix__header--month
+        //     kpi-matrix__header kpi-matrix__header--week
+        //     kpi-matrix__header kpi-matrix__header--team
+        // =========================================
+        th.kpi-matrix__header {
+          color: $kpi-header-text;
+          font-weight: 750;
+          font-size: 0.78rem;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+        
+          background:
+            linear-gradient(
+              to bottom,
+              rgba(255, 255, 255, 0.92),
+              rgba(243, 244, 246, 0.92)
+            );
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+        
+          border-bottom: 1px solid rgba(15, 23, 42, 0.10);
+          box-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) inset;
+        
+          padding: 10px 12px;
+          white-space: nowrap;
+          vertical-align: middle;
+        }
+
+        // 月・週（見出しとして少し濃く）
+        th.kpi-matrix__header--month,
+        th.kpi-matrix__header--week {
+          font-size: 0.72rem;
+          font-weight: 800;
+          letter-spacing: 0.10em;
+        
+          background:
+            linear-gradient(
+              to bottom,
+              rgba(235, 237, 237, 0.98),
+              rgba(229, 231, 235, 0.92)
+            );
+        }
+
+        // 班ヘッダ（大文字化はしない）
+        th.kpi-matrix__header--team {
+          font-size: 0.82rem;
+          font-weight: 750;
+          text-transform: none;
+          letter-spacing: 0.02em;
+          padding-top: 12px;
+          padding-bottom: 12px;
+        }
+
+        // 今月ヘッダ（既存クラスに対して“リッチ化”）
+        th.kpi-matrix__header--current-period {
+          color: $kpi-current-header-text;
+          background:
+            linear-gradient(
+              to bottom,
+              rgba($kpi-current-header-bg, 0.98),
+              rgba($kpi-current-header-bg, 0.88)
+            );
+          border-bottom-color: rgba(15, 23, 42, 0.12);
+          box-shadow:
+            0 1px 0 rgba(255, 255, 255, 0.25) inset,
+            0 0 0 1px rgba(15, 23, 42, 0.06) inset;
+        }
+
+        // 「全体」列の区切り（ヘッダにも）
+        th.kpi-matrix__group-end {
+          border-right: 2px solid rgba(255, 255, 255, 0.92);
+          box-shadow: 1px 0 0 rgba(229, 231, 235, 0.92);
+        }
+    
+        
+    
+        // ===== 左端行ラベル（横スクロールでも固定）=====
+        tbody th.kpi-matrix__row-label {
+          position: sticky;
+          left: 0;
+          z-index: 6;
+          text-align: left;
+        
+          // ヘッダーと親和：薄いグラデ + うっすら枠（header base と同系統）
+          color: rgba($kpi-header-text, 0.92);
+          font-weight: 750;
+          font-size: 0.82rem;
+        
+          background:
+            linear-gradient(
+              to bottom,
+              rgba(255, 255, 255, 0.92),
+              rgba(243, 244, 246, 0.92)
+            );
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+        
+          border-right: 2px solid #fff;
+          border-left: 4px solid transparent;
+        
+          padding-left: 10px;
+          padding-right: 12px;
+        
+          box-shadow:
+            1px 0 0 #fff,
+            1px 0 0 $kpi-border-color,
+            0 1px 0 rgba(15, 23, 42, 0.06) inset;
+        }
+        
+        // 種別で左ライン色を合わせる（count / mh）
+        tbody th.kpi-matrix__row-label--count {
+          border-left-color: $kpi-count-accent;
+        }
+        tbody th.kpi-matrix__row-label--mh {
+          border-left-color: $kpi-mh-accent;
+        }
+        
+        // セクション境界（任意：見た目の一体感）
+        tbody th.kpi-matrix__row-label--section-start {
+          padding-top: 16px;
+        }
+        tbody th.kpi-matrix__row-label--section-end {
+          box-shadow:
+            1px 0 0 #fff,
+            1px 0 0 $kpi-border-color,
+            0 1px 0 rgba(15, 23, 42, 0.06) inset,
+            0 6px 0 $kpi-section-color;
+        }
+
+    
+        // ===== 左上交差セル（最前面で固定）=====
+        thead th.kpi-matrix__header--row-label {
+          position: sticky;
+          top: 0;
+          left: 0;
+          z-index: 30;
+          background: #fff;
+          background-clip: padding-box;
+          padding: 0;
+
+          vertical-align: bottom;
+    
+          // ★ 交差部分の見切れを綺麗にする境界（現状の要望）
+          box-shadow:
+            2px 0 0 #fff,   // 右側に白を2px（横スクロール時のにじみ対策）
+            0 2px 0 #fff,   // 下側に白を2px（縦スクロール時のにじみ対策）
+
+            1px 0 0 $kpi-border-color,
+            0 1px 0 $kpi-border-color;
+
+          .kpi-rowlabel-wrap {
+            display: block;
+            padding: 6px 0;
+            box-sizing: border-box;
+          }
+
+          .kpi-rowlabel {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+          }
+          
+
+          .kpi-rowlabel__item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 0.78rem;
+            color: #111827;
+            white-space: nowrap;
+        
+            &::before {
+              content: "";
+              width: 10px;
+              height: 10px;
+              border-radius: 999px;
+              display: inline-block;
+            }
+        
+            &--count::before { background: $kpi-count-accent; }
+            &--mh::before    { background: $kpi-mh-accent; }
+          }
+        }
+    
+        // 「全体」列の右側の太線
+        th.kpi-matrix__group-end { border-right: 2px solid #fff; }
+        td.kpi-matrix__group-end { border-right: 2px solid $kpi-border-color; }
+    
+        // ボディのストライプ
+        tbody tr.kpi-row--count > td {
+          background-color: rgba($kpi-count-accent, 0.25);
+        }
+        tbody tr.kpi-row--count:nth-child(even) > td {
+          background-color: rgba($kpi-count-accent, 0.03);
+        }
+        tbody tr.kpi-row--mh > td {
+          background-color: rgba($kpi-mh-accent, 0.25);
+        }
+        tbody tr.kpi-row--mh:nth-child(even) > td {
+          background-color: rgba($kpi-mh-accent, 0.03);
+        }
+
+        // 偶数行の今月セル
+        tbody tr:nth-child(odd) td.kpi-matrix__cell--current-period {
+          background-color: $kpi-current-bg;
+        }
+
+        tbody tr:nth-child(even) td.kpi-matrix__cell--current-period {
+          background-color: rgba($kpi-current-bg, 0.03)
+        }
+
+        tbody td { text-align: right; }
+    
+        // 右端のボーダー
+        thead th:last-child,
+        tbody td:last-child {
+          border-right: 1px solid #fff;
+        }
+    
+        // 行の下線（最終行以外）
+        tbody tr:not(:last-child):not(.kpi-row--section-end) {
+          > th[scope='row'],
+          > td { border-bottom: 2px solid #fff; }
+        }
+        tbody tr:last-child {
+          > th[scope='row'],
+          > td { border-bottom: none !important; }
+        }
+    
+        // 今月ハイライト（colで付与）
+        col.kpi-matrix__col--current-period { background-color: $kpi-current-bg; }
+        .kpi-matrix__header--current-period {
+          background-color: $kpi-current-header-bg;
+          color: $kpi-current-header-text;
+          font-weight: 600;
+        }
+    
+        // クリック可能セル
+        td.kpi-matrix__cell--clickable {
+          cursor: pointer;
+          transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+        }
+      }
+    }
+    
+
+    // レスポンシブ（幅が狭いとき）
+    @media (max-width: 1024px) {
+      .kpi-top-controls {
+        align-items: stretch;
+
+        .kpi-btn {
+          flex: 1 1 auto;
+          justify-content: center;
+        }
+      }
+    }
+  }
+}
+
+// ==============================
+// ソフトなバリアント (matrix--soft)
+// ==============================
+.kpi-matrix.matrix--soft {
+  .kpi-matrix__table {
+    --month-sep-w: 12px;
+
+    // 行の下端に薄い線
+    tbody tr {
+      background-image: linear-gradient(
+        to bottom,
+        rgba(17, 24, 39, 0.06),
+        rgba(17, 24, 39, 0.06)
+      );
+      background-size: 100% 1px;
+      background-repeat: no-repeat;
+      background-position: left bottom;
+    }
+
+
+    // 余白
+    th, td { padding: 10px 16px; }
+
+    //デフォルト（ボディセル）を薄くする
+    // ※ 行ラベル(th)やヘッダ(th)は対象外にしている
+    tbody td.kpi-matrix__cell {
+      color: rgba($kpi-body-text, 0.42); // ←薄さはここで調整（0.35〜0.55）
+      font-weight: 500;
+      transition: color 0.15s ease;
+    }
+
+    //current期間セルは濃く・少し太く
+    tbody td.kpi-matrix__cell--current-period {
+      color: rgba($kpi-body-text, 0.95);
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      // 数値が見やすくなるおまけ（不要なら消してOK）
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+
+    //選択状態は最優先（薄くならない）
+    tbody td.kpi-matrix__cell--selected {
+      color: #111827;
+      font-weight: 700;
+    }
+
+    //hover時（クリック可能セル）は、薄い文字を戻して読みやすく
+    tbody td.kpi-matrix__cell--clickable:hover {
+      color: #ffffff; // あなたのhover背景(#396fb5)前提
+    }
+
+    // hover
+    tbody td.kpi-matrix__cell--clickable:hover {
+      background-color: #396fb5 !important;
+      color: #ffffff;
+    }
+    tbody td.kpi-matrix__cell--clickable.kpi-matrix__cell--current-period:hover {
+      background-color: #396fb5 !important;
+      color: #ffffff;
+    }
+
+    // 選択状態
+    tbody td.kpi-matrix__cell--selected {
+      background-color: #dbeafe;
+      font-weight: 600;
+      box-shadow: inset 0 0 0 1px #2563eb;
+    }
+
+    tr.kpi-row--section-end > th[scope='row'],
+    tr.kpi-row--section-end > td {
+      border-bottom: 6px solid $kpi-section-color; // 太さは好みで 2〜4px
+    }
+  
+    // plan_mh 行の「上」に余白（空行っぽさ）
+    tr.kpi-row--section-start > th[scope='row'],
+    tr.kpi-row--section-start > td {
+      padding-top: 16px;  // 8〜18px で調整
+    }
+
+    tbody tr.kpi-row--count > th[scope='row'] {
+      border-left-color: $kpi-count-accent;
+    }
+
+    tbody tr.kpi-row--mh > th[scope='row'] {
+      border-left-color: $kpi-mh-accent;
+    }
+
+    tbody tr.kpi-row--count > td {
+      background-color: rgba($kpi-count-accent, 0.15);
+    }
+    tbody tr.kpi-row--mh > td {
+      background-color: rgba($kpi-mh-accent, 0.15);
+    }
+
+        // 固定ラベル自体の hover（押せる感じ）
+        tbody th.kpi-matrix__row-label:hover {
+          color: rgba($kpi-header-text, 0.98);
+          transform: translateY(-1px);
+          box-shadow:
+            1px 0 0 #fff,
+            1px 0 0 $kpi-border-color,
+            0 1px 0 rgba(15, 23, 42, 0.06) inset,
+            0 10px 18px rgba(15, 23, 42, 0.10);
+        }
+    
+        // ✅ 「ラベルに hover した行」だけ、同じ行の td を軽く強調
+        // 行全体(tr:hover)ではなく “ラベル hover” 限定にするため、兄弟セレクタを使う
+        tbody th.kpi-matrix__row-label:hover ~ td {
+          // 背景は“ほんのり”だけ（見やすさを壊さない）
+          background-color: #396fb5;
+          // 文字も少しだけ濃く
+          color: #fff;
+          // うっすら上品に
+          box-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) inset;
+          transition: background-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+        }
+    
+        // ふわっと戻すためにベースにも transition
+        tbody th.kpi-matrix__row-label,
+        tbody td {
+          transition: background-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease, transform 0.08s ease;
+        }
+
+  }
+}
+
+
+/* 列幅（セル詳細テーブル用：必要なら “drawer内のtable” にだけ効かせる） */
+[data-ui-root="drawer"].planned-maintenance-container {
+  .drawer__table {
+    th:nth-child(1), td:nth-child(1) { min-width: 120px; }
+
+    th:nth-child(2), td:nth-child(2) {
+      min-width: 260px;
+      max-width: 420px;
+    }
+
+    th:nth-child(3), td:nth-child(3),
+    th:nth-child(4), td:nth-child(4) {
+      width: 110px;
+    }
+    th:nth-child(5), td:nth-child(5) { min-width: 80px; }
+    th:nth-child(6), td:nth-child(6) { min-width: 100px; }
+    th:nth-child(7), td:nth-child(7) { min-width: 100px; }
+  }
+}
+

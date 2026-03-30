@@ -1,4 +1,7 @@
 @charset "UTF-8";
+:root {
+  --header-h: 8vh; }
+
 .l-header {
   position: fixed;
   grid-area: header;
@@ -121,7 +124,7 @@
   object-fit: contain;
   transform: transform 0.3s ease; }
 
-@media (max-width: 576px) {
+@media (max-width: 575px) {
   .l-header .dynamic-links {
     top: 150%;
     left: -20%;
@@ -167,6 +170,8 @@
     .l-header .dynamic-links .achievements {
       display: none; }
     .l-header .dynamic-links .planned-maintenance {
+      display: none; }
+    .l-header .dynamic-links .output-csv {
       display: none; }
   .l-header .employee-name {
     margin-right: 5px; }

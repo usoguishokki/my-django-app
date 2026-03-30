@@ -1,7 +1,8 @@
 @charset "UTF-8";
 @import 'variables';
 @import 'mixins';
-
+@import 'foundation/typography.scss';
+@import 'components/modal/modal';
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
 input:-webkit-autofill:focus, 
@@ -20,29 +21,28 @@ html {
 }
 
 h1 {
-    font-size: clamp(2rem, 3vw, 2.5rem); // 32〜40px
-    font-weight: 600;
+    font-size: clamp(1.0rem, 3vw, 1.5rem); // ~16–24px
+    font-weight: 400;
     line-height: 1.3;
 }
-
+  
+/* h1 < h2 にならないように調整（h2はh1より必ず小さい） */
 h2 {
-    font-size: clamp(1.75rem, 2.5vw, 2rem); // 28〜32px
+    font-size: clamp(1.0rem, 1.8vw, 1.35rem); // ~16–21.6px
     font-weight: 600;
     line-height: 1.35;
 }
-
-
+  
 h3 {
-    font-size: clamp(1.5rem, 2vw, 1.75rem); // 24〜28px
+    font-size: clamp(0.95rem, 1.4vw, 1.2rem); // ~15.2–19.2px
     font-weight: 500;
     line-height: 1.4;
 }
-
-
-
+  
 h4 {
-    font-size: 1.25rem; // 20px
+    font-size: clamp(0.9rem, 1vw, 1.1rem); // ~14.4–17.6px
     font-weight: 500;
+    line-height: 1.45;
 }
 
 p {
@@ -54,12 +54,50 @@ p {
 /*全体のスタイル設定*/
 *, *::before, *::after {
     box-sizing: border-box;
-  }
+}
 
-  body, h1, h2, h3, h4, h5, h6, p, address, blockquote, pre, div, dl, dt, dd, ol, ul, li, th, td, form, fieldset, input, textarea {
+:root {
+    --ls-body: 0.02em;     /* 本文の標準字間（和文は 0.02–0.03em が無難） */
+    --ls-heading: 0.02em;  /* 見出しの標準字間 */
+}
+
+body, h1, h2, h3, h4, h5, h6, p, address, blockquote, pre, div, dl, dt, dd, ol, ul, li, th, td, form, fieldset, input, textarea {
     margin: 0 0 0 0;
     border: 0;
     padding: 0 0 0 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    letter-spacing: var(--ls-heading);
+}
+
+/* 基本：本文系 */
+body, p, li, dd, td, th, label, input, textarea, select, button {
+    letter-spacing: var(--ls-body);
+}
+
+table, th, td {
+    font: inherit;
+    letter-spacing: var(--ls-body);
+}
+
+
+
+:root { --current-bp: 'desktop';
+    --header-h: 64px; 
+    --page-gutter: clamp(12px, 2vw, 24px);
+}
+
+@include respond-to(sm, down) {
+    :root { --current-bp: 'mobile'; }
+}
+
+@include respond-to(sm, between, lg) {
+    :root { --current-bp: 'tablet'; }
+}
+
+@include respond-to(lg, up) {
+    :root { --current-bp: 'desktop'; }
 }
 
 body {
@@ -84,55 +122,178 @@ body {
     }
 }
 
-.modal {
-    display: none;
-    position: fixed;
+
+// ===============================
+// Rich Loading Overlay (Glass)
+// ===============================
+.spinner-overlay {
+    position: absolute;
+    inset: 0;
     z-index: 999;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.4)
-}
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    opacity: 0;
+    transition: opacity 160ms ease-out;
+    &.is-active { opacity: 1; }
+  
+    // 背景をリッチに
+    background:
+      radial-gradient(circle at 20% 10%, rgba(56, 189, 248, 0.18), transparent 45%),
+      radial-gradient(circle at 80% 20%, rgba(34, 197, 94, 0.14), transparent 48%),
+      radial-gradient(circle at 40% 90%, rgba(168, 85, 247, 0.10), transparent 55%),
+      rgba(15, 23, 42, 0.30);
+  
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  
+    // クリック遮断
+    pointer-events: auto;
+  
+    // フェードイン
+    animation: overlayFade 180ms ease-out both;
+  
+    // “カード”
+    .spinner-card {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: center;
 
-.modal-content {
-    background-color: $modal-color-default;
-    &.modal_green {
-        background-color: $modal-color-green;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 180ms ease-out, transform 180ms ease-out;
+      &.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+  
+      padding: 14px 16px;
+      border-radius: 16px;
+  
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      box-shadow:
+        0 20px 50px rgba(15, 23, 42, 0.18),
+        0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  
+      // 上品なハイライト
+      position: relative;
+      overflow: hidden;
+      &::before {
+        content: "";
+        position: absolute;
+        inset: -50% -30%;
+        background: linear-gradient(
+          120deg,
+          transparent 35%,
+          rgba(255, 255, 255, 0.55) 50%,
+          transparent 65%
+        );
+        transform: translateX(-30%) rotate(8deg);
+        animation: shine 1.2s ease-in-out infinite;
+        pointer-events: none;
+      }
     }
-    &.modal_red {
-        background-color: $modal-color-red;
+  
+    .spinner-text {
+      display: grid;
+      gap: 2px;
+      min-width: 200px;
+  
+      .title {
+        font-size: 14px;
+        font-weight: 700;
+        color: rgba(15, 23, 42, 0.92);
+        letter-spacing: 0.2px;
+      }
+      .sub {
+        font-size: 12px;
+        color: rgba(15, 23, 42, 0.56);
+      }
     }
-    font-weight: $font-weight-semibold;
-    margin: 5% auto;
-    padding-top: 18px;
-    padding-left:15px;
-    padding-bottom: 10px;
-    padding-right: 15px;
-    border: 1px solid #888;
-    border-radius: 6px;
-    width: 80%;
-    p {
-        font-size: 18px;
-        color: $font-color-modal;
-        margin-bottom: 8px;
+  }
+  
+  // ===============================
+  // Loader Core (ring + dots)
+  // ===============================
+  .spinner {
+    --size: 44px;
+    --stroke: 4px;
+  
+    width: var(--size);
+    height: var(--size);
+    position: relative;
+    display: grid;
+    place-items: center;
+  
+    // サイズバリアント
+    &--sm { --size: 18px; --stroke: 2px; }
+    &--md { --size: 30px; --stroke: 3px; }
+    &--lg { --size: 48px; --stroke: 4px; }
+  
+    // 回転リング（グラデでリッチに）
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      padding: var(--stroke);
+  
+      background: conic-gradient(
+        from 180deg,
+        rgba(59, 130, 246, 1),
+        rgba(34, 197, 94, 1),
+        rgba(168, 85, 247, 1),
+        rgba(59, 130, 246, 1)
+      );
+  
+      // 内側をくり抜く
+      -webkit-mask:
+        radial-gradient(farthest-side, transparent calc(100% - var(--stroke)), #000 0);
+              mask:
+        radial-gradient(farthest-side, transparent calc(100% - var(--stroke)), #000 0);
+  
+      animation: spin 1.0s linear infinite;
+      filter: saturate(1.1);
     }
-}
+  
+    // 呼吸するドット（中央）
+    &::after {
+      content: "";
+      width: calc(var(--size) * 0.22);
+      height: calc(var(--size) * 0.22);
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.22);
+      animation: pulse 900ms ease-in-out infinite;
+    }
+  }
+  
+  // ===============================
+  // Motion / Accessibility
+  // ===============================
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse {
+    0%, 100% { transform: scale(0.85); opacity: 0.55; }
+    50%      { transform: scale(1.10); opacity: 0.90; }
+  }
+  @keyframes overlayFade {
+    from { opacity: 0; transform: translateY(2px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes shine {
+    0%   { transform: translateX(-35%) rotate(8deg); opacity: 0.0; }
+    25%  { opacity: 0.55; }
+    55%  { opacity: 0.25; }
+    100% { transform: translateX(35%) rotate(8deg); opacity: 0.0; }
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    .spinner-overlay { animation: none; }
+    .spinner::before, .spinner::after { animation: none; }
+    .spinner-overlay .spinner-card::before { animation: none; }
+  }
 
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 20px;
-    font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
-}
 
 button {
     cursor: pointer;
@@ -147,9 +308,50 @@ body, html {
     margin: 0;
     padding: 0;
     height: 100vh;
-    font-family:'Helvetia', serif;
+    font-family:'Noto Sans JP', serif;
+    font-weight:300;
     font-size: clamp(15px, 1.1vw, 16px); // 全体を柔らかくスケーリング
     line-height: 1.6;
+}
+
+
+:root {
+    --ls-body: 0.02em;
+    --ls-heading: 0.02em;
+    --scrollbar-thumb: #cbd5e1;
+    --scrollbar-track: transparent;
+    --scrollbar-size: 10px;
+}
+
+html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-gutter: stable;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+    width: var(--scrollbar-size);
+    height: var(--scrollbar-size);
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+*::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar-corner {
+    background: var(--scrollbar-track);
 }
 
 .parent-grid {
@@ -164,6 +366,7 @@ body, html {
     grid-template-areas:
     "header header header"
     ". main .";
+
     background-color: white;
 }
 
@@ -173,6 +376,7 @@ body, html {
     height: 100%;
     overflow: hidden;
     position: relative;
+    padding: 10px 0px 10px 0px;
 }
 
 
@@ -283,12 +487,46 @@ body, html {
     }
 }
 
+.api-loading {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9998;
+    pointer-events: all;
+    opacity: 0;
+    transition: opacity 0.1s ease;
 
+    .loading-stack {
+        display: inline-flex;          /* 横並び */
+        align-items: center;           /* 垂直中央 */
+        gap: 12px;                     /* 余白 */
+    }
 
+    .loading-text {
+        font-size: clamp(14px, 1.4vw, 18px);
+        line-height: 1.4;
+        font-weight: 600;
+        letter-spacing: .02em;
+        color: #111827;
+    }
 
+    &__overlay {
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
 
+    &--visible {
+        opacity: 1;
+        pointer-events: all;
+    }
 
-
+    &--hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
 
 
 

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}点検履歴{% endblock %}
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/inspectionHistory.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block header %}
+{% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="equipment-info" id="controlNo">
+    <h1 class="equipment-info-title" id="controlNoTitle">
+        <span class="equipment-name">
+            <span class="label">設備名(点検カードNo):</span>
+            <span class="value" id="controlNameSpan">{{ control_name }}({{ inspection_no }})</span>
+        </span>
+        <span class="equipment-id">
+            <span class="label">作業名:</span>
+            <span class="value" id="warkNameSpan">{{ wark_name }}</span>
+        </span>
+    </h1>
+</div>
+<div id="inspectionHistorycontents" data-density="comfortable">
+    <div class="table-scroll" id="tableScroll">
+        <table id="myTable">
+            <colgroup>
+                <col class="implementation-date-content" id="implementationDateCol">
+                <col class="result_man-content" id="resultManCol">
+                <col class="result-content" id="resultCol">
+                <col class="practitioner-content" id="practitionerCol">
+                <col class="approver-content" id="approverCol">
+                <col class="points_to_note-content" id="pointsToNoteCol">
+
+            </colgroup>
+            <thead>
+                <tr class="table-th" id="tableTh">
+                    <th class="implementation-date-content implementation-date-column" id="implementationDateColumn">実施日</th>
+                    <th class="result_man-content result_man-column" id="resultManColumn">実施工数</th>
+                    <th class="result-content result-column" id="resultColumn">結果</th>
+                    <th class="practitioner-content practitioner-column" id="practitionerColumn">実施者</th>
+                    <th class="approver-content approver-column" id="approverColumn">承認者</th>
+                    <th class="points_to_note-content points_to_note-column" id="pointsToNoteColColumn">指摘事項</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                    <tr class="{% if forloop.counter|divisibleby:2 %}odd{% else %}even{% endif %}">                                                                     
+                        <td class="implementation-date-content implementation-date-row">{{ result.implementation_date|date:"y年m月d日" }}</td>
+                        <td class="result_man-content result_man-row">{{ result.resultManHour }}</td>
+                        <td class="result-content result-row">{{ result.result }}</td>
+                        <td class="practitioner-content practitioner-row">
+                        {% if result.practitioner %}
+                            {% for name in result.practitioner %}
+                                {{ name }}{% if not forloop.last %}<br>{% endif %}
+                            {% endfor %}
+                        {% else %}
+                            ー
+                        {% endif %}
+                        </td>
+                        <td class="approver-content approver-row">{{ result.approver }}</td>
+                        <td class="points_to_note-content points_to_note-row">{{ result.points_to_note }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>  
+</div>
+
+<form method="post">
+    {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block script %}
+    <script type="module" src="{% static 'js/inspectionHistory/inspectionHistory.js' %}"></script>
+{% endblock %}

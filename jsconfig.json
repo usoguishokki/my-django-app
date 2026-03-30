@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+      "target": "ES2020",
+      "module": "ESNext",
+      "moduleResolution": "node",
+      "baseUrl": ".",
+      "checkJs": false
+    },
+    "include": [
+      "myapp/static/js/**/*.js"
+    ],
+    "exclude": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/.venv/**",
+      "**/venv/**",
+      "**/__pycache__/**"
+    ]
+}

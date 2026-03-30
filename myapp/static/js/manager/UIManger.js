@@ -1,22 +1,59 @@
 export class UIManger {
     constructor() {}
 
-    static breakpoints = {
-        xs: 576,
-        sm: 768,
-        md: 992,
-        lg: 1200,
-        xl: 1400
-    };
+
+    /**
+    * 現在がモバイルかを判定（引数 mode があればそれを、なければ CSS を参照）
+    * @param {string} [mode] 'mobile' | 'tablet' | 'desktop'
+    * @returns {boolean}
+    */
+    static isMobile(mode) {
+        const m = mode || UIManger.readCurrentBreakpoint();
+        return m === 'mobile';
+    }
+
+    /**
+    * 現在のブレークポイント名を CSS 変数 --current-bp から取得
+    *（Sass のメディアクエリが決めた値を JS が読むだけ：ズレが起きない）
+    *
+    * 期待値: 'mobile' | 'tablet' | 'desktop'
+    *
+    * @param {Object} [opt]
+    * @param {string} [opt.fallback='desktop']  CSS が未適用などで読めないときの代替
+    * @returns {string} 'mobile' | 'tablet' | 'desktop' のいずれか
+    */
+    static readCurrentBreakpoint({ fallback = 'desktop' } = {}) {
+        // SSR安全策
+        if (typeof window === 'undefined' || typeof document === 'undefined') {
+            return fallback;
+        }
+        const cs = getComputedStyle(document.documentElement);
+        // 値は "'mobile'" のように引用符付きになることがあるので除去
+        const raw = cs.getPropertyValue('--current-bp');
+        const val = (raw || '').replace(/["']/g, '').trim();
+        return val || fallback;
+    }
+
+    /**
+    * 初回だけのモード判定ヘルパー。
+    * Sass 側の @media で設定された --current-bp を読み取り、その値を返す。
+    * アプリの init() 冒頭で 1 回だけ呼び、以後は固定運用する想定。
+    *
+    * 例:
+    *   const mode = UIManger.detectInitialViewportMode();
+    *   this._applyMode(mode);
+    *
+    * @param {Object} [opt]
+    * @param {string} [opt.fallback='desktop']  読み取れない場合の代替
+    * @returns {string} 'mobile' | 'tablet' | 'desktop'
+    */
+    static detectInitialViewportMode(opt) {
+        return UIManger.readCurrentBreakpoint(opt);
+    }
 
     //画面の高さを取得する関数
     static getScreenHeight() {
         return window.innerHeight;
-    }
-
-    //画面の横幅を取得する関数
-    static getScreenWidth() {
-        return window.innerWidth;
     }
     
     //余白を計算
@@ -44,7 +81,7 @@ export class UIManger {
     */
     static isElementVisible = (element) => {
         const style = window.getComputedStyle(element);
-        return style.display !== 'none' && style.visibility !== 'hidden';
+        return style.display !== 'none';
     }
 
     /**
@@ -67,18 +104,6 @@ export class UIManger {
         });
     }
 
-    /**
-     * 指定されたパターンに一致するクラスを要素から削除する静的メソッド
-     * @param {HTMLElement} element -クラスを削除するHTML要素
-     * @param {RegExg} pattern - クラス名をテストする正規表現パターン
-     */
-    static removeClassesByPattern(element, pattern) {
-        element.classList.forEach(className => {
-            if (pattern.test(className)) {
-                element.classList.remove(className);
-            }
-        })
-    }
 
     /**
     * 指定されたタグ名、属性、およびテキストを使用して新しいHTML要素を作成します。
@@ -118,8 +143,8 @@ export class UIManger {
     * @param {string|null} text - 新しい要素に設定するテキスト。テキストが不要な場合はnullを使用
     * @param {Function} eventListener -要素に追加するイベントリスナ(クリックイベント)
     */
-    static addActionElement = (parentSelector, tag, className, text, eventListener = null) => {
-        const element = UIManger.createElement(tag, { 'class': className }, text);
+    static addActionElement = (parentSelector, tag, className, idName, text, eventListener = null) => {
+        const element = UIManger.createElement(tag, { 'class': className, 'id': idName}, text);
         if (eventListener) {
             element.addEventListener('click', eventListener);
         }
@@ -136,172 +161,8 @@ export class UIManger {
         if (element && element.parentNode) {
             element.parentNode.removeChild(element);
         }
-    };
-
-    /**
-     * 指定されたセレクトボックス要素のオプションから、指定されたユーザーIDに一致するものを選択状態にします。
-     * @param {string} selectElementId -セレクトボックスの要素ID
-     * @param {string | number} userId -選択状態にするユーザーのID
-     */
-    static selectUserProfile(selectElementId, userId) {
-        const selectElement = document.getElementById(selectElementId);
-        if (selectElement) {
-            for (let i = 0; i < selectElement.options.length; i++) {
-                if (selectElement.options[i].value == userId) {
-                    selectElement.selectedIndex = i;
-                    return selectElement;
-                }
-            }
-        }
-        return null;
     }
 
-    /**
-     * 任意の要素に指定されたイベントリスナーを追加します。
-     * @param {HTMLElement} elemet -イベントリスナーを追加する
-     * @param {string} eventType -イベントの種類(例: 'change', 'click')
-     * @param {Function} handler -イベント発生に呼び出せるハンドラ関数
-     */
-    static addEventListenerToElement(element, eventType, handler) {
-        if (element) {
-            element.addEventListener(eventType, handler);
-        }
-    }
-
-    /**
-     * 任意の要素から指定されたイベントリスナーを削除します。
-     * @param {HTMLElement} element -イベントリスナーを削除する要素
-     * @param {string} eventType -イベントの種類(例: 'change', 'click')
-     * @param {Function} handler -削除するイベントリスナーのハンドラー関数
-     */
-
-    static removeEventListenerFromElement(element, eventType, handler) {
-        if (element) {
-            element.removeEventListener(eventType, handler);
-        }
-    }
-
-    /**
-    * 日付文字列を "Y-m-d\\TH:i" 形式にフォーマットします。
-    *
-    * この関数は日付文字列を受け取り、Dateオブジェクトに変換し、
-    * その後、特定の文字列形式 "Y-m-d\\TH:i" にフォーマットします。
-    * 出力形式には年、月、日、時間、分が含まれ、
-    * 一桁の月、日、時間、分はゼロパディングされます。
-    *
-    * @param {string} dateString - フォーマットする入力の日付文字列。
-    * @returns {string} - "Y-m-d\\TH:i" 形式のフォーマットされた日付文字列。
-    */
-    static formatDateStringToISO = (dateString) => {
-        const date = new Date(dateString);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
-    };
-
-    /**
-     * 与えられた日付文字列をカスタム形式 'm-d h:i'に変換します。
-     * 
-     * @param {string} dateString - フォーマットの日付文字列。Dateコンストラクタで認識される形式である必要があります。
-     * @returns {string} 'm-d h:i'形式の日付文字列
-     * 
-     * @example
-     * const iputDate = "2023-05-28T14:45:00Z"
-     * const formatteDate = convertDateToCusttomFormat(inputDate);
-     * console.log(formatteDate); //出力 "05-28 14:45"
-     */
-    static convertDateToCustomFormat(dateString) {
-        const date = new Date(dateString);
-        const month = date.getMonth() + 1;
-        const day = date.getDate();
-        const hours = date.getHours();
-        const minutes = date.getMinutes();
-
-        //必要に応じて月、日、時、分をゼロ埋め;
-        const paddedMonth = String(month).padStart(2, '0');
-        const paddedDay = String(day).padStart(2, '0');
-        const paddedHours = String(hours).padStart(2, '0');
-        const paddedMinutes = String(minutes).padStart(2, '0');
-
-        return `${paddedMonth}-${paddedDay} ${paddedHours}:${paddedMinutes}`;
-    }
-
-    /**
-    * 日付文字列に指定された分数を加算し、新しい日付文字列を返します。
-    * 
-    * @param {string} dateString - 元の日付文字列。ISO形式で指定します（例: "2024-05-27T14:45"）。
-    * @param {string} minutesToAdd - 加算する分数。文字列形式で指定します（例: "10"）。
-    * @returns {string} 加算後の日付文字列。元の日付形式と同じ形式で返します。
-    * 
-    * @example
-    * const inputDate = "2024-05-27T14:45";
-    * const minutes = "10";
-    * const newDate = addMinutesToDate(inputDate, minutes);
-    * console.log(newDate); // 出力: "2024-05-27T14:55"
-    */
-    static addMinutesToDate(dateString, minutesToAdd) {
-        const date = new Date(dateString);
-        const minutes = parseInt(minutesToAdd, 10);
-        date.setMinutes(date.getMinutes() + minutes);
-        //const covDate = UIManger.formatDateStringToISO(date);
-        //return covDate;
-        return date
-    }
-
-    /**
-     * 指定されたフォーマットに基づいて日付データを返す関数
-     * 
-     * @param {string} dateString -日付文字列(例: '2024-10-24-16:10')
-     * @param {string} format -フォーマット文字列(例: 'H:i')
-     * @returns {string} -指定されたフォーマットの日付文字部分を返す
-     */
-    static formatDate(dateString, format) {
-        const date = new Date(dateString.trim());
-        const formatMap = {
-            'Y': date.getFullYear(),
-            'm': ('0' + (date.getMonth() + 1)).slice(-2),
-            'd': ('0' + date.getDate()).slice(-2),
-            'H': ('0' + date.getHours()).slice(-2),
-            'i': ('0' + date.getMinutes()).slice(-2),
-            's': ('0' + date.getSeconds()).slice(-2)
-        };
-        return format.replace(/Y|m|d|H|i|s/g, match => formatMap[match]);
-    }
-
-    /**
-     * 指定された日付文字列が有効な日付かどうかをチェックします。
-     * 
-     * この関数は `Date.parse` を使用して入力文字列をタイムスタンプに解析します。
-     * 解析が成功し、結果のタイムスタンプが `NaN` でない場合、この関数は
-     * 入力文字列が有効な日付を表していると判断して `true` を返します。それ以外の場合は `false` を返します。
-     * 
-     * 
-     * @param {string} dateString - 検証する日付文字列。
-     * @returns {boolean} -日付文字列が有効な日付の場合'true'そうでない場合'false'を返します。
-     */
-    static isValidDate(dateString) {
-        const timestamp = Date.parse(dateString);
-        return !isNaN(timestamp);
-    }
-
-    /**
-     * 'Z'を削除する関数
-     * 
-     * @param {string} dataStr - 'Z'を取り除く対象の日付文字列
-     * @returns {string} - 'Z'が取り除かれた日付文字列。'Z'がなかった場合は元の文字列を返す
-     */
-
-    static removeZFromISODate(dateStr) {
-            // 'Z'が存在する場合のみ取り除く
-        if (dateStr.endsWith('Z')) {
-            return dateStr.slice(0, -1);
-        }
-        // 'Z'がない場合はそのまま返す
-        return dateStr;
-    }
     /**
      * 無効な値をチェックする関数
      * 
@@ -313,45 +174,7 @@ export class UIManger {
         return !invalidValues.includes(value) && !Number.isNaN(value);
     }
 
-    /**
-     * 指定された属性値を持つ要素の複数の属性値を変更する関数
-     * 
-     * @param {NodeList} parentElement -親要素
-     * @param {string} attribute -検索する属性名
-     * @param {string} currentValue -現在の属性値
-     * @param {string} newValue -変更する新しい属性値
-     */
-    static changeMulitipeElementsAttributeValue = (elements, attribute, targetValue, updates) => {
-        elements.forEach(el => {
-            if (el.getAttribute(attribute) === targetValue) {
-                for (const [attr, newValue] of Object.entries(updates)) {
-                    if (UIManger.isValidValue(newValue)) {
-                        el.setAttribute(attr, newValue);
-                    }
-                }
-            }
-        });
-    };
-
-    /**
-     * 指定された条件に基づいて属性をフィルタリングする関数
-     * 
-     * @param {HTMLElement} element -対象要素
-     * @param {string} attributeName -検索する属性名
-     * @param {string} attributeValue - フィルタリング条件となる属性値
-     * @returns {Object} -条件に一致する属性を持つオブジェクト 
-     */
-
-    static getFilterAttributes(element, attributeName, attributeValue) {
-        const result = {};
-        const attrValue = element.getAttribute(attributeName);
-            
-        if (attrValue === attributeValue) {
-            result[attributeName] = attrValue;
-        }
-        
-        return result;
-    }
+    
 
     /**
      * デバウンス関数
@@ -379,78 +202,225 @@ export class UIManger {
         };
     }
 
-    /**
-     * RGB色の色相を変更する関数
-     * 
-     * @param {string} color - RGB形式の色文字列 (例: 'rgb(51, 112, 173)')
-     * @param {number} degree - 色相を変更する度合い。正の値で色相を進め、負の値で色相を戻す。
-     * @param {number} saturationShift - 彩度を変更する度合い。
-     * @param {number} lightnessShift - 明度を変更する度合い。
-     * @returns {string} - 変更後のRGB色文字列 (例: 'rgb(102, 153, 204)')
-     */
-    static shiftHue(color, degree, saturationShift = 0, lightnessShift = 0) {
-        const rgbToHsl = (rgb) => {
-            let r = parseInt(rgb.slice(4, rgb.indexOf(','))) / 255;
-            let g = parseInt(rgb.slice(rgb.indexOf(',') + 1, rgb.lastIndexOf(','))) / 255;
-            let b = parseInt(rgb.slice(rgb.lastIndexOf(',') + 1, rgb.indexOf(')'))) / 255;
-            let max = Math.max(r, g, b), min = Math.min(r, g, b);
-            let h, s, l = (max + min) / 2;
-
-            if (max == min) {
-                h = s = 0; // 無彩色
-            } else {
-                let d = max - min;
-                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-                switch (max) {
-                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                    case g: h = (b - r) / d + 2; break;
-                    case b: h = (r - g) / d + 4; break;
-                }
-                h /= 6;
-            }
-
-            return { h: h * 360, s: s, l: l };
-        }
-
-        const hslToRgb = (hsl) => {
-            let r, g, b;
-            let h = hsl.h / 360;
-            let s = hsl.s;
-            let l = hsl.l;
-
-            if (s == 0) {
-                r = g = b = l; // 無彩色
-            } else {
-                const hue2rgb = (p, q, t) => {
-                    if (t < 0) t += 1;
-                    if (t > 1) t -= 1;
-                    if (t < 1 / 6) return p + (q - p) * 6 * t;
-                    if (t < 1 / 2) return q;
-                    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-                    return p;
-                }
-
-                let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-                let p = 2 * l - q;
-                r = hue2rgb(p, q, h + 1 / 3);
-                g = hue2rgb(p, q, h);
-                b = hue2rgb(p, q, h - 1 / 3);
-            }
-
-            return `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
-        }
-
-        const hsl = rgbToHsl(color);
-        hsl.h = (hsl.h + degree) % 360;
-        if (hsl.h < 0) hsl.h += 360;
-        hsl.s = Math.min(1, Math.max(0, hsl.s + saturationShift));
-        hsl.l = Math.min(1, Math.max(0, hsl.l + lightnessShift));
-        return hslToRgb(hsl);
+    // 軽量エスケープ（XSS/崩れ防止） 
+    static esc(s) {
+        return String(s ?? '').replace(/[&<>"']/g, m => (
+            ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[m]
+        ));
     }
 
-    static toCamelCase(attr) {
-        return attr
-            .replace(/^data-/, '')
-            .replace(/-([a-z])/g, (match, letter) => letter.toUpperCase())
+    /**
+    * URL クエリを共通的に更新する
+    * @param {Object} updates { key: value } 形式。
+    *   - undefined / null / ""（keepEmpty=false時）は削除
+    *   - boolean は encodeBoolean で 1/0 か "true"/"false" に
+    *   - 配列は ?key=a&key=b... に展開
+    * @param {Object} [opt]
+    * @param {"replace"|"push"|false} [opt.history="replace"]  履歴を更新するか
+    * @param {"numeric"|"string"} [opt.encodeBoolean="numeric"] true→"1" or "true"
+    * @param {boolean} [opt.keepEmpty=false] 空文字を残すか
+    * @param {string}  [opt.base=location.href] 基準URL
+    * @returns {URL} 更新後の URL オブジェクト
+    */
+    static _updateUrlQuery(
+        updates,
+        { history: hist = "replace", encodeBoolean = "numeric", keepEmpty = false, base = location.href } = {}
+    ) {
+        const url = new URL(base, location.origin);
+        const sp = url.searchParams;
+  
+        for (const [k, v] of Object.entries(updates || {})) {
+            if (v == null || (v === "" && !keepEmpty)) {
+                sp.delete(k);
+                continue;
+            }
+            if (Array.isArray(v)) {
+                sp.delete(k);
+                v.forEach(val => sp.append(k, String(val)));
+                continue;
+            }
+            if (typeof v === "boolean") {
+                sp.set(k, encodeBoolean === "numeric" ? (v ? "1" : "0") : String(v));
+                continue;
+            }
+            sp.set(k, String(v));
+        }
+  
+        if (hist === "replace") {
+            history.replaceState({ query: Object.fromEntries(sp) }, "", url);
+        } else if (hist === "push") {
+            history.pushState({ query: Object.fromEntries(sp) }, "", url);
+        }
+        return url;
+    }
+
+
+    static _overlayClickHandler = null;
+    static _prevBodyOverflow = '';
+    /**
+    * 共通オーバレイを表示
+    * @param {Object} opts
+    * @param {number} [opts.zIndex=900]  モーダルより1段低く
+    * @param {number} [opts.opacity=0.35]  フェード濃さ
+    * @param {boolean} [opts.closeOnClick=true]  背景クリックで閉じるか
+    * @param {function} [opts.onClick=null]  クリック時の追加処理
+    * @param {boolean} [opts.lockScroll=true]  bodyスクロールをロック
+    */
+    static showOverlay({
+        zIndex = 900,
+        opacity = 0.35,
+        closeOnClick = true,
+        onClick = null,
+        lockScroll = true,
+    } = {}) {
+        const el = document.getElementById('screenDim');
+        // 動的スタイル
+        el.style.zIndex = String(zIndex);
+        el.style.opacity = String(opacity);
+        el.classList.add('is-active'); // CSSで pointer-events/visibility を制御
+
+        if (lockScroll) {
+            this._prevBodyOverflow = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 既存ハンドラを外してから登録（多重発火防止）
+        if (this._overlayClickHandler) el.removeEventListener('pointerdown', this._overlayClickHandler);
+
+        this._overlayClickHandler = (e) => {
+            if (typeof onClick === 'function') onClick(e);
+            if (closeOnClick) this.hideOverlay();
+        };
+        el.addEventListener('pointerdown', this._overlayClickHandler);
+    }
+
+    /** 共通オーバレイを非表示 */
+    static hideOverlay() {
+        const el = document.getElementById('screenDim');
+        el.classList.remove('is-active');
+        el.style.zIndex = '-1';
+        el.style.opacity = '';
+
+        if (this._overlayClickHandler) {
+            el.removeEventListener('pointerdown', this._overlayClickHandler);
+            this._overlayClickHandler = null;
+        }
+
+        document.body.style.overflow = this._prevBodyOverflow || '';
+    }
+
+    static showSpinner({
+        container,
+        id = 'calendarSpinner',
+        size = 'lg',
+        title = '読み込み中…',
+        sub = 'データを取得しています',
+        delayMs = 150,
+    } = {}) {
+        if (document.getElementById(id)) return;
+      
+        const host =
+          container instanceof Element
+            ? container
+            : (typeof container === 'string' ? document.querySelector(container) : null);
+        if (!host) return;
+      
+        const cs = getComputedStyle(host);
+        if (!cs.position || cs.position === 'static') {
+          host.dataset.__spinnerPrevPos = host.style.position || '';
+          host.style.position = 'relative';
+        }
+      
+        // overlayを先に作る（ここが白フラッシュ防止の肝）
+        const overlay = document.createElement('div');
+        overlay.className = 'spinner-overlay';
+        overlay.id = id;
+        overlay.setAttribute('aria-busy', 'true');
+      
+        const card = document.createElement('div');
+        card.className = 'spinner-card';
+      
+        const spinner = document.createElement('div');
+        spinner.className = `spinner spinner--${size}`;
+      
+        const text = document.createElement('div');
+        text.className = 'spinner-text';
+        text.innerHTML = `<div class="title">${title}</div><div class="sub">${sub}</div>`;
+      
+        card.appendChild(spinner);
+        card.appendChild(text);
+        overlay.appendChild(card);
+        host.appendChild(overlay);
+      
+        // overlayフェードインは即
+        requestAnimationFrame(() => overlay.classList.add('is-active'));
+      
+        // カードだけ遅延表示（チラつき防止）
+        const timerKey = `__spinnerTimer_${id}`;
+        host.dataset[timerKey] = String(setTimeout(() => {
+          card.classList.add('is-visible');
+          delete host.dataset[timerKey];
+        }, delayMs));
+    }
+      
+    static hideSpinner({ id = 'calendarSpinner' } = {}) {
+        const overlay = document.getElementById(id);
+      
+        // delay中にhideされた場合：タイマー取消
+        const host = overlay?.parentElement;
+        if (host) {
+          const timerKey = `__spinnerTimer_${id}`;
+          const t = host.dataset[timerKey];
+          if (t) {
+            clearTimeout(Number(t));
+            delete host.dataset[timerKey];
+          }
+        }
+      
+        if (!overlay) return;
+      
+        const parent = overlay.parentElement;
+        if (parent && Object.prototype.hasOwnProperty.call(parent.dataset, '__spinnerPrevPos')) {
+          parent.style.position = parent.dataset.__spinnerPrevPos;
+          delete parent.dataset.__spinnerPrevPos;
+        }
+      
+        overlay.remove();
+    }
+
+    /**
+     * HTMLエスケープ処理
+     *
+     * 外部データ（APIレスポンス / DB値 / ユーザー入力など）を
+     * innerHTML に安全に挿入するためのユーティリティ。
+     *
+     * @static
+     * @param {string | number | null | undefined} value
+     *   エスケープ対象の値
+     *
+     * @returns {string}
+     *   HTMLとして解釈されない安全な文字列
+     *
+     * @example
+     * UIManger.escapeHtml('<script>alert(1)</script>');
+     * // => '&lt;script&gt;alert(1)&lt;/script&gt;'
+     *
+     * @example
+     * element.innerHTML = UIManger.escapeHtml(apiResponse.text);
+     *
+     * @remarks
+     * - textContent を使う場合は不要
+     * - innerHTML + 外部データ の場合は必ず使用する
+     */
+    static escapeHtml(value) {
+      if (value == null) return '';
+    
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 }
+

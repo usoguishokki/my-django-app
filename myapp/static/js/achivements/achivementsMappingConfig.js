@@ -1,4 +1,5 @@
-import { UIManger } from '../manager/UIManger.js';
+
+import { formatDate } from '../utils/dateTime.js';
 export class achivementsManager {
     constructor() {
 
@@ -7,7 +8,7 @@ export class achivementsManager {
         return {
             date: {
                 datasetKey: 'day',
-                formatFn: (value, item) => UIManger.formatDate(value, 'm月d日')
+                formatFn: (value, item) => formatDate(value, 'm月d日')
             },
             hozen_calendar: {datasetKey: 'calendar'},
             active_hours: {

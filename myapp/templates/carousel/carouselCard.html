@@ -1,41 +1,65 @@
+{% load static %}
 <div class="carousel">
     <div class="carousel-track-container">
         <ul class="carousel-track">
             {% for plan in plans %}
-            <li id="carouselSlide" class="carousel-slide"
-             data-tile="{{ plan.inspection_no.wark_name }}"
-             data-index="{{ forloop.counter0 }}" 
-             plan-id="{{ plan.plan_id }}" 
-             data-result='{{ plan.result }}'
-             data-point-to-note="{{ plan.points_to_note}}"
-             data-comment="{{ plan.comment }}"
-             data-member-check-list="{{ plan.member_check_list }}"
-             data-result-mahours="{{ plan.result_man_hours }}"
-             data-line-name="{{ plan.inspection_no.control_no.line_name }}"
-             data-machine-name="{{ plan.inspection_no.control_no.machine }}">
+            <li class="carousel-slide"
+                data-title="{{ plan.inspection_no.wark_name|escape }}"
+                data-index="{{ forloop.counter0 }}" 
+                plan-id="{{ plan.plan_id }}" 
+                data-result='{{ plan.result }}'
+                data-point-to-note="{{ plan.points_to_note|escape }}"
+                data-comment="{{ plan.comment|escape }}"
+                data-member-check-list="{{ plan.member_check_list|escape }}"
+                data-result-mahours="{{ plan.result_man_hours }}"
+                data-line-name="{{ plan.inspection_no.control_no.line_name }}"
+                data-machine-name="{{ plan.inspection_no.control_no.machine }}"
+                data-plan-time="{{ plan.plan_time|date:'Y-m-d' }}"
+                data-inspection-status="{{ plan.inspection_no.status }}"
+                data-time-zone = "{{ plan.inspection_no.time_zone }}"
+            >
                 <div class="card">
-                    <div class="content-tilte">
-                        <span class="title-number"></span>
-                    </div>  
                     <div class="card-header">
-                        <h1 class="wark_name">
-                            <span class="part">{{ plan.inspection_no.control_no.machine }}</span>
-                            <span class="part">{{ plan.inspection_no.wark_name }}</span>
-                        </h1>
+                      <h1 class="wark_name">
+                        <span class="part">{{ plan.inspection_no.control_no.machine }}:{{ plan.inspection_no.wark_name }}</span>
+                        <span class="part">
+                          <img
+                            class="safe-point-icon"
+                            src="{% static 'img/緑十字.svg' %}"
+                            alt=""
+                            aria-hidden="true"
+                          >
+                          {{ plan.inspection_no.safe_point }}
+                        </span>
+                      </h1>
+                      <span class="title-number"></span>
                     </div>
                     <div class="applicable-devices-wrappper">
                         {% for device, data in plan.details_unique_devices.items %}
-                        <div class="applicable_devices">
-                            <div class="device">
-                               <p>{{ device }}</p>
-                            </div>
+                        
+
+                        <section class="work-unit" aria-label="対象装置ごとの作業">
+                          <!-- 区切りヘッダー -->
+                          <header class="work-unit__header">
+                            <h2 class="work-unit__device">{{ device }}</h2>
+                          </header>
+                      
+                          <!-- 既存のブロック（中身はほぼそのまま） -->
+                          <div class="applicable_devices">
                             <div class="wark-contents">
-                                {% for content, standard, method in data.details %}
-                                <p class="wark-contents-content">・{{ content }}({{ method }})</p>
-                                <p class="wark-contents-standard">‣{{ standard }}</p>
-                                {% endfor %}
+                              {% for content, standard, method in data.details %}
+                            
+                              <!--「1項目（作業内容＋評価基準）」を1行ユニットにする -->
+                              <div class="work-item">
+                                <p class="wark-contents-content">{{ content }}（{{ method }}）</p>
+                                <p class="wark-contents-standard">{{ standard }}</p>
+                              </div>
+                          
+                              {% endfor %}
                             </div>
-                        </div>
+                          </div>
+                        </section>
+
                         {% endfor %}
                     </div>
                     

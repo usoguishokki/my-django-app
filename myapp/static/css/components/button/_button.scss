@@ -1,0 +1,147 @@
+@import 'foundation/typography';
+
+/* ==========================================================================
+  UI Button System
+  - 画面横断で使い回す汎用ボタン
+========================================================================== */
+
+$btn-radius: 10px !default;
+
+$btn-primary-bg: #032e4a !default;
+$btn-primary-fg: #ffffff !default;
+
+$btn-ghost-bg: transparent !default;
+$btn-ghost-fg: #0b1220 !default;
+
+$btn-border: rgba(15, 23, 42, 0.14) !default;
+
+$btn-primary-hover-bg: #1483cd !default;
+$btn-hover-shadow: 0 8px 18px rgba(0,0,0,.12) !default;
+$btn-focus-ring: 0 0 0 3px rgba(99,102,241,.22) !default;
+
+/* danger */
+$btn-danger-bg: #b91c1c !default;
+$btn-danger-hover-bg: #991b1b !default;
+$btn-danger-fg: #ffffff !default;
+
+$btn-outline-bg: #ffffff !default;
+$btn-outline-fg: #1f2937 !default;
+$btn-outline-border: rgba(15, 23, 42, 0.14) !default;
+$btn-outline-hover-bg: #f8fafc !default;
+$btn-outline-hover-border: #c4cfdd !default;
+
+
+
+
+/* ベース */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid transparent;
+  border-radius: $btn-radius;
+
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+
+  @include type-ui;
+
+  transition:
+    background-color .14s ease,
+    box-shadow .14s ease,
+    transform .06s ease,
+    opacity .14s ease;
+
+  /* ✅ hoverは「有効時のみ」影を付ける */
+  &:not(:disabled):not(.is-disabled):hover {
+    box-shadow: $btn-hover-shadow;
+  }
+
+  &:active { transform: translateY(1px); }
+
+  /* ✅ focus ring は hover shadow と“共存”できるようにする */
+  &:focus-visible {
+    outline: none;
+    box-shadow: $btn-focus-ring;
+  }
+
+  &:not(:disabled):not(.is-disabled):focus-visible:hover {
+    box-shadow: $btn-focus-ring, $btn-hover-shadow;
+  }
+
+  &.is-disabled,
+  &:disabled {
+    pointer-events: none;
+    opacity: .45;
+    filter: grayscale(20%);
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+/* サイズ（typographyに寄せる） */
+.ui-btn--sm {
+  height: 36px;
+  padding: 0 12px;
+  @include type-ui-sm;
+}
+
+.ui-btn--md {
+  height: 48px;
+  padding: 0 14px;
+  @include type-ui;
+}
+
+/* バリアント */
+.ui-btn--primary {
+  background: $btn-primary-bg;
+  color: $btn-primary-fg;
+
+  &:not(:disabled):not(.is-disabled):hover {
+    background-color: $btn-primary-hover-bg; /* hoverは青 */
+  }
+}
+
+.ui-btn--ghost {
+  background: $btn-ghost-bg;
+  color: $btn-ghost-fg;
+  border-color: $btn-border;
+
+  &:not(:disabled):not(.is-disabled):hover {
+    background: rgba(15, 23, 42, 0.04);
+  }
+}
+
+.ui-btn--danger {
+  background: $btn-danger-bg;
+  color: $btn-danger-fg;
+
+  &:not(:disabled):not(.is-disabled):hover {
+    background-color: $btn-danger-hover-bg; /* hoverは濃い赤 */
+  }
+}
+
+.ui-btn--outline {
+  background: $btn-outline-bg;
+  color: $btn-outline-fg;
+  border-color: $btn-outline-border;
+
+  &:not(:disabled):not(.is-disabled):hover {
+    background: $btn-outline-hover-bg;
+    border-color: $btn-outline-hover-border;
+  }
+}
+
+.ui-btn--icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.ui-btn--round {
+  border-radius: 999px;
+}

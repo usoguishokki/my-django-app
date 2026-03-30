@@ -1,0 +1,176 @@
+@import 'foundation/typography';
+
+/* ==========================================================================
+  Table System (Standard: calendar table)
+  --------------------------------------------------------------------------
+  @doc
+  - 標準テーブル: calendar.scss の table-container を基準に統一
+  - 目的: 画面間で table の padding/文字/hover/sticky がブレないようにする
+  - 使い方:
+      1) table コンテナに .table-container を付ける（推奨）
+      2) table 要素に .ui-table を付ける（推奨）
+      3) 既存HTMLを変えられない場合は mixin を親セレクタに当てる
+========================================================================== */
+
+/* -----------------------------
+  Tokens (table-only)
+------------------------------ */
+$tbl-head-bg-top: rgba(255, 255, 255, 0.98) !default;
+$tbl-head-bg-btm: rgba(243, 244, 246, 0.98) !default;
+
+$tbl-head-border: rgba(15, 23, 42, 0.12) !default;     // 下線（境界）
+$tbl-head-divider: rgba(15, 23, 42, 0.08) !default;    // 列区切り（縦線）
+$tbl-head-text: rgba(30, 41, 59, 0.95) !default;       // 文字色（濃いめ）
+$tbl-head-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.10) !default;
+
+$tbl-th-py: 14px !default;
+$tbl-th-px: 14px !default;
+
+$tbl-td-py: 10px !default;
+$tbl-td-px: 14px !default;
+
+$tbl-row-divider: rgba(15, 23, 42, 0.08) !default;  // 行区切り（下線）
+$tbl-row-even-bg: rgba(15, 23, 42, 0.02) !default;  // ゼブラ（偶数行）
+$tbl-row-hover-bg: rgba(219, 234, 254, 0.55) !default; // hover（行）
+
+/* -----------------------------
+  Container (scroll + frame)
+------------------------------ */
+@mixin table-container-standard {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  box-sizing: border-box;
+
+  background: #fff;
+  position: relative;
+}
+
+/* -----------------------------
+  Table base
+------------------------------ */
+@mixin table-standard {
+    width: 100%;
+    border-collapse: collapse;
+  
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+  
+      text-align: left;
+      background: linear-gradient(to bottom, $tbl-head-bg-top, $tbl-head-bg-btm);
+      box-shadow: $tbl-head-shadow;
+  
+      /* “ヘッダー帯”としての境界を明確に */
+      border-bottom: 1px solid $tbl-head-border;
+  
+      tr { height: 42px; } /* 少しだけ余裕を持たせる */
+  
+      th {
+        padding: $tbl-th-py $tbl-th-px;
+  
+        @include type-th;
+        color: $tbl-head-text;
+  
+        /* 読みやすさ優先：字間は少し弱めに */
+        letter-spacing: 0.05em;
+  
+        white-space: nowrap;
+        vertical-align: middle;
+  
+        /* セルとしての境界（ヘッダー内の上下） */
+        box-shadow: 0 1px 0 rgba(255,255,255,0.65) inset;
+  
+        /* 列境界：うっすら縦線 */
+        & + th {
+          border-left: 1px solid $tbl-head-divider;
+        }
+      }
+    }
+
+    tbody {
+        tr {
+          transition: background-color 0.18s ease;
+          vertical-align: top;
+          cursor: pointer;
+
+          td { background: transparent; } // リセット（過去の指定の影響を潰す）
+
+          &.is-even td { background: $tbl-row-even-bg; }
+          &.is-odd  td { background: transparent; } 
+          
+          // ✅ hover：tr ではなく td に当てる（塗りムラ防止）
+          &:hover td {
+            background: $tbl-row-hover-bg;
+          }
+      
+          td {
+            padding: $tbl-td-py $tbl-td-px;
+            @include type-td;
+      
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+      
+            font-weight: 520;
+            letter-spacing: 0.01em;
+            color: rgba(11, 18, 32, 0.90);
+      
+            // ✅ 行区切り線（これで行同士が分離して見える）
+            border-bottom: 1px solid $tbl-row-divider;
+      
+            // 文字が詰まって見えるのが気になる場合は少しだけ上げる
+            // line-height は type-td に含まれるので基本不要
+          }
+        }
+      
+        // 最終行だけ下線を消したい場合（任意）
+        tr:last-child td {
+          border-bottom: none;
+        }
+      
+        tr.dragging {
+          opacity: .35;
+          &:hover td { background: inherit; } // hover色が勝たないように
+        }
+      
+        tr.drag-placeholder {
+          td {
+            padding: 0 !important;
+            height: 38px;
+            background: rgba(0,0,0,.04);
+            border-bottom: none;
+          }
+        }
+    }
+    td.is-right,
+    th.is-right {
+      text-align: right;
+    }
+  }
+
+/* -----------------------------
+  Utility: HTMLを変えられない場合用
+  例) .table-container { @include apply-table-standard; }
+------------------------------ */
+@mixin apply-table-standard {
+  @include table-container-standard;
+
+  table {
+    @include table-standard;
+    table-layout: fixed;
+  }
+}
+
+/* -----------------------------
+  推奨クラス版（HTML側で付けられるなら）
+------------------------------ */
+.table-container {
+  &.is-standard {
+    @include table-container-standard;
+
+    .ui-table { @include table-standard; }
+  }
+}

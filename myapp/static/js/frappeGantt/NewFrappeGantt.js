@@ -2,9 +2,10 @@ import date_utils from './data_utils.js';
 import { $, createSVG } from './svg_utils.js';
 import Bar from './bar.js';
 import Arrow from './arrow.js';
-import Popup from './popup.js';
 import { ModalManger } from '../manager/ModalManger.js'
 import { asynchronousCommunication } from '../asyncCommunicator/asyncCommunicator.js';
+
+import { formatDate } from '../utils/dateTime.js';
 
 const VIEW_MODE = {
     QUARTER_DAY: 'Quarter Day',
@@ -16,76 +17,128 @@ const VIEW_MODE = {
     TIME: 'Time'
 };
 
+
+/**
+ * 日本語⇔英語キーの辞書とヘルパを正規化
+ * @param {object} input
+ *  - DICT: { pending:{ja:'実施待ち',id:'...'}, ... }
+ *  - JA_TO_KEY: { '実施待ち':'pending', ... }（省略可）
+ *  - helpers: { statusJa?:fn, getKeyFromJa?:fn }（省略可）
+ * @returns {{ DICT:Object, JA_TO_KEY:Object, statusJa:Function, getKeyFromJa:Function }}
+ */
+function normalizeStatus(input = {}) {
+    const DICT = input.DICT ?? {};
+    // JA→key 辞書が来なければ DICT から生成
+    const JA_TO_KEY = input.JA_TO_KEY ?? Object.fromEntries(
+        Object.entries(DICT).map(([key, v]) => [String(v?.ja ?? ""), key])
+    );
+  
+    // 表記ゆれを軽く吸収する正規化
+    const norm = s => String(s ?? "").trim();
+  
+    // ヘルパ（未指定ならデフォルトを用意）
+    const statusJa = input.helpers?.statusJa ?? ((k) => (DICT?.[k]?.ja ?? k));
+    const getKeyFromJa = input.helpers?.getKeyFromJa ?? ((ja) => {
+        const key = JA_TO_KEY[norm(ja)];
+        return key ?? null;
+    });
+  
+    return { DICT, JA_TO_KEY, statusJa, getKeyFromJa };
+}
+  
+
 export default class Gantt {
-    constructor(wrapper, tasks, options, GanttSetUpInstance) {
+    constructor(wrapper, tasks, options, deps = {}) {
         this.gantt_offset_width = 120;
+        
         this.setup_options(options);
         this.setup_wrapper(wrapper);
         this.setup_tasks(tasks);
         this.change_view_mode();
         this.bind_events();
-        this.GanttSetUpInstance = GanttSetUpInstance
+        this.GanttSetUpInstance = deps.GanttSetUpInstance;
+        this.home = deps.home;
+        this.status = normalizeStatus(deps.status);
         // initialize with default view mode
     }
 
     setup_wrapper(element) {
+
         let svg_element, wrapper_element;
 
-        // CSS Selector is passed
-        if (typeof element === 'string') {
-            element = document.querySelector(element);
-        }
-
-        // get the SVGElement
+        // 受け取り正規化
+        if (typeof element === 'string') element = document.querySelector(element);
         if (element instanceof HTMLElement) {
-            wrapper_element = element;
+            wrapper_element = element;                 // #gantt (DIV) の想定
             svg_element = element.querySelector('svg');
         } else if (element instanceof SVGElement) {
-            svg_element = element;
+          svg_element = element;
         } else {
             throw new TypeError(
-                'Frappé Gantt only supports usage of a string CSS selector,' +
-                    " HTML DOM element or SVG DOM element for the 'element' parameter"
+                "Frappé Gantt only supports a CSS selector, HTML element or SVG element for 'element'"
             );
         }
-
-        // svg element
+      
+        // SVG 本体
         if (!svg_element) {
-            // create it
-            this.$svg = createSVG('svg', {
-                append_to: wrapper_element,
-                class: 'gantt',
-            });
+            this.$svg = createSVG('svg', { append_to: wrapper_element, class: 'gantt', id: 'ganttSvg' });
         } else {
             this.$svg = svg_element;
             this.$svg.classList.add('gantt');
         }
-        
-        //parent_element
-        const ganttHeaderContainer = document.createElement('div');
-        this.ganttContainerParent = document.querySelector('.gantt-container-parent')
-        ganttHeaderContainer.classList.add('gantt-header-container');
-        ganttHeaderContainer.style.height =  `${this.options.header_height}px`;
-        this.ganttContainerParent.parentNode.insertBefore(ganttHeaderContainer, this.ganttContainerParent);
-        this.ganttHeader = createSVG('svg', {
-            x: 0,
-            y: 0,
-            append_to: ganttHeaderContainer,
-            class: 'gantt-header',
-        });
-        
-        // wrapper element
-        this.$container = document.createElement('div');
-        this.$container.classList.add('gantt-container');
-
-        const parent_element = this.$svg.parentElement;
-        parent_element.appendChild(this.$container);
-        this.$container.appendChild(this.$svg);
-
-        // popup wrapper
-        this.popup_wrapper = document.createElement('div');
-        this.popup_wrapper.classList.add('popup-wrapper');
-        this.$container.appendChild(this.popup_wrapper);
+      
+        // === 親（ガント本体のラッパ）を保持：他所でも使うので必ずセット ===
+        this.ganttContainerParent =
+            wrapper_element?.closest('.gantt-container-parent')
+      
+        // === ヘッダ：Viewport（固定・padding を持つ） + Track（動く） ===
+        const host = this.ganttContainerParent?.parentNode
+      
+        let headerViewport =
+            host.querySelector(':scope > .gantt-header-viewport') ||
+                (this.ganttContainerParent?.previousElementSibling &&
+                this.ganttContainerParent.previousElementSibling.classList.contains('gantt-header-viewport')
+                ? this.ganttContainerParent.previousElementSibling
+                : null);
+      
+        if (!headerViewport) {
+            headerViewport = document.createElement('div');
+            headerViewport.className = 'gantt-header-viewport';
+            host.insertBefore(headerViewport, this.ganttContainerParent); // 直前に差し込む
+        }
+        headerViewport.style.height = `${this.options.header_height}px`;
+      
+        // 2) track（実際に横移動する中身）
+        let headerTrack = headerViewport.querySelector('.gantt-header-container');
+        if (!headerTrack) {
+            headerTrack = document.createElement('div');
+            headerTrack.className = 'gantt-header-container';
+            headerViewport.appendChild(headerTrack);
+        }
+        headerTrack.style.height = `${this.options.header_height}px`;
+        this.ganttHeaderContainer = headerTrack;
+      
+        // 3) ヘッダ SVG（時間目盛）
+        let headerSvg = headerTrack.querySelector('svg.gantt-header');
+        if (!headerSvg) {
+            headerSvg = createSVG('svg', { append_to: headerTrack, class: 'gantt-header' });
+        }
+        this.ganttHeader = headerSvg;
+      
+        // === 本体スクロール用のラッパ ===
+        if (!this.$container) {
+            this.$container = document.createElement('div');
+            this.$container.classList.add('gantt-container');
+            wrapper_element.appendChild(this.$container);
+            this.$container.appendChild(this.$svg);
+        }
+      
+        // === ポップアップ ===
+        if (!this.popup_wrapper) {
+            this.popup_wrapper = document.createElement('div');
+            this.popup_wrapper.classList.add('popup-wrapper');
+            this.$container.appendChild(this.popup_wrapper);
+        }
     }
 
     setup_options(options) {
@@ -109,76 +162,33 @@ export default class Gantt {
 
     setup_tasks(tasks) {
         //担当者ごとの行のインデックスを保持するオブジェクト
-        this.assigneeRows = {};
+        this.assigneeIndexById = {};       // id -> index
+        this.assigneeIdByIndex  = [];      // index -> id
+        this.assigneeNameByIndex = [];     // index -> name
+      
+
+        const members = this.options.memberList || [];
+
+        members.forEach((member, i) => {
+            const id = member.member_id;
+            const name = member.name;
         
+            this.assigneeIndexById[id] = i;
+            this.assigneeIdByIndex[i] = id;
+            this.assigneeNameByIndex[i] = name;
+        });
+        /*
         this.options.members.map((member, i) => {
             this.assigneeRows[member] = i
         });
-        
-        let currentRowIndex = 0
-        // prepare tasks
-        /*
-        this.tasks = tasks.map((task, i) => {
-            // convert to Date objects
-            if (this.assigneeRows.hasOwnPrperty(task.assignee)) {
-                task._index = this.assigneeRows[task.assignee];
-            }
-            
-            task._start = date_utils.parse(task.start);
-            task._end = date_utils.parse(task.end);
-
-            // make task invalid if duration too large
-            if (date_utils.diff(task._end, task._start, 'year') > 10) {
-                task.end = null;
-            }
-
-            task._index = this.assigneeRows[task.assignee];
-
-            // invalid dates
-            if (!task.start && !task.end) {
-                const today = date_utils.today();
-                task._start = today;
-                task._end = date_utils.add(today, 2, 'day');
-            }
-
-            if (!task.start && task.end) {
-                task._start = date_utils.add(task._end, -2, 'day');
-            }
-
-            if (task.start && !task.end) {
-                task._end = date_utils.add(task._start, 2, 'day');
-            }
-
-            // invalid flag
-            if (!task.start || !task.end) {
-                task.invalid = true;
-            }
-
-            // dependencies
-            if (typeof task.dependencies === 'string' || !task.dependencies) {
-                let deps = [];
-                if (task.dependencies) {
-                    deps = task.dependencies
-                        .split(',')
-                        .map((d) => d.trim())
-                        .filter((d) => d);
-                }
-                task.dependencies = deps;
-            }
-
-            // uids
-            if (!task.id) {
-                task.id = generate_id(task);
-            }
-
-            return task;
-        });
         */
+        
         this.tasks = tasks.reduce((acc, task) => {
             // convert to Date objects
-            if (!this.assigneeRows.hasOwnProperty(task.assignee)) return acc;
+            //if (!this.assigneeRows.hasOwnProperty(task.assignee)) return acc;
 
-            task._index = this.assigneeRows[task.assignee];
+            //task._index = this.assigneeRows[task.assignee];
+            task._index = this.assigneeIndexById[task.custom.holderId]
             task._start = date_utils.parse(task.start);
             task._end = date_utils.parse(task.end);
 
@@ -186,8 +196,6 @@ export default class Gantt {
             if (date_utils.diff(task._end, task._start, 'year') > 10) {
                 task.end = null;
             }
-
-            task._index = this.assigneeRows[task.assignee];
 
             // invalid dates
             if (!task.start && !task.end) {
@@ -230,7 +238,8 @@ export default class Gantt {
             return acc;
         }, []);
         
-        this.assigneeSize = Object.keys(this.assigneeRows).length;
+        //this.assigneeSize = Object.keys(this.assigneeRows).length;
+        this.assigneeSize = this.assigneeIdByIndex.length;
 
         this.setup_dependencies();
     }
@@ -392,7 +401,6 @@ export default class Gantt {
     custom_render(wrapper, tasks, options) {
         this.header_clear()
         this.clear();
-
         //this.setup_options(options);
         this.setup_wrapper(wrapper);
         this.setup_options(options)
@@ -453,7 +461,7 @@ export default class Gantt {
 
         let row_y = 0;
 
-        Object.keys(this.assigneeRows).forEach((assignee, index) => {
+        Object.keys(this.assigneeIndexById).forEach((key, value) => {
             createSVG('rect', {
                 x: 0,
                 y: row_y,
@@ -461,10 +469,10 @@ export default class Gantt {
                 height: this.row_height,
                 class: 'grid-row',
                 append_to: rows_layer,
-                'data-row-number': index,
+                'data-row-number': value,
             });
             row_y += this.options.bar_height + this.options.padding;
-        });
+        })
     }
 
     make_grid_header() {
@@ -477,6 +485,7 @@ export default class Gantt {
             width: header_width + this.gantt_offset_width,
             height: header_height -25,
             class: 'gantt-header-grid',
+            id: 'ganttHeaderGrid',
             append_to: ganttHeaderlayer,
         });
         
@@ -724,7 +733,7 @@ export default class Gantt {
         }
 
         const base_pos = {
-            x: i * this.options.column_width + this.gantt_offset_width + 12,//変更
+            x: i * this.options.column_width + this.gantt_offset_width -4,//変更
             lower_y: this.options.header_height -5,
             upper_y: this.options.header_height - 25,
         };
@@ -887,52 +896,100 @@ export default class Gantt {
         });
         $.on(this.$svg, 'mouseup', async (e) => {
             this.bar_being_dragged = null;
-            let upDateDict = {}
+            let upDateDict = {
+                'planId': '',
+                'afterStart': '',
+                'afterStartMessage': '',
+                'beforeStart': '',
+                'beforeStartMessage': '',
+                "afterHolderName": '',
+                "beforeHolderId": '',
+                "beforeHolderName": '',
+                "holderStatus": false,
+                "timeStatus": false,
+                "rows": []
+            }
+
             for (const bar of bars) {
                 const $bar = bar.$bar;
                 let upDateNeeded = false;
+                upDateDict.planId = bar.task.id
                 if ($bar.finaldx) {
+                    upDateDict.afterStart = formatDate(bar.task.start, "YYYY-MM-DD HH:mm:ss")
+                    upDateDict.afterStartMessage = formatDate(bar.task.start, "MM月DD日 HH時mm分")
                     bar.date_changed();
                     bar.set_action_completed();
-                    upDateDict = {...upDateDict, ...this.handleHorizontalDrag(bar)};
+                    upDateDict.beforeStart = formatDate(bar.task._start, "YYYY-MM-DD HH:mm:ss")
+                    upDateDict.beforeStartMessage = formatDate(bar.task._start, "MM月DD日 HH時mm分")
+                    upDateDict.timeStatus = true
                     upDateNeeded = true;
                 }
                 if($bar.snapY) {
                     bar.update_bar_position({ y: $bar.snapY, axis: 'y'});
                     if ($bar.snapY != $bar.oy) {
-                        const holder = this.findHolder(lastRowIndex);
+                        upDateDict.afterHolderName = bar.task.assignee
+                        upDateDict.status = bar.task.custom.status;
+                        const { holderId, holderName } = this.findHolder(lastRowIndex);
+                        upDateDict.beforeHolderId = holderId;
+                        upDateDict.beforeHolderName = holderName;
                         highLightSelectors.forEach(selector => {
                             const lastElement = this.ganttContainerParent.querySelector(`${selector}[data-row-number="${lastRowIndex}"]`);
-                            lastElement.classList.remove('row-highlight');    
+                            lastElement.classList.remove('row-highlight');
                         });
-                        if (!holder) {
+                        if (!upDateDict.beforeHolderId) {
                             await ModalManger.showModal("メンバーが見つかりません", 'red');
                             bar.update_bar_position({ x: $bar.ox, y: $bar.oy, axis: 'xy'});
                             break;
                         }
-                        bar.task.assignee = holder
-                        upDateDict = {...upDateDict, ...this.handleVerticalDrag(bar, holder)};
+                        bar.task.assignee = holderName
+                        upDateDict.holderStatus = true;
                         upDateNeeded = true;
                     }
                 }
                 $bar.finaldx = 0;
                 $bar.finaldy = 0;
                 $bar.snapY = 0;
-                if (upDateNeeded) {
+                if (upDateDict.holderStatus || upDateDict.timeStatus) {
                     await this.performAsynchronousOperation(upDateDict);
-                }   
+                }
             }
         });
         this.bind_bar_progress();
     }
+
 
     async performAsynchronousOperation(upDateDict) {
         try {
             const params = this.createRequestParams(upDateDict);
             const response = await asynchronousCommunication(params);
             if (response && response.status === 'success') {
-                const message = this.createResponseMessage(response.data);
-                this.GanttSetUpInstance.upDateGantt(response.data)
+                const message = this.createResponseMessage(upDateDict);
+                upDateDict.rows = response.data.rows
+                this.GanttSetUpInstance.upDateGantt(upDateDict);
+                const ids = []
+
+                if (upDateDict.planId != null) {
+                    ids.push(Number(upDateDict.planId))
+                } else {
+                    throw new Error("idが見つかりません。");
+                }
+
+                const activeStatus = this.home.state.activeStatus?.key??  '';
+                const upDateStatus = this.status.JA_TO_KEY[upDateDict.status]?? '';
+
+                if (this.home.state.activeUser.userName === upDateDict.beforeHolderName) {
+                    const decision = { action: 'upsert', upDateStatus, ids, rows: upDateDict.rows };
+                    this.home._syncActiveCacheAfterDecision(decision);
+                    if (activeStatus === upDateStatus) {
+                        this.home.replaceTable(upDateDict.rows, { mode: "append" });
+                    }
+                } else {
+                    const decision = { action: 'remove', upDateStatus, ids };
+                    this.home._syncActiveCacheAfterDecision(decision);
+                    if (activeStatus === upDateStatus) {
+                        this.home.removeTable(ids);
+                    }
+                }
                 await ModalManger.showModal(message, 'green', true);
             } else {
                 throw new Error("リクエストが失敗したか、応答がありません。");
@@ -945,8 +1002,8 @@ export default class Gantt {
 
     createRequestParams(upDateDict) {
         return {
-            url: '/home/',
-            method: 'POST',
+            url: `/api/plans/${upDateDict.planId}/time/`,
+            method: 'PATCH',
             data: {
                 action: 'fetch_update_bar',
                 upDateDict
@@ -954,25 +1011,38 @@ export default class Gantt {
         };
     }
 
+    getValue(data, key) {
+        if (key.includes(".")) {
+            // ネストキー対応
+            return key.split(".").reduce((o, k) => o?.[k], data);
+        }
+        // フラットキー 
+        return data[key];
+    }
+
     createResponseMessage(data) {
         if (!data) return "<p>データは利用できません。</p>";
 
         let messageParts = [
-            `<p>plan_id: ${data["plan_id"] || "不明"}</p>`
+            `<p>plan_id: ${data["planId"] || "不明"}</p>`
         ];
 
-        this.appendChangeMessage(messageParts, data, 'old_member_holder', 'new_member_holder', '実施者');
-        this.appendChangeMessage(messageParts, data, 'old_plan_time', 'new_plan_time', '実施時間');
+        this.appendChangeMessage(messageParts, data, 'afterHolderName', 'beforeHolderName', '実施者');
+        this.appendChangeMessage(messageParts, data, 'afterStartMessage', 'beforeStartMessage', '実施時間');
 
         return messageParts.join('');
     }
 
     appendChangeMessage(parts, data, oldKey, newKey, label) {
-        if (data[oldKey] && data[newKey]) {
-            parts.push(`<p>${label}: ${data[oldKey]} ⇒ ${data[newKey]}に変更されました。</p>`);
+        const oldVal = this.getValue(data, oldKey);
+        const newVal = this.getValue(data, newKey);
+
+        if (oldVal && newVal) {
+            parts.push(`<p>${label}: ${oldVal} ⇒ ${newVal}に変更されました。</p>`);
         } else {
             parts.push(`<p>${label}: 変更はありません。</p>`);
         }
+
     }
     
     handleHorizontalDrag(bar) {
@@ -982,16 +1052,22 @@ export default class Gantt {
         };
     }
 
-    handleVerticalDrag(bar, holder) {
+    handleVerticalDrag(bar, holderDict) {
         return {
             "plan_id": bar.task.id,
-            "member": holder
+            "holderDict": holderDict
         };
     }
 
     findHolder(rowIndex) {
+        const [id, holderName] = Object.entries(this.assigneeNameByIndex).find(([key, val]) => Number(key) === rowIndex);
+        const holderId = this.assigneeIdByIndex[id]
+        return { holderId, holderName };
+
+        /*
         const entry = Object.entries(this.assigneeRows).find(([key,val]) => val === rowIndex);
         return entry ? entry[0] : null;
+        */
     }
 
     bind_bar_progress() {

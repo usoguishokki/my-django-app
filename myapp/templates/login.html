@@ -2,22 +2,32 @@
 {% load static %}
 {% load sass_tags %}
 
-{% block title %}Login{% endblock %}
+{% block title %}ログイン{% endblock %}
 {% block extra_css %}
     <link href="{% sass_src 'css/login.scss' %}" rel="stylesheet" type="text/css">
 {% endblock %}
     
 {% block content %}
-    <form class="sign-in" method="post" action="{% url 'login' %}">
+    <form class="sign-in" method="post" action="{% url 'login' %}" autocomplete="off">
         {% csrf_token %}
         <h1 class="sign-in-title">Sign in to Nika</h1>
         {% if form.login_number.errors %}
             <p class="error-message">{{ form.login_number.errors.0 }}</p>
         {% endif %}
-            {{ form.login_number }}
+        {{ form.login_number }}
         <div class="mybutton pull-back-button">
-            <!--<a href="/home/">sign in</a>-->
             <button type="submit">sign in</button>
         </div>
     </form>
+
+    <script>
+      window.addEventListener('pageshow', function (event) {
+        const navEntries = performance.getEntriesByType('navigation');
+        const navType = navEntries.length > 0 ? navEntries[0].type : '';
+
+        if (event.persisted || navType === 'back_forward') {
+          window.location.reload();
+        }
+      });
+    </script>
 {% endblock %}

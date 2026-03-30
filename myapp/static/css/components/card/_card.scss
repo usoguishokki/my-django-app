@@ -1,0 +1,14 @@
+@mixin ui-card(
+  $radius: 12px,
+  $padding: 12px 14px,
+  $max-width: 320px
+) {
+  position: fixed;
+  z-index: 9999;
+  max-width: $max-width;
+  padding: $padding;
+  border-radius: $radius;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
