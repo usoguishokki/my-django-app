@@ -41,3 +41,4 @@ htmlcov/
 *.csv
 *.zip
 *.map
+myproject/settings_backup/

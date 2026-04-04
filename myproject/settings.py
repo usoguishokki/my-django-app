@@ -3,13 +3,13 @@ import os
 from concurrent_log_handler import ConcurrentRotatingFileHandler
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-4&5fitkrdl4rcdj)ih&%dsofz_bw_5w18^_&)qs(tp52dn5au!'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 if DEBUG:
     FRONTEND_URL = "http://localhost:3000"
@@ -27,7 +27,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'debug_toolbar',
     'sass_processor',
     'myapp',
     'corsheaders'
@@ -41,11 +40,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'myapp.middlewares.ModelCacheMiddleware',
     'corsheaders.middleware.CorsMiddleware',
 ]
-
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
@@ -71,24 +68,10 @@ INTERNAL_IPS = [
     '127.0.0.1',
 ]
 
-DEBUG_TOOLBAR_PANELS = [
-    'debug_toolbar.panels.versions.VersionsPanel',
-    'debug_toolbar.panels.timer.TimerPanel',
-    'debug_toolbar.panels.settings.SettingsPanel',
-    'debug_toolbar.panels.headers.HeadersPanel',
-    'debug_toolbar.panels.request.RequestPanel',
-    'debug_toolbar.panels.sql.SQLPanel',  
-    'debug_toolbar.panels.staticfiles.StaticFilesPanel',
-    'debug_toolbar.panels.templates.TemplatesPanel',
-    'debug_toolbar.panels.cache.CachePanel',
-    'debug_toolbar.panels.signals.SignalsPanel',
-    'debug_toolbar.panels.logging.LoggingPanel',
-    'debug_toolbar.panels.redirects.RedirectsPanel',
-]
 
-AUTENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend', #標準の認証バックエンド
-    'myapp.backends.MemberAuthenticationBackend', #カスタム認証バックエンド
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'myapp.backends.MemberAuthenticationBackend',
 ]
 
 ROOT_URLCONF = 'myproject.urls'
@@ -204,10 +187,12 @@ USE_TZ = False
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'myapp', 'static'),
+    os.path.join(BASE_DIR, 'myapp/static'),
+    os.path.join(BASE_DIR, 'frontend/build/static'),
 ]
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+#collectstaticを利用する時にコメント化を解除
+STATIC_ROOT = r'C:\inetpub\wwwroot\sitefolder\myproject\staticfiles'
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
