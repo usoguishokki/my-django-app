@@ -4,6 +4,7 @@ export class TimeScheduleTemplate {
     gridLines,
     members,
     events,
+    breakBands,
     currentSchedules,
     scheduleHeightPx,
   }) {
@@ -35,6 +36,10 @@ export class TimeScheduleTemplate {
                 ${this.createMemberColumns(members)}
               </div>
 
+              <div class="time-schedule__breakBands">
+                ${this.createBreakBands(breakBands)}
+              </div>
+
               <div class="time-schedule__events">
                 ${this.createEvents(events, members)}
               </div>
@@ -58,8 +63,13 @@ export class TimeScheduleTemplate {
 
   static createMemberHeaders(members) {
     return members.map((member) => `
-      <div class="time-schedule__memberHeader">
-        ${member.name}
+      <div
+        class="time-schedule__memberHeader"
+        data-job-title="${member.job_title ?? ''}"
+      >
+        <span class="time-schedule__memberHeaderName">
+          ${member.name}
+        </span>
       </div>
     `).join('');
   }
@@ -67,22 +77,27 @@ export class TimeScheduleTemplate {
   static createCurrentSchedules(members, currentSchedules = []) {
     return members.map((member) => {
       const current = currentSchedules.find((item) => item.memberId === member.id);
-
+  
       if (!current || !current.hasSchedule) {
         return `
-          <div class="time-schedule__currentCell is-empty">
-            <div class="time-schedule__currentTitle">予定なし</div>
+          <div class="time-schedule__currentCell is-empty" data-status="">
+            <div class="time-schedule__currentMain">予定なし</div>
           </div>
         `;
       }
-
+  
       return `
-        <div class="time-schedule__currentCell">
-          <div class="time-schedule__currentTime">
-            ${current.startTime} - ${current.endTime}
+        <div class="time-schedule__currentCell" data-status="${current.status ?? ''}">
+          <div class="time-schedule__currentMeta">
+            <span class="time-schedule__currentTime">
+              ${current.startTime} - ${current.endTime}
+            </span>
+            <span class="time-schedule__currentStatus">
+              ${current.status}
+            </span>
           </div>
-          <div class="time-schedule__currentTitle">
-            ${current.title}
+          <div class="time-schedule__currentMain">
+            ${current.machineName}: ${current.workName}
           </div>
         </div>
       `;
@@ -115,7 +130,8 @@ export class TimeScheduleTemplate {
 
     return events.map((event) => {
       const memberIndex = this.findMemberIndex(members, event.memberId);
-
+      const eventLabel = this.buildEventLabel(event);
+  
       return `
         <article
           class="time-schedule__event"
@@ -127,16 +143,51 @@ export class TimeScheduleTemplate {
           "
           data-event-id="${event.id}"
           data-member-id="${event.memberId}"
+          data-start-time="${event.startTime}"
+          data-end-time="${event.endTime}"
+          data-status="${event.status ?? ''}"
         >
-          <div class="time-schedule__eventTime">
-            ${event.startTime} - ${event.endTime}
-          </div>
           <div class="time-schedule__eventTitle">
-            ${event.title}
+            ${eventLabel}
           </div>
         </article>
       `;
     }).join('');
+  }
+
+  static buildEventLabel(event) {
+    const machineName = event.machineName ?? '';
+    const workName = event.workName ?? event.title ?? '';
+
+    if (machineName && workName) {
+      return `${machineName}: ${workName}`;
+    }
+
+    if (machineName) {
+      return machineName;
+    }
+
+    return workName;
+  }
+
+  static createBreakBands(breakBands = []) {
+    if (!breakBands.length) {
+      return '';
+    }
+  
+    return breakBands.map((band) => `
+      <div
+        class="time-schedule__breakBand"
+        style="
+          top: ${band.topPx}px;
+          height: ${band.heightPx}px;
+        "
+        data-break-id="${band.id}"
+        data-start-time="${band.startTime}"
+        data-end-time="${band.endTime}"
+        data-status="${band.status ?? ''}"
+      ></div>
+    `).join('');
   }
 
   static findMemberIndex(members, memberId) {

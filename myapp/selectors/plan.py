@@ -104,12 +104,6 @@ def filter_week_plans(qs=None, *, base_date: date | None = None):
 
     start_of_week, end_of_week = get_week_range(base_date)
     
-    #テスト用---------------------
-    start_of_week = date(2026, 3, 30)
-    end_of_week = date(2026, 4, 5)
-    #----------------------------
-    
-    
     
     return qs.filter(p_date__h_date__range=(start_of_week, end_of_week))
 
@@ -149,3 +143,25 @@ def filter_this_week_plan_time_plans(qs=None):
     plan_time ベースで今週（月曜〜日曜）の Plan を返す
     """
     return filter_week_plan_time_plans(qs=qs)
+
+
+def select_schedule_day_plans(*, affiliation_id: int, target_date: date):
+    """
+    スケジュール画面用:
+    指定所属・指定日(06:30〜翌06:30)に入る Plan を返す。
+    担当者は Plan_tb.holder を使う。
+    """
+
+    start_dt = datetime.combine(target_date, time(hour=6, minute=30))
+    end_dt = start_dt + timedelta(days=1)
+    
+    return (
+        plan_base_qs()
+        .filter(
+            holder__profile__belongs_id=affiliation_id,
+            plan_time__isnull=False,
+            plan_time__gte=start_dt,
+            plan_time__lt=end_dt,
+        )
+        .order_by('plan_time', 'plan_id')
+    )

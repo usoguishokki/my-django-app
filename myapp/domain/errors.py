@@ -39,3 +39,7 @@ class InvalidMachineSelection(DomainError):
     def __init__(self, raw: Optional[str] = None, *, detail: str = "invalid machine selection"):
         self.raw = raw
         super().__init__(detail if raw is None else f"{detail}: {raw}")
+        
+class InvalidScheduleDayParams(DomainError):
+    def __init__(self, detail: str = "invalid schedule day params"):
+        super().__init__(detail)

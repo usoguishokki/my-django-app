@@ -57,7 +57,8 @@
     <div id="employeeName" class="employee-name" 
         data-employee-id="{{ employee.user_id }}"
         data-job-title="{{ employee.job_title }}"
-        data-affiliation="{{ employee.belongs.affilation}}">
+        data-affiliation="{{ employee.belongs.affilation}}"
+        data-affiliation_id="{{ employee.belongs_id }}">
         <img src="{% static 'img/user.png' %}" alt="ユーザアイコン" class="icon user-icon">
         <div id="userProfile" class="user-profile">
             {{ employee.user.name }}

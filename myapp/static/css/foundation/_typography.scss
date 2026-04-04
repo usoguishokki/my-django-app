@@ -225,3 +225,15 @@ $fw-strong: 700;
   line-height: $lh-normal;
   letter-spacing: 0.02em;
 }
+
+@mixin type-schedule-meta {
+  font-size: 0.66rem;
+  font-weight: $fw-strong;
+  line-height: 1.1;
+}
+
+@mixin type-schedule-main {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
+}

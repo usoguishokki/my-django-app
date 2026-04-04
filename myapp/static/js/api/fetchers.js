@@ -374,3 +374,17 @@ export function executeInspectionPlanResultDownload(p = {}) {
         fallbackFilename: 'inspection_plan_result.csv',
     });
 }
+
+
+export function fetchScheduleDay(p = {}) {
+    const params = new URLSearchParams();
+
+    if (p.date) params.set('date', p.date);
+    if (p.affiliationId) params.set('affiliationId', p.affiliationId);
+
+
+    return asynchronousCommunication({
+        url: `/api/schedule/day/?${params.toString()}`,
+        method: 'GET',
+    });
+}

@@ -7,6 +7,8 @@ from myapp.api.csv_download import (
     inspection_standard_download_api,
     inspection_plan_result_download_api,
 )
+from myapp.api.schedule import schedule_day_api
+
 urlpatterns = [
     path("kpi-matrix/", kpi_matrix_api, name="kpi_matrix_api"),
     path("kpi-matrix/cell-detail/", kpi_matrix_cell_detail_api, name="kpi_matrix_cell_detail_api"),
@@ -31,4 +33,6 @@ urlpatterns = [
         inspection_plan_result_download_api,
         name="inspection_plan_result_download_api",
     ),
+    
+    path("schedule/day/", schedule_day_api, name="schedule_day_api"),
 ]

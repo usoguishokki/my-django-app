@@ -38,8 +38,8 @@ export class DropdownInitializer {
     getMappedAttr,
     getCleanDropdown,
     applyOptionAttributes,
-    collectAttributeMeta,
     syncUniqueValues,
+    syncFullOptionsMap,
     updateDropdownOption,
   }) {
     this.dropdowns = dropdowns;
@@ -48,8 +48,8 @@ export class DropdownInitializer {
     this.getMappedAttr = getMappedAttr;
     this.getCleanDropdown = getCleanDropdown;
     this.applyOptionAttributes = applyOptionAttributes;
-    this.collectAttributeMeta = collectAttributeMeta;
     this.syncUniqueValues = syncUniqueValues;
+    this.syncFullOptionsMap = syncFullOptionsMap;
     this.updateDropdownOption = updateDropdownOption;
   }
 
@@ -63,27 +63,10 @@ export class DropdownInitializer {
     const attr = this.getMappedAttr(dropdownId);
     if (!attr) return;
 
-    const optionsMap = this.collectOptions(attr);
     this.syncUniqueValues(dropdownId, optionsMap);
+    this.syncFullOptionsMap(dropdownId, optionsMap);
     this.renderOptions(dropdownId, attr, optionsMap);
     this.applyInitialVisibility(dropdownId);
-  }
-
-  collectOptions(attr, metaKeys = ['data-line-name', 'data-machine-name']) {
-    const optionsMap = new Map();
-
-    document.querySelectorAll(this.itemSelector).forEach((item) => {
-      const value = item.getAttribute(attr);
-      if (!value) return;
-
-      if (!optionsMap.has(value)) {
-        optionsMap.set(value, {
-          attributes: this.collectAttributeMeta(item, metaKeys),
-        });
-      }
-    });
-
-    return optionsMap;
   }
 
   renderOptions(dropdownId, attr, optionsMap) {

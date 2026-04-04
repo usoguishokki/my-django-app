@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from typing import Optional
 from django.utils import timezone
 
+ACTUAL_PLAN_WINDOW_OFFSET_HOURS = 8
+
 @dataclass(frozen=True)
 class PlanWindowHit:
     in_window: bool
@@ -14,6 +16,7 @@ def is_impl_in_plan_window(
     team_key: Optional[str],
     shift_pattern_map=None,
     pattern_time_map=None,
+    offset_hours: int = ACTUAL_PLAN_WINDOW_OFFSET_HOURS,
 ) -> bool:
     if plan_date is None or implementation_date is None or team_key is None:
         return False
@@ -33,7 +36,12 @@ def is_impl_in_plan_window(
         return impl_dt.date() == plan_date
 
     start_dt, end_dt = w
-    return start_dt <= impl_dt < end_dt
+    offset = timedelta(hours=offset_hours)
+    
+    window_start = start_dt - offset
+    window_end = end_dt + offset
+    
+    return window_start <= impl_dt < window_end
 
 def to_local_naive(dt):
     """

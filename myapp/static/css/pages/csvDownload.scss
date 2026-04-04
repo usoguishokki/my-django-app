@@ -1,8 +1,8 @@
-@import 'common';
-@import 'components/input/input';
-@import 'components/button/button';
-@import 'components/button/optionButtonGroup';
-@import 'components/customDropdown/customDropdown';
+@import '../common';
+@import '../components/input/input';
+@import '../components/button/button';
+@import '../components/button/optionButtonGroup';
+@import '../components/customDropdown/customDropdown';
 
 .csv-download {
   max-width: 980px;

@@ -42,6 +42,7 @@ export class dropdownManger {
         this.options = { ...defaults, ...options };
         this.globalShowCount = options?.globalShowCount === true;
         this.initUniqueValues();
+        this.initFullOptionsMap();
         this.initializeDropdownCore();
         this.initializeRemoteOptionsSetter();
     };
@@ -62,21 +63,33 @@ export class dropdownManger {
             renderOptions: (dropdownId, values, totalCount, { showCount, sortKey }) => {
                 this.renderDropdownOptionsWithCountsToggle(dropdownId, values, totalCount, { showCount, sortKey });
             },
+
             applyVisibilityRule: (dropdownId, selectEl, hideByUnique) => {
-                if (hideByUnique === false) {
-                    Array.from(selectEl.options).forEach(opt => UIManger.toggleClass(opt, 'display-none', 'remove'));
+                const conf = this.getDropdownConfig(dropdownId);
+            
+                if (hideByUnique === false || conf.keepSelectionEvenIfMissing === true) {
+                    Array.from(selectEl.options).forEach(opt =>
+                        UIManger.toggleClass(opt, 'display-none', 'remove')
+                    );
                 } else {
                     this.updateDropdownOption(dropdownId);
                 }
             },
+            
             syncUniqueValues: (dropdownId, valuesMap) => {
                 if (!this.uniqueValues[dropdownId]) this.uniqueValues[dropdownId] = new Set();
                 else this.uniqueValues[dropdownId].clear();
                 valuesMap.forEach((_, v) => this.uniqueValues[dropdownId].add(v));
             },
             restoreSelection: (selectEl, prevValue) => {
-                if (prevValue && Array.from(selectEl.options).some(o => o.value === prevValue)) {
-                    selectEl.value = prevValue;
+                const normalizedPrevValue = prevValue == null ? '' : String(prevValue);
+            
+                const hasOption = Array.from(selectEl.options).some(
+                    option => option.value === normalizedPrevValue
+                );
+            
+                if (normalizedPrevValue && hasOption) {
+                    selectEl.value = normalizedPrevValue;
                 } else {
                     selectEl.value = '';
                 }
@@ -112,8 +125,8 @@ export class dropdownManger {
             getMappedAttr: this.getDropdownMappedAttribute.bind(this),
             getCleanDropdown: this.getCleanDropdown.bind(this),
             applyOptionAttributes: this.applyOptionAttributes.bind(this),
-            collectAttributeMeta: this.collectAttributeMeta.bind(this),
             syncUniqueValues: this.syncDropdownUniqueValues.bind(this),
+            syncFullOptionsMap: this.syncFullOptionsMap.bind(this),
             updateDropdownOption: this.updateDropdownOption.bind(this),
         });
 
@@ -129,6 +142,10 @@ export class dropdownManger {
         optionsMap.forEach((_, value) => {
             this.uniqueValues[dropdownId].add(value);
         });
+    }
+
+    syncFullOptionsMap(dropdownId, optionsMap) {
+        this.fullOptionsMap[dropdownId] = new Map(optionsMap);
     }
 
     initializeRemoteOptionsSetter() {
@@ -151,6 +168,7 @@ export class dropdownManger {
             showCount: this.options.showCounts === true,
             sortKey: null, // ★ここでは補完しない
             persistOnDataReplace: false,
+            keepSelectionEvenIfMissing: false,
           };
         }
       
@@ -161,16 +179,33 @@ export class dropdownManger {
         // ★rawにsortKeyがある場合だけ採用（無ければnull）
         const sortKey = (typeof raw?.sortKey === 'function') ? raw.sortKey : null;
         const persistOnDataReplace = raw?.persistOnDataReplace === true;
+        const keepSelectionEvenIfMissing = raw?.keepSelectionEvenIfMissing === true;
       
-        return { attr, hideByUnique, showCount, sortKey, persistOnDataReplace };
+        return { 
+            attr, 
+            hideByUnique, 
+            showCount, 
+            sortKey, 
+            persistOnDataReplace,
+            keepSelectionEvenIfMissing,
+        };
     }
 
     renderDropdownOptionsWithCountsToggle(dropdownId, valuesMap, totalCount, { showCount = false, sortKey = null } = {}) {
+        const currentSelections = this._filterState?.getSelections?.() ?? {};
+        const selectedValue = currentSelections[dropdownId] ?? '';
+    
         const select = this.getCleanDropdown(dropdownId);
         if (!select) return;
-
-        const { attr } = this.getDropdownConfig(dropdownId);
-
+    
+        const conf = this.getDropdownConfig(dropdownId);
+        const { attr, keepSelectionEvenIfMissing } = conf;
+    
+        const sourceOptionsMap =
+            keepSelectionEvenIfMissing
+                ? (this.fullOptionsMap?.[dropdownId] ?? valuesMap)
+                : valuesMap;
+        
         const effectiveSortKey =
             (typeof sortKey === 'function' ? sortKey : null) ??
             DEFAULT_SORTERS_BY_ATTR[attr] ??
@@ -182,9 +217,9 @@ export class dropdownManger {
         allOpt.textContent = showCount ? `全て(${totalCount})` : '全て';
         if (showCount) allOpt.setAttribute('data-count', String(totalCount));
         select.appendChild(allOpt);
-
-        let entries = Array.from(valuesMap.entries());
-
+    
+        let entries = Array.from(sourceOptionsMap.entries());
+    
         if (typeof effectiveSortKey === 'function') {
             entries.sort((a, b) => {
               const ka = effectiveSortKey(a[0]);
@@ -193,18 +228,31 @@ export class dropdownManger {
             });
           }
       
-
+    
         for (const [value, data] of entries) {
             const opt = document.createElement('option');
-
+    
             opt.value = String(value);
-
+    
             const label = labelForAttrValue(attr, value);
             opt.textContent = showCount ? `${label}(${data.count})` : label;
             this.applyOptionAttributes(opt, data.attributes);
             if (showCount) opt.setAttribute('data-count', String(data.count));
             select.appendChild(opt);
-          } 
+        }
+    
+        if (
+            keepSelectionEvenIfMissing &&
+            selectedValue &&
+            !sourceOptionsMap.has(selectedValue) &&
+            !Array.from(select.options).some(option => option.value === String(selectedValue))
+        ) {
+            const missingOpt = document.createElement('option');
+            missingOpt.value = String(selectedValue);
+            missingOpt.textContent = labelForAttrValue(attr, selectedValue);
+            missingOpt.setAttribute('data-missing-selected', 'true');
+            select.appendChild(missingOpt);
+        }
     }
 
     /*各ドロップダウンに対応するユニーク値の Set を初期化する*/
@@ -214,6 +262,14 @@ export class dropdownManger {
             this.uniqueValues[dropdownId] = new Set();
         });
     }
+
+    initFullOptionsMap() {
+        this.fullOptionsMap = {};
+        Object.keys(this.dropdowns).forEach((dropdownId) => {
+            this.fullOptionsMap[dropdownId] = new Map();
+        });
+    }
+
 
     /*4/27に追加*/
     /*任意のドロップダウンに対して、個別の変更時処理（changeイベントリスナー）を登録する*/
@@ -351,16 +407,6 @@ export class dropdownManger {
             option.setAttribute(attr, val);
         }
     }
-
-    collectAttributeMeta(item, keys = ['data-line-name', 'data-machine-name']) {
-        const result = {};
-        keys.forEach(key => {
-            result[key] = item.getAttribute(key) || '';
-        });
-
-        return result;
-    }
-
 
     getDropdownMappedAttribute(dropdownId) {
         return this.getDropdownConfig(dropdownId)?.attr ?? null;

@@ -1,6 +1,16 @@
 export class ScheduleState {
-  constructor(baseDate = new Date()) {
+  constructor(baseDate = new Date(), initialTeam = '', initialAffiliationId = '') {
     this.selectedDate = this.formatDate(baseDate);
+    this.selectedTeam = initialTeam;
+    this.selectedAffiliationId = initialAffiliationId;
+  }
+
+  setSelectedAffiliationId(affiliationId) {
+    this.selectedAffiliationId = affiliationId ?? '';
+  }
+
+  getSelectedAffiliationId() {
+    return this.selectedAffiliationId;
   }
 
   setSelectedDate(date) {
@@ -9,6 +19,14 @@ export class ScheduleState {
 
   getSelectedDate() {
     return this.selectedDate;
+  }
+
+  setSelectedTeam(team) {
+    this.selectedTeam = team;
+  }
+
+  getSelectedTeam() {
+    return this.selectedTeam;
   }
 
   moveDay(delta) {

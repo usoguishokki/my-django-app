@@ -1,9 +1,11 @@
 import { ScheduleTimeLayoutService } from '../domain/ScheduleTimeLayoutService.js';
+import { UtilityManager } from '../../manager/UtilityManager.js';
+import { fetchScheduleDay } from '../../api/fetchers.js';
 
 export class ScheduleController {
   static MINUTE_HEIGHT = 6.5;
   static HEADER_OFFSET_PX = 44;
-  static CURRENT_ROW_OFFSET_PX = 30;
+  static CURRENT_ROW_OFFSET_PX = 54;
   static TIME_AXIS_OFFSET_PX =
     ScheduleController.HEADER_OFFSET_PX + ScheduleController.CURRENT_ROW_OFFSET_PX;
 
@@ -13,31 +15,86 @@ export class ScheduleController {
     this.elements = elements;
   }
 
-  init() {
+  async init() {
     if (!this.elements.title || !this.elements.timeViewRoot) {
       return;
     }
 
+    this.syncInitialAffiliationId();
+    this.syncInitialActiveTeamButton();
     this.bindEvents();
-    this.render();
+    await this.render();
+  }
+
+  syncInitialAffiliationId() {
+    const affiliationId = UtilityManager.$id('employeeName')?.dataset?.affiliation_id ?? '';
+
+    if (affiliationId) {
+      this.state.setSelectedAffiliationId(affiliationId);
+    }
+  }
+
+  syncInitialActiveTeamButton() {
+    const selectedAffiliationId = this.state.getSelectedAffiliationId();
+    this.updateTeamButtonsByAffiliationId(selectedAffiliationId);
+  }
+
+  getScheduleQueryParams() {
+    return {
+      date: this.state.getSelectedDate(),
+      affiliationId: this.state.getSelectedAffiliationId(),
+    };
   }
 
   bindEvents() {
-    this.elements.prevButton?.addEventListener('click', () => {
+    this.elements.prevButton?.addEventListener('click', async () => {
       this.state.moveDay(-1);
-      this.render();
+      await this.render();
     });
 
-    this.elements.nextButton?.addEventListener('click', () => {
+    this.elements.nextButton?.addEventListener('click', async () => {
       this.state.moveDay(1);
-      this.render();
+      await this.render();
+    });
+
+    this.elements.teamButtons?.forEach((button) => {
+      button.addEventListener('click', async () => {
+        const affiliationId = this.getTeamButtonAffiliationId(button);
+
+        if (!affiliationId) {
+          return;
+        }
+
+        this.state.setSelectedAffiliationId(affiliationId);
+        this.updateTeamButtonsByAffiliationId(affiliationId);
+        await this.render();
+      });
     });
   }
 
-  render() {
+  getTeamButtonAffiliationId(button) {
+    return button?.dataset?.affiliationId ?? '';
+  }
+
+  updateTeamButtonsByAffiliationId(activeAffiliationId) {
+    this.elements.teamButtons?.forEach((button) => {
+      const buttonAffiliationId = this.getTeamButtonAffiliationId(button);
+      const isActive = buttonAffiliationId === activeAffiliationId;
+
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', String(isActive));
+    });
+  }
+
+  async render() {
+    const params = this.getScheduleQueryParams();
+    const response = await fetchScheduleDay(params);
+
     const selectedDate = this.state.getSelectedDate();
-    const members = this.buildDummyMembers();
-    const rawItems = this.buildDummyTimeSchedule(selectedDate);
+    const members = response.data?.members ?? [];
+    const rawItems = response.data?.items ?? [];
+    const breaks = response.data?.breaks ?? [];
+
     const scheduleHeightPx = ScheduleTimeLayoutService.getScheduleHeightPx(
       ScheduleController.MINUTE_HEIGHT
     );
@@ -77,6 +134,19 @@ export class ScheduleController {
       };
     });
 
+    const breakBands = breaks.map((item) => {
+      const layout = ScheduleTimeLayoutService.calculateEventLayout({
+        startTime: item.startTime,
+        endTime: item.endTime,
+        minuteHeight: ScheduleController.MINUTE_HEIGHT,
+      });
+
+      return {
+        ...item,
+        ...layout,
+      };
+    });
+
     const currentSchedules = this.buildCurrentSchedules(members, events);
 
     this.updateTitle(selectedDate);
@@ -87,6 +157,7 @@ export class ScheduleController {
       gridLines,
       members,
       events,
+      breakBands,
       currentSchedules,
     });
   }
@@ -116,7 +187,9 @@ export class ScheduleController {
           hasSchedule: false,
           startTime: '',
           endTime: '',
-          title: '予定なし',
+          status: '',
+          machineName: '',
+          workName: '予定なし',
         };
       }
 
@@ -125,72 +198,11 @@ export class ScheduleController {
         hasSchedule: true,
         startTime: currentEvent.startTime,
         endTime: currentEvent.endTime,
-        title: currentEvent.title,
+        status: currentEvent.status ?? '',
+        machineName: currentEvent.machineName ?? '',
+        workName: currentEvent.workName ?? currentEvent.title ?? '',
       };
     });
-  }
-
-  buildDummyMembers() {
-    return [
-      { id: 'm1', name: 'Aさん' },
-      { id: 'm2', name: 'Bさん' },
-      { id: 'm3', name: 'Cさん' },
-      { id: 'm4', name: 'Dさん' },
-    ];
-  }
-
-  buildDummyTimeSchedule(date) {
-    return [
-      {
-        id: `${date}-1`,
-        memberId: 'm1',
-        startTime: '06:30',
-        endTime: '07:15',
-        title: '引継ぎ確認',
-      },
-      {
-        id: `${date}-2`,
-        memberId: 'm2',
-        startTime: '09:00',
-        endTime: '10:30',
-        title: '日常点検',
-      },
-      {
-        id: `${date}-3`,
-        memberId: 'm3',
-        startTime: '13:00',
-        endTime: '14:15',
-        title: '週次点検',
-      },
-      {
-        id: `${date}-4`,
-        memberId: 'm4',
-        startTime: '23:30',
-        endTime: '01:00',
-        title: '夜間設備確認',
-      },
-      {
-        id: `${date}-5`,
-        memberId: 'm1',
-        startTime: '05:30',
-        endTime: '06:20',
-        title: '早朝立上げ確認',
-      },
-      {
-        id: `${date}-6`,
-        memberId: 'm2',
-        startTime: '15:00',
-        endTime: '16:00',
-        title: '設備清掃',
-      },
-      {
-        id: `${date}-7`,
-        memberId: 'm3',
-        startTime: '18:00',
-        endTime: '19:30',
-        title: '巡回確認',
-      },
-    ];
   }
 
   updateTitle(dateText) {

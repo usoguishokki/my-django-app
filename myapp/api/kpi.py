@@ -13,6 +13,10 @@ from myapp.domain.kpi_cell_request import parse_kpi_cell_detail_params
 from myapp.presenters.plan_detail_presenter import build_plan_detail_payload, build_plan_detail_payload_from_check
 from myapp.presenters.inspection_card_plans_presenter import build_inspection_card_plans_payload
 
+import csv
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, JsonResponse
+
 @login_required
 def kpi_matrix_api(request):
     try:
@@ -31,6 +35,24 @@ def kpi_matrix_cell_detail_api(request):
     try:
         params = parse_kpi_cell_detail_params(request.GET)
         payload, status = build_kpi_cell_detail_result(params)
+        
+        rows = payload.get("rows", [])
+        
+        rows = payload.get("rows", [])
+
+        with open("kpi_matrix_detail.csv", "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            writer.writerow(["plan_id", "card_no", "work_name"])
+
+            for row in rows:
+                writer.writerow([
+                    row.get("plan_id", ""),
+                    row.get("card_no", ""),
+                    row.get("work_name", ""),
+                    row.get("status_label", ""),
+                ])
+        
+
         
         return JsonResponse(payload, status=status, json_dumps_params={"ensure_ascii": False})
     

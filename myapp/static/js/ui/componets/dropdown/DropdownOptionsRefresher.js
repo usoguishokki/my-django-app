@@ -107,12 +107,15 @@ export class DropdownOptionsRefresher {
       const prevValue = selections[dropdownId] ?? '';
 
       const filtersExcept = this.filterState.buildFilters(selections, { exceptDropdownId: dropdownId });
+
+      
       const baseItems =
         Object.keys(filtersExcept).length === 0
           ? allItems
           : allItems.filter(item =>
               Object.entries(filtersExcept).every(([a, v]) => item.getAttribute(a) === v)
             );
+    
 
       const { values, totalCount } = this.statsCalculator.calc(baseItems, attr);
 

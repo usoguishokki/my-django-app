@@ -1002,12 +1002,12 @@ class CalendarUI {
     dropdownMangerSetup() {
         const itemSelector = "#external-events tr"
         this.dropdowns= {
-            teamSelect:      { attr: 'data-affilation', hideByUnique: true, persistOnDataReplace: true },
+            teamSelect:      { attr: 'data-affilation', hideByUnique: true, persistOnDataReplace: true, keepSelectionEvenIfMissing: true },
             inspectionTypeSelect: { attr: 'data-check-status',  hideByUnique: true},
             lineSelect:      { attr: 'data-line', hideByUnique: true  },
             machineSelect:   { attr: 'data-control-name', hideByUnique: true  },
             periodSelect:    { attr: 'data-period', hideByUnique: true  },
-            daySelect:       { attr: 'data-plan-week-of-day', hideByUnique: true, persistOnDataReplace: true },
+            daySelect:       { attr: 'data-plan-week-of-day', hideByUnique: true, persistOnDataReplace: true, keepSelectionEvenIfMissing: true },
             timezoneSelect:  { attr: 'data-time-zone', hideByUnique: true }, 
         }
 

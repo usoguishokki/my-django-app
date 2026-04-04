@@ -150,15 +150,13 @@
             <select id="teamSelect" data-filter-attribute="data-team">
                 <option value="">全て</option>
                 {% for team, meta in filters.team_shifts.items %}
-                    {% with t=team|stringformat:"s" %}
-                        <option value="{{ t }}" 
-                            data-affilation="{{ meta.affilation }}"
-                            data-affilation-id="{{ meta.affilation_id }}"
-                            data-shift-pattern="{{ meta.shift_pattern }}"
-                            {% if t == filters.selected.team_name %}selected{% endif %}>
-                            {{ team }}
-                        </option> 
-                    {% endwith %}
+                    <option value="{{ t }}" 
+                        data-affilation="{{ meta.affilation }}"
+                        data-affilation-id="{{ meta.affilation_id }}"
+                        data-shift-pattern="{{ meta.shift_pattern }}"
+                    >
+                        {{ team }}
+                    </option> 
                 {% endfor %}
             </select>
         </div>

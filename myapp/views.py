@@ -4,8 +4,8 @@ from django.core import serializers
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Sum, Prefetch, Count, F, QuerySet, Min, Max, OuterRef, Subquery, Value
-from django.db.models.functions import Coalesce, TruncDate
+from django.db.models import Q, Sum, Prefetch, Count, F, QuerySet, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.db import transaction
@@ -13,8 +13,8 @@ from datetime import datetime, timedelta, time as dt_time, date
 from .backends import MemberAuthenticationBackend
 from .models import (
     Control_tb, Member_tb, Plan_tb, Db_details_tb, Calendar_tb, Check_tb,
-    ShiftPattan_tb, Practitioner_tb, UserProfile, WeeklyDuty, Hozen_calendar_tb,
-    DayOfWeek, PlanStatus
+    ShiftPattan_tb, Practitioner_tb, UserProfile, Hozen_calendar_tb,
+    PlanStatus
 )
 from django.views.decorators.cache import never_cache
 from .filters_maps import get_field_map, get_status_map, get_op_map, get_negated_ops
@@ -23,7 +23,6 @@ from .services.query_builders import (
     build_q_from_filters,
 )
 
-from collections import defaultdict
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 
@@ -40,7 +39,7 @@ import logging
 import calendar
 import logging
 import csv
-from typing import Optional, Dict, List, Sequence, Iterable, Union, Callable, Any, Tuple
+from typing import Optional, Dict,  Callable, Any
 
 from myapp.selectors.plan import (
     plan_base_qs, 
@@ -1870,6 +1869,7 @@ def nika_app_view(request):
     logger.debug(f"🔍 request.COOKIES in nika_app_view: {request.COOKIES}")
     return render(request, 'index.html')
 """
+
 @api_view(['GET'])
 def get_employee(request):
     return JsonResponse({

@@ -1,15 +1,15 @@
 import { ChartSetup } from  './chartSetup.js'
 import { UIManger } from '../manager/UIManger.js'
 import { formatDate, toDateTimeLocalString, } from '../utils/dateTime.js';
-import { UtilityManager } from '../manager/UtilityManager.js'
+import { UtilityManager } from '../manager/UtilityManager.js';
 
-import { isValidDate, addMinutesToDate, addMinutesToDateTimeLocal } from '../utils/dateTime.js'
+import { isValidDate, addMinutesToDate, addMinutesToDateTimeLocal } from '../utils/dateTime.js';
 
-import { TableManager } from '../manager/TableManger.js'
-import Gantt from '../frappeGantt/NewFrappeGantt.js'
-import { $ } from '../frappeGantt/svg_utils.js'
+import { TableManager } from '../manager/TableManger.js';
+import Gantt from '../frappeGantt/NewFrappeGantt.js';
+import { $ } from '../frappeGantt/svg_utils.js';
 import date_utils from '../frappeGantt/data_utils.js';
-import { HomeColumnManager } from './homeMappingConfig.js'
+import { HomeColumnManager } from './homeMappingConfig.js';
 import { 
     initializeLoadingScreen, 
     showLoadingScreen,

@@ -1,6 +1,6 @@
-@import 'common';
-@import 'mixins';
-@import 'foundation/typography';
+@import '../common';
+@import '../mixins';
+@import '../foundation/typography';
 
 /* 既存のアニメーションを流用 */
 @keyframes skeleton-loading {

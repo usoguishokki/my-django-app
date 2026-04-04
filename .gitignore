@@ -36,3 +36,8 @@ htmlcov/
 
 # Uploads if not managed in git
 /media/
+
+# --- Project specific ---
+*.csv
+*.zip
+*.map

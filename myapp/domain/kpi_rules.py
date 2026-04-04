@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Literal, Tuple, Union, Optional
 from myapp.domain.shifts import (
     get_shift_day_bucket_for_impl_dt, 
@@ -13,8 +13,23 @@ from myapp.domain.shifts import (
 
 from myapp.domain.periods import fiscal_month_index, fiscal_week_index
 
+ACTUAL_PLAN_WINDOW_OFFSET_HOURS = 8
+
 PeriodView = Literal["day", "week", "month"]
 PeriodKey = Union[int, Tuple[int, int], date]  # month:int / week:(month,week) / day:date
+
+
+def expand_window_with_offset(
+    start_dt: datetime,
+    end_dt: datetime,
+    offset_hours: int = ACTUAL_PLAN_WINDOW_OFFSET_HOURS,
+):
+    """
+    窓の前後に offset を付与した (start_dt, end_dt) を返す。
+    """
+    offset = timedelta(hours=offset_hours)
+    return start_dt - offset, end_dt + offset
+
 
 def make_period_key(
     *,
@@ -137,8 +152,9 @@ def is_delay_row(
         # パターンが取れるなら「シフト終了」を締切にする
         w = calc_shift_window_dt_from_pattern(plan_date, pattern_id, pattern_time_map)
         if w:
-            _, end_dt = w
-            return now_dt >= end_dt
+            start_dt, end_dt = w
+            _, delayed_deadline = expand_window_with_offset(start_dt, end_dt)
+            return now_dt >= delayed_deadline
 
         # フォールバック：日付基準
         return plan_date < now_dt.date()

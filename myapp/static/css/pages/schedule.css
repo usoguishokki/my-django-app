@@ -637,16 +637,84 @@ button, select {
 .schedule-page {
   padding: 16px;
   color: #1f2937; }
+  .schedule-page__contentLayout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 16px;
+    align-items: stretch;
+    min-width: 0; }
+  .schedule-page__aside {
+    min-width: 0;
+    min-height: 75vh;
+    border: 1px solid #d9e0ea;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    padding: 18px 16px; }
+  .schedule-page__asideCard {
+    display: flex;
+    flex-direction: column;
+    gap: 16px; }
+  .schedule-page__asideHeader {
+    display: flex;
+    flex-direction: column;
+    gap: 4px; }
+  .schedule-page__asideTitle {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+    margin: 0;
+    color: #6b7280; }
+  .schedule-page__legendList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px; }
+  .schedule-page__legendItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 6px 8px; }
+  .schedule-page__legendSwatch {
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06); }
+    .schedule-page__legendSwatch--inspection {
+      background: #f59e0b; }
+    .schedule-page__legendSwatch--instruction {
+      background: #0bf51b; }
+    .schedule-page__legendSwatch--meeting {
+      background: #a30bf5; }
+    .schedule-page__legendSwatch--break {
+      background: rgba(107, 114, 128, 0.22); }
+  .schedule-page__legendLabel {
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.55;
+    min-width: 0;
+    color: #6b7280; }
+  .schedule-page__main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column; }
   .schedule-page__header {
     display: flex;
     flex-direction: column;
     gap: 14px;
-    margin-bottom: 16px; }
+    margin-bottom: 16px;
+    min-width: 0; }
   .schedule-page__nav {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    gap: 12px; }
+    gap: 12px;
+    min-width: 0; }
   .schedule-page__teamButtons {
     grid-column: 1;
     justify-self: start;
@@ -655,6 +723,18 @@ button, select {
     gap: 20px;
     min-width: 0;
     flex-wrap: wrap; }
+  .schedule-page__titleGroup {
+    grid-column: 2;
+    justify-self: center;
+    display: flex;
+    align-items: center;
+    gap: 50px;
+    min-width: 0; }
+  .schedule-page__body {
+    min-width: 0;
+    flex: 1 1 auto; }
+  .schedule-page__panel {
+    min-width: 0; }
   .schedule-page__teamButton {
     border-radius: 999px;
     background: #ffffff;
@@ -667,24 +747,6 @@ button, select {
     border-color: rgba(37, 99, 235, 0.35);
     color: #2563eb;
     box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08); }
-  .schedule-page__titleGroup {
-    grid-column: 2;
-    justify-self: center;
-    display: flex;
-    align-items: center;
-    gap: 50px;
-    min-width: 0; }
-  .schedule-page__title {
-    font-size: 0.96rem;
-    font-weight: 700;
-    line-height: 1.55;
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 700;
-    text-align: center;
-    color: #1f2937;
-    letter-spacing: 0.01em;
-    white-space: nowrap; }
   .schedule-page__navButtons {
     display: flex;
     align-items: center;
@@ -695,10 +757,27 @@ button, select {
     display: block; }
   .schedule-page__navButton--prev .schedule-page__navIcon {
     transform: rotate(180deg); }
-  .schedule-page__body {
-    min-width: 0; }
-  .schedule-page__panel {
-    min-width: 0; }
+  .schedule-page__navButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #1f2937;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease; }
+    .schedule-page__navButton:hover {
+      background: #f8fafc;
+      border-color: #c4cfdd;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08); }
+    .schedule-page__navButton:active {
+      transform: scale(0.98); }
+    .schedule-page__navButton:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18), 0 4px 14px rgba(15, 23, 42, 0.08); }
 
 /* ==============================
    Time schedule
@@ -724,24 +803,22 @@ button, select {
     background: #f8fafc;
     z-index: 5; }
   .time-schedule__axisLabel {
-    font-size: 0.96rem;
+    font-size: 0.78rem;
     font-weight: 700;
-    line-height: 1.55;
+    letter-spacing: 0.05em;
+    line-height: 1.3;
     position: absolute;
     left: 0;
     width: 100%;
     padding-right: 10px;
     transform: translateY(-50%);
     text-align: right;
-    font-size: 0.78rem;
-    font-weight: 700;
-    line-height: 1;
     color: #6b7280;
     white-space: nowrap;
     pointer-events: none; }
   .time-schedule__membersArea {
     display: grid;
-    grid-template-rows: 44px 30px minmax(0, 1fr);
+    grid-template-rows: 44px 54px minmax(0, 1fr);
     min-width: 0;
     height: 100%; }
   .time-schedule__memberHeaderRow {
@@ -765,44 +842,57 @@ button, select {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    gap: 4px;
     min-width: 0;
     padding: 6px 8px;
     border-right: 1px solid #e7ebf1;
+    border-left: 6px solid transparent;
     background: #fcfdff; }
     .time-schedule__currentCell:last-child {
       border-right: 0; }
     .time-schedule__currentCell.is-empty {
       color: #6b7280;
       background: #fafbfc; }
-  .time-schedule__currentTime {
-    font-size: 0.96rem;
+  .time-schedule__currentMeta {
+    font-size: 0.66rem;
     font-weight: 700;
-    line-height: 1.55;
-    margin-bottom: 2px;
-    min-width: 0;
-    font-size: 0.68rem;
-    font-weight: 700;
+    line-height: 1.1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0; }
+  .time-schedule__currentMain {
+    font-size: 0.72rem;
+    font-weight: 600;
     line-height: 1.2;
-    color: #2563eb;
+    min-width: 0;
+    color: #6b7280;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis; }
-  .time-schedule__currentTitle {
-    font-size: 0.96rem;
+  .time-schedule__currentTime {
+    font-size: 0.66rem;
     font-weight: 700;
-    line-height: 1.55;
+    line-height: 1.1;
     min-width: 0;
-    font-size: 0.74rem;
-    font-weight: 600;
-    line-height: 1.25;
-    color: #1f2937;
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; }
+  .time-schedule__currentTime {
+    font-size: 0.66rem;
+    font-weight: 700;
+    line-height: 1.1;
+    min-width: 0;
+    color: #6b7280;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis; }
   .time-schedule__memberHeader {
-    font-size: 0.96rem;
+    font-size: 0.85rem;
     font-weight: 700;
-    line-height: 1.55;
+    letter-spacing: 0.04em;
+    line-height: 1.3;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -810,8 +900,6 @@ button, select {
     padding: 0 8px;
     border-right: 1px solid #e7ebf1;
     background: #f8fafc;
-    font-size: 0.86rem;
-    font-weight: 700;
     color: #1f2937;
     text-align: center;
     white-space: nowrap;
@@ -819,6 +907,26 @@ button, select {
     text-overflow: ellipsis; }
     .time-schedule__memberHeader:last-child {
       border-right: 0; }
+  .time-schedule__memberHeaderName {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-width: 0; }
+  .time-schedule__memberHeader[data-job-title='班長'] .time-schedule__memberHeaderName, .time-schedule__memberHeader[data-job-title='組長'] .time-schedule__memberHeaderName {
+    padding-left: 10px; }
+  .time-schedule__memberHeader[data-job-title='班長'] .time-schedule__memberHeaderName::before, .time-schedule__memberHeader[data-job-title='組長'] .time-schedule__memberHeaderName::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    border-radius: 2px;
+    height: 75%; }
+  .time-schedule__memberHeader[data-job-title='班長'] .time-schedule__memberHeaderName::before {
+    background: rgba(244, 28, 28, 0.916); }
+  .time-schedule__memberHeader[data-job-title='組長'] .time-schedule__memberHeaderName::before {
+    background: rgba(28, 68, 244, 0.916); }
   .time-schedule__grid {
     position: relative;
     height: 100%;
@@ -861,35 +969,58 @@ button, select {
     overflow: hidden;
     padding: 6px 8px;
     border-left: 4px solid #2563eb;
-    border-radius: 8px;
-    background: #eef2ff;
-    color: #1e3a8a;
-    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.1); }
+    border-radius: 8px; }
     .time-schedule__event:hover {
       filter: brightness(0.98); }
-  .time-schedule__eventTime {
+  .time-schedule__event[data-status='日常点検'], .time-schedule__event[data-status='定期点検'] {
+    background: #fef3c7;
+    border-left-color: #f59e0b;
+    color: #6b7280;
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.14); }
+  .time-schedule__event[data-status='日常点検'] .time-schedule__eventTitle, .time-schedule__event[data-status='定期点検'] .time-schedule__eventTitle {
+    color: #6b7280; }
+  .time-schedule__currentCell[data-status='日常点検'], .time-schedule__currentCell[data-status='定期点検'] {
+    border-left-color: #f59e0b; }
+  .time-schedule__currentCell[data-status='日常点検'] .time-schedule__currentTime, .time-schedule__currentCell[data-status='定期点検'] .time-schedule__currentTime, .time-schedule__currentCell[data-status='日常点検'] .time-schedule__currentStatus, .time-schedule__currentCell[data-status='定期点検'] .time-schedule__currentStatus, .time-schedule__currentCell[data-status='日常点検'] .time-schedule__currentMain, .time-schedule__currentCell[data-status='定期点検'] .time-schedule__currentMain {
+    color: #6b7280; }
+  .time-schedule__eventTitle {
+    font-size: 0.66rem;
+    font-weight: 700;
+    line-height: 1.1;
+    overflow: hidden;
+    word-break: break-word; }
+  .time-schedule__breakBands {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none; }
+  .time-schedule__breakBand {
+    position: absolute;
+    left: 0;
+    right: 0;
+    box-sizing: border-box;
+    background: rgba(107, 114, 128, 0.22);
+    border-top: 1px solid rgba(107, 114, 128, 0.3);
+    border-bottom: 1px solid rgba(107, 114, 128, 0.3); }
+  .time-schedule__breakLabel {
     font-size: 0.96rem;
     font-weight: 700;
     line-height: 1.55;
-    margin-bottom: 2px;
+    position: sticky;
+    left: 8px;
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 8px;
     font-size: 0.72rem;
     font-weight: 700;
-    line-height: 1.2;
     color: #2563eb;
-    white-space: nowrap; }
-  .time-schedule__eventTitle {
-    font-size: 0.96rem;
-    font-weight: 700;
-    line-height: 1.55;
-    overflow: hidden;
-    font-size: 0.8rem;
-    font-weight: 600;
-    line-height: 1.3;
-    color: #1f2937;
-    word-break: break-word; }
+    background: rgba(255, 255, 255, 0.72);
+    border-radius: 999px;
+    margin-left: 8px; }
   .time-schedule__empty {
     font-size: 0.96rem;
-    font-weight: 700;
+    font-weight: 400;
     line-height: 1.55;
     position: absolute;
     inset: 0;
@@ -924,6 +1055,10 @@ button, select {
     .schedule-page__modeButton {
       min-height: 34px;
       padding: 7px 12px; }
+    .schedule-page__contentLayout {
+      grid-template-columns: 1fr; }
+    .schedule-page__aside {
+      min-height: auto; }
   .calendar__weekLabel {
     padding: 10px 4px;
     font-size: 0.82rem; }
@@ -976,8 +1111,6 @@ button, select {
   .calendar__event {
     padding: 2px 4px;
     font-size: 0.62rem; }
-  .calendar__eventTime {
-    display: none; }
   .time-schedule__item {
     grid-template-columns: 1fr; }
   .time-schedule__time {
