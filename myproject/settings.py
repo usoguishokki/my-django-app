@@ -69,9 +69,9 @@ INTERNAL_IPS = [
 ]
 
 
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'myapp.backends.MemberAuthenticationBackend',
+AUTENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend', #標準の認証バックエンド
+    'myapp.backends.MemberAuthenticationBackend', #カスタム認証バックエンド
 ]
 
 ROOT_URLCONF = 'myproject.urls'
