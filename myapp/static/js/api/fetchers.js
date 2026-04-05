@@ -36,7 +36,17 @@ export function fetchWdRows(p = {}) {
 
 export function fetchPlanRows(p = {}) {
     const params = new URLSearchParams();
-    if (p.week)             params.set('week', p.week);
+    if (p.week) {
+        params.set('week', p.week);
+    }
+
+    if (Array.isArray(p.statuses)) {
+        p.statuses
+            .filter(Boolean)
+            .forEach((status) => {
+                params.append('status', status);
+            });
+    }
     return asynchronousCommunication({
         url: `/api/plans/?${params.toString()}`,
         method: 'GET',

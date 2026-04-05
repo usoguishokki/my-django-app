@@ -4,8 +4,8 @@ from django.core import serializers
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Sum, Prefetch, Count, F, QuerySet, OuterRef, Subquery
-from django.db.models.functions import Coalesce
+from django.db.models import Q, Sum, Prefetch, Count, F, QuerySet, Min, Max, OuterRef, Subquery, Value
+from django.db.models.functions import Coalesce, TruncDate
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.db import transaction
@@ -13,8 +13,8 @@ from datetime import datetime, timedelta, time as dt_time, date
 from .backends import MemberAuthenticationBackend
 from .models import (
     Control_tb, Member_tb, Plan_tb, Db_details_tb, Calendar_tb, Check_tb,
-    ShiftPattan_tb, Practitioner_tb, UserProfile, Hozen_calendar_tb,
-    PlanStatus
+    ShiftPattan_tb, Practitioner_tb, UserProfile, WeeklyDuty, Hozen_calendar_tb,
+    DayOfWeek, PlanStatus
 )
 from django.views.decorators.cache import never_cache
 from .filters_maps import get_field_map, get_status_map, get_op_map, get_negated_ops
@@ -23,6 +23,7 @@ from .services.query_builders import (
     build_q_from_filters,
 )
 
+from collections import defaultdict
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 
@@ -39,7 +40,7 @@ import logging
 import calendar
 import logging
 import csv
-from typing import Optional, Dict,  Callable, Any
+from typing import Optional, Dict, List, Sequence, Iterable, Union, Callable, Any, Tuple
 
 from myapp.selectors.plan import (
     plan_base_qs, 
@@ -573,7 +574,12 @@ def api_plans(request):
     op_map = get_op_map()
     negated_ops = get_negated_ops()
     
+    week_alias = request.GET.get("week")
+    status = request.GET.getlist("status")
+    
     qs = plan_base_qs()
+    qs = qs.filter(status__in=status)
+    qs = qs.filter(p_date__date_alias=week_alias)
     
     # --- 相関サブクエリ（Plan_tb の行ごとに Calendar_tb を (c_date, pattern) で特定）---
     cal_base = Calendar_tb.objects.filter(
@@ -585,27 +591,21 @@ def api_plans(request):
         cal_affilation_name = Subquery(cal_base.values('affilation__affilation')[:1]),
     )
     
-    simple_params = {
-        "week_alias": request.GET.get("week"),
-        "status": request.GET.get("status"),
-        "day_of_week": request.GET.get("day_of_week"),
-        "time_zone": request.GET.get("time_zone"),
-        "machine": request.GET.get("machine"),
-        "line_id": request.GET.get("line_id") or request.GET.get("linename_id")
-    }
+    #simple_params = {
+    #    "week_alias": request.GET.get("week"),
+    #    "status": request.GET.get("status"),
+    #}
     
-    q_simple = build_q_from_simple_params(simple_params, field_map=field_map, status_map=status_map)
+    #q_simple = build_q_from_simple_params(simple_params, field_map=field_map, status_map=status_map)
     
-    q_adv = Q()
-    if (f := request.GET.get("filters")):
-        try:
-            q_adv = build_q_from_filters(json.loads(f), field_map=field_map,
-                                         status_map=status_map, op_map=op_map,
-                                         negated_ops=negated_ops)
-        except json.JSONDecodeError:
-            return JsonResponse({"status":"error","message":"invalid filters json"}, status=400)
+    #q_adv = Q()
+    #if (f := request.GET.get("filters")):
+    #    try:
+    #        q_adv = build_q_from_filters(json.loads(f), field_map=field_map,
+    #                                     status_map=status_map, op_map=op_map,
+    #                                     negated_ops=negated_ops)
     
-    qs = qs.filter(q_simple).filter(q_adv)
+    #qs = qs.filter(q_simple).filter(q_adv)
     rows = list(qs.values(
         "plan_id","status","p_date__date_alias","p_date__h_day_of_week",
         "inspection_no__time_zone","inspection_no__control_no__machine",
@@ -1869,7 +1869,6 @@ def nika_app_view(request):
     logger.debug(f"🔍 request.COOKIES in nika_app_view: {request.COOKIES}")
     return render(request, 'index.html')
 """
-
 @api_view(['GET'])
 def get_employee(request):
     return JsonResponse({

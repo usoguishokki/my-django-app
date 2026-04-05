@@ -1053,7 +1053,13 @@ class CalendarUI {
         });
     
         try {
-            const payload = await fetchPlanRows({ week });
+            const payload = await fetchPlanRows({ 
+                week,
+                statuses: [
+                    '配布待ち',
+                    '遅れ'
+                ],
+            });
     
             if (reqId !== this._weekReqSeq) return;
     
