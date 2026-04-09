@@ -83,6 +83,58 @@ $schedule-job-title-marker-radius: 2px;
     min-width: 0;
   }
 
+  &__rangeOptions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  &__rangeOption {
+    @include type-ui-sm;
+  
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 40px;
+    padding: 8px 12px;
+  
+    border: 1px solid $schedule-border;
+    border-radius: 999px;
+    background: $schedule-surface;
+    color: $schedule-text;
+    font-weight: 700;
+    cursor: pointer;
+  
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.15s ease;
+  
+    &:hover {
+      background: $schedule-surface-muted;
+      border-color: #c4cfdd;
+    }
+  
+    &:active {
+      transform: scale(0.98);
+    }
+  
+    &:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+    }
+  
+    &.is-active {
+      background: $schedule-primary-soft;
+      border-color: rgba(37, 99, 235, 0.35);
+      color: $schedule-primary;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+    }
+  }
+
   &__aside {
     min-width: 0;
     min-height: 75vh;
@@ -91,6 +143,10 @@ $schedule-job-title-marker-radius: 2px;
     background: $schedule-surface;
     box-shadow: $schedule-shadow;
     padding: 18px 16px;
+  
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
   }
 
   &__asideCard {
@@ -101,16 +157,71 @@ $schedule-job-title-marker-radius: 2px;
   
   &__asideHeader {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  &__asideHeader--clickable {
+    cursor: pointer;
+    user-select: none;
+    padding: 6px 8px;
+    margin: -6px -8px 0;
+    border-radius: $schedule-radius-sm;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  
+    &:hover {
+      background: $schedule-surface-muted;
+    }
+  
+    &:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+    }
   }
   
   &__asideTitle {
-    @include type-title;
+    @include type-ui-sm;
     margin: 0;
     color: $schedule-text-muted;
   }
+
+  &__asideBody {
+    min-width: 0;
+  }
   
+  &__asideCard.is-collapsed &__asideBody {
+    display: none;
+  }
+
+  &__asideToggleIcon {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    transition: background-color 0.2s ease, transform 0.24s ease;
+  }
+
+  &__asideToggleIconImage {
+    width: 16px;
+    height: 16px;
+    display: block;
+    opacity: 0.9;
+    transition: transform 0.24s ease, opacity 0.2s ease;
+  }
+
+  &__asideHeader[aria-expanded='true'] &__asideToggleIconImage {
+    transform: rotate(0deg);
+  }
+  
+  &__asideHeader[aria-expanded='false'] &__asideToggleIconImage {
+    transform: rotate(-90deg);
+  }
+
+
   &__legendList {
     list-style: none;
     margin: 0;
@@ -300,13 +411,43 @@ $schedule-job-title-marker-radius: 2px;
   }
 
   &__axis {
-    position: relative;
+    display: grid;
+    grid-template-rows:
+      $time-schedule-header-height
+      $time-schedule-current-row-height
+      minmax(0, 1fr);
     height: 100%;
     border-right: 1px solid $schedule-border-light;
     background: #f8fafc;
-    z-index: 5;
+    z-index: 2;
+    min-width: 0;
   }
 
+  &__axisHeaderSpacer {
+    position: sticky;
+    top: 0;
+    height: 100%;
+    box-sizing: border-box;
+    background: #f8fafc;
+    z-index: 4;
+  }
+  
+  &__axisCurrentSpacer {
+    position: sticky;
+    top: $time-schedule-header-height;
+    height: 100%;
+    box-sizing: border-box;
+    background: #f8fafc;
+    z-index: 3;
+    border-bottom: 1px solid $schedule-border;
+  }
+  
+  &__axisLabels {
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+  }
+  
   &__axisLabel {
     @include type-label;
   
@@ -565,8 +706,6 @@ $schedule-job-title-marker-radius: 2px;
     overflow: hidden;
     word-break: break-word;
   }
-
-  
 
   &__breakBands {
     position: absolute;

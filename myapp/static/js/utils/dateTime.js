@@ -193,3 +193,10 @@ export function addMonths(dateLike, months) {
   d.setMonth(d.getMonth() + Number(months || 0));
   return d;
 }
+
+export function addDays(dateLike, days) {
+  const d = dateLike instanceof Date ? new Date(dateLike) : new Date(dateLike);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setDate(d.getDate() + Number(days || 0));
+  return d;
+}

@@ -11,6 +11,7 @@ def present_schedule_members(members_qs):
         for member in members_qs
     ]
 
+
 def present_schedule_items(plans_qs):
     items = []
 
@@ -62,7 +63,35 @@ def present_schedule_breaks(calendar_obj):
         }
     ]
 
-def build_schedule_day_payload(*, target_date, affiliation_id, members, items, breaks):
+
+def present_team_schedules(calendar_rows):
+    team_schedules = []
+
+    for row in calendar_rows:
+        pattern = row.pattern
+        affilation = row.affilation
+        start_time = pattern.start_time if pattern else None
+
+        team_schedules.append({
+            'affiliationId': row.affilation_id,
+            'affiliationName': affilation.affilation if affilation else '',
+            'patternId': row.pattern_id,
+            'patternName': pattern.pattern_name if pattern else '',
+            'startTime': start_time.strftime('%H:%M') if start_time else '',
+        })
+
+    return team_schedules
+
+
+def build_schedule_day_payload(
+    *,
+    target_date,
+    affiliation_id,
+    members,
+    items,
+    breaks,
+    team_schedules,
+):
     return {
         'status': 'success',
         'data': {
@@ -71,5 +100,6 @@ def build_schedule_day_payload(*, target_date, affiliation_id, members, items, b
             'members': members,
             'items': items,
             'breaks': breaks,
+            'teamSchedules': team_schedules,
         },
     }

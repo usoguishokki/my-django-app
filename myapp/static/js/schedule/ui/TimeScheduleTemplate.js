@@ -7,6 +7,7 @@ export class TimeScheduleTemplate {
     breakBands,
     currentSchedules,
     scheduleHeightPx,
+    visibleHours,
   }) {
     return `
       <div class="time-schedule">
@@ -15,7 +16,11 @@ export class TimeScheduleTemplate {
           style="--time-schedule-height: ${scheduleHeightPx}px; --member-count: ${members.length};"
         >
           <div class="time-schedule__axis">
-            ${this.createAxisLabels(axisLabels)}
+            <div class="time-schedule__axisHeaderSpacer"></div>
+            <div class="time-schedule__axisCurrentSpacer"></div>
+            <div class="time-schedule__axisLabels">
+              ${this.createAxisLabels(axisLabels)}
+            </div>
           </div>
 
           <div class="time-schedule__membersArea">
@@ -41,7 +46,7 @@ export class TimeScheduleTemplate {
               </div>
 
               <div class="time-schedule__events">
-                ${this.createEvents(events, members)}
+                ${this.createEvents(events, members, visibleHours)}
               </div>
             </div>
           </div>
@@ -119,7 +124,7 @@ export class TimeScheduleTemplate {
     `).join('');
   }
 
-  static createEvents(events, members) {
+  static createEvents(events, members, visibleHours) {
     if (!events.length) {
       return `
         <div class="time-schedule__empty">
@@ -127,7 +132,9 @@ export class TimeScheduleTemplate {
         </div>
       `;
     }
-
+  
+    const shouldShowEventLabel = visibleHours <= 2;
+  
     return events.map((event) => {
       const memberIndex = this.findMemberIndex(members, event.memberId);
       const eventLabel = this.buildEventLabel(event);
@@ -147,9 +154,11 @@ export class TimeScheduleTemplate {
           data-end-time="${event.endTime}"
           data-status="${event.status ?? ''}"
         >
-          <div class="time-schedule__eventTitle">
-            ${eventLabel}
-          </div>
+          ${shouldShowEventLabel ? `
+            <div class="time-schedule__eventTitle">
+              ${eventLabel}
+            </div>
+          ` : ''}
         </article>
       `;
     }).join('');

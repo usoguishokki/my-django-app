@@ -85,6 +85,18 @@ def annotate_plan_affiliation_from_calendar(qs):
         ),
     )
     
+def select_calendars_by_date(*, target_date: date):
+    """
+    指定日の班カレンダー一覧を返す。
+    班自動切替用に affilation / pattern をまとめて取得する。
+    """
+    return (
+        Calendar_tb.objects
+        .select_related("pattern", "c_date", "affilation")
+        .filter(c_date__h_date=target_date)
+        .order_by("pattern__start_time", "affilation_id")
+    )
+    
     
 def select_calendar_by_date_and_affiliation(*, target_date: date, affiliation_id: int):
     return (

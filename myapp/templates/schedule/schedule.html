@@ -20,32 +20,108 @@
       data-role="schedule-aside"
       aria-label="スケジュール補助情報"
     >
-      <section class="schedule-page__asideCard">
-        <header class="schedule-page__asideHeader">
+      <section
+        class="schedule-page__asideCard is-collapsed"
+        data-role="schedule-legend"
+      >
+        <header
+          class="schedule-page__asideHeader schedule-page__asideHeader--clickable"
+          data-role="schedule-legend-toggle"
+          aria-expanded="false"
+          tabindex="0"
+        >
           <h2 class="schedule-page__asideTitle">凡例</h2>
+          <span class="schedule-page__asideToggleIcon" aria-hidden="true">
+            <img
+              class="schedule-page__asideToggleIconImage"
+              src="{% static 'img/カスタムセレクト矢印.svg' %}"
+              alt=""
+            >
+          </span>
         </header>
       
-        <ul class="schedule-page__legendList">
-          <li class="schedule-page__legendItem">
-            <span class="schedule-page__legendSwatch schedule-page__legendSwatch--inspection"></span>
-            <span class="schedule-page__legendLabel">定期点検 / 日常点検</span>
-          </li>
-        
-          <li class="schedule-page__legendItem">
-            <span class="schedule-page__legendSwatch schedule-page__legendSwatch--instruction"></span>
-            <span class="schedule-page__legendLabel">指示カード</span>
-          </li>
-        
-          <li class="schedule-page__legendItem">
-            <span class="schedule-page__legendSwatch schedule-page__legendSwatch--meeting"></span>
-            <span class="schedule-page__legendLabel">会議</span>
-          </li>
-          <li class="schedule-page__legendItem">
-            <span class="schedule-page__legendSwatch schedule-page__legendSwatch--break"></span>
-            <span class="schedule-page__legendLabel">休憩</span>
-          </li>
+        <div class="schedule-page__asideBody" data-role="schedule-legend-body">
+          <ul class="schedule-page__legendList">
+            <li class="schedule-page__legendItem">
+              <span class="schedule-page__legendSwatch schedule-page__legendSwatch--inspection"></span>
+              <span class="schedule-page__legendLabel">定期点検 / 日常点検</span>
+            </li>
+          
+            <li class="schedule-page__legendItem">
+              <span class="schedule-page__legendSwatch schedule-page__legendSwatch--instruction"></span>
+              <span class="schedule-page__legendLabel">指示カード</span>
+            </li>
+          
+            <li class="schedule-page__legendItem">
+              <span class="schedule-page__legendSwatch schedule-page__legendSwatch--meeting"></span>
+              <span class="schedule-page__legendLabel">会議</span>
+            </li>
+          
+            <li class="schedule-page__legendItem">
+              <span class="schedule-page__legendSwatch schedule-page__legendSwatch--break"></span>
+              <span class="schedule-page__legendLabel">休憩</span>
+            </li>
+          </ul>
+        </div>
+      </section>
 
-        </ul>
+      <section
+        class="schedule-page__asideCard is-collapsed"
+        data-role="schedule-range"
+      >
+        <header
+          class="schedule-page__asideHeader schedule-page__asideHeader--clickable"
+          data-role="schedule-range-toggle"
+          aria-expanded="false"
+          tabindex="0"
+        >
+          <h2 class="schedule-page__asideTitle">表示範囲</h2>
+          <span class="schedule-page__asideToggleIcon" aria-hidden="true">
+            <img
+              class="schedule-page__asideToggleIconImage"
+              src="{% static 'img/カスタムセレクト矢印.svg' %}"
+              alt=""
+            >
+          </span>
+        </header>
+      
+        <div class="schedule-page__asideBody" data-role="schedule-range-body">
+          <div
+            class="schedule-page__rangeOptions"
+            role="radiogroup"
+            aria-label="表示範囲"
+          >
+            <button
+              type="button"
+              class="schedule-page__rangeOption is-active"
+              data-ui-action="schedule:change-range"
+              data-hours="2"
+              aria-pressed="true"
+            >
+              2時間
+            </button>
+          
+            <button
+              type="button"
+              class="schedule-page__rangeOption"
+              data-ui-action="schedule:change-range"
+              data-hours="4"
+              aria-pressed="false"
+            >
+              4時間
+            </button>
+          
+            <button
+              type="button"
+              class="schedule-page__rangeOption"
+              data-ui-action="schedule:change-range"
+              data-hours="8"
+              aria-pressed="false"
+            >
+              8時間
+            </button>
+          </div>
+        </div>
       </section>
     </aside>
 
@@ -107,6 +183,7 @@
                 type="button"
                 class="ui-btn ui-btn--outline ui-btn--icon schedule-page__navButton schedule-page__navButton--prev"
                 data-role="schedule-prev-day"
+                data-ui-action="schedule:prev-day"
                 aria-label="前日へ"
               >
                 <img class="schedule-page__navIcon" src="{% static 'img/arrow.svg' %}" alt="">
@@ -116,6 +193,7 @@
                 type="button"
                 class="ui-btn ui-btn--outline ui-btn--icon schedule-page__navButton schedule-page__navButton--next"
                 data-role="schedule-next-day"
+                data-ui-action="schedule:next-day"
                 aria-label="翌日へ"
               >
                 <img class="schedule-page__navIcon" src="{% static 'img/arrow.svg' %}" alt="">

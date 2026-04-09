@@ -643,6 +643,40 @@ button, select {
     gap: 16px;
     align-items: stretch;
     min-width: 0; }
+  .schedule-page__rangeOptions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px; }
+  .schedule-page__rangeOption {
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.55;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid #d9e0ea;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #1f2937;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease; }
+    .schedule-page__rangeOption:hover {
+      background: #f9fafb;
+      border-color: #c4cfdd; }
+    .schedule-page__rangeOption:active {
+      transform: scale(0.98); }
+    .schedule-page__rangeOption:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16); }
+    .schedule-page__rangeOption.is-active {
+      background: #eff6ff;
+      border-color: rgba(37, 99, 235, 0.35);
+      color: #2563eb;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08); }
   .schedule-page__aside {
     min-width: 0;
     min-height: 75vh;
@@ -650,22 +684,60 @@ button, select {
     border-radius: 16px;
     background: #ffffff;
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-    padding: 18px 16px; }
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px; }
   .schedule-page__asideCard {
     display: flex;
     flex-direction: column;
     gap: 16px; }
   .schedule-page__asideHeader {
     display: flex;
-    flex-direction: column;
-    gap: 4px; }
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px; }
+  .schedule-page__asideHeader--clickable {
+    cursor: pointer;
+    user-select: none;
+    padding: 6px 8px;
+    margin: -6px -8px 0;
+    border-radius: 8px;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease; }
+    .schedule-page__asideHeader--clickable:hover {
+      background: #f9fafb; }
+    .schedule-page__asideHeader--clickable:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16); }
   .schedule-page__asideTitle {
-    font-size: 1.1rem;
+    font-size: 0.85rem;
     font-weight: 700;
-    letter-spacing: 0.02em;
-    line-height: 1.3;
+    line-height: 1.55;
     margin: 0;
     color: #6b7280; }
+  .schedule-page__asideBody {
+    min-width: 0; }
+  .schedule-page__asideCard.is-collapsed .schedule-page__asideBody {
+    display: none; }
+  .schedule-page__asideToggleIcon {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    transition: background-color 0.2s ease, transform 0.24s ease; }
+  .schedule-page__asideToggleIconImage {
+    width: 16px;
+    height: 16px;
+    display: block;
+    opacity: 0.9;
+    transition: transform 0.24s ease, opacity 0.2s ease; }
+  .schedule-page__asideHeader[aria-expanded='true'] .schedule-page__asideToggleIconImage {
+    transform: rotate(0deg); }
+  .schedule-page__asideHeader[aria-expanded='false'] .schedule-page__asideToggleIconImage {
+    transform: rotate(-90deg); }
   .schedule-page__legendList {
     list-style: none;
     margin: 0;
@@ -797,11 +869,32 @@ button, select {
     position: relative;
     box-sizing: border-box; }
   .time-schedule__axis {
-    position: relative;
+    display: grid;
+    grid-template-rows: 44px 54px minmax(0, 1fr);
     height: 100%;
     border-right: 1px solid #e7ebf1;
     background: #f8fafc;
-    z-index: 5; }
+    z-index: 2;
+    min-width: 0; }
+  .time-schedule__axisHeaderSpacer {
+    position: sticky;
+    top: 0;
+    height: 100%;
+    box-sizing: border-box;
+    background: #f8fafc;
+    z-index: 4; }
+  .time-schedule__axisCurrentSpacer {
+    position: sticky;
+    top: 44px;
+    height: 100%;
+    box-sizing: border-box;
+    background: #f8fafc;
+    z-index: 3;
+    border-bottom: 1px solid #d9e0ea; }
+  .time-schedule__axisLabels {
+    position: relative;
+    min-height: 0;
+    overflow: hidden; }
   .time-schedule__axisLabel {
     font-size: 0.78rem;
     font-weight: 700;

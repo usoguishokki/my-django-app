@@ -1006,7 +1006,7 @@ export class TableManager {
         const thead = table.createTHead();
         const headerTr = thead.insertRow();
 
-        const headers = ['点検カードNo', '作業名', '計画工数(分)', '実施工数(分)', 'ステータス', '保持者', '周期', '計画週', '実施週'];
+        const headers = ['点検カードNo', '作業名', '計(分)', '実(分)', 'ステータス', '保持者', '周期', '計週', '実週'];
         headers.forEach((label) => {
             const th = document.createElement('th');
             th.textContent = label;

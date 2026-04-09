@@ -93,4 +93,12 @@ export class ScheduleTimeLayoutService {
     static getScheduleHeightPx(minuteHeight) {
       return this.TOTAL_MINUTES * minuteHeight;
     }
+
+    static getRelativeMinute(hour, minute = 0) {
+      return this.toRelativeMinute(hour, minute);
+    }
+    
+    static getMidnightRelativeMinute() {
+      return this.getRelativeMinute(0, 0);
+    }
   }
