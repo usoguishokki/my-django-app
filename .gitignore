@@ -44,3 +44,4 @@ htmlcov/
 myproject/settings_backup/
 
 myproject/settings.py
+web.config
