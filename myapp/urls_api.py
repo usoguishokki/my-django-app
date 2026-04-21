@@ -7,7 +7,12 @@ from myapp.api.csv_download import (
     inspection_standard_download_api,
     inspection_plan_result_download_api,
 )
-from myapp.api.schedule import schedule_day_api
+
+from myapp.api.schedule import (
+    schedule_day_api,
+    schedule_member_week_api,
+    schedule_event_move_api,
+)
 
 urlpatterns = [
     path("kpi-matrix/", kpi_matrix_api, name="kpi_matrix_api"),
@@ -35,4 +40,6 @@ urlpatterns = [
     ),
     
     path("schedule/day/", schedule_day_api, name="schedule_day_api"),
+    path("schedule/member-week/", schedule_member_week_api, name="schedule_member_week_api"),
+    path("schedule/events/move/", schedule_event_move_api, name="schedule_event_move_api"),
 ]

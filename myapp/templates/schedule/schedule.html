@@ -6,6 +6,7 @@
 
 {% block extra_css %}
 <link href="{% sass_src 'css/pages/schedule.scss' %}" rel="stylesheet" type="text/css">
+<link href="{% sass_src 'css/components/drawer/_drawer.scss' %}" rel="stylesheet" type="text/css">
 {% endblock %}
 
 {% block header %}
@@ -13,125 +14,256 @@
 {% endblock %}
 
 {% block content %}
-<section class="schedule-page" data-page="schedule">
-  <div class="schedule-page__contentLayout">
+<section class="schedule-page page" data-page="schedule" data-ui-root="drawer">
+  {% include "includes/components/drawer_stack.html" with panels_template="schedule/drawer_panels__schedule.html" %}
+  <div
+    class="schedule-page__contentLayout"
+    data-role="schedule-layout"
+    data-drawer-open="false"
+    data-active-panel=""
+  >
     <aside
-      class="schedule-page__aside"
-      data-role="schedule-aside"
-      aria-label="スケジュール補助情報"
+      class="schedule-page__sidebarRail"
+      aria-label="スケジュール補助メニュー"
     >
-      <section
-        class="schedule-page__asideCard is-collapsed"
-        data-role="schedule-legend"
-      >
-        <header
-          class="schedule-page__asideHeader schedule-page__asideHeader--clickable"
-          data-role="schedule-legend-toggle"
-          aria-expanded="false"
-          tabindex="0"
-        >
-          <h2 class="schedule-page__asideTitle">凡例</h2>
-          <span class="schedule-page__asideToggleIcon" aria-hidden="true">
-            <img
-              class="schedule-page__asideToggleIconImage"
-              src="{% static 'img/カスタムセレクト矢印.svg' %}"
-              alt=""
-            >
-          </span>
-        </header>
-      
-        <div class="schedule-page__asideBody" data-role="schedule-legend-body">
-          <ul class="schedule-page__legendList">
-            <li class="schedule-page__legendItem">
-              <span class="schedule-page__legendSwatch schedule-page__legendSwatch--inspection"></span>
-              <span class="schedule-page__legendLabel">定期点検 / 日常点検</span>
-            </li>
-          
-            <li class="schedule-page__legendItem">
-              <span class="schedule-page__legendSwatch schedule-page__legendSwatch--instruction"></span>
-              <span class="schedule-page__legendLabel">指示カード</span>
-            </li>
-          
-            <li class="schedule-page__legendItem">
-              <span class="schedule-page__legendSwatch schedule-page__legendSwatch--meeting"></span>
-              <span class="schedule-page__legendLabel">会議</span>
-            </li>
-          
-            <li class="schedule-page__legendItem">
-              <span class="schedule-page__legendSwatch schedule-page__legendSwatch--break"></span>
-              <span class="schedule-page__legendLabel">休憩</span>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <section
-        class="schedule-page__asideCard is-collapsed"
-        data-role="schedule-range"
-      >
-        <header
-          class="schedule-page__asideHeader schedule-page__asideHeader--clickable"
-          data-role="schedule-range-toggle"
-          aria-expanded="false"
-          tabindex="0"
-        >
-          <h2 class="schedule-page__asideTitle">表示範囲</h2>
-          <span class="schedule-page__asideToggleIcon" aria-hidden="true">
-            <img
-              class="schedule-page__asideToggleIconImage"
-              src="{% static 'img/カスタムセレクト矢印.svg' %}"
-              alt=""
-            >
-          </span>
-        </header>
-      
-        <div class="schedule-page__asideBody" data-role="schedule-range-body">
-          <div
-            class="schedule-page__rangeOptions"
-            role="radiogroup"
-            aria-label="表示範囲"
+      <div class="schedule-page__sidebarRailInner">
+        <nav class="schedule-page__sidebarNav" aria-label="補助パネル一覧">
+          <button
+            type="button"
+            class="schedule-page__sidebarIconButton"
+            data-role="schedule-panel-button"
+            data-panel-id="support"
+            aria-label="スケジュール補助を開く"
+            aria-pressed="false"
           >
-            <button
-              type="button"
-              class="schedule-page__rangeOption is-active"
-              data-ui-action="schedule:change-range"
-              data-hours="2"
-              aria-pressed="true"
-            >
-              2時間
-            </button>
-          
-            <button
-              type="button"
-              class="schedule-page__rangeOption"
-              data-ui-action="schedule:change-range"
-              data-hours="4"
-              aria-pressed="false"
-            >
-              4時間
-            </button>
-          
-            <button
-              type="button"
-              class="schedule-page__rangeOption"
-              data-ui-action="schedule:change-range"
-              data-hours="8"
-              aria-pressed="false"
-            >
-              8時間
-            </button>
-          </div>
-        </div>
-      </section>
-    </aside>
+            補
+          </button>
+  
+          <button
+            type="button"
+            class="schedule-page__sidebarIconButton"
+            data-role="schedule-panel-button"
+            data-panel-id="test"
+            aria-label="テストカードを開く"
+            aria-pressed="false"
+          >
+            テ
+          </button>
 
+          <button
+            type="button"
+            class="schedule-page__sidebarIconButton schedule-page__sidebarIconButton--editMode"
+            data-role="schedule-edit-mode-button"
+            data-ui-action="schedule:open-edit-mode"
+            aria-label="編集モードを開く"
+            aria-pressed="false"
+            title="編集モード"
+          >
+            編
+          </button>
+          
+        </nav>
+      </div>
+    </aside>
+  
+    <aside
+      class="schedule-page__drawer"
+      data-role="schedule-drawer"
+      aria-label="補助パネル"
+      aria-hidden="true"
+    >
+      <div
+        class="schedule-page__drawerPanel"
+        data-role="schedule-panel"
+        data-panel-id="support"
+        hidden
+      >
+        <header class="schedule-page__drawerPanelHeader">
+          <h2 class="schedule-page__drawerPanelTitle">スケジュール補助</h2>
+        </header>
+  
+        <div class="schedule-page__drawerPanelBody">
+          <section
+            class="schedule-page__asideCard is-collapsed"
+            data-role="schedule-legend"
+          >
+            <header
+              class="schedule-page__asideHeader schedule-page__asideHeader--clickable"
+              data-role="schedule-legend-toggle"
+              aria-expanded="false"
+              tabindex="0"
+            >
+              <h3 class="schedule-page__asideTitle">凡例</h3>
+              <span class="schedule-page__asideToggleIcon" aria-hidden="true">
+                <img
+                  class="schedule-page__asideToggleIconImage"
+                  src="{% static 'img/カスタムセレクト矢印.svg' %}"
+                  alt=""
+                >
+              </span>
+            </header>
+  
+            <div class="schedule-page__asideBody" data-role="schedule-legend-body">
+              <ul class="schedule-page__legendList">
+                <li class="schedule-page__legendItem">
+                  <span class="schedule-page__legendSwatch schedule-page__legendSwatch--inspection"></span>
+                  <span class="schedule-page__legendLabel">定期点検 / 日常点検</span>
+                </li>
+  
+                <li class="schedule-page__legendItem">
+                  <span class="schedule-page__legendSwatch schedule-page__legendSwatch--instruction"></span>
+                  <span class="schedule-page__legendLabel">指示カード</span>
+                </li>
+  
+                <li class="schedule-page__legendItem">
+                  <span class="schedule-page__legendSwatch schedule-page__legendSwatch--meeting"></span>
+                  <span class="schedule-page__legendLabel">会議</span>
+                </li>
+  
+                <li class="schedule-page__legendItem">
+                  <span class="schedule-page__legendSwatch schedule-page__legendSwatch--break"></span>
+                  <span class="schedule-page__legendLabel">休憩</span>
+                </li>
+              </ul>
+            </div>
+          </section>
+  
+          <section
+            class="schedule-page__asideCard is-collapsed"
+            data-role="schedule-range"
+          >
+            <header
+              class="schedule-page__asideHeader schedule-page__asideHeader--clickable"
+              data-role="schedule-range-toggle"
+              aria-expanded="false"
+              tabindex="0"
+            >
+              <h3 class="schedule-page__asideTitle">表示範囲</h3>
+              <span class="schedule-page__asideToggleIcon" aria-hidden="true">
+                <img
+                  class="schedule-page__asideToggleIconImage"
+                  src="{% static 'img/カスタムセレクト矢印.svg' %}"
+                  alt=""
+                >
+              </span>
+            </header>
+  
+            <div class="schedule-page__asideBody" data-role="schedule-range-body">
+              <div
+                class="schedule-page__rangeOptions"
+                role="radiogroup"
+                aria-label="表示範囲"
+              >
+                <button
+                  type="button"
+                  class="schedule-page__rangeOption is-active"
+                  data-ui-action="schedule:change-range"
+                  data-hours="2"
+                  aria-pressed="true"
+                >
+                  2時間
+                </button>
+  
+                <button
+                  type="button"
+                  class="schedule-page__rangeOption"
+                  data-ui-action="schedule:change-range"
+                  data-hours="4"
+                  aria-pressed="false"
+                >
+                  4時間
+                </button>
+  
+                <button
+                  type="button"
+                  class="schedule-page__rangeOption"
+                  data-ui-action="schedule:change-range"
+                  data-hours="8"
+                  aria-pressed="false"
+                >
+                  8時間
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+  
+      <div
+        class="schedule-page__drawerPanel"
+        data-role="schedule-panel"
+        data-panel-id="test"
+        hidden
+      >
+        <header class="schedule-page__drawerPanelHeader">
+          <h2 class="schedule-page__drawerPanelTitle">テストカード</h2>
+        </header>
+  
+        <div class="schedule-page__drawerPanelBody">
+          <p>動作確認用のパネルです。</p>
+        </div>
+      </div>
+
+      <div
+        class="schedule-page__drawerPanel schedule-page__drawerPanel--withFooter"
+        data-role="schedule-panel"
+        data-panel-id="edit"
+        hidden
+      >
+        <header class="schedule-page__drawerPanelHeader">
+          <h2 class="schedule-page__drawerPanelTitle">編集モード</h2>
+        </header>
+      
+        <div class="schedule-page__drawerPanelBody schedule-page__drawerPanelBody--scroll schedule-page__editFlow">
+          <section
+            class="schedule-page__asideCard schedule-page__editCard schedule-page__editCard--before"
+            data-role="schedule-edit-before"
+          >
+            <div class="schedule-page__asideBody">
+              <div
+                class="schedule-page__editSummary is-empty"
+                data-role="schedule-edit-before-summary"
+              ></div>
+            </div>
+          </section>
+        
+          <div class="schedule-page__editArrow" aria-hidden="true">
+            <span class="schedule-page__editArrowCircle">
+              <img
+                class="schedule-page__editArrowIcon"
+                src="{% static 'img/arrow.svg' %}"
+                alt=""
+              >
+            </span>
+          </div>
+        
+          <section
+            class="schedule-page__asideCard schedule-page__editCard schedule-page__editCard--after"
+            data-role="schedule-edit-after"
+          >
+            <div class="schedule-page__asideBody">
+              <div
+                class="schedule-page__editSummary is-empty"
+                data-role="schedule-edit-after-summary"
+              ></div>
+            </div>
+          </section>
+        </div>
+      
+        <footer
+          class="schedule-page__drawerPanelFooter schedule-page__drawerPanelFooter--edit"
+          data-role="schedule-edit-footer"
+        ></footer>
+      </div>
+    </aside>
+  
     <div class="schedule-page__main">
       <header class="schedule-page__header">
         <div class="schedule-page__nav">
           <div class="schedule-page__teamButtons" data-role="schedule-team-buttons">
             <button
               type="button"
-              class="ui-btn ui-btn--sm ui-btn--outline schedule-page__teamButton is-active"
+              class="ui-btn ui-btn--sm ui-btn--outline ui-btn--round schedule-page__teamButton is-active"
               data-ui-action="schedule:change-team"
               data-ui-group="schedule-team"
               data-value="A"
@@ -142,7 +274,7 @@
             </button>
             <button
               type="button"
-              class="ui-btn ui-btn--sm ui-btn--outline schedule-page__teamButton"
+              class="ui-btn ui-btn--sm ui-btn--outline ui-btn--round schedule-page__teamButton"
               data-ui-action="schedule:change-team"
               data-ui-group="schedule-team"
               data-value="B"
@@ -153,7 +285,7 @@
             </button>
             <button
               type="button"
-              class="ui-btn ui-btn--sm ui-btn--outline schedule-page__teamButton"
+              class="ui-btn ui-btn--sm ui-btn--outline ui-btn--round schedule-page__teamButton"
               data-ui-action="schedule:change-team"
               data-ui-group="schedule-team"
               data-value="C"
@@ -164,7 +296,7 @@
             </button>
             <button
               type="button"
-              class="ui-btn ui-btn--sm ui-btn--outline schedule-page__teamButton"
+              class="ui-btn ui-btn--sm ui-btn--outline ui-btn--round schedule-page__teamButton"
               data-ui-action="schedule:change-team"
               data-ui-group="schedule-team"
               data-value="DAY"
@@ -175,9 +307,60 @@
             </button>
           </div>
 
+          <div class="schedule-page__memberActions" data-role="schedule-member-actions">
+            <button
+              type="button"
+              class="ui-btn ui-btn--sm ui-btn--outline schedule-page__returnButton"
+              data-role="schedule-return-team-day"
+              data-ui-action="schedule:return-team-day"
+              hidden
+            >
+              <img
+                class="schedule-page__returnButtonIcon"
+                src="{% static 'img/arrow.svg' %}"
+                alt=""
+                aria-hidden="true"
+              >
+              <span class="schedule-page__returnButtonText">班表示へ戻る</span>
+            </button>
+          
+            <div
+              class="custom-dropdown schedule-page__memberDropdown"
+              data-role="schedule-member-dropdown"
+              data-state="closed"
+              hidden
+            >
+              <button
+                type="button"
+                class="custom-dropdown__trigger"
+                data-role="schedule-member-dropdown-trigger"
+                data-ui-action="schedule:toggle-member-dropdown"
+                aria-expanded="false"
+              >
+                <span
+                  class="custom-dropdown__triggerText"
+                  data-role="schedule-member-dropdown-trigger-text"
+                >
+                  山田 太郎
+                </span>
+                <span class="custom-dropdown__triggerIcon" aria-hidden="true">▾</span>
+              </button>
+          
+              <div
+                class="custom-dropdown__panel"
+                data-role="schedule-member-dropdown-panel"
+                hidden
+              >
+                <div class="custom-dropdown__list" data-role="schedule-member-dropdown-list">
+                  <!-- option buttons -->
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="schedule-page__titleGroup">
             <h1 class="schedule-page__title" data-role="schedule-title"></h1>
-
+          
             <div class="schedule-page__navButtons">
               <button
                 type="button"
@@ -188,7 +371,7 @@
               >
                 <img class="schedule-page__navIcon" src="{% static 'img/arrow.svg' %}" alt="">
               </button>
-
+          
               <button
                 type="button"
                 class="ui-btn ui-btn--outline ui-btn--icon schedule-page__navButton schedule-page__navButton--next"
@@ -202,7 +385,7 @@
           </div>
         </div>
       </header>
-
+  
       <div class="schedule-page__body">
         <section
           class="schedule-page__panel"

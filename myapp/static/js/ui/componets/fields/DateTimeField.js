@@ -40,37 +40,52 @@ export function renderDateTimeFieldHTML(spec = {}) {
   const mode = spec.mode ?? 'time';
 
   if (mode === 'split') {
-    const groupClass = ['ui-fieldGroup', 'ui-fieldGroup--datetime', spec.groupClassName]
+    const layout = spec.layout ?? 'inline';
+
+    const groupClass = [
+      'ui-fieldGroup',
+      'ui-fieldGroup--datetime',
+      layout === 'stack' ? 'ui-fieldGroup--stack' : '',
+      spec.groupClassName,
+    ]
       .filter(Boolean)
       .join(' ');
 
-    const groupLabel = spec.groupLabel ?? ''; // '開始' / '終了'
+    const groupLabel = spec.groupLabel ?? ''; // 必要ならグループ全体のラベル
 
     return `
       <div class="${esc(groupClass)}" data-role="${esc(spec.groupRole ?? '')}">
         ${groupLabel ? `<span class="ui-fieldGroup__label">${esc(groupLabel)}</span>` : ''}
 
         ${renderLabeledInput({
+          label: spec.dateLabel ?? '',
           inputType: 'date',
           role: spec.dateRole ?? 'reg-date',
           value: spec.dateValue ?? '',
-          className: ['ui-input', 'ui-input--sm', 'ui-input--date', spec.dateClassName].filter(Boolean).join(' '),
+          className: ['ui-input', 'ui-input--sm', 'ui-input--date', spec.dateClassName]
+            .filter(Boolean)
+            .join(' '),
+          fieldClassName: spec.fieldClassName ?? '',
+          labelClassName: spec.labelClassName ?? '',
           attrs: spec.dateAttrs ?? {},
         })}
 
         ${renderLabeledInput({
+          label: spec.timeLabel ?? '',
           inputType: 'time',
           role: spec.timeRole ?? 'reg-time',
           value: spec.timeValue ?? '',
-          className: ['ui-input', 'ui-input--sm', 'ui-input--time', spec.timeClassName].filter(Boolean).join(' '),
+          className: ['ui-input', 'ui-input--sm', 'ui-input--time', spec.timeClassName]
+            .filter(Boolean)
+            .join(' '),
+          fieldClassName: spec.fieldClassName ?? '',
+          labelClassName: spec.labelClassName ?? '',
           attrs: spec.timeAttrs ?? {},
         })}
       </div>
     `;
   }
 
-  
-  // それ以外（date / time / datetime-local）は既存ロジックでOK（必要ならここに残す）
   const inputType =
     mode === 'date' ? 'date'
     : mode === 'datetime-local' ? 'datetime-local'

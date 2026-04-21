@@ -31,3 +31,10 @@ def select_member_by_user_id(user_id: str):
         .filter(profile__user_id=user_id)
         .first()
     )
+
+def select_member_by_member_id(member_id: str):
+    return (
+        member_base_qs()
+        .filter(member_id=member_id)
+        .first()
+    )

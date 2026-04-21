@@ -200,3 +200,40 @@ export function addDays(dateLike, days) {
   d.setDate(d.getDate() + Number(days || 0));
   return d;
 }
+
+/**
+ * HH:mm -> 総分
+ * @param {string} time
+ * @returns {number|null}
+ */
+export function timeStringToMinutes(time) {
+  if (typeof time !== 'string') return null;
+
+  const match = time.match(/^(\d{2}):(\d{2})$/);
+  if (!match) return null;
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return null;
+  }
+
+  return (hour * 60) + minute;
+}
+
+/**
+ * 総分 -> HH:mm
+ * 24時間で丸める
+ * @param {number} totalMinutes
+ * @returns {string}
+ */
+export function minutesToTimeString(totalMinutes) {
+  const normalized =
+    ((Number(totalMinutes || 0) % (24 * 60)) + (24 * 60)) % (24 * 60);
+
+  const hh = String(Math.floor(normalized / 60)).padStart(2, '0');
+  const mm = String(normalized % 60).padStart(2, '0');
+
+  return `${hh}:${mm}`;
+}

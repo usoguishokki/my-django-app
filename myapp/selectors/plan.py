@@ -165,3 +165,29 @@ def select_schedule_day_plans(*, affiliation_id: int, target_date: date):
         )
         .order_by('plan_time', 'plan_id')
     )
+    
+    
+def select_schedule_member_week_plans(*, member_id: int, target_date: date):
+    """
+    メンバー週表示用:
+    指定メンバー・指定週(月曜06:30〜翌週月曜06:30)に入る Plan を返す。
+    """
+
+    start_of_week, _ = get_week_range(target_date)
+
+    start_dt = datetime.combine(start_of_week, time(hour=6, minute=30))
+    end_dt = start_dt + timedelta(days=7)
+
+    return (
+        plan_base_qs()
+        .filter(
+            holder_id=member_id,
+            plan_time__isnull=False,
+            plan_time__gte=start_dt,
+            plan_time__lt=end_dt,
+        )
+        .order_by('plan_time', 'plan_id')
+    )
+    
+def select_plan_by_id(plan_id: int):
+    return plan_base_qs().filter(plan_id=plan_id).first()

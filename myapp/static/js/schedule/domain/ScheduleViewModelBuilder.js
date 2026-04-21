@@ -1,5 +1,5 @@
-import { ScheduleTimeLayoutService } from './ScheduleTimeLayoutService.js';
-import { ScheduleViewConfigService } from './ScheduleViewConfigService.js';
+import { ScheduleViewMapper } from './ScheduleViewMapper.js';
+import { ScheduleTimelineViewBuilder } from './ScheduleTimelineViewBuilder.js';
 
 export class ScheduleViewModelBuilder {
   static build({ response, minuteHeight, visibleHours, currentSchedules }) {
@@ -7,52 +7,24 @@ export class ScheduleViewModelBuilder {
     const rawItems = response.data?.items ?? [];
     const breaks = response.data?.breaks ?? [];
 
-    const scheduleHeightPx =
-      ScheduleTimeLayoutService.getScheduleHeightPx(minuteHeight);
-
-    const baseAxes = ScheduleTimeLayoutService.buildAxisLabels();
-    const axisIntervalMinutes =
-      ScheduleViewConfigService.getAxisIntervalMinutes(visibleHours);
-
-    const axisLabels = baseAxes
-      .filter((axis) => axis.minute % axisIntervalMinutes === 0)
-      .map((axis) => ({
-        ...axis,
-        isHour: axis.minute % 60 === 0,
-        topPx: ScheduleTimeLayoutService.toPositionPx(axis.minute, minuteHeight),
-      }));
-
-    const gridLines = baseAxes.map((axis) => ({
-      ...axis,
-      isHour: axis.minute % 60 === 0,
-      topPx: ScheduleTimeLayoutService.toPositionPx(axis.minute, minuteHeight),
-    }));
-
-    const events = rawItems.map((item) => {
-      const layout = ScheduleTimeLayoutService.calculateEventLayout({
-        startTime: item.startTime,
-        endTime: item.endTime,
-        minuteHeight,
-      });
-
-      return {
-        ...item,
-        ...layout,
-      };
+    const {
+      scheduleHeightPx,
+      axisLabels,
+      gridLines,
+    } = ScheduleTimelineViewBuilder.build({
+      minuteHeight,
+      visibleHours,
     });
 
-    const breakBands = breaks.map((item) => {
-      const layout = ScheduleTimeLayoutService.calculateEventLayout({
-        startTime: item.startTime,
-        endTime: item.endTime,
-        minuteHeight,
-      });
+    const memberIndexMap = this.buildMemberIndexMap(members);
 
-      return {
-        ...item,
-        ...layout,
-      };
-    });
+    const events = rawItems.map((item) =>
+      this.mapEventWithColumnIndex(item, minuteHeight, memberIndexMap)
+    );
+
+    const breakBands = breaks.map((item) =>
+      ScheduleViewMapper.mapTimedItem(item, minuteHeight)
+    );
 
     return {
       scheduleHeightPx,
@@ -62,6 +34,21 @@ export class ScheduleViewModelBuilder {
       events,
       breakBands,
       currentSchedules: currentSchedules(members, events),
+    };
+  }
+
+  static buildMemberIndexMap(members = []) {
+    return new Map(
+      members.map((member, index) => [member.id, index])
+    );
+  }
+
+  static mapEventWithColumnIndex(item, minuteHeight, memberIndexMap) {
+    const mapped = ScheduleViewMapper.mapTimedItem(item, minuteHeight);
+
+    return {
+      ...mapped,
+      columnIndex: memberIndexMap.get(item.memberId) ?? 0,
     };
   }
 }

@@ -1,5 +1,10 @@
+import { ScheduleEventLabelBuilder } from './ScheduleEventLabelBuilder.js';
+import { ScheduleAxisTemplate } from './ScheduleAxisTemplate.js';
+import { ScheduleColumnTemplate } from './ScheduleColumnTemplate.js';
+import { ScheduleEventTemplate } from './ScheduleEventTemplate.js';
+
 export class TimeScheduleTemplate {
-  static create({ 
+  static create({
     axisLabels,
     gridLines,
     members,
@@ -19,7 +24,7 @@ export class TimeScheduleTemplate {
             <div class="time-schedule__axisHeaderSpacer"></div>
             <div class="time-schedule__axisCurrentSpacer"></div>
             <div class="time-schedule__axisLabels">
-              ${this.createAxisLabels(axisLabels)}
+              ${ScheduleAxisTemplate.createAxisLabels(axisLabels)}
             </div>
           </div>
 
@@ -34,7 +39,7 @@ export class TimeScheduleTemplate {
 
             <div class="time-schedule__grid">
               <div class="time-schedule__lines">
-                ${this.createGridLines(gridLines)}
+                ${ScheduleAxisTemplate.createGridLines(gridLines)}
               </div>
 
               <div class="time-schedule__memberColumns">
@@ -55,44 +60,49 @@ export class TimeScheduleTemplate {
     `;
   }
 
-  static createAxisLabels(axisLabels) {
-    return axisLabels.map((axis) => `
-      <div
-        class="time-schedule__axisLabel"
-        style="top: ${axis.topPx}px;"
-      >
-        ${axis.label}
-      </div>
-    `).join('');
-  }
-
   static createMemberHeaders(members) {
     return members.map((member) => `
-      <div
+      <button
+        type="button"
         class="time-schedule__memberHeader"
         data-job-title="${member.job_title ?? ''}"
+        data-member-id="${member.id ?? ''}"
+        data-member-name="${member.name ?? ''}"
+        data-ui-action="schedule:open-member-week"
+        aria-label="${member.name}の週間予定を開く"
       >
         <span class="time-schedule__memberHeaderName">
           ${member.name}
         </span>
-      </div>
+      </button>
     `).join('');
   }
 
   static createCurrentSchedules(members, currentSchedules = []) {
     return members.map((member) => {
       const current = currentSchedules.find((item) => item.memberId === member.id);
-  
+      const currentLabel = current
+        ? ScheduleEventLabelBuilder.build(current)
+        : '';
+
       if (!current || !current.hasSchedule) {
         return `
-          <div class="time-schedule__currentCell is-empty" data-status="">
+          <div
+            class="time-schedule__currentCell is-empty"
+            data-status=""
+            data-member-id="${member.id ?? ''}"
+          >
             <div class="time-schedule__currentMain">予定なし</div>
           </div>
         `;
       }
-  
+
       return `
-        <div class="time-schedule__currentCell" data-status="${current.status ?? ''}">
+        <div
+          class="time-schedule__currentCell"
+          data-status="${current.status ?? ''}"
+          data-member-id="${member.id ?? ''}"
+        >
           <div class="time-schedule__currentMeta">
             <span class="time-schedule__currentTime">
               ${current.startTime} - ${current.endTime}
@@ -102,88 +112,43 @@ export class TimeScheduleTemplate {
             </span>
           </div>
           <div class="time-schedule__currentMain">
-            ${current.machineName}: ${current.workName}
+            ${currentLabel}
           </div>
         </div>
       `;
     }).join('');
   }
 
-  static createGridLines(axisLabels) {
-    return axisLabels.map((axis) => `
-      <div
-        class="time-schedule__gridLine ${axis.isHour ? 'is-hour' : ''}"
-        style="top: ${axis.topPx}px;"
-      ></div>
-    `).join('');
-  }
-
   static createMemberColumns(members) {
-    return members.map(() => `
-      <div class="time-schedule__memberColumn"></div>
-    `).join('');
+    return ScheduleColumnTemplate.createMemberColumns(members);
   }
 
   static createEvents(events, members, visibleHours) {
     if (!events.length) {
-      return `
-        <div class="time-schedule__empty">
-          予定がありません。
-        </div>
-      `;
+      return ScheduleEventTemplate.createEmpty();
     }
   
     const shouldShowEventLabel = visibleHours <= 2;
+    const columnCount = members.length;
   
     return events.map((event) => {
-      const memberIndex = this.findMemberIndex(members, event.memberId);
-      const eventLabel = this.buildEventLabel(event);
+      const eventLabel = ScheduleEventLabelBuilder.build(event);
   
-      return `
-        <article
-          class="time-schedule__event"
-          style="
-            top: ${event.topPx}px;
-            height: ${event.heightPx}px;
-            left: calc((100% / var(--member-count)) * ${memberIndex});
-            width: calc(100% / var(--member-count));
-          "
-          data-event-id="${event.id}"
-          data-member-id="${event.memberId}"
-          data-start-time="${event.startTime}"
-          data-end-time="${event.endTime}"
-          data-status="${event.status ?? ''}"
-        >
-          ${shouldShowEventLabel ? `
-            <div class="time-schedule__eventTitle">
-              ${eventLabel}
-            </div>
-          ` : ''}
-        </article>
-      `;
+      return ScheduleEventTemplate.createEventArticle({
+        event,
+        columnIndex: event.columnIndex ?? 0,
+        columnCount,
+        showLabel: shouldShowEventLabel,
+        eventLabel,
+      });
     }).join('');
-  }
-
-  static buildEventLabel(event) {
-    const machineName = event.machineName ?? '';
-    const workName = event.workName ?? event.title ?? '';
-
-    if (machineName && workName) {
-      return `${machineName}: ${workName}`;
-    }
-
-    if (machineName) {
-      return machineName;
-    }
-
-    return workName;
   }
 
   static createBreakBands(breakBands = []) {
     if (!breakBands.length) {
       return '';
     }
-  
+
     return breakBands.map((band) => `
       <div
         class="time-schedule__breakBand"
@@ -199,8 +164,4 @@ export class TimeScheduleTemplate {
     `).join('');
   }
 
-  static findMemberIndex(members, memberId) {
-    const index = members.findIndex((member) => member.id === memberId);
-    return index >= 0 ? index : 0;
-  }
 }

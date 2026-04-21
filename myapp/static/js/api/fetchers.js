@@ -398,3 +398,37 @@ export function fetchScheduleDay(p = {}) {
         method: 'GET',
     });
 }
+
+export function fetchScheduleMemberWeek(p = {}) {
+    const params = new URLSearchParams();
+
+    if (p.date) params.set('date', p.date);
+    if (p.memberId) params.set('memberId', p.memberId);
+
+    return asynchronousCommunication({
+        url: `/api/schedule/member-week/?${params.toString()}`,
+        method: 'GET',
+    });
+}
+
+export function executeScheduleEventMove(p = {}) {
+    const {
+        planId,
+        holderId,
+        planTime,
+    } = p;
+
+    if (!planId) throw new Error('planId is required');
+    if (!holderId) throw new Error('holderId is required');
+    if (!planTime) throw new Error('planTime is required');
+
+    return asynchronousCommunication({
+        url: '/api/schedule/events/move/',
+        method: 'POST',
+        data: {
+            planId,
+            holderId,
+            planTime,
+        },
+    });
+}

@@ -1,6 +1,11 @@
 import { formatDate } from '../../utils/dateTime.js';
 
 export class ScheduleState {
+  static VIEW_MODES = {
+    TEAM_DAY: 'team-day',
+    MEMBER_WEEK: 'member-week',
+  };
+
   constructor(
     baseDate = new Date(),
     initialTeam = '',
@@ -15,6 +20,18 @@ export class ScheduleState {
     this.selectedAffiliationId = initialAffiliationId;
     this.visibleHours = this.normalizeVisibleHours(initialVisibleHours);
     this.teamSchedules = [];
+
+    this.isDrawerOpen = false;
+    this.activePanelId = '';
+
+    this.viewMode = ScheduleState.VIEW_MODES.TEAM_DAY;
+
+    this.selectedMemberId = '';
+    this.selectedMemberName = '';
+
+    this.isMemberDropdownOpen = false;
+
+    this.isMoveMode = false;
   }
 
   setBaseDate(date) {
@@ -23,6 +40,26 @@ export class ScheduleState {
 
   getBaseDate() {
     return this.baseDate;
+  }
+
+  setMemberDropdownOpen(isOpen) {
+    this.isMemberDropdownOpen = Boolean(isOpen);
+  }
+  
+  getIsMemberDropdownOpen() {
+    return this.isMemberDropdownOpen;
+  }
+  
+  openMemberDropdown() {
+    this.setMemberDropdownOpen(true);
+  }
+  
+  closeMemberDropdown() {
+    this.setMemberDropdownOpen(false);
+  }
+  
+  toggleMemberDropdown() {
+    this.setMemberDropdownOpen(!this.getIsMemberDropdownOpen());
   }
 
   setSelectedAffiliationId(affiliationId) {
@@ -65,6 +102,96 @@ export class ScheduleState {
     return this.teamSchedules;
   }
 
+  setDrawerOpen(isOpen) {
+    this.isDrawerOpen = Boolean(isOpen);
+  }
+
+  getIsDrawerOpen() {
+    return this.isDrawerOpen;
+  }
+
+  setActivePanelId(panelId) {
+    this.activePanelId = panelId ?? '';
+  }
+
+  getActivePanelId() {
+    return this.activePanelId;
+  }
+
+  openDrawer(panelId) {
+    this.setDrawerOpen(true);
+    this.setActivePanelId(panelId);
+  }
+
+  closeDrawer() {
+    this.setDrawerOpen(false);
+    this.setActivePanelId('');
+  }
+
+  toggleDrawer(panelId) {
+    const nextPanelId = panelId ?? '';
+    const isSamePanel =
+      this.getIsDrawerOpen() &&
+      this.getActivePanelId() === nextPanelId;
+
+    if (isSamePanel) {
+      this.closeDrawer();
+      return;
+    }
+
+    this.openDrawer(nextPanelId);
+  }
+
+  setViewMode(viewMode) {
+    const allowedViewModes = Object.values(ScheduleState.VIEW_MODES);
+
+    this.viewMode = allowedViewModes.includes(viewMode)
+      ? viewMode
+      : ScheduleState.VIEW_MODES.TEAM_DAY;
+  }
+
+  getViewMode() {
+    return this.viewMode;
+  }
+
+  isTeamDayView() {
+    return this.viewMode === ScheduleState.VIEW_MODES.TEAM_DAY;
+  }
+
+  isMemberWeekView() {
+    return this.viewMode === ScheduleState.VIEW_MODES.MEMBER_WEEK;
+  }
+
+  setSelectedMemberId(memberId) {
+    this.selectedMemberId = memberId ?? '';
+  }
+
+  getSelectedMemberId() {
+    return this.selectedMemberId;
+  }
+
+  setSelectedMemberName(memberName) {
+    this.selectedMemberName = memberName ?? '';
+  }
+  
+  getSelectedMemberName() {
+    return this.selectedMemberName;
+  }
+
+  showTeamDayView() {
+    this.setViewMode(ScheduleState.VIEW_MODES.TEAM_DAY);
+    this.setSelectedMemberId('');
+    this.setSelectedMemberName('');
+    this.closeMemberDropdown();
+  }
+
+  showMemberWeekView(memberId, memberName = '') {
+    this.setViewMode(ScheduleState.VIEW_MODES.MEMBER_WEEK);
+    this.setSelectedMemberId(memberId);
+    this.setSelectedMemberName(memberName);
+    this.closeMemberDropdown();
+  }
+
   normalizeVisibleHours(hours) {
     const value = Number(hours);
     const allowedHours = [2, 4, 8];
@@ -76,5 +203,26 @@ export class ScheduleState {
     const current = new Date(`${this.selectedDate}T00:00:00`);
     current.setDate(current.getDate() + delta);
     this.selectedDate = formatDate(current);
+  }
+
+  setMoveMode(isMoveMode) {
+    this.isMoveMode = Boolean(isMoveMode);
+  }
+  
+  getIsMoveMode() {
+    return this.isMoveMode;
+  }
+  
+  enableMoveMode() {
+    this.setMoveMode(true);
+  }
+  
+  disableMoveMode() {
+    this.setMoveMode(false);
+  }
+  
+  toggleMoveMode() {
+    this.setMoveMode(!this.getIsMoveMode());
+    return this.getIsMoveMode();
   }
 }

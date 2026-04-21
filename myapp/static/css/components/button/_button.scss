@@ -30,6 +30,11 @@ $btn-outline-border: rgba(15, 23, 42, 0.14) !default;
 $btn-outline-hover-bg: #f8fafc !default;
 $btn-outline-hover-border: #c4cfdd !default;
 
+$btn-active-bg: #eff6ff !default;
+$btn-active-fg: #2563eb !default;
+$btn-active-border: #2563eb !default;
+$btn-active-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12) !default;
+
 
 
 
@@ -53,16 +58,16 @@ $btn-outline-hover-border: #c4cfdd !default;
     background-color .14s ease,
     box-shadow .14s ease,
     transform .06s ease,
-    opacity .14s ease;
+    opacity .14s ease,
+    border-color .14s ease,
+    color .14s ease;
 
-  /* ✅ hoverは「有効時のみ」影を付ける */
   &:not(:disabled):not(.is-disabled):hover {
     box-shadow: $btn-hover-shadow;
   }
 
   &:active { transform: translateY(1px); }
 
-  /* ✅ focus ring は hover shadow と“共存”できるようにする */
   &:focus-visible {
     outline: none;
     box-shadow: $btn-focus-ring;
@@ -80,7 +85,23 @@ $btn-outline-hover-border: #c4cfdd !default;
     box-shadow: none;
     transform: none;
   }
+
+  &.is-active,
+  &[aria-pressed='true'] {
+    background-color: $btn-active-bg;
+    color: $btn-active-fg;
+    border-color: $btn-active-border;
+    box-shadow: $btn-active-shadow;
+  }
+
+  &.is-active:hover,
+  &[aria-pressed='true']:hover {
+    background-color: $btn-active-bg;
+    color: $btn-active-fg;
+    border-color: $btn-active-border;
+  }
 }
+
 
 /* サイズ（typographyに寄せる） */
 .ui-btn--sm {

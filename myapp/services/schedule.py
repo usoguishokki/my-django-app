@@ -1,19 +1,36 @@
+from django.db import transaction
+
+from datetime import timedelta
+
 from myapp.domain.sort_keys.member_sort import sort_members
+from myapp.domain.schedule import build_schedule_event_move_params
 
 from myapp.selectors.members import select_members_by_affiliation_id
-from myapp.selectors.plan import select_schedule_day_plans
+from myapp.selectors.plan import (
+    select_schedule_day_plans,
+    select_schedule_member_week_plans,
+    select_plan_by_id
+)
 from myapp.selectors.calendar import (
     select_calendar_by_date_and_affiliation,
     select_calendars_by_date,
 )
+
+from myapp.selectors.members import select_member_by_member_id
+
 from myapp.presenters.schedule import (
     present_schedule_items,
     present_schedule_members,
     present_schedule_breaks,
     present_team_schedules,
+    present_schedule_member_week_items,
     build_schedule_day_payload,
+    build_schedule_member_week_payload,
+    present_schedule_event_move_result
 )
 
+class ScheduleEventMoveNotFound(ValueError):
+    pass
 
 def build_schedule_day_result(*, affiliation_id, target_date):
     members_qs = select_members_by_affiliation_id(affiliation_id)
@@ -43,3 +60,51 @@ def build_schedule_day_result(*, affiliation_id, target_date):
         breaks=breaks,
         team_schedules=team_schedules,
     )
+
+
+def build_schedule_member_week_result(*, member_id, target_date):
+    week_start = target_date - timedelta(days=target_date.weekday())
+    week_dates = [week_start + timedelta(days=index) for index in range(7)]
+
+    plans_qs = select_schedule_member_week_plans(
+        member_id=member_id,
+        target_date=target_date,
+    )
+
+    days = [
+        {
+            'key': current_date.isoformat(),
+        }
+        for current_date in week_dates
+    ]
+
+    items = present_schedule_member_week_items(plans_qs)
+
+    return build_schedule_member_week_payload(
+        member_id=member_id,
+        target_date=target_date,
+        week_start=week_start,
+        days=days,
+        items=items,
+    )
+    
+@transaction.atomic
+def move_schedule_event(payload):
+    params = build_schedule_event_move_params(payload)
+
+    plan = select_plan_by_id(params.plan_id)
+    if plan is None:
+        raise ScheduleEventMoveNotFound('plan not found')
+
+    holder = select_member_by_member_id(params.holder_id)
+    if holder is None:
+        raise ScheduleEventMoveNotFound('holder not found')
+
+    plan.holder = holder
+    plan.plan_time = params.plan_time
+    plan.save(update_fields=['holder', 'plan_time'])
+
+    return {
+        'status': 'success',
+        'data': present_schedule_event_move_result(plan),
+    }

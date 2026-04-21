@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, time
 
 
 def present_schedule_members(members_qs):
@@ -30,6 +30,7 @@ def present_schedule_items(plans_qs):
 
         items.append({
             'id': str(plan.plan_id),
+            'inspectionNo': inspection.inspection_no or '',
             'memberId': holder.member_id,
             'startTime': plan_time.strftime('%H:%M'),
             'endTime': end_dt.strftime('%H:%M'),
@@ -37,7 +38,7 @@ def present_schedule_items(plans_qs):
             'status': inspection.status or '',
             'lineName': line.line_name if line else '',
             'machineName': control.machine if control else '',
-            'workName': inspection.wark_name or ''
+            'workName': inspection.wark_name or '',
         })
 
     return items
@@ -102,4 +103,69 @@ def build_schedule_day_payload(
             'breaks': breaks,
             'teamSchedules': team_schedules,
         },
+    }
+    
+def present_schedule_member_week_items(plans_qs):
+    items = []
+
+    boundary_time = time(hour=6, minute=30)
+
+    for plan in plans_qs:
+        holder = plan.holder
+        inspection = plan.inspection_no
+        control = inspection.control_no if inspection else None
+        line = control.line_name if control else None
+        plan_time = plan.plan_time
+
+        if holder is None or inspection is None or plan_time is None:
+            continue
+
+        man_hours = inspection.man_hours or 0
+        end_dt = plan_time + timedelta(minutes=man_hours)
+
+        schedule_date = plan_time.date()
+        if plan_time.time() < boundary_time:
+            schedule_date = schedule_date - timedelta(days=1)
+
+        items.append({
+            'id': str(plan.plan_id),
+            'memberId': holder.member_id,
+            'dayKey': schedule_date.isoformat(),
+            'startTime': plan_time.strftime('%H:%M'),
+            'endTime': end_dt.strftime('%H:%M'),
+            'title': inspection.wark_name or '',
+            'status': inspection.status or '',
+            'lineName': line.line_name if line else '',
+            'machineName': control.machine if control else '',
+            'workName': inspection.wark_name or '',
+        })
+
+    return items
+
+def build_schedule_member_week_payload(
+    *,
+    member_id,
+    target_date,
+    week_start,
+    days,
+    items,
+):
+    return {
+        'status': 'success',
+        'data': {
+            'memberId': member_id,
+            'date': target_date.isoformat(),
+            'weekStart': week_start.isoformat(),
+            'days': days,
+            'items': items,
+        },
+    }
+    
+def present_schedule_event_move_result(plan):
+    holder = plan.holder
+
+    return {
+        'planId': str(plan.plan_id),
+        'holderId': holder.member_id if holder else '',
+        'planTime': plan.plan_time.isoformat() if plan.plan_time else None,
     }
