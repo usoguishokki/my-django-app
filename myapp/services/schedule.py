@@ -9,8 +9,10 @@ from myapp.selectors.members import select_members_by_affiliation_id
 from myapp.selectors.plan import (
     select_schedule_day_plans,
     select_schedule_member_week_plans,
-    select_plan_by_id
+    select_plan_by_id,
+    select_test_card_week_plans,
 )
+
 from myapp.selectors.calendar import (
     select_calendar_by_date_and_affiliation,
     select_calendars_by_date,
@@ -24,9 +26,11 @@ from myapp.presenters.schedule import (
     present_schedule_breaks,
     present_team_schedules,
     present_schedule_member_week_items,
+    present_schedule_test_cards_week_items,
     build_schedule_day_payload,
     build_schedule_member_week_payload,
-    present_schedule_event_move_result
+    build_schedule_test_cards_week_payload,
+    present_schedule_event_move_result,
 )
 
 class ScheduleEventMoveNotFound(ValueError):
@@ -108,3 +112,13 @@ def move_schedule_event(payload):
         'status': 'success',
         'data': present_schedule_event_move_result(plan),
     }
+    
+    
+def build_schedule_test_cards_week_result(*, target_date):
+    plans_qs = select_test_card_week_plans(base_date=target_date)
+    items = present_schedule_test_cards_week_items(plans_qs)
+
+    return build_schedule_test_cards_week_payload(
+        target_date=target_date,
+        items=items,
+    )

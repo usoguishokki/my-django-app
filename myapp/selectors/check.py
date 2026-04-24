@@ -51,17 +51,6 @@ def check_detail_qs_for_plan_payload():
         )
         .prefetch_related(filtered_db_details)
     )
-    
-def get_check_detail_by_inspection_no(*, inspection_no: str) -> Check_tb | None:
-    if not inspection_no:
-        return None
-
-    return (
-        check_detail_qs_for_plan_payload()
-        .filter(inspection_no=str(inspection_no))
-        .first()
-    )
-
 
 def get_check_detail_by_inspection_no(*, inspection_no: str) -> Check_tb | None:
     """

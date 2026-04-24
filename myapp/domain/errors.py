@@ -43,3 +43,12 @@ class InvalidMachineSelection(DomainError):
 class InvalidScheduleDayParams(DomainError):
     def __init__(self, detail: str = "invalid schedule day params"):
         super().__init__(detail)
+        
+class InvalidScheduleRequestParams(DomainError):
+    def __init__(self, detail: str = "invalid schedule request params"):
+        super().__init__(detail)
+
+
+class InvalidScheduleDayParams(InvalidScheduleRequestParams):
+    def __init__(self, detail: str = "invalid schedule day params"):
+        super().__init__(detail)

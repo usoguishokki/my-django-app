@@ -432,3 +432,14 @@ export function executeScheduleEventMove(p = {}) {
         },
     });
 }
+
+export function fetchScheduleTestCardsWeek(p = {}) {
+    const params = new URLSearchParams();
+
+    if (p.date) params.set('date', p.date);
+
+    return asynchronousCommunication({
+        url: `/api/schedule/test-cards/week/?${params.toString()}`,
+        method: 'GET',
+    });
+}

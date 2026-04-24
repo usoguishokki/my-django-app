@@ -6,32 +6,33 @@ export class ScheduleState {
     MEMBER_WEEK: 'member-week',
   };
 
-  constructor(
-    baseDate = new Date(),
-    initialTeam = '',
-    initialAffiliationId = '',
-    initialVisibleHours = 2
-  ) {
-    const formattedDate = formatDate(baseDate);
-
-    this.baseDate = formattedDate;
-    this.selectedDate = formattedDate;
+  constructor(baseDate = new Date(), initialTeam = '', initialAffiliationId) {
+    this.selectedDate = formatDate(baseDate);
     this.selectedTeam = initialTeam;
-    this.selectedAffiliationId = initialAffiliationId;
-    this.visibleHours = this.normalizeVisibleHours(initialVisibleHours);
+    this.affiliation = initialAffiliationId;
+  
+    this.visibleHours = 2;
     this.teamSchedules = [];
-
-    this.isDrawerOpen = false;
-    this.activePanelId = '';
-
-    this.viewMode = ScheduleState.VIEW_MODES.TEAM_DAY;
-
+  
+    this.viewMode = 'team-day';
     this.selectedMemberId = '';
     this.selectedMemberName = '';
-
+  
+    this.isDrawerOpen = false;
+    this.activePanelId = '';
+  
+    this.isFilterPaneOpen = false;
+    this.selectedTestCardCaseKey = 'all';
+    this.selectedTestCardMachineName = 'all';
+    this.isTestCardMachinePickerOpen = false;
+    this.isTestCardCasePickerOpen = false;
+  
     this.isMemberDropdownOpen = false;
-
+    this.currentMemberWeekDate = this.selectedDate;
+  
     this.isMoveMode = false;
+
+    this.activeTestCardFilterKey = '';
   }
 
   setBaseDate(date) {
@@ -142,6 +143,27 @@ export class ScheduleState {
     this.openDrawer(nextPanelId);
   }
 
+  setFilterPaneOpen(isOpen) {
+    this.isFilterPaneOpen = Boolean(isOpen);
+  }
+  
+  getIsFilterPaneOpen() {
+    return this.isFilterPaneOpen;
+  }
+  
+  openFilterPane() {
+    this.setFilterPaneOpen(true);
+  }
+  
+  closeFilterPane() {
+    this.setFilterPaneOpen(false);
+  }
+  
+  toggleFilterPane() {
+    this.setFilterPaneOpen(!this.getIsFilterPaneOpen());
+    return this.getIsFilterPaneOpen();
+  }
+
   setViewMode(viewMode) {
     const allowedViewModes = Object.values(ScheduleState.VIEW_MODES);
 
@@ -225,4 +247,102 @@ export class ScheduleState {
     this.setMoveMode(!this.getIsMoveMode());
     return this.getIsMoveMode();
   }
+
+  setSelectedTestCardCaseKey(caseKey) {
+    this.selectedTestCardCaseKey = caseKey ?? 'all';
+  }
+
+  getSelectedTestCardCaseKey() {
+    return this.selectedTestCardCaseKey;
+  }
+
+  setTestCardCasePickerOpen(isOpen) {
+    this.isTestCardCasePickerOpen = Boolean(isOpen);
+  }
+  
+  getIsTestCardCasePickerOpen() {
+    return this.isTestCardCasePickerOpen;
+  }
+  
+  openTestCardCasePicker() {
+    this.setTestCardCasePickerOpen(true);
+  }
+  
+  closeTestCardCasePicker() {
+    this.setTestCardCasePickerOpen(false);
+  }
+  
+  toggleTestCardCasePicker() {
+    this.setTestCardCasePickerOpen(!this.getIsTestCardCasePickerOpen());
+    return this.getIsTestCardCasePickerOpen();
+  }
+
+  setSelectedTestCardMachineName(machineName) {
+    this.selectedTestCardMachineName = machineName
+      ? String(machineName)
+      : 'all';
+  }
+  
+  getSelectedTestCardMachineName() {
+    return this.selectedTestCardMachineName;
+  }
+
+  setTestCardMachinePickerOpen(isOpen) {
+    this.isTestCardMachinePickerOpen = Boolean(isOpen);
+  }
+  
+  getIsTestCardMachinePickerOpen() {
+    return this.isTestCardMachinePickerOpen;
+  }
+  
+  openTestCardMachinePicker() {
+    this.setTestCardMachinePickerOpen(true);
+  }
+  
+  closeTestCardMachinePicker() {
+    this.setTestCardMachinePickerOpen(false);
+  }
+  
+  toggleTestCardMachinePicker() {
+    this.setTestCardMachinePickerOpen(!this.getIsTestCardMachinePickerOpen());
+    return this.getIsTestCardMachinePickerOpen();
+  }
+
+  setActiveTestCardFilterKey(filterKey = '') {
+    this.activeTestCardFilterKey = filterKey ? String(filterKey) : '';
+  }
+  
+  getActiveTestCardFilterKey() {
+    return this.activeTestCardFilterKey;
+  }
+  
+  openTestCardFilter(filterKey) {
+    this.setActiveTestCardFilterKey(filterKey);
+  }
+  
+  closeActiveTestCardFilter() {
+    this.setActiveTestCardFilterKey('');
+  }
+  
+  toggleTestCardFilter(filterKey) {
+    const normalizedKey = filterKey ? String(filterKey) : '';
+  
+    if (!normalizedKey) {
+      this.closeActiveTestCardFilter();
+      return '';
+    }
+  
+    if (this.getActiveTestCardFilterKey() === normalizedKey) {
+      this.closeActiveTestCardFilter();
+      return '';
+    }
+  
+    this.openTestCardFilter(normalizedKey);
+    return normalizedKey;
+  }
+  
+  isTestCardFilterOpen(filterKey) {
+    return this.getActiveTestCardFilterKey() === String(filterKey);
+  }
+  
 }

@@ -27,11 +27,14 @@ def present_schedule_items(plans_qs):
 
         man_hours = inspection.man_hours or 0
         end_dt = plan_time + timedelta(minutes=man_hours)
+        
+        plan_date = plan_time.date()
 
         items.append({
             'id': str(plan.plan_id),
             'inspectionNo': inspection.inspection_no or '',
             'memberId': holder.member_id,
+            'dayKey': plan_date.isoformat(),
             'startTime': plan_time.strftime('%H:%M'),
             'endTime': end_dt.strftime('%H:%M'),
             'title': inspection.wark_name or '',
@@ -168,4 +171,47 @@ def present_schedule_event_move_result(plan):
         'planId': str(plan.plan_id),
         'holderId': holder.member_id if holder else '',
         'planTime': plan.plan_time.isoformat() if plan.plan_time else None,
+    }
+    
+def present_schedule_test_cards_week_items(plans_qs):
+    items = []
+
+    for plan in plans_qs:
+        inspection = plan.inspection_no
+        control = inspection.control_no if inspection else None
+        rule = inspection.rule if inspection else None
+
+        items.append(
+            {
+                'planId': plan.plan_id,
+                'planDate': plan.p_date.h_date.isoformat() if plan.p_date and plan.p_date.h_date else '',
+                'status': plan.status,
+                'inspectionNo': inspection.inspection_no if inspection else '',
+                'machineName': control.machine if control else '',
+                'workName': inspection.wark_name if inspection else '',
+                'manHours': inspection.man_hours if inspection else '',
+                'dayOfWeek': inspection.day_of_week if inspection else '',
+                'interval': rule.interval if rule else None,
+                'unit': rule.unit if rule else '',
+                'detailItems': [
+                    {
+                        'applicableDevice': detail.applicable_device or '',
+                        'contents': detail.contents or '',
+                    }
+                    for detail in inspection.db_details.all()
+                    if detail.applicable_device or detail.contents
+                ] if inspection else [],
+            }
+        )
+
+    return items
+
+
+def build_schedule_test_cards_week_payload(*, target_date, items):
+    return {
+        'status': 'success',
+        'data': {
+            'targetDate': target_date.isoformat(),
+            'items': items,
+        },
     }

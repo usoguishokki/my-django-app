@@ -6,7 +6,6 @@
 
 {% block extra_css %}
 <link href="{% sass_src 'css/pages/schedule.scss' %}" rel="stylesheet" type="text/css">
-<link href="{% sass_src 'css/components/drawer/_drawer.scss' %}" rel="stylesheet" type="text/css">
 {% endblock %}
 
 {% block header %}
@@ -20,6 +19,7 @@
     class="schedule-page__contentLayout"
     data-role="schedule-layout"
     data-drawer-open="false"
+    data-filter-open="false"
     data-active-panel=""
   >
     <aside
@@ -38,7 +38,7 @@
           >
             補
           </button>
-  
+
           <button
             type="button"
             class="schedule-page__sidebarIconButton"
@@ -61,8 +61,30 @@
           >
             編
           </button>
-          
         </nav>
+      </div>
+    </aside>
+
+    <aside
+      class="schedule-page__filterPane"
+      data-role="schedule-filter-pane"
+      aria-label="テストカードフィルター"
+      aria-hidden="true"
+    >
+      <div class="schedule-page__filterPaneInner">
+        <header class="schedule-page__filterPaneHeader">
+          <h2
+            class="schedule-page__filterPaneTitle"
+            data-role="schedule-test-card-filter-title"
+          >
+            フィルター
+          </h2>
+        </header>
+
+        <div
+          class="schedule-page__filterPaneBody"
+          data-role="schedule-test-card-filter-body"
+        ></div>
       </div>
     </aside>
   
@@ -188,7 +210,7 @@
           </section>
         </div>
       </div>
-  
+
       <div
         class="schedule-page__drawerPanel"
         data-role="schedule-panel"
@@ -197,11 +219,22 @@
       >
         <header class="schedule-page__drawerPanelHeader">
           <h2 class="schedule-page__drawerPanelTitle">テストカード</h2>
+          <button
+            type="button"
+            class="ui-btn ui-btn--sm ui-btn--outline schedule-page__drawerFilterButton"
+            data-ui-action="schedule:toggle-filter-pane"
+            data-role="schedule-filter-button"
+            aria-label="テストカードのフィルターを開く"
+            aria-pressed="false"
+          >
+            フィルター
+          </button>
         </header>
-  
-        <div class="schedule-page__drawerPanelBody">
-          <p>動作確認用のパネルです。</p>
-        </div>
+      
+        <div
+          class="schedule-page__drawerPanelBody"
+          data-role="schedule-test-cards-body"
+        ></div>
       </div>
 
       <div

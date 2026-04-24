@@ -12,6 +12,7 @@ from myapp.api.schedule import (
     schedule_day_api,
     schedule_member_week_api,
     schedule_event_move_api,
+    schedule_test_cards_week_api
 )
 
 urlpatterns = [
@@ -42,4 +43,5 @@ urlpatterns = [
     path("schedule/day/", schedule_day_api, name="schedule_day_api"),
     path("schedule/member-week/", schedule_member_week_api, name="schedule_member_week_api"),
     path("schedule/events/move/", schedule_event_move_api, name="schedule_event_move_api"),
+    path("schedule/test-cards/week/", schedule_test_cards_week_api, name="schedule_test_cards_week_api"),
 ]

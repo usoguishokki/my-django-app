@@ -237,3 +237,9 @@ export function minutesToTimeString(totalMinutes) {
 
   return `${hh}:${mm}`;
 }
+
+export function getJsDay(dateLike) {
+  const d = parseUiDateTimeLike(dateLike);
+  if (!d) return null;
+  return d.getDay();
+}

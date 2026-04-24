@@ -568,12 +568,7 @@ def api_wd_rows(request):
 
 
 
-def api_plans(request):
-    field_map = get_field_map("plan")
-    status_map = get_status_map('plan')
-    op_map = get_op_map()
-    negated_ops = get_negated_ops()
-    
+def api_plans(request):    
     week_alias = request.GET.get("week")
     status = request.GET.getlist("status")
     

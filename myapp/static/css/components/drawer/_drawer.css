@@ -785,7 +785,7 @@
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 10px 22px rgba(15, 23, 42, 0.1);
   overflow: hidden; }
   .detail-card__header {
-    padding: 10px 14px;
+    padding: 8px 10px;
     background: linear-gradient(to bottom, #eef2f7, #e9eef6);
     border-bottom: 1px solid rgba(15, 23, 42, 0.1); }
   .detail-card__title {
@@ -897,5 +897,111 @@
 /* ボタン見た目（既にあるなら不要） */
 .drawerTableTop__btn {
   white-space: nowrap; }
+
+.click-card__button {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  min-width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer; }
+
+.ui-empty-message {
+  margin: 0;
+  padding: 12px 4px;
+  color: #34373c58; }
+
+.detail-card__titleLine {
+  display: block; }
+
+.detail-card__titleSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #000000;
+  font-weight: 500; }
+
+.detail-card__titleLine,
+.detail-card__titleSub {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis; }
+
+.detail-card__emptyMessage {
+  margin: 0;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.3; }
+
+.detail-card__detailItems {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0; }
+
+.detail-card__detailItem {
+  display: grid;
+  gap: 4px;
+  min-width: 0; }
+  .detail-card__detailItem:not(:last-child) {
+    padding-bottom: 10px;
+    border-bottom: 1px dashed rgba(15, 23, 42, 0.1); }
+
+.detail-card__detailItemDevice {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #1e3a5f;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
+  border: 1px solid #dbe7f5;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis; }
+
+.detail-card__detailItemContents {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  color: #0b1220;
+  line-height: 1.6;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere; }
+
+.detail-card.click-card {
+  max-height: 210px; }
+
+.click-card__button {
+  height: 100%; }
+
+.detail-card__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto; }
 
 /*# sourceMappingURL=_drawer.css.map */

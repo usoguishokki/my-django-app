@@ -9,7 +9,7 @@ export class ScheduleEditSummaryService {
     if (!eventEl) {
       return null;
     }
-
+  
     return {
       planId: eventEl.dataset.planId ?? '',
       workName: eventEl.dataset.workName ?? '',
@@ -17,7 +17,7 @@ export class ScheduleEditSummaryService {
       startTime: eventEl.dataset.startTime ?? '',
       endTime: eventEl.dataset.endTime ?? '',
       inspectionNo: eventEl.dataset.inspectionNo ?? '',
-      planDate: this.getSelectedDate(),
+      planDate: eventEl.dataset.dayKey ?? this.getSelectedDate(),
     };
   }
 

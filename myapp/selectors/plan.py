@@ -3,10 +3,10 @@ from typing import Iterable, Optional
 
 from datetime import date, datetime, time, timedelta
 
-from django.db.models import F
+from django.db.models import F, Prefetch
 
 from django.utils import timezone
-from myapp.models import Plan_tb, CheckStatus
+from myapp.models import Plan_tb, CheckStatus, Db_details_tb
 
 from myapp.domain.periods import get_week_range
 
@@ -100,7 +100,7 @@ def select_plan_detail_rows(*, qs, matched_ids):
 
 def filter_week_plans(qs=None, *, base_date: date | None = None):
     if qs is None:
-        qs = Plan_tb.objects.all()
+        qs = plan_base_qs()
 
     start_of_week, end_of_week = get_week_range(base_date)
     
@@ -112,7 +112,7 @@ def filter_this_week_plans(qs=None):
 
 def filter_status_plans(qs=None, *, statuses: Optional[Iterable[str]] = None):
     if qs is None:
-        qs = Plan_tb.objects.all()
+        qs = plan_base_qs()
 
     if not statuses:
         return qs
@@ -125,7 +125,7 @@ def filter_week_plan_time_plans(qs=None, *, base_date: date | None = None):
     plan_time が、指定日が属する週（月曜〜日曜）に入る Plan を返す
     """
     if qs is None:
-        qs = Plan_tb.objects.all()
+        qs = plan_base_qs()
 
     start_of_week, end_of_week = get_week_range(base_date)
 
@@ -191,3 +191,19 @@ def select_schedule_member_week_plans(*, member_id: int, target_date: date):
     
 def select_plan_by_id(plan_id: int):
     return plan_base_qs().filter(plan_id=plan_id).first()
+
+def select_test_card_week_plans(*, base_date: date | None = None):
+    qs = plan_base_qs()
+    qs = filter_week_plans(qs=qs, base_date=base_date)
+    qs = filter_status_plans(qs=qs, statuses=['配布待ち', '遅れ'])
+    qs = qs.prefetch_related(
+        Prefetch(
+            'inspection_no__db_details',
+            queryset=Db_details_tb.objects.only(
+                'id',
+                'inspection_no_id',
+                'contents',
+            ).order_by('id'),
+        )
+    )
+    return qs.order_by('p_date__h_date', 'plan_id')

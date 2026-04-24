@@ -6,6 +6,9 @@ export function getScheduleElements(root = document) {
 
     layout: root.querySelector('[data-role="schedule-layout"]'),
     drawer: root.querySelector('[data-role="schedule-drawer"]'),
+    filterPane: root.querySelector('[data-role="schedule-filter-pane"]'),
+    filterButton: root.querySelector('[data-role="schedule-filter-button"]'),
+
     panelButtons: [...root.querySelectorAll('[data-role="schedule-panel-button"]')],
     panels: [...root.querySelectorAll('[data-role="schedule-panel"]')],
 
@@ -52,5 +55,12 @@ export function getScheduleElements(root = document) {
     editAfter: root.querySelector('[data-role="schedule-edit-after"]'),
     editAfterSummary: root.querySelector('[data-role="schedule-edit-after-summary"]'),
     editFooter: root.querySelector('[data-role="schedule-edit-footer"]'),
+
+    testCardsPanelBody: root.querySelector('[data-role="schedule-test-cards-body"]'),
+
+    testCardFilterTitle: root.querySelector('[data-role="schedule-test-card-filter-title"]'),
+    testCardFilterBody: root.querySelector('[data-role="schedule-test-card-filter-body"]'),
+
+    testCardCaseSelect: root.querySelector('[data-role="schedule-test-card-case-select"]'),
   };
 }

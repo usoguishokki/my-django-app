@@ -9,6 +9,7 @@ $dr-border: rgba(15, 23, 42, 0.10);
 $dr-text-strong: #020617;
 $dr-text-main:   #0b1220;
 $dr-muted:       #475569;
+$dr-accent: #2563eb;
 
 /* drawer width tokens */
 $drawer-default-width: 380px;
@@ -403,7 +404,7 @@ $drawer-wide:   clamp(620px, 70vw, 1000px);    // 1枚時 wide 幅
   overflow: hidden;
 
   &__header {
-    padding: 10px 14px;
+    padding: 8px 10px;
     background: linear-gradient(to bottom, #eef2f7, #e9eef6);
     border-bottom: 1px solid $dr-border;
   }
@@ -523,4 +524,126 @@ $drawer-wide:   clamp(620px, 70vw, 1000px);    // 1枚時 wide 幅
 /* ボタン見た目（既にあるなら不要） */
 .drawerTableTop__btn {
   white-space: nowrap;
+}
+
+.click-card__button {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+
+  width: 100%;
+  min-width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+
+  border: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ui-empty-message {
+  margin: 0;
+  padding: 12px 4px;
+  color: #34373c58;
+}
+
+.detail-card__titleLine {
+  display: block;
+}
+
+.detail-card__titleSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #000000;
+  font-weight: 500;
+}
+
+
+.detail-card__titleLine,
+.detail-card__titleSub {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.detail-card {
+  &__emptyMessage {
+    margin: 0;
+    color: $dr-muted;
+    @include type-label;
+  }
+
+  &__detailItems {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  &__detailItem {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+
+    &:not(:last-child) {
+      padding-bottom: 10px;
+      border-bottom: 1px dashed rgba(15, 23, 42, 0.10);
+    }
+  }
+
+  &__detailItemDevice {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    width: fit-content;
+    padding: 4px 10px;
+    border-radius: 10px;
+
+    @include type-label;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+
+    color: #1e3a5f;
+    background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
+    border: 1px solid #dbe7f5;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  &__detailItemContents {
+    @include type-label;
+    color: $dr-text-main;
+    line-height: 1.6;
+
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+}
+
+.detail-card.click-card {
+  max-height: 210px;
+}
+
+.click-card__button {
+  height: 100%;
+}
+
+.detail-card__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }

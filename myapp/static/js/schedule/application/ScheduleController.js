@@ -8,18 +8,26 @@ import { ScheduleEditMemberDropdownService } from './ScheduleEditMemberDropdownS
 import { ScheduleDragPreviewService } from './ScheduleDragPreviewService.js';
 import { ScheduleDropOrchestratorService } from './ScheduleDropOrchestratorService.js';
 import { ScheduleDragTimeIndicatorService } from './ScheduleDragTimeIndicatorService.js';
+import { ScheduleFeedbackPresenter } from '../ui/ScheduleFeedbackPresenter.js';
 
 import { ScheduleViewConfigService } from '../domain/ScheduleViewConfigService.js';
 import { ScheduleTeamResolver } from '../domain/ScheduleTeamResolver.js';
 import { ScheduleDateResolver } from '../domain/ScheduleDateResolver.js';
 import { ScheduleMoveTimeService } from '../domain/ScheduleMoveTimeService.js';
+import { ScheduleTestCardCaseBuilder } from '../domain/ScheduleTestCardCaseBuilder.js';
+import { ScheduleTestCardCaseFilter } from '../domain/ScheduleTestCardCaseFilter.js';
+import { ScheduleTestCardMachineBuilder } from '../domain/ScheduleTestCardMachineBuilder.js';
+import { ScheduleTestCardMachineFilter } from '../domain/ScheduleTestCardMachineFilter.js';
 
 import { ScheduleDragManager } from '../ui/ScheduleDragManager.js';
 import { ScheduleDragTargetHighlighter } from '../ui/ScheduleDragTargetHighlighter.js';
+import { ScheduleTestCardCaseTemplate } from '../ui/ScheduleTestCardCaseTemplate.js';
+import { ScheduleTestCardMachineTemplate } from '../ui/ScheduleTestCardMachineTemplate.js';
 
 import { UtilityManager } from '../../manager/UtilityManager.js';
 
 import { renderButtonHTML } from '../../ui/componets/buttons/Button.js';
+import { renderScheduleTestCardsHTML } from '../../ui/renderers/scheduleTestCardsRenderer.js';
 
 import {
   buildPlanDetailCardsVM,
@@ -35,6 +43,7 @@ import {
   fetchScheduleMemberWeek,
   fetchInspectionCardDetail,
   executeScheduleEventMove,
+  fetchScheduleTestCardsWeek,
 } from '../../api/fetchers.js';
 
 import { bindUIActions } from '../../ui/componets/actions/UIActionDispatcher.js';
@@ -100,14 +109,15 @@ export class ScheduleController {
 
     this.selectedEditEvent = null;
     this.pendingEditEvent = null;
-    
+
+    this.testCardsWeekItems = [];
   }
 
   async init() {
     if (!this.elements.title || !this.elements.timeViewRoot) {
       return;
     }
-
+  
     this.syncInitialScheduleDate();
     this.syncInitialAffiliationId();
     this.syncInitialActiveTeamButton();
@@ -116,10 +126,12 @@ export class ScheduleController {
     this.bindEvents();
     this.bindDrawerKeyboardEvents();
     this.memberDropdownService.bindGlobalEvents();
+    this.renderTestCardFilterPane();
     this.syncDrawerUI();
+    this.syncFilterPaneUI();
     this.autoScrollService.bindUserInteractionTracking(this.elements.root);
     this.initializeDetailDrawerStack();
-
+  
     await this.render();
     this.autoScrollService.scrollToCurrentTime({ offsetMinutes: 15 });
     this.autoRefreshManager.start();
@@ -148,7 +160,22 @@ export class ScheduleController {
     await this.render();
   }
 
-
+  async loadTestCardsWeek() {
+    try {
+      const response = await fetchScheduleTestCardsWeek({
+        date: this.state.getSelectedDate(),
+      });
+  
+      this.testCardsWeekItems = response?.data?.items ?? [];
+  
+      console.log('[loadTestCardsWeek] response:', this.testCardsWeekItems);
+    } catch (error) {
+      console.error('[loadTestCardsWeek] failed:', error);
+      this.testCardsWeekItems = [];
+    }
+  
+    this.renderTestCardsUI();
+  }
 
   async resolveAutoAffiliationForCurrentState() {
     const params = this.getScheduleQueryParams();
@@ -163,6 +190,53 @@ export class ScheduleController {
       affiliationChanged,
       payload,
     };
+  }
+
+  getTestCardFilterConfigs() {
+    const selectedCaseKey = this.state.getSelectedTestCardCaseKey();
+    const caseSourceItems = this.getTestCardItemsForCaseOptions();
+    const caseItems = ScheduleTestCardCaseBuilder.build(
+      selectedCaseKey,
+      caseSourceItems
+    );
+    const selectedCaseItem =
+      caseItems.find((item) => item.isActive) ?? caseItems[0] ?? { label: '全て' };
+  
+    const selectedMachineName = this.state.getSelectedTestCardMachineName();
+    const machineSourceItems = this.getTestCardItemsForMachineOptions();
+    const machineItems = ScheduleTestCardMachineBuilder.build(
+      machineSourceItems,
+      selectedMachineName
+    );
+    const selectedMachineItem =
+      machineItems.find((item) => item.isActive) ??
+      machineItems[0] ??
+      { label: '全て' };
+  
+    return [
+      {
+        key: 'case',
+        label: '曜日',
+        selectedLabel: selectedCaseItem.label,
+        render: (isOpen) =>
+          ScheduleTestCardCaseTemplate.create({
+            items: caseItems,
+            selectedKey: selectedCaseKey,
+            isPickerOpen: isOpen,
+          }),
+      },
+      {
+        key: 'machine',
+        label: '設備',
+        selectedLabel: selectedMachineItem.label,
+        render: (isOpen) =>
+          ScheduleTestCardMachineTemplate.create({
+            items: machineItems,
+            selectedMachineName,
+            isPickerOpen: isOpen,
+          }),
+      },
+    ];
   }
 
   buildPendingEditPreview(dragState) {
@@ -228,6 +302,7 @@ export class ScheduleController {
   }
 
   openEditMode() {
+    this.closeFilterPane();
     this.state.enableMoveMode();
     this.state.openDrawer('edit');
   
@@ -343,6 +418,110 @@ export class ScheduleController {
     return viewModel;
   }
 
+  renderTestCardFilterPane() {
+    const container = this.elements.testCardFilterBody;
+  
+    if (!container) {
+      return;
+    }
+  
+    this.renderTestCardFilterPaneHeader();
+  
+    const filterConfigs = this.getTestCardFilterConfigs();
+    const activeFilterKey = this.state.getActiveTestCardFilterKey();
+  
+    if (activeFilterKey) {
+      const activeFilterConfig = filterConfigs.find(
+        (config) => config.key === activeFilterKey
+      );
+  
+      if (activeFilterConfig) {
+        container.innerHTML = activeFilterConfig.render(true);
+        return;
+      }
+    }
+  
+    container.innerHTML = filterConfigs
+      .map((config) => config.render(false))
+      .join('');
+  }
+
+  renderTestCardFilterPaneHeader() {
+    const titleElement = this.elements.testCardFilterTitle;
+  
+    if (!titleElement) {
+      return;
+    }
+  
+    const activeFilterKey = this.state.getActiveTestCardFilterKey();
+  
+    if (!activeFilterKey) {
+      titleElement.textContent = 'フィルター';
+      return;
+    }
+  
+    const filterLabelMap = {
+      case: '曜日',
+      machine: '設備',
+    };
+  
+    titleElement.textContent = `フィルター / ${
+      filterLabelMap[activeFilterKey] ?? 'フィルター'
+    }`;
+  }
+  
+  renderTestCardsPanel() {
+    const container = this.elements.testCardsPanelBody;
+  
+    if (!container) {
+      return;
+    }
+  
+    const filteredItems = this.getFilteredTestCardsWeekItems();
+  
+    container.innerHTML = `
+      <div class="schedule-page__testCardListSection">
+        ${renderScheduleTestCardsHTML(filteredItems)}
+      </div>
+    `;
+  }
+  
+  renderTestCardsUI() {
+    this.renderTestCardFilterPane();
+    this.renderTestCardsPanel();
+  }
+
+  handleTestCardCaseChange(caseKey) {
+    this.state.setSelectedTestCardCaseKey(caseKey);
+    this.state.closeActiveTestCardFilter();
+    this.renderTestCardsUI();
+  }
+
+  handleTestCardMachineChange(machineName) {
+    this.state.setSelectedTestCardMachineName(machineName);
+    this.state.closeActiveTestCardFilter();
+    this.renderTestCardsUI();
+  }
+
+  async handleFilterPaneToggle() {
+    const shouldOpen = !this.state.getIsFilterPaneOpen();
+  
+    if (!shouldOpen) {
+      this.state.closeFilterPane();
+      this.syncFilterPaneUI();
+      return;
+    }
+  
+    this.state.openDrawer('test');
+    this.state.openFilterPane();
+  
+    this.syncDrawerUI();
+    this.syncFilterPaneUI();
+    this.renderTestCardFilterPane();
+  
+    await this.loadTestCardsWeek();
+  }
+  
   handleEditMemberChange(memberId) {
     if (!this.pendingEditEvent || !memberId) {
       return;
@@ -452,7 +631,37 @@ export class ScheduleController {
     });
   }
 
+  getFilteredTestCardsWeekItems() {
+    const caseFilteredItems = ScheduleTestCardCaseFilter.filter(
+      this.testCardsWeekItems,
+      this.state.getSelectedTestCardCaseKey()
+    );
+  
+    return ScheduleTestCardMachineFilter.filter(
+      caseFilteredItems,
+      this.state.getSelectedTestCardMachineName()
+    );
+  }
+
+  getTestCardItemsForCaseOptions() {
+    return ScheduleTestCardMachineFilter.filter(
+      this.testCardsWeekItems,
+      this.state.getSelectedTestCardMachineName()
+    );
+  }
+  
+  getTestCardItemsForMachineOptions() {
+    return ScheduleTestCardCaseFilter.filter(
+      this.testCardsWeekItems,
+      this.state.getSelectedTestCardCaseKey()
+    );
+  }
+
   updateTitleByScrollPosition(dateText = this.state.getSelectedDate()) {
+    if (!this.shouldUpdateTitleByScroll()) {
+      return;
+    }
+  
     this.updateTitle(this.getTitleTextByScrollPosition(dateText));
   }
 
@@ -510,7 +719,7 @@ export class ScheduleController {
     this.selectedEditEvent =
       this.editSummaryService.buildEventSummaryFromElement(sourceEl);
   
-    this.pendingEditEvent = this.selectedEditEvent;
+    this.pendingEditEvent = { ...this.selectedEditEvent };
   
     this.editSummaryService.syncBefore(this.selectedEditEvent);
     this.editSummaryService.syncAfter(this.selectedEditEvent);
@@ -644,11 +853,44 @@ export class ScheduleController {
         this.editMemberDropdownService.open();
       },
 
+      'schedule:toggle-filter-pane': async () => {
+        await this.handleFilterPaneToggle();
+      },
+
       'schedule:submit-edit': async () => {
         await this.handleEditSubmit();
       },
 
+      'schedule:toggle-test-card-case-picker': () => {
+        this.state.toggleTestCardFilter('case');
+        this.renderTestCardFilterPane();
+      },
+      
+      'schedule:toggle-test-card-machine-picker': () => {
+        this.state.toggleTestCardFilter('machine');
+        this.renderTestCardFilterPane();
+      },
+      
+      'schedule:change-test-card-machine': ({ element }) => {
+        const machineName = element?.dataset?.machineName ?? 'all';
+        this.handleTestCardMachineChange(machineName);
+      },
+
+      'schedule:change-test-card-case': ({ element }) => {
+        const caseKey = element?.dataset?.caseKey ?? 'all';
+        this.handleTestCardCaseChange(caseKey);
+      },
     });
+  }
+
+  closeFilterPane() {
+    if (!this.state.getIsFilterPaneOpen()) {
+      return;
+    }
+  
+    this.state.closeActiveTestCardFilter();
+    this.state.closeFilterPane();
+    this.syncFilterPaneUI();
   }
 
   async handleEditSubmit() {
@@ -664,19 +906,24 @@ export class ScheduleController {
     try {
       await executeScheduleEventMove(payload);
   
-      this.dragPreviewService.reset();
-      this.dragTimeIndicatorService.reset();
-  
-      const scheduleContainer =
-        this.elements?.scheduleContainer ?? this.elements?.timeViewRoot;
-  
-      this.dragTargetHighlighter.reset(scheduleContainer);
-  
-      await this.render({ preservedScroll });
-      this.closeEditMode();
+      await this.finalizeEditCommit({
+        committedEditEvent: this.pendingEditEvent,
+        preservedScroll,
+        successMessage: '登録を完了しました',
+        keepDragPreviewUntilRender: true,
+      });
     } catch (error) {
-      console.error('[handleEditSubmit] move failed:', error);
+      await this.handleEditCommitError(error, '登録に失敗しました。');
     }
+  }
+
+  commitEditState(committedEditEvent = this.pendingEditEvent) {
+    if (!committedEditEvent) {
+      return;
+    }
+  
+    this.selectedEditEvent = { ...committedEditEvent };
+    this.pendingEditEvent = { ...committedEditEvent };
   }
 
 
@@ -701,22 +948,26 @@ export class ScheduleController {
     }
   
     return {
-      id: this.selectedEditEvent.id,
+      planId: this.selectedEditEvent.planId,
       holderId: this.pendingEditEvent.memberId,
       planTime: `${this.pendingEditEvent.planDate}T${this.pendingEditEvent.startTime}:00`,
     };
   }
 
-  hasPendingEditChanges() {
-    if (!this.selectedEditEvent || !this.pendingEditEvent) {
+  hasEditChanges(beforeEvent, afterEvent) {
+    if (!beforeEvent || !afterEvent) {
       return false;
     }
   
     return !(
-      String(this.selectedEditEvent.memberId) === String(this.pendingEditEvent.memberId) &&
-      this.selectedEditEvent.planDate === this.pendingEditEvent.planDate &&
-      this.selectedEditEvent.startTime === this.pendingEditEvent.startTime
+      String(beforeEvent.memberId) === String(afterEvent.memberId) &&
+      beforeEvent.planDate === afterEvent.planDate &&
+      beforeEvent.startTime === afterEvent.startTime
     );
+  }
+  
+  hasPendingEditChanges() {
+    return this.hasEditChanges(this.selectedEditEvent, this.pendingEditEvent);
   }
 
   bindEditDateTimeEvents() {
@@ -770,6 +1021,7 @@ export class ScheduleController {
   
     this.editSummaryService.syncAfter(this.pendingEditEvent);
     this.editMemberDropdownService.sync();
+    this.bindEditDateTimeEvents();
     
     this.dragTimeIndicatorService.sync({
       scheduleContainer: this.elements?.scheduleContainer ?? this.elements?.timeViewRoot,
@@ -777,7 +1029,7 @@ export class ScheduleController {
       pendingEditEvent: this.pendingEditEvent,
       visibleHours: this.state.getVisibleHours(),
     });
-
+    
     this.syncEditSubmitButton();
   }
   bindDrawerKeyboardEvents() {
@@ -819,29 +1071,39 @@ export class ScheduleController {
     if (!panelId) {
       return;
     }
-  
+
     const wasEditActive = this.isEditModeActive();
-  
+
     this.state.toggleDrawer(panelId);
-  
+
     const isEditPanelClosed =
       wasEditActive &&
       (!this.state.getIsDrawerOpen() || this.state.getActivePanelId() !== 'edit');
-  
+
     if (isEditPanelClosed) {
       this.state.disableMoveMode();
       this.dragPreviewService.reset();
       this.resetPendingEditPreview();
     }
-  
+
     this.syncMoveModeButton();
     this.syncMoveModeView();
     this.syncDrawerUI();
+
+    const isTestPanelOpened =
+      panelId === 'test' &&
+      this.state.getIsDrawerOpen() &&
+      this.state.getActivePanelId() === 'test';
+
+    if (isTestPanelOpened) {
+      this.loadTestCardsWeek();
+    }
   }
 
   syncDrawerUI() {
     const isDrawerOpen = this.state.getIsDrawerOpen();
     const activePanelId = this.state.getActivePanelId();
+    const shouldKeepFilterPaneOpen = isDrawerOpen && activePanelId === 'test';
   
     if (this.elements.layout) {
       this.elements.layout.dataset.drawerOpen = String(isDrawerOpen);
@@ -865,8 +1127,34 @@ export class ScheduleController {
   
       panel.hidden = !isActive;
     });
+
+    if (!shouldKeepFilterPaneOpen) {
+      this.state.closeFilterPane();
+    }
   
     this.syncAutoRefreshByDrawerState(isDrawerOpen);
+  }
+
+  syncFilterPaneUI() {
+    const isFilterOpen = this.state.getIsFilterPaneOpen();
+  
+    if (this.elements.layout) {
+      this.elements.layout.dataset.filterOpen = String(isFilterOpen);
+    }
+  
+    if (this.elements.filterPane) {
+      this.elements.filterPane.setAttribute(
+        'aria-hidden',
+        String(!isFilterOpen)
+      );
+    }
+  
+    if (this.elements.filterButton) {
+      this.elements.filterButton.setAttribute(
+        'aria-pressed',
+        String(isFilterOpen)
+      );
+    }
   }
 
   getTimeScheduleScrollContainer() {
@@ -1161,7 +1449,13 @@ export class ScheduleController {
       });
   
     if (!isValid) {
-      this.dragPreviewService.reset();
+      this.resetDragInteractionUI();
+      this.resetPendingEditPreview();
+      return;
+    }
+
+    if (!this.hasEditChanges(this.selectedEditEvent, pendingEditEvent)) {
+      this.resetDragInteractionUI();
       this.resetPendingEditPreview();
       return;
     }
@@ -1169,20 +1463,24 @@ export class ScheduleController {
     this.syncPendingEditPreview(pendingEditEvent);
   
     const preservedScroll = this.captureTimeScrollPosition();
+    let isCommitted = false;
   
     try {
       await executeScheduleEventMove(payload);
-      await this.render({ preservedScroll });
+      isCommitted = true;
+  
+      await this.finalizeEditCommit({
+        committedEditEvent: pendingEditEvent,
+        preservedScroll,
+        successMessage: '登録を完了しました',
+        keepDragPreviewUntilRender: true,
+      });
     } catch (error) {
-      console.error('[handleScheduleDrop] move failed:', error);
+      await this.handleEditCommitError(error, '登録に失敗しました。');
     } finally {
-      this.dragPreviewService.reset();
-      this.dragTimeIndicatorService.reset();
-    
-      const scheduleContainer =
-        this.elements?.scheduleContainer ?? this.elements?.timeViewRoot;
-    
-      this.dragTargetHighlighter.reset(scheduleContainer);
+      if (!isCommitted) {
+        this.resetDragInteractionUI();
+      }
     }
   }
 
@@ -1202,5 +1500,45 @@ export class ScheduleController {
     }
   
     this.syncEditSubmitButton();
+  }
+
+  shouldUpdateTitleByScroll() {
+    return !this.state.isMemberWeekView();
+  }
+
+  resetDragInteractionUI() {
+    this.dragPreviewService.reset();
+    this.dragTimeIndicatorService.reset();
+  
+    const scheduleContainer =
+      this.elements?.scheduleContainer ?? this.elements?.timeViewRoot;
+  
+    this.dragTargetHighlighter.reset(scheduleContainer);
+  }
+
+  async finalizeEditCommit({
+    committedEditEvent = this.pendingEditEvent,
+    preservedScroll,
+    successMessage = '登録が完了しました。',
+    keepDragPreviewUntilRender = false,
+  }) {
+    this.commitEditState(committedEditEvent);
+  
+    if (!keepDragPreviewUntilRender) {
+      this.resetDragInteractionUI();
+    }
+  
+    await this.render({ preservedScroll });
+  
+    if (keepDragPreviewUntilRender) {
+      this.resetDragInteractionUI();
+    }
+  
+    await ScheduleFeedbackPresenter.showSaveSuccess(successMessage);
+  }
+  
+  async handleEditCommitError(error, message = '登録に失敗しました。') {
+    console.error('[edit commit failed]:', error);
+    await ScheduleFeedbackPresenter.showSaveError(message);
   }
 }
