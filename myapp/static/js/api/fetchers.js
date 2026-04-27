@@ -433,13 +433,27 @@ export function executeScheduleEventMove(p = {}) {
     });
 }
 
-export function fetchScheduleTestCardsWeek(p = {}) {
+export function fetchScheduleTestCardsWeek({
+    date = null,
+    dateAlias = '',
+    shiftPatternId = '',
+  } = {}) {
     const params = new URLSearchParams();
+  
+    if (date) {
+      params.set('date', date);
+    }
+  
+    if (dateAlias) {
+      params.set('date_alias', dateAlias);
+    }
 
-    if (p.date) params.set('date', p.date);
-
+    if (shiftPatternId) {
+        params.set('shiftPatternId', shiftPatternId);
+    }
+  
     return asynchronousCommunication({
-        url: `/api/schedule/test-cards/week/?${params.toString()}`,
-        method: 'GET',
+      url: `/api/schedule/test-cards/week/?${params.toString()}`,
+      method: 'GET',
     });
-}
+  }

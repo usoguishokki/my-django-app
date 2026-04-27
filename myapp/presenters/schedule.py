@@ -95,6 +95,7 @@ def build_schedule_day_payload(
     items,
     breaks,
     team_schedules,
+    active_date_alias=None,
 ):
     return {
         'status': 'success',
@@ -105,6 +106,7 @@ def build_schedule_day_payload(
             'items': items,
             'breaks': breaks,
             'teamSchedules': team_schedules,
+            'activeDateAlias': active_date_alias,
         },
     }
     
@@ -179,6 +181,7 @@ def present_schedule_test_cards_week_items(plans_qs):
     for plan in plans_qs:
         inspection = plan.inspection_no
         control = inspection.control_no if inspection else None
+        line = control.line_name if control else None
         rule = inspection.rule if inspection else None
 
         items.append(
@@ -188,9 +191,13 @@ def present_schedule_test_cards_week_items(plans_qs):
                 'status': plan.status,
                 'inspectionNo': inspection.inspection_no if inspection else '',
                 'machineName': control.machine if control else '',
+                'processName': line.line_name if line else '',
+                'inspectionType': inspection.status if inspection else '',
+                'timeZone': inspection.time_zone if inspection else '',
                 'workName': inspection.wark_name if inspection else '',
                 'manHours': inspection.man_hours if inspection else '',
                 'dayOfWeek': inspection.day_of_week if inspection else '',
+                'practitionerId': inspection.practitioner_id if inspection else '',
                 'interval': rule.interval if rule else None,
                 'unit': rule.unit if rule else '',
                 'detailItems': [
@@ -207,11 +214,19 @@ def present_schedule_test_cards_week_items(plans_qs):
     return items
 
 
-def build_schedule_test_cards_week_payload(*, target_date, items):
+def build_schedule_test_cards_week_payload(
+    *,
+    target_date,
+    items,
+    date_alias_options=None,
+    active_date_alias=None,
+):
     return {
         'status': 'success',
         'data': {
             'targetDate': target_date.isoformat(),
             'items': items,
+            'dateAliases': date_alias_options or [],
+            'activeDateAlias': active_date_alias,
         },
     }

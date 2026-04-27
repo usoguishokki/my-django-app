@@ -63,3 +63,14 @@ def get_h_id_by_date(target_date: date) -> Optional[int]:
         .values_list("h_id", flat=True)
         .first()
     )
+    
+def get_date_alias_by_date(target_date: date) -> Optional[str]:
+    """
+    指定日の date_alias を返す
+    """
+    return (
+        Hozen_calendar_tb.objects
+        .filter(h_date=target_date)
+        .values_list("date_alias", flat=True)
+        .first()
+    )

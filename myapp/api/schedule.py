@@ -117,6 +117,8 @@ def schedule_test_cards_week_api(request):
 
     payload = build_schedule_test_cards_week_result(
         target_date=params.target_date,
+        date_alias=params.date_alias,
+        shift_pattern_id=params.shift_pattern_id,
     )
-
+    
     return JsonResponse(payload, json_dumps_params={'ensure_ascii': False})

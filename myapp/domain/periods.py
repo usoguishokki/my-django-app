@@ -96,3 +96,9 @@ def get_this_week_range() -> tuple[date, date]:
     今週の開始日(月曜)と終了日(日曜)を返す。
     """
     return get_week_range()
+
+def get_fiscal_year_range(base: date) -> tuple[date, date]:
+    fy = base.year if base.month >= 4 else base.year - 1
+    start = date(fy, 3, 30)
+    end = date(fy + 1, 3, 28)
+    return start, end

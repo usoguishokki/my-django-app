@@ -6,9 +6,11 @@ from myapp.domain.kpi_cell_matcher import match_cell
 from myapp.domain.errors import InvalidFiltersJSON, InvalidPeriodKey
 from myapp.domain.kpi_cell_detail_result import KPICellDetailResult
 
+from myapp.domain.periods import get_fiscal_year_range
+
 from myapp.selectors.plan import select_plan_detail_rows
 from myapp.selectors.kpi_queryset import build_kpi_plan_queryset, kpi_rows
-from myapp.selectors.hozen_calendar import get_fiscal_year_range, get_month_ranges
+from myapp.selectors.hozen_calendar import get_month_ranges
 from myapp.selectors.kpi_context import build_day_context
 
 from myapp.presenters.kpi_cell_detail_presenter import build_cell_detail_payload

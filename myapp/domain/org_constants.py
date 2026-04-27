@@ -1,4 +1,7 @@
 ALLOWED_TEAM_KEYS = {"A", "B", "C"}
+
+TEAM_FILTER_KEYS = ("A", "B", "C")
+
 TEAM_KEYS = ("A", "B", "C", "all", "unknown")
 TEAM_LABEL = {
     "A": "A班",
@@ -7,6 +10,12 @@ TEAM_LABEL = {
     "all": "全体",
     "unknown": "不明",
 }
+
+TEAM_FILTER_ORDER = {
+    team_key: index
+    for index, team_key in enumerate(TEAM_FILTER_KEYS)
+}
+
 
 WD_JA = ["月", "火", "水", "木", "金", "土", "日"]
 

@@ -534,8 +534,7 @@ class Plan_tb(DateFilterable): #DateFilterableが'models.Modelを継承してい
         on_delete=models.CASCADE,
         related_name='applied_plans'
     )#申請者
-    
-    
+
     def __str__(self):
         return f"Plan {self.plan_id} ({self.status})"
    

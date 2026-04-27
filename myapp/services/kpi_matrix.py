@@ -5,8 +5,10 @@ from myapp.domain.kpi_request import KPIRequestParams
 from myapp.domain.errors import InvalidFiltersJSON
 from myapp.domain.kpi_aggregate import aggregate_kpi_by_period
 
+from myapp.domain.periods import get_fiscal_year_range
+
 from myapp.selectors.kpi_queryset import build_kpi_plan_queryset, kpi_rows
-from myapp.selectors.hozen_calendar import get_fiscal_year_range, get_month_ranges
+from myapp.selectors.hozen_calendar import get_month_ranges
 from myapp.selectors.kpi_context import build_day_context
 
 from myapp.presenters.kpi_matrix_presenter import build_matrix

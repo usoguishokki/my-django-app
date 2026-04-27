@@ -218,7 +218,13 @@
         hidden
       >
         <header class="schedule-page__drawerPanelHeader">
-          <h2 class="schedule-page__drawerPanelTitle">テストカード</h2>
+          <h2
+            class="schedule-page__drawerPanelTitle"
+            data-role="schedule-test-cards-title"
+          >
+            カード
+          </h2>
+
           <button
             type="button"
             class="ui-btn ui-btn--sm ui-btn--outline schedule-page__drawerFilterButton"
@@ -227,7 +233,12 @@
             aria-label="テストカードのフィルターを開く"
             aria-pressed="false"
           >
-            フィルター
+            <img
+              class="schedule-page__drawerFilterIcon"
+              src="{% static 'img/filter.svg' %}"
+              alt=""
+              aria-hidden="true"
+            >
           </button>
         </header>
       
@@ -392,7 +403,15 @@
           </div>
 
           <div class="schedule-page__titleGroup">
-            <h1 class="schedule-page__title" data-role="schedule-title"></h1>
+            <div class="schedule-page__titleLine">
+              <h1 class="schedule-page__title" data-role="schedule-title"></h1>
+          
+              <span
+                class="schedule-page__activeDateAlias"
+                data-role="schedule-active-date-alias"
+                hidden
+              ></span>
+            </div>
           
             <div class="schedule-page__navButtons">
               <button
@@ -428,6 +447,8 @@
     </div>
   </div>
 </section>
+
+{{ schedule_initial_data|json_script:"schedule-initial-data" }}
 {% endblock %}
 
 {% block script %}

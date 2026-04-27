@@ -619,9 +619,7 @@ button, select {
   font-size: 0.96rem;
   font-weight: 700;
   line-height: 1.55;
-  transition: background-color .14s ease, box-shadow .14s ease, transform .06s ease, opacity .14s ease;
-  /* ✅ hoverは「有効時のみ」影を付ける */
-  /* ✅ focus ring は hover shadow と“共存”できるようにする */ }
+  transition: background-color .14s ease, box-shadow .14s ease, transform .06s ease, opacity .14s ease, border-color .14s ease, color .14s ease; }
   .ui-btn:not(:disabled):not(.is-disabled):hover {
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12); }
   .ui-btn:active {
@@ -637,6 +635,15 @@ button, select {
     filter: grayscale(20%);
     box-shadow: none;
     transform: none; }
+  .ui-btn.is-active, .ui-btn[aria-pressed='true'] {
+    background-color: #eff6ff;
+    color: #2563eb;
+    border-color: #2563eb;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12); }
+  .ui-btn.is-active:hover, .ui-btn[aria-pressed='true']:hover {
+    background-color: #eff6ff;
+    color: #2563eb;
+    border-color: #2563eb; }
 
 /* サイズ（typographyに寄せる） */
 .ui-btn--sm {
@@ -674,6 +681,23 @@ button, select {
   .ui-btn--danger:not(:disabled):not(.is-disabled):hover {
     background-color: #991b1b;
     /* hoverは濃い赤 */ }
+
+.ui-btn--outline {
+  background: #ffffff;
+  color: #1f2937;
+  border-color: rgba(15, 23, 42, 0.14); }
+  .ui-btn--outline:not(:disabled):not(.is-disabled):hover {
+    background: #f8fafc;
+    border-color: #c4cfdd; }
+
+.ui-btn--icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 999px; }
+
+.ui-btn--round {
+  border-radius: 999px; }
 
 /* ==========================================================================
   Typography Tokens (Readable-first)
@@ -1008,8 +1032,8 @@ button, select {
     justify-content: space-between;
     gap: 12px;
     width: 100%;
-    min-height: 46px;
-    padding: 0 14px;
+    min-height: 42px;
+    padding: 0 13px;
     border: 1px solid #cfd8e3;
     border-radius: 12px;
     background: #ffffff;
@@ -1024,7 +1048,7 @@ button, select {
   .custom-dropdown__trigger:focus, .custom-dropdown__trigger:focus-visible {
     outline: none;
     border-color: #2563eb;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12); }
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px rgba(37, 99, 235, 0.16); }
   .custom-dropdown__trigger:disabled {
     background: rgba(15, 23, 42, 0.03);
     color: rgba(11, 18, 32, 0.45);
@@ -1046,23 +1070,29 @@ button, select {
     transition: transform 0.18s ease, color 0.18s ease; }
   .custom-dropdown[data-state='open'] .custom-dropdown__trigger {
     border-color: #93c5fd;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08), 0 6px 18px rgba(15, 23, 42, 0.06);
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08), 0 6px 18px rgba(15, 23, 42, 0.06);
     background: #ffffff; }
   .custom-dropdown[data-state='open'] .custom-dropdown__triggerIcon {
     transform: rotate(180deg);
     color: #2563eb; }
   .custom-dropdown__panel {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 12px);
     left: 0;
     z-index: 30;
     width: 100%;
-    padding: 8px;
+    padding: 10px;
     border: 1px solid #dbe3ee;
     border-radius: 14px;
     background: #ffffff;
     box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
-    box-sizing: border-box; }
+    box-sizing: border-box;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.18s ease, transform 0.18s ease; }
+  .custom-dropdown[data-state='open'] .custom-dropdown__panel {
+    opacity: 1;
+    transform: translateY(0); }
   .custom-dropdown[data-direction='up'] .custom-dropdown__panel {
     top: auto;
     bottom: calc(100% + 8px); }
@@ -1091,8 +1121,9 @@ button, select {
     display: flex;
     align-items: center;
     width: 100%;
-    min-height: 42px;
+    min-height: 40px;
     padding: 0 12px;
+    margin: 2px 0;
     border: none;
     background: transparent;
     color: #111827;
@@ -1104,13 +1135,15 @@ button, select {
     background: #eff6ff; }
   .custom-dropdown__option:focus, .custom-dropdown__option:focus-visible {
     outline: none;
-    background: #dbeafe; }
+    background: #eff6ff;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.18); }
   .custom-dropdown__option:active {
     transform: scale(0.995); }
   .custom-dropdown__option.is-selected {
     background: #dbeafe;
     color: #1d4ed8;
-    font-weight: 700; }
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12); }
   .custom-dropdown__option.is-hidden {
     display: none; }
   .custom-dropdown__empty {

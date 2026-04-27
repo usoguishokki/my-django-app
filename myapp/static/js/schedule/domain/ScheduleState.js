@@ -9,8 +9,8 @@ export class ScheduleState {
   constructor(baseDate = new Date(), initialTeam = '', initialAffiliationId) {
     this.selectedDate = formatDate(baseDate);
     this.selectedTeam = initialTeam;
-    this.affiliation = initialAffiliationId;
-  
+    this.selectedAffiliationId = initialAffiliationId ?? '';
+
     this.visibleHours = 2;
     this.teamSchedules = [];
   
@@ -23,7 +23,11 @@ export class ScheduleState {
   
     this.isFilterPaneOpen = false;
     this.selectedTestCardCaseKey = 'all';
+    this.selectedTestCardInspectionType = 'all';
+    this.selectedTestCardTimeZone = 'all';
+    this.selectedTestCardProcessName = 'all';
     this.selectedTestCardMachineName = 'all';
+
     this.isTestCardMachinePickerOpen = false;
     this.isTestCardCasePickerOpen = false;
   
@@ -33,6 +37,16 @@ export class ScheduleState {
     this.isMoveMode = false;
 
     this.activeTestCardFilterKey = '';
+
+    this.activeDateAlias = '';
+    this.dateAliasOptions = [];
+    this.selectedTestCardDateAlias = '';
+
+    this.selectedTestCardTeamKey = '';
+
+    this.selectedTestCardAffiliationId = '';
+
+    this.testCardTeamOptions = [];
   }
 
   setBaseDate(date) {
@@ -252,6 +266,26 @@ export class ScheduleState {
     this.selectedTestCardCaseKey = caseKey ?? 'all';
   }
 
+  setSelectedTestCardInspectionType(inspectionType) {
+    this.selectedTestCardInspectionType = inspectionType
+      ? String(inspectionType)
+      : 'all';
+  }
+  
+  getSelectedTestCardInspectionType() {
+    return this.selectedTestCardInspectionType;
+  }
+
+  setSelectedTestCardTimeZone(timeZone) {
+    this.selectedTestCardTimeZone = timeZone
+      ? String(timeZone)
+      : 'all';
+  }
+  
+  getSelectedTestCardTimeZone() {
+    return this.selectedTestCardTimeZone;
+  }
+
   getSelectedTestCardCaseKey() {
     return this.selectedTestCardCaseKey;
   }
@@ -275,6 +309,16 @@ export class ScheduleState {
   toggleTestCardCasePicker() {
     this.setTestCardCasePickerOpen(!this.getIsTestCardCasePickerOpen());
     return this.getIsTestCardCasePickerOpen();
+  }
+
+  setSelectedTestCardProcessName(processName) {
+    this.selectedTestCardProcessName = processName
+      ? String(processName)
+      : 'all';
+  }
+  
+  getSelectedTestCardProcessName() {
+    return this.selectedTestCardProcessName;
   }
 
   setSelectedTestCardMachineName(machineName) {
@@ -344,5 +388,78 @@ export class ScheduleState {
   isTestCardFilterOpen(filterKey) {
     return this.getActiveTestCardFilterKey() === String(filterKey);
   }
+
+  setActiveDateAlias(activeDateAlias = '') {
+    this.activeDateAlias = activeDateAlias || '';
+  }
   
+  getActiveDateAlias() {
+    return this.activeDateAlias;
+  }
+  
+  setSelectedTestCardDateAlias(dateAlias = '') {
+    this.selectedTestCardDateAlias = dateAlias || '';
+  }
+  
+  getSelectedTestCardDateAlias() {
+    return this.selectedTestCardDateAlias || this.activeDateAlias || '';
+  }
+  
+  setTestCardTeamOptions(teamOptions = []) {
+    this.testCardTeamOptions = Array.isArray(teamOptions)
+      ? teamOptions
+      : [];
+  }
+  
+  getTestCardTeamOptions() {
+    return this.testCardTeamOptions;
+  }
+
+  setSelectedTestCardTeamKey(teamKey) {
+    this.selectedTestCardTeamKey = teamKey;
+  }
+
+  setDateAliasOptions(dateAliasOptions = []) {
+    this.dateAliasOptions = Array.isArray(dateAliasOptions)
+      ? dateAliasOptions
+      : [];
+  }
+  
+  getDateAliasOptions() {
+    return this.dateAliasOptions;
+  }
+
+  getSelectedTestCardTeamKey() {
+    return this.selectedTestCardTeamKey;
+  }
+
+  setSelectedTestCardAffiliationId(affiliationId) {
+    this.selectedTestCardAffiliationId = String(affiliationId ?? '');
+  }
+  
+  getSelectedTestCardAffiliationId() {
+    return this.selectedTestCardAffiliationId;
+  }
+
+  getSelectedTestCardShiftPatternId() {
+    const selectedAffiliationId =
+      this.getSelectedTestCardAffiliationId?.() ?? '';
+  
+    if (!selectedAffiliationId) {
+      return '';
+    }
+  
+    const teamOptions = this.getTestCardTeamOptions?.() ?? [];
+  
+    if (!Array.isArray(teamOptions) || teamOptions.length === 0) {
+      return '';
+    }
+  
+    const selectedTeam = teamOptions.find(
+      (team) =>
+        String(team.affiliationId ?? '') === String(selectedAffiliationId)
+    );
+  
+    return String(selectedTeam?.shiftPatternId ?? '');
+  }
 }

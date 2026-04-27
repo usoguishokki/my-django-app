@@ -4,6 +4,10 @@ from datetime import timedelta
 
 from myapp.domain.sort_keys.member_sort import sort_members
 from myapp.domain.schedule import build_schedule_event_move_params
+from myapp.domain.hozen_calendar_constants import build_hozen_date_alias_options
+
+from myapp.selectors.hozen_calendar import get_date_alias_by_date
+
 
 from myapp.selectors.members import select_members_by_affiliation_id
 from myapp.selectors.plan import (
@@ -11,6 +15,8 @@ from myapp.selectors.plan import (
     select_schedule_member_week_plans,
     select_plan_by_id,
     select_test_card_week_plans,
+    select_test_card_plans_by_date_alias,
+    filter_test_card_plans_by_shift_pattern,
 )
 
 from myapp.selectors.calendar import (
@@ -51,6 +57,8 @@ def build_schedule_day_result(*, affiliation_id, target_date):
     )
     calendar_rows = select_calendars_by_date(target_date=target_date)
 
+    active_date_alias = get_date_alias_by_date(target_date)
+
     members = present_schedule_members(sorted_members)
     items = present_schedule_items(plans_qs)
     breaks = present_schedule_breaks(calendar_obj)
@@ -63,6 +71,7 @@ def build_schedule_day_result(*, affiliation_id, target_date):
         items=items,
         breaks=breaks,
         team_schedules=team_schedules,
+        active_date_alias=active_date_alias,
     )
 
 
@@ -114,11 +123,54 @@ def move_schedule_event(payload):
     }
     
     
-def build_schedule_test_cards_week_result(*, target_date):
-    plans_qs = select_test_card_week_plans(base_date=target_date)
+def build_schedule_test_cards_week_result(
+    *,
+    target_date,
+    date_alias='',
+    shift_pattern_id=None,
+):
+    active_date_alias = date_alias or get_date_alias_by_date(target_date)
+
+    if active_date_alias:
+        plans_qs = select_test_card_plans_by_date_alias(
+            date_alias=active_date_alias,
+            base_date=target_date,
+        )
+    else:
+        plans_qs = select_test_card_week_plans(
+            base_date=target_date,
+        )
+
+    plans_qs = filter_test_card_plans_by_shift_pattern(
+        plans_qs,
+        shift_pattern_id=shift_pattern_id,
+    )
+
     items = present_schedule_test_cards_week_items(plans_qs)
 
     return build_schedule_test_cards_week_payload(
         target_date=target_date,
         items=items,
+        date_alias_options=build_hozen_date_alias_options(
+            active_date_alias=active_date_alias,
+        ),
+        active_date_alias=active_date_alias,
     )
+    
+COMMON_TEST_CARD_PRACTITIONER_ID = 7
+
+
+def build_test_card_practitioner_ids(*, shift_pattern_id=None) -> list[int]:
+    """
+    テストカード取得対象の practitioner_id を作る。
+
+    選択中の shift_pattern_id に加えて、
+    practitioner_id=7 は共通カードとして必ず含める。
+    """
+    practitioner_ids = {COMMON_TEST_CARD_PRACTITIONER_ID}
+
+    if shift_pattern_id is not None and shift_pattern_id != '':
+        practitioner_ids.add(int(shift_pattern_id))
+
+    return sorted(practitioner_ids)
+    

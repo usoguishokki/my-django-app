@@ -21,6 +21,8 @@ class ScheduleMemberWeekRequestParams:
 @dataclass(frozen=True)
 class ScheduleTestCardsWeekRequestParams:
     target_date: date
+    date_alias: str = ''
+    shift_pattern_id: int | None = None
 
 
 def parse_schedule_day_request_params(querydict) -> ScheduleDayRequestParams:
@@ -40,6 +42,12 @@ def parse_schedule_member_week_request_params(querydict) -> ScheduleMemberWeekRe
 def parse_schedule_test_cards_week_request_params(querydict) -> ScheduleTestCardsWeekRequestParams:
     return ScheduleTestCardsWeekRequestParams(
         target_date=_parse_target_date(querydict),
+        date_alias=_parse_optional_str(querydict, 'date_alias', fallback_key='dateAlias'),
+        shift_pattern_id=_parse_optional_int(
+            querydict,
+            'shift_pattern_id',
+            fallback_key='shiftPatternId',
+        ),
     )
 
 
@@ -57,6 +65,28 @@ def _parse_required_int(querydict, key: str) -> int:
 
     if not raw_value:
         raise InvalidScheduleRequestParams(f'{key} is required')
+
+    try:
+        return int(raw_value)
+    except (TypeError, ValueError) as exc:
+        raise InvalidScheduleRequestParams(f'{key} must be integer') from exc
+    
+def _parse_optional_str(querydict, key: str, fallback_key=None) -> str:
+    raw_value = querydict.get(key)
+
+    if raw_value is None and fallback_key:
+        raw_value = querydict.get(fallback_key)
+
+    return (raw_value or '').strip()
+
+def _parse_optional_int(querydict, key: str, fallback_key=None) -> int | None:
+    raw_value = querydict.get(key)
+
+    if raw_value is None and fallback_key:
+        raw_value = querydict.get(fallback_key)
+
+    if raw_value is None or raw_value == '':
+        return None
 
     try:
         return int(raw_value)

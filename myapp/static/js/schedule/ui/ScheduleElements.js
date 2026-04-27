@@ -13,6 +13,9 @@ export function getScheduleElements(root = document) {
     panels: [...root.querySelectorAll('[data-role="schedule-panel"]')],
 
     title: root.querySelector('[data-role="schedule-title"]'),
+    scheduleActiveDateAlias: root.querySelector(
+      '[data-role="schedule-active-date-alias"]'
+    ),
     timeViewRoot: root.querySelector('[data-role="time-view-root"]'),
     scheduleContainer: root.querySelector('[data-role="time-view-root"]'),
 
@@ -57,6 +60,10 @@ export function getScheduleElements(root = document) {
     editFooter: root.querySelector('[data-role="schedule-edit-footer"]'),
 
     testCardsPanelBody: root.querySelector('[data-role="schedule-test-cards-body"]'),
+
+    testCardsPanelTitle: root.querySelector(
+      '[data-role="schedule-test-cards-title"]'
+    ),
 
     testCardFilterTitle: root.querySelector('[data-role="schedule-test-card-filter-title"]'),
     testCardFilterBody: root.querySelector('[data-role="schedule-test-card-filter-body"]'),

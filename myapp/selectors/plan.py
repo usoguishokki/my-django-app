@@ -3,12 +3,11 @@ from typing import Iterable, Optional
 
 from datetime import date, datetime, time, timedelta
 
-from django.db.models import F, Prefetch
+from django.db.models import F, Prefetch, Q
 
-from django.utils import timezone
-from myapp.models import Plan_tb, CheckStatus, Db_details_tb
+from myapp.models import Plan_tb, CheckStatus, Db_details_tb, PlanStatus
 
-from myapp.domain.periods import get_week_range
+from myapp.domain.periods import get_week_range, get_fiscal_year_range
 
 EXCLUDED_INSPECTION_STATUSES = (
     CheckStatus.ABOLISHED,
@@ -29,6 +28,63 @@ DETAIL_ROW_FIELDS = (
     "interval",
     "unit",
 )
+
+TEST_CARD_STATUSES = (
+    PlanStatus.WAITING.value,
+    PlanStatus.DELAYED.value,
+)
+
+ALWAYS_INCLUDE_PRACTITIONER_ID = 7
+
+def apply_test_card_common_filters(qs):
+    """
+    テストカード一覧で共通して使う絞り込み・prefetchを適用する。
+    """
+    qs = filter_status_plans(
+        qs=qs,
+        statuses=TEST_CARD_STATUSES,
+    )
+
+    return qs.prefetch_related(
+        Prefetch(
+            'inspection_no__db_details',
+            queryset=Db_details_tb.objects.only(
+                'id',
+                'inspection_no_id',
+                'contents',
+            ).order_by('id'),
+        )
+    )
+    
+def select_test_card_week_plans(*, base_date: date | None = None):
+    qs = plan_base_qs()
+    qs = filter_week_plans(qs=qs, base_date=base_date)
+    qs = apply_test_card_common_filters(qs)
+
+    return qs.order_by('p_date__h_date', 'plan_id')
+
+def select_test_card_plans_by_date_alias(
+    *,
+    date_alias: str,
+    base_date: date | None = None,
+):
+    if not date_alias:
+        return Plan_tb.objects.none()
+
+    qs = plan_base_qs()
+    qs = qs.filter(p_date__date_alias=date_alias)
+
+    if base_date is not None:
+        fiscal_year_start, fiscal_year_end = get_fiscal_year_range(base_date)
+
+        qs = qs.filter(
+            p_date__h_date__gte=fiscal_year_start,
+            p_date__h_date__lt=fiscal_year_end,
+        )
+
+    qs = apply_test_card_common_filters(qs)
+
+    return qs.order_by('p_date__h_date', 'plan_id')
 
 def plan_base_qs():
     """
@@ -192,18 +248,26 @@ def select_schedule_member_week_plans(*, member_id: int, target_date: date):
 def select_plan_by_id(plan_id: int):
     return plan_base_qs().filter(plan_id=plan_id).first()
 
-def select_test_card_week_plans(*, base_date: date | None = None):
-    qs = plan_base_qs()
-    qs = filter_week_plans(qs=qs, base_date=base_date)
-    qs = filter_status_plans(qs=qs, statuses=['配布待ち', '遅れ'])
-    qs = qs.prefetch_related(
-        Prefetch(
-            'inspection_no__db_details',
-            queryset=Db_details_tb.objects.only(
-                'id',
-                'inspection_no_id',
-                'contents',
-            ).order_by('id'),
-        )
+
+def filter_test_card_plans_by_shift_pattern(
+    plans_qs,
+    *,
+    shift_pattern_id=None,
+):
+    """
+    テストカードをシフトパターンで絞り込む。
+
+    条件:
+      - check_tb.practitioner_id == shift_pattern_id
+      - practitioner_id=7 は常に含める
+
+    practitioner_id は Plan_tb -> Check_tb の
+    inspection_no__practitioner_id を参照する。
+    """
+    if not shift_pattern_id:
+        return plans_qs
+
+    return plans_qs.filter(
+        Q(inspection_no__practitioner_id=shift_pattern_id)
+        | Q(inspection_no__practitioner_id=ALWAYS_INCLUDE_PRACTITIONER_ID)
     )
-    return qs.order_by('p_date__h_date', 'plan_id')

@@ -7,7 +7,6 @@ from myapp.api.csv_download import (
     inspection_standard_download_api,
     inspection_plan_result_download_api,
 )
-
 from myapp.api.schedule import (
     schedule_day_api,
     schedule_member_week_api,

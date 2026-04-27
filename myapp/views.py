@@ -17,11 +17,6 @@ from .models import (
     DayOfWeek, PlanStatus
 )
 from django.views.decorators.cache import never_cache
-from .filters_maps import get_field_map, get_status_map, get_op_map, get_negated_ops
-from .services.query_builders import (
-    build_q_from_simple_params,
-    build_q_from_filters,
-)
 
 from collections import defaultdict
 from rest_framework.response import Response
@@ -61,29 +56,9 @@ from myapp.selectors.members import (
 from myapp.domain.sort_keys.inspection_no import inspection_no_sort_key
 from myapp.domain.checks.constants import NON_ACTIVE_CHECK_STATUSES
 from myapp.domain.sort_keys.member_sort import build_member_dict
+from myapp.domain.schedule_initial_filters import build_schedule_initial_filters
 
 from myapp.services.member_profile_service import build_members_with_profiles
-
-
-
-def download_test_csv(request):
-    # 1) Content-Type（CSV）
-    response = HttpResponse(content_type="text/csv; charset=utf-8")
-
-    # 2) Content-Disposition（添付ファイルとして扱わせる＝ダウンロード）
-    response["Content-Disposition"] = 'attachment; filename="test.csv"'
-
-    # 3) Excelで文字化けしにくいようにBOM付与（任意だけど日本語ならほぼ必須）
-    response.write("\ufeff")
-
-    # 4) CSV本体（中身は何でもOK）
-    writer = csv.writer(response)
-    writer.writerow(["col1", "col2", "col3"])
-    writer.writerow(["あ", "い", "う"])
-    writer.writerow(["1", "2", "3"])
-
-    return response
-
 logger = logging.getLogger('myapp')
 
 def hozen_common_data():
@@ -1857,7 +1832,11 @@ def csv_download_page(request):
 
 @login_required
 def schedule_page(request):
-    return render(request, 'schedule/schedule.html')     
+    context = {
+        "schedule_initial_data": build_schedule_initial_filters(user=request.user),
+    }
+
+    return render(request, "schedule/schedule.html", context)
 
 """
 def nika_app_view(request):
