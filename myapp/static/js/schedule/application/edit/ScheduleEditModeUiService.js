@@ -10,22 +10,23 @@ export class ScheduleEditModeUiService {
 
   syncButton({ isMoveMode }) {
     const button = this.elements?.editModeButton;
-
+  
     if (!button) {
       return;
     }
-
+  
     setActivePressedState(button, isMoveMode);
-
+  
     button.setAttribute(
       'aria-label',
       isMoveMode ? '編集モードを終了する' : '編集モードを開く'
     );
-
-    button.setAttribute(
-      'title',
-      isMoveMode ? '編集モード中' : '編集モード'
-    );
+  
+    button.dataset.tooltip = isMoveMode
+      ? '編集モード中'
+      : '編集モード';
+  
+    button.removeAttribute('title');
   }
 
   syncView({ isMoveMode }) {

@@ -7,11 +7,17 @@ from myapp.api.csv_download import (
     inspection_standard_download_api,
     inspection_plan_result_download_api,
 )
+
 from myapp.api.schedule import (
     schedule_day_api,
     schedule_member_week_api,
     schedule_event_move_api,
-    schedule_test_cards_week_api
+    schedule_test_cards_week_api,
+    schedule_test_card_team_options_api,
+    schedule_event_retract_api,
+    schedule_bulk_registration_api,
+    schedule_bulk_retract_api,
+    schedule_bulk_move_api
 )
 
 urlpatterns = [
@@ -42,5 +48,26 @@ urlpatterns = [
     path("schedule/day/", schedule_day_api, name="schedule_day_api"),
     path("schedule/member-week/", schedule_member_week_api, name="schedule_member_week_api"),
     path("schedule/events/move/", schedule_event_move_api, name="schedule_event_move_api"),
+    path(
+        "schedule/events/bulk-registration/",
+        schedule_bulk_registration_api,
+        name="schedule_bulk_registration_api",
+    ),
     path("schedule/test-cards/week/", schedule_test_cards_week_api, name="schedule_test_cards_week_api"),
+    path('schedule/events/retract/', schedule_event_retract_api, name='schedule_event_retract_api'),
+    path(
+        "schedule/events/bulk-retract/",
+        schedule_bulk_retract_api,
+        name="schedule_bulk_retract_api",
+    ),
+    path(
+        "schedule/test-cards/team-options/",
+        schedule_test_card_team_options_api,
+        name="schedule_test_card_team_options_api",
+    ),
+    path(
+        'schedule/events/bulk-move/',
+        schedule_bulk_move_api,
+        name='schedule_bulk_move_api',
+    ),
 ]

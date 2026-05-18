@@ -79,13 +79,25 @@ function renderTestCardHTML(item) {
   return `
     <article
       class="detail-card click-card"
-      data-plan-id="${UIManger.escapeHtml(item?.planId)}"
+      data-role="schedule-test-card"
+      data-drag-source="test-card"
+      data-plan-id="${UIManger.escapeHtml(item?.planId ?? '')}"
+      data-plan-date="${UIManger.escapeHtml(item?.planDate ?? '')}"
+      data-day-key="${UIManger.escapeHtml(item?.planDate ?? '')}"
+      data-work-name="${UIManger.escapeHtml(item?.workName ?? '')}"
+      data-inspection-no="${UIManger.escapeHtml(item?.inspectionNo ?? '')}"
+      data-man-hours="${UIManger.escapeHtml(item?.manHours ?? '')}"
+      data-duration-minutes="${UIManger.escapeHtml(item?.manHours ?? '')}"
+      data-assigned-affiliation-id="${UIManger.escapeHtml(item?.assignedAffiliationId ?? '')}"
+      data-member-id=""
+      data-start-time=""
+      data-end-time=""
     >
       <button
         type="button"
         class="click-card__button"
         data-ui-action="schedule:select-test-card"
-        data-plan-id="${UIManger.escapeHtml(item?.planId)}"
+        data-plan-id="${UIManger.escapeHtml(item?.planId ?? '')}"
       >
         <header class="detail-card__header">
           <div class="detail-card__title">

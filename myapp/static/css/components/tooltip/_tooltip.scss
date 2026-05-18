@@ -1,0 +1,101 @@
+/* ==============================
+   Component / Tooltip
+   ============================== */
+
+.ui-tooltip {
+    position: relative;
+}
+  
+.ui-tooltip::after {
+  content: attr(data-tooltip);
+
+  position: absolute;
+  z-index: 1200;
+
+  max-width: 220px;
+  padding: 6px 9px;
+  border-radius: 8px;
+
+  background: rgba(15, 23, 42, 0.92);
+  color: #ffffff;
+
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transform: translateY(2px);
+  transition:
+    opacity 0.16s ease,
+    visibility 0.16s ease,
+    transform 0.16s ease;
+}
+
+.ui-tooltip:hover::after,
+.ui-tooltip:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.ui-tooltip[data-tooltip='']::after,
+.ui-tooltip:not([data-tooltip])::after {
+  display: none;
+}
+
+/* 下表示 */
+.ui-tooltip--bottom::after {
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translate(-50%, 2px);
+}
+
+.ui-tooltip--bottom:hover::after,
+.ui-tooltip--bottom:focus-visible::after {
+  transform: translate(-50%, 0);
+}
+
+/* 上表示 */
+.ui-tooltip--top::after {
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translate(-50%, -2px);
+}
+
+.ui-tooltip--top:hover::after,
+.ui-tooltip--top:focus-visible::after {
+  transform: translate(-50%, 0);
+}
+
+/* 右寄せ表示：右端のボタン用 */
+.ui-tooltip--bottomRight::after {
+  top: calc(100% + 8px);
+  right: 0;
+  transform: translateY(2px);
+}
+
+.ui-tooltip--bottomRight:hover::after,
+.ui-tooltip--bottomRight:focus-visible::after {
+  transform: translateY(0);
+}
+
+/* 右表示：サイドバー縦ボタン用 */
+.ui-tooltip--right::after {
+  top: 50%;
+  left: calc(100% + 10px);
+  right: auto;
+  bottom: auto;
+
+  transform: translate(4px, -50%);
+}
+
+.ui-tooltip--right:hover::after,
+.ui-tooltip--right:focus-visible::after {
+  transform: translate(0, -50%);
+}

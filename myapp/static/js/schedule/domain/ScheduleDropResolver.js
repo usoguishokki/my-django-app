@@ -1,8 +1,7 @@
+import { ScheduleDayBoundary } from './ScheduleDayBoundary.js';
+
 export class ScheduleDropResolver {
     static SNAP_MINUTES = 1;
-    static SCHEDULE_START_HOUR = 6;
-    static SCHEDULE_START_MINUTE = 30;
-    static MINUTES_PER_DAY = 24 * 60;
   
     static resolve({
       dropClientX,
@@ -113,27 +112,11 @@ export class ScheduleDropResolver {
     
       const rawMinutes = relativeY / minuteHeight;
       const snappedMinutes = this.snapMinutes(rawMinutes);
-  
-      const startOffsetMinutes =
-        this.SCHEDULE_START_HOUR * 60 + this.SCHEDULE_START_MINUTE;
-  
-      const totalMinutesFromMidnight = startOffsetMinutes + snappedMinutes;
-  
-      const dayOffset = Math.floor(
-        totalMinutesFromMidnight / this.MINUTES_PER_DAY
+
+      return ScheduleDayBoundary.toLocalDateTimeString(
+        selectedDate,
+        snappedMinutes
       );
-  
-      const minutesOfDay =
-        ((totalMinutesFromMidnight % this.MINUTES_PER_DAY) + this.MINUTES_PER_DAY) %
-        this.MINUTES_PER_DAY;
-  
-      const targetDate = new Date(`${selectedDate}T00:00:00`);
-      targetDate.setDate(targetDate.getDate() + dayOffset);
-  
-      const hours = Math.floor(minutesOfDay / 60);
-      const minutes = minutesOfDay % 60;
-  
-      return this.toLocalDateTimeString(targetDate, hours, minutes);
     }
   
     static snapMinutes(minutes) {

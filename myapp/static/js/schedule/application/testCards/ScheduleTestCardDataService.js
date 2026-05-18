@@ -1,3 +1,4 @@
+
 export class ScheduleTestCardDataService {
   constructor({
     state,
@@ -13,10 +14,33 @@ export class ScheduleTestCardDataService {
     this.getSelectedDateAlias = getSelectedDateAlias;
     this.getSelectedShiftPatternId = getSelectedShiftPatternId;
     this.initialDateAliasOptions = initialDateAliasOptions;
+  
+    this.items = [];
+    this.dateAliasOptions = initialDateAliasOptions;
+    this.activeDateAlias = 'all';
   }
 
   getItems() {
     return this.items;
+  }
+
+  removeItemByPlanId(planId) {
+    const targetPlanId = String(planId ?? '');
+  
+    if (!targetPlanId) {
+      return false;
+    }
+  
+    const currentItems = Array.isArray(this.items) ? this.items : [];
+    const nextItems = currentItems.filter(
+      (item) => String(item?.planId ?? '') !== targetPlanId
+    );
+  
+    const removed = nextItems.length !== currentItems.length;
+  
+    this.items = nextItems;
+  
+    return removed;
   }
 
   getDateAliasOptions() {
@@ -67,5 +91,28 @@ export class ScheduleTestCardDataService {
   
       return this.items;
     }
+  }
+
+  async loadTeamOptions() {
+    try {
+      const response = await this.dataService.fetchTestCardTeamOptions({
+        date: this.getSelectedDate?.(),
+        dateAlias: this.getSelectedDateAlias?.() ?? '',
+      });
+  
+      const teamOptions =
+        response?.data?.teamOptions
+        ?? response?.data?.items
+        ?? [];
+  
+      return Array.isArray(teamOptions) ? teamOptions : [];
+    } catch (error) {
+      console.error('[ScheduleTestCardDataService.loadTeamOptions]', error);
+      return [];
+    }
+  }
+  
+  clearItems() {
+    this.items = [];
   }
 }

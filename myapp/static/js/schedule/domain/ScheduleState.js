@@ -11,6 +11,7 @@ export class ScheduleState {
     this.selectedTeam = initialTeam;
     this.selectedAffiliationId = initialAffiliationId ?? '';
 
+    this.currentTeamDayDate = this.selectedDate;
     this.visibleHours = 2;
     this.teamSchedules = [];
   
@@ -47,6 +48,9 @@ export class ScheduleState {
     this.selectedTestCardAffiliationId = '';
 
     this.testCardTeamOptions = [];
+
+    this.bulkRegistrationMemberId = '';
+    this.bulkRegistrationMemberName = '';
   }
 
   setBaseDate(date) {
@@ -91,6 +95,14 @@ export class ScheduleState {
 
   getSelectedDate() {
     return this.selectedDate;
+  }
+
+  setCurrentTeamDayDate(date) {
+    this.currentTeamDayDate = String(date ?? '') || this.selectedDate;
+  }
+  
+  getCurrentTeamDayDate() {
+    return this.currentTeamDayDate || this.selectedDate;
   }
 
   setSelectedTeam(team) {
@@ -461,5 +473,18 @@ export class ScheduleState {
     );
   
     return String(selectedTeam?.shiftPatternId ?? '');
+  }
+
+  setBulkRegistrationMember({ memberId = '', memberName = '' } = {}) {
+    this.bulkRegistrationMemberId = String(memberId ?? '');
+    this.bulkRegistrationMemberName = String(memberName ?? '');
+  }
+  
+  getBulkRegistrationMemberId() {
+    return this.bulkRegistrationMemberId;
+  }
+  
+  getBulkRegistrationMemberName() {
+    return this.bulkRegistrationMemberName;
   }
 }

@@ -19,12 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const state = new ScheduleState();
   const initialData = ScheduleInitialDataService.read();
 
-  const teamOptions = initialData?.teamOptions ?? [];
-
-  if (Array.isArray(teamOptions)) {
-    state.setTestCardTeamOptions(teamOptions);
-  }
-
   const activeDateAlias = initialData?.activeDateAlias ?? '';
 
   if (activeDateAlias) {

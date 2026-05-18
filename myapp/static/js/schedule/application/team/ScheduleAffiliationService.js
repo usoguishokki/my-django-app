@@ -1,3 +1,5 @@
+import { ScheduleTeamResolver } from '../../domain/ScheduleTeamResolver.js';
+
 export class ScheduleAffiliationService {
     constructor({
       state,

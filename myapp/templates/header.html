@@ -13,25 +13,27 @@
         <img src="{% static 'img/Nika.png' %}" alt="icon" class="site-icon">
 
         <div class="dynamic-links" aria-hidden="true">
-            <a class="home loading-link" href="{% url 'home' %}">
+            <a class="menu-item home loading-link" href="{% url 'home' %}">
                 <img src="{% static 'img/home.png' %}" alt="ホームアイコン" class="icon">
-                ホーム
+                <span class="menu-label"> ホーム</span>
             </a>
-            <a class="post-card loading-link" href="{% url 'calendar' %}">
-                <img src="{% static 'img/calendar.png' %}" alt="配布アイコン" class="icon">
-                配る
+
+            <a class="menu-item time-table time-table-link" href="{% url 'timeTable' %}">
+                <img src="{% static 'img/timetable.svg' %}" alt="タイムテーブル" class="icon">
+                <span class="menu-label">タイムテーブル</span>
             </a>
-            <a class="check loading-link" href="{% url 'workContets' %}">
+
+            <a class="menu-item check loading-link" href="{% url 'workContets' %}">
                 <img src="{% static 'img/check.png' %}" alt="確認アイコン" class="icon">
-                確認
+                <span class="menu-label">確認</span>
             </a>
-            <a class="planned-maintenance loading-linke" href="{% url 'plannedMaintenance' %}">
+            <a class="menu-item planned-maintenance loading-linke" href="{% url 'plannedMaintenance' %}">
                 <img src="{% static 'img/plannedMaintenance.png' %}" alt="計画保全アイコン" class="icon">
-                計画
+                <span class="menu-label">計画</span>
             </a>
-            <a class="standards loading-link" href="{% url 'inspectionStadards' %}">
+            <a class="menu-item standards loading-link" href="{% url 'inspectionStadards' %}">
                 <img src="{% static 'img/standard.png' %}" alt="基準書アイコン" class="icon">
-                点検基準書
+                <span class="menu-label">点検基準書</span>
             </a>
 
             <!--
@@ -41,15 +43,18 @@
             </a>
             -->
 
-            <a class="output-csv loading-linke" href="{% url 'csvDownloadPage' %}">
+            <a class="menu-item output-csv loading-linke" href="{% url 'csvDownloadPage' %}">
                 <img src="{% static 'img/outputCsv.png' %}" alt="CSVダウンロードアイコン" class="icon">
-                CSV_DL
+                <span class="menu-label">CSV_DL</span>
+            </a>
+            <a class="menu-item post-card loading-link" href="{% url 'calendar' %}">
+                <img src="{% static 'img/calendar.png' %}" alt="配布アイコン" class="icon">
+                <span class="menu-label">配る</span>
             </a>
 
-
-            <a class="logout" href="{% url 'logout' %}">
+            <a class="menu-item logout" href="{% url 'logout' %}">
                 <img src="{% static 'img/logout.png' %}" alt="ログアウトアイコン" class="icon">
-                logout
+                <span class="menu-label">logout</span>
             </a>
         </div>
     </h1>

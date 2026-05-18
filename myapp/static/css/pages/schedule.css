@@ -635,6 +635,168 @@ button, select {
 .ui-btn--round {
   border-radius: 999px; }
 
+/* ==============================
+   Component / Tooltip
+   ============================== */
+.ui-tooltip {
+  position: relative; }
+
+.ui-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  z-index: 1200;
+  max-width: 220px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(2px);
+  transition: opacity 0.16s ease, visibility 0.16s ease, transform 0.16s ease; }
+
+.ui-tooltip:hover::after,
+.ui-tooltip:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0); }
+
+.ui-tooltip[data-tooltip='']::after,
+.ui-tooltip:not([data-tooltip])::after {
+  display: none; }
+
+/* 下表示 */
+.ui-tooltip--bottom::after {
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translate(-50%, 2px); }
+
+.ui-tooltip--bottom:hover::after,
+.ui-tooltip--bottom:focus-visible::after {
+  transform: translate(-50%, 0); }
+
+/* 上表示 */
+.ui-tooltip--top::after {
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translate(-50%, -2px); }
+
+.ui-tooltip--top:hover::after,
+.ui-tooltip--top:focus-visible::after {
+  transform: translate(-50%, 0); }
+
+/* 右寄せ表示：右端のボタン用 */
+.ui-tooltip--bottomRight::after {
+  top: calc(100% + 8px);
+  right: 0;
+  transform: translateY(2px); }
+
+.ui-tooltip--bottomRight:hover::after,
+.ui-tooltip--bottomRight:focus-visible::after {
+  transform: translateY(0); }
+
+/* 右表示：サイドバー縦ボタン用 */
+.ui-tooltip--right::after {
+  top: 50%;
+  left: calc(100% + 10px);
+  right: auto;
+  bottom: auto;
+  transform: translate(4px, -50%); }
+
+.ui-tooltip--right:hover::after,
+.ui-tooltip--right:focus-visible::after {
+  transform: translate(0, -50%); }
+
+/* foundation/_toggle.scss */
+/* カラートークン */
+/* ネイビー */
+/* 本体（囲み無し） */
+.toggle,
+.drawer-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 6px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  font-size: 0;
+  line-height: 0;
+  transition: transform 120ms ease; }
+
+.toggle:active:not(:disabled),
+.drawer-toggle:active:not(:disabled) {
+  transform: translateY(1px); }
+
+/* track */
+.toggle::before,
+.drawer-toggle::before {
+  content: "";
+  width: 40px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.16);
+  transition: background-color 160ms ease, box-shadow 160ms ease; }
+
+/* knob */
+.toggle::after,
+.drawer-toggle::after {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(2, 6, 23, 0.18), 0 0 0 1px rgba(2, 6, 23, 0.06);
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  translate: 0 -50%;
+  transform: translateX(0);
+  transition: transform 160ms cubic-bezier(0.2, 0.9, 0.2, 1); }
+
+/* hover */
+.toggle:hover:not(:disabled)::before,
+.drawer-toggle:hover:not(:disabled)::before {
+  background: rgba(100, 116, 139, 0.4); }
+
+/* ON */
+.toggle[aria-pressed="true"]::before,
+.toggle[data-checked="1"]::before,
+.drawer-toggle[aria-pressed="true"]::before,
+.drawer-toggle[data-checked="1"]::before {
+  background: #3c8ce1;
+  box-shadow: inset 0 0 0 1px #3c8ce1; }
+
+.toggle[aria-pressed="true"]::after,
+.toggle[data-checked="1"]::after,
+.drawer-toggle[aria-pressed="true"]::after,
+.drawer-toggle[data-checked="1"]::after {
+  transform: translateX(16px); }
+
+/* focus */
+.toggle:focus-visible::before,
+.drawer-toggle:focus-visible::before {
+  box-shadow: inset 0 0 0 1px #3c8ce1, 0 0 0 3px rgba(32, 148, 231, 0.956); }
+
+/* disabled */
+.toggle:disabled,
+.toggle[aria-disabled="true"],
+.drawer-toggle:disabled,
+.drawer-toggle[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed; }
+
 /* ==========================================================================
   Typography Tokens (Readable-first)
   --------------------------------------------------------------------------
@@ -900,6 +1062,19 @@ button, select {
     letter-spacing: 0.02em;
     padding: 10px 12px;
     color: #64748b; }
+  .custom-dropdown__triggerIconImage {
+    display: block;
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    pointer-events: none;
+    opacity: 0.75;
+    transform: rotate(-90deg);
+    transition: transform 0.16s ease, opacity 0.16s ease; }
+  .custom-dropdown[data-state='open'] .custom-dropdown__triggerIconImage {
+    opacity: 1;
+    transform: rotate(90deg); }
 
 @media (max-width: 480px) {
   .custom-dropdown__trigger {
@@ -1774,11 +1949,11 @@ button, select {
   margin: 0; }
 
 .ui-fieldGroup.ui-fieldGroup--datetime .ui-input--date {
-  width: 150px;
+  width: 140px;
   max-width: 100%; }
 
 .ui-fieldGroup.ui-fieldGroup--datetime .ui-input--time {
-  width: 110px;
+  width: 80px;
   max-width: 100%; }
 
 .drawerTableTop__sep {
@@ -1909,15 +2084,224 @@ button, select {
   overflow-wrap: anywhere; }
 
 .detail-card.click-card {
-  max-height: 210px; }
+  max-height: 210px;
+  overflow: hidden; }
 
-.click-card__button {
-  height: 100%; }
+.detail-card.click-card .click-card__button {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 210px;
+  overflow: hidden; }
 
-.detail-card__body {
+.detail-card.click-card .detail-card__header {
+  flex: 0 0 auto; }
+
+.detail-card.click-card .detail-card__body {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto; }
+  max-height: 140px;
+  overflow-y: hidden;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable; }
+
+/* カードにマウスを乗せた時だけスクロール可能にする */
+.detail-card.click-card:hover .detail-card__body {
+  overflow-y: auto; }
+
+/* ==========================================================================
+  Typography Tokens (Readable-first)
+  --------------------------------------------------------------------------
+  @doc
+  - 目的: 文字サイズ/行間/太さを“用途”で標準化し、画面間のブレを無くす
+  - 方針: 「読みやすさ優先」(業務UIでの可読性を最優先)
+  - 使い方:
+      1) 基本はトークン（$fs-*, $lh-*, $fw-*）を参照して指定
+      2) 可能なら mixin（type-td/type-th/type-ui...）経由で当てる
+  - 禁止:
+      - 個別SCSSで font-size をベタ書き乱発しない（例外: 微調整が必要な特殊UIのみ）
+  @example
+    .table td { font-size: $fs-td; line-height: $lh-relaxed; font-weight: $fw-regular; }
+========================================================================== */
+/* --------------------------------------------------------------------------
+  Font Size Scale
+  --------------------------------------------------------------------------
+  @doctag typography.font-size
+  @rule
+    - base(1rem) を基準に、用途ごとの“意味”でトークンを選ぶ
+    - 迷ったら: UI = $fs-ui / 表本文 = $fs-td / 見出し = $fs-th
+--------------------------------------------------------------------------- */
+/** @doctag typography.token
+ *  @name $fs-base
+ *  @type font-size
+ *  @use 画面全体の基準サイズ。body / root container の基準に使う。
+ *  @when 「この画面の標準文字」を決めたいとき
+ *  @example body { font-size: $fs-base; }
+ */
+/** @doctag typography.token
+  *  @name $fs-label
+  *  @type font-size
+  *  @use ラベル/補助見出し用（filterラベル、フォーム項目名、セクション注釈）
+  *  @when “主情報より弱く”見せたいとき（ただし読めるサイズ）
+  *  @example .select-label { font-size: $fs-label; }
+  */
+/** @doctag typography.token
+  *  @name $fs-th
+  *  @type font-size
+  *  @use テーブルヘッダ/カード見出し用（th、card-title）
+  *  @when 情報の「列の意味」や「見出し」を強調したいとき
+  *  @example thead th { font-size: $fs-th; }
+  */
+/** @doctag typography.token
+  *  @name $fs-td
+  *  @type font-size
+  *  @use テーブル本文（最重要の“読む”領域）
+  *  @when 一覧を目で追う、長時間読む、現場で使うUI（可読性優先）
+  *  @example tbody td { font-size: $fs-td; }
+  */
+/** @doctag typography.token
+  *  @name $fs-ui
+  *  @type font-size
+  *  @use UI操作系（ボタン、input、select、カレンダー操作ボタン、補助UI）
+  *  @when クリック/タップ対象で“読めること”が重要なとき
+  *  @example .button { font-size: $fs-ui; }
+  */
+/** @doctag typography.token
+  *  @name $fs-title
+  *  @type font-size
+  *  @use タイトル（モーダルのh3、セクション主見出し）
+  *  @when 画面/モーダル内の「主題」を示したいとき
+  *  @example .modal h3 { font-size: $fs-title; }
+  */
+/** @doctag typography.token
+  *  @name $fs-kpi
+  *  @type font-size
+  *  @use KPI/数値カードの強調表示（card-content、合計値など）
+  *  @when “パッと見で数字を把握”させたいとき（ただし暴れない範囲）
+  *  @example .kpi { font-size: $fs-kpi; }
+  */
+/* --------------------------------------------------------------------------
+   Line Height
+   --------------------------------------------------------------------------
+   @doctag typography.line-height
+   @rule
+     - 読みやすさ優先: 本文は $lh-relaxed を基本にする
+     - UIラベル/ボタン等は詰めすぎない範囲で $lh-normal
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $lh-tight
+  *  @type line-height
+  *  @use 見出し・短いラベル向け（詰まり過ぎ防止に注意）
+  *  @when 1行で完結する見出し/ヘッダ
+  */
+/** @doctag typography.token
+  *  @name $lh-normal
+  *  @type line-height
+  *  @use UI一般（ボタン、input、短文）
+  *  @when UIが間延びしないバランスを取りたいとき
+  */
+/** @doctag typography.token
+  *  @name $lh-relaxed
+  *  @type line-height
+  *  @use 長時間読む領域（テーブル本文、説明文、一覧）
+  *  @when “目が疲れない”を優先したいとき（業務画面は基本これ）
+  */
+/* --------------------------------------------------------------------------
+   Font Weight
+   --------------------------------------------------------------------------
+   @doctag typography.font-weight
+   @rule
+     - 本文は $fw-regular（軽め）で読み疲れを減らす
+     - 見出し/重要値は $fw-strong（ただし太すぎ注意）
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $fw-regular
+  *  @type font-weight
+  *  @use 本文の基本（テーブルtd、説明文）
+  *  @when “読む量が多い”ところは基本これ
+  */
+/** @doctag typography.token
+  *  @name $fw-strong
+  *  @type font-weight
+  *  @use 見出し/強調（th、タイトル、KPI）
+  *  @when 情報の階層を明確にしたいとき
+  */
+/* @doctag typography.usage-map
+  - Label        : $fs-label / $fw-strong / $lh-tight
+  - Table head   : $fs-th    / $fw-strong / $lh-tight
+  - Table body   : $fs-td    / $fw-regular / $lh-relaxed
+  - UI controls  : $fs-ui    / $fw-strong or $fw-regular / $lh-normal
+  - Modal title  : $fs-title / $fw-strong / $lh-tight
+  - KPI number   : $fs-kpi   / $fw-strong / $lh-tight
+*/
+/* =========================
+   Mixins（事故防止用）
+   ========================= */
+/* 説明文・補足テキスト（uppercase無し） */
+/* ==========================================================================
+  UI Input System
+  - 画面横断で使い回す汎用 input（text/date/time/datetime-local）
+  - class="ui-input" を付ければ統一される
+========================================================================== */
+/* tokens */
+/* base */
+.ui-input {
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  background: #ffffff;
+  color: rgba(11, 18, 32, 0.92);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.55;
+  font-weight: 400;
+  outline: none;
+  transition: border-color .14s ease, box-shadow .14s ease, background-color .14s ease, transform .06s ease, opacity .14s ease;
+  /* iOS/Chromium の date/time の見た目ブレ対策 */
+  -webkit-appearance: none;
+  appearance: none; }
+  .ui-input:hover {
+    border-color: rgba(20, 131, 205, 0.55); }
+  .ui-input:focus, .ui-input:focus-visible {
+    border-color: #1483cd;
+    box-shadow: 0 0 0 3px rgba(20, 131, 205, 0.25); }
+  .ui-input:disabled, .ui-input.is-disabled {
+    background: rgba(15, 23, 42, 0.03);
+    color: rgba(11, 18, 32, 0.45);
+    border-color: rgba(15, 23, 42, 0.1);
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.95; }
+
+/* size */
+.ui-input--sm {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.55;
+  font-weight: 400; }
+
+.ui-input--md {
+  height: 36px;
+  padding: 0 12px; }
+
+/* type-specific minor adjustments */
+.ui-input--date,
+.ui-input--time,
+.ui-input--datetime-local {
+  /* 数字が揃って見えて気持ちいい */
+  font-variant-numeric: tabular-nums; }
+
+/* optional: focus時に少しだけ“触ってる感” */
+.ui-input:active {
+  transform: translateY(1px); }
 
 /* ==============================
    Tokens
@@ -1963,6 +2347,26 @@ button, select {
 .schedule-page__contentLayout[data-drawer-open='false'] {
   --schedule-drawer-width: 0px; }
 
+.schedule-page__contentLayout[data-drawer-variant='bulk-registration'] {
+  --schedule-drawer-max-width: 760px; }
+
+.schedule-page__contentLayout[data-drawer-variant='bulk-pullback'] {
+  --schedule-drawer-max-width: 760px; }
+
+.schedule-page__contentLayout[data-drawer-variant='bulk-pullback'] .schedule-page__bulkRegistrationButton,
+.schedule-page__contentLayout[data-drawer-variant='bulk-pullback'] .schedule-page__drawerFilterButton {
+  display: none; }
+
+.schedule-page__bulkRegistrationPanel[data-mode='bulk-pullback'] {
+  grid-template-rows: minmax(0, 1fr) auto; }
+
+.schedule-page__bulkRegistrationPanelActions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 56px;
+  padding-top: 12px; }
+
 .schedule-page__main, .schedule-page__drawer, .schedule-page__filterPane {
   min-height: 0; }
 
@@ -1979,7 +2383,8 @@ button, select {
    ============================== */
 .schedule-page__sidebarRail {
   position: relative;
-  z-index: 20;
+  z-index: 80;
+  overflow: visible;
   border-right: 1px solid #e2e8f0;
   background: #ffffff; }
 
@@ -2034,6 +2439,43 @@ button, select {
     color: #1d4ed8;
     box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08); }
 
+.schedule-page__sidebarIcon {
+  display: block;
+  width: 32px;
+  height: 32px;
+  background-color: currentColor;
+  pointer-events: none; }
+
+.schedule-page__sidebarIcon--option {
+  -webkit-mask-image: url("/static/img/option.svg");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-image: url("/static/img/option.svg");
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain; }
+
+.schedule-page__sidebarIcon--distribute {
+  -webkit-mask-image: url("/static/img/distribute.svg");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-image: url("/static/img/distribute.svg");
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain; }
+
+.schedule-page__sidebarIcon--edit {
+  -webkit-mask-image: url("/static/img/edit.svg");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-image: url("/static/img/edit.svg");
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain; }
+
 .schedule-page__filterPane {
   display: flex;
   flex-direction: column;
@@ -2055,6 +2497,8 @@ button, select {
   transition: opacity 0.2s ease, transform 0.2s ease; }
 
 .schedule-page__filterPaneHeader {
+  position: relative;
+  z-index: 20;
   display: flex;
   align-items: center;
   height: 42px;
@@ -2062,10 +2506,9 @@ button, select {
   max-height: 42px;
   box-sizing: border-box;
   padding: 0 12px;
-  overflow: hidden;
+  overflow: visible;
   border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-  background: #f8fafc;
-  z-index: 1; }
+  background: #f8fafc; }
 
 .schedule-page__filterPaneTitle {
   font-size: 0.96rem;
@@ -2113,6 +2556,8 @@ button, select {
   display: none; }
 
 .schedule-page__drawerPanelHeader {
+  position: relative;
+  z-index: 20;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -2121,12 +2566,14 @@ button, select {
   max-height: 42px;
   box-sizing: border-box;
   padding: 0 12px;
-  overflow: hidden;
+  overflow: visible;
   border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-  background: #f8fafc;
-  z-index: 1; }
+  background: #f8fafc; }
 
 .schedule-page__drawerPanelTitle {
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.55;
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
@@ -2155,24 +2602,87 @@ button, select {
   text-overflow: ellipsis;
   white-space: nowrap; }
 
+.schedule-page__bulkRegistrationButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  padding: 0;
+  border-radius: 999px;
+  border-color: rgba(15, 23, 42, 0.12);
+  background: #ffffff;
+  color: #334155;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; }
+
+.schedule-page__bulkRegistrationButton:hover {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.2);
+  transform: translateY(-1px); }
+
+.schedule-page__bulkRegistrationButton:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.24);
+  outline-offset: 2px; }
+
+.schedule-page__bulkRegistrationButtonIcon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  background-color: currentColor;
+  -webkit-mask-image: url("/static/img/一括登録.svg");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-image: url("/static/img/一括登録.svg");
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain; }
+
+.schedule-page__bulkRegistrationButton[data-icon-only='1'] {
+  display: inline-grid;
+  place-items: center; }
+
+.schedule-page__bulkRegistrationButton[data-icon-only='0'] {
+  width: auto;
+  min-width: auto;
+  padding: 0 10px; }
+
+.schedule-page__srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%); }
+
 .schedule-page__drawerFilterButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  min-height: 32px;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
   padding: 0;
   border-radius: 999px;
   border-color: rgba(15, 23, 42, 0.12);
-  background: #1e293b;
+  background: #ffffff;
+  color: #334155;
   white-space: nowrap;
   transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; }
 
 .schedule-page__drawerFilterButton:hover {
-  background: #0f172a;
+  background: #f8fafc;
   border-color: rgba(15, 23, 42, 0.2);
   transform: translateY(-1px); }
 
@@ -2183,13 +2693,24 @@ button, select {
 .schedule-page__drawerFilterButton[aria-pressed='true'] {
   background: #2563eb;
   border-color: rgba(37, 99, 235, 0.32);
+  color: #ffffff;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18), 0 8px 18px rgba(37, 99, 235, 0.18); }
 
 .schedule-page__drawerFilterIcon {
-  width: 22px;
-  height: 22px;
   display: block;
-  pointer-events: none; }
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  background-color: currentColor;
+  pointer-events: none;
+  -webkit-mask-image: url("/static/img/filter.svg");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-image: url("/static/img/filter.svg");
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain; }
 
 .schedule-page__drawerPanelBody {
   min-height: 0;
@@ -2216,9 +2737,104 @@ button, select {
   box-shadow: none; }
 
 /* ==============================
+   Bulk registration drawer top
+   ============================== */
+/* ==============================
+   Bulk registration drawer top
+   ============================== */
+.schedule-page__bulkRegistrationPanel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  row-gap: 12px;
+  min-width: 0;
+  min-height: 0; }
+
+.schedule-page__bulkRegistrationPanelTop {
+  min-width: 0; }
+  .schedule-page__bulkRegistrationPanelTop .registration-drawer-top {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 14px;
+    flex-wrap: nowrap;
+    width: 100%;
+    min-width: 0;
+    padding: 0; }
+  .schedule-page__bulkRegistrationPanelTop .registration-drawer-top__memberField {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: max-content; }
+  .schedule-page__bulkRegistrationPanelTop .registration-drawer-top__memberDropdown {
+    flex: 0 0 auto;
+    width: 140px;
+    min-width: 0; }
+  .schedule-page__bulkRegistrationPanelTop .registration-drawer-top__memberDropdown .custom-dropdown__trigger {
+    width: 100%;
+    min-height: 32px; }
+  .schedule-page__bulkRegistrationPanelTop .drawerTableTop {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    flex-wrap: nowrap;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0;
+    overflow: hidden; }
+  .schedule-page__bulkRegistrationPanelTop .drawerTableTop__range {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden; }
+  .schedule-page__bulkRegistrationPanelTop .drawerTableTop__group {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    flex: 0 0 auto;
+    min-width: max-content; }
+  .schedule-page__bulkRegistrationPanelTop .drawerTableTop__sep {
+    flex: 0 0 auto;
+    white-space: nowrap; }
+
+.schedule-page__bulkRegistrationPanelTable {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: visible; }
+
+.drawer__table--no-rowclick tbody tr.is-register-off {
+  background: rgba(148, 163, 184, 0.08);
+  box-shadow: inset 3px 0 0 rgba(148, 163, 184, 0.45); }
+
+.drawer__table--no-rowclick tbody tr.is-register-off > td {
+  color: rgba(71, 85, 105, 0.58); }
+
+.drawer__table--no-rowclick tbody tr.is-register-off > td:not(:first-child) {
+  opacity: 0.62; }
+
+.drawer__table--no-rowclick tbody tr.is-register-off .toggle {
+  opacity: 1; }
+
+.registration-drawer-top__label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.55;
+  white-space: nowrap;
+  color: rgba(71, 85, 105, 0.95); }
+
+/* ==============================
    schedule-page / main
    ============================== */
 .schedule-page__main {
+  container-name: schedule-main;
+  container-type: inline-size;
   min-width: 0;
   min-height: 0;
   padding: 16px 20px 20px;
@@ -2272,11 +2888,21 @@ button, select {
   white-space: nowrap; }
 
 .schedule-page__titleLine {
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
-  gap: 2px;
-  min-width: 0;
+  gap: 6px;
+  min-width: 0; }
+
+.schedule-page__titleWeekday {
+  flex: 0 0 auto;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(71, 85, 105, 0.95);
   white-space: nowrap; }
+
+.schedule-page__titleWeekday[hidden] {
+  display: none; }
 
 .schedule-page__title {
   font-size: 1.1rem;
@@ -2384,12 +3010,22 @@ button, select {
   line-height: 1; }
 
 .schedule-page__memberDropdown {
-  width: 150px;
+  width: 130px;
   min-width: 0;
-  margin-left: 32px; }
+  margin-left: 12px; }
 
 .schedule-page__memberDropdown[hidden] {
   display: none; }
+
+.schedule-page .schedule-page__memberDropdown[data-state='closed'] .custom-dropdown__triggerIconImage,
+.schedule-page .schedule-page__teamDropdown[data-state='closed'] .custom-dropdown__triggerIconImage,
+.schedule-page .registration-drawer-top__memberDropdown[data-state='closed'] .custom-dropdown__triggerIconImage {
+  transform: rotate(90deg); }
+
+.schedule-page .schedule-page__memberDropdown[data-state='open'] .custom-dropdown__triggerIconImage,
+.schedule-page .schedule-page__teamDropdown[data-state='open'] .custom-dropdown__triggerIconImage,
+.schedule-page .registration-drawer-top__memberDropdown[data-state='open'] .custom-dropdown__triggerIconImage {
+  transform: rotate(-90deg); }
 
 .schedule-page__memberWeekLabel {
   grid-column: 1;
@@ -2427,6 +3063,22 @@ button, select {
 
 .schedule-page__memberWeekSelect[hidden] {
   display: none; }
+
+.schedule-page__teamDropdown {
+  display: none;
+  width: 160px;
+  min-width: 0; }
+
+.schedule-page__teamDropdown[hidden] {
+  display: none !important; }
+
+.schedule-page__teamDropdown .custom-dropdown__trigger {
+  width: 100%;
+  min-height: 40px; }
+
+.schedule-page__teamDropdown .custom-dropdown__panel {
+  margin-top: 8px;
+  z-index: 20; }
 
 /* ==============================
    schedule-page / aside common
@@ -2728,9 +3380,30 @@ button, select {
   .schedule-page__editMemberDropdown .custom-dropdown__option.is-selected, .schedule-page__editMemberDropdown .custom-dropdown__option[aria-selected='true'] {
     background: #eff6ff;
     color: #1d4ed8; }
-  .schedule-page__editSubmit {
+  .schedule-page__editFooterActions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    width: 100%; }
+  .schedule-page__editRetract, .schedule-page__editSubmit {
     flex-shrink: 0;
     min-width: 120px; }
+  .schedule-page__editRetract {
+    border-color: rgba(220, 38, 38, 0.45);
+    background: #fff;
+    color: #b91c1c; }
+  .schedule-page__editRetract:hover:not(:disabled) {
+    border-color: rgba(220, 38, 38, 0.75);
+    background: #fef2f2;
+    color: #991b1b; }
+  .schedule-page__editRetract:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18); }
+  .schedule-page__editRetract:disabled {
+    border-color: rgba(148, 163, 184, 0.35);
+    background: #f8fafc;
+    color: #94a3b8; }
 
 .schedule-page__testCardFilterField {
   display: grid;
@@ -2888,25 +3561,59 @@ button, select {
    Time schedule
    ============================== */
 .time-schedule {
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   max-height: 75vh;
   border: 1px solid #d9e0ea;
   border-radius: 16px;
   background: #ffffff;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  overscroll-behavior: contain;
+  --time-schedule-axis-width: 72px;
+  --time-schedule-min-width: 720px;
+  --time-schedule-end-cap: 28px;
+  --time-schedule-timeline-render-height: calc(
+    var(--time-schedule-height) + var(--time-schedule-end-cap)
+  );
+  --time-schedule-layout-height: calc(
+    44px +
+    54px +
+    var(--time-schedule-timeline-render-height)
+  );
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
   /* ==============================
      memberWeek schedule
      ============================== */ }
+  .time-schedule::-webkit-scrollbar {
+    width: 8px;
+    height: 8px; }
+  .time-schedule::-webkit-scrollbar-track {
+    background: transparent; }
+  .time-schedule::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background-color: transparent; }
+  .time-schedule::-webkit-scrollbar-corner {
+    background: transparent; }
+  .time-schedule:hover {
+    scrollbar-color: rgba(100, 116, 139, 0.35) transparent; }
+  .time-schedule:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 116, 139, 0.42); }
+  .time-schedule:hover::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(71, 85, 105, 0.62); }
   .time-schedule__layout {
     display: grid;
-    grid-template-columns: 72px minmax(0, 1fr);
-    min-width: 720px;
-    height: var(--time-schedule-height);
+    grid-template-columns: var(--time-schedule-axis-width) minmax(0, 1fr);
+    min-width: var(--time-schedule-min-width);
+    --time-schedule-timeline-render-height: calc(
+      var(--time-schedule-height) + var(--time-schedule-end-cap)
+    );
+    height: calc( 44px + 54px + var(--time-schedule-timeline-render-height));
     position: relative;
     box-sizing: border-box; }
   .time-schedule__axis {
     display: grid;
-    grid-template-rows: 44px 54px minmax(0, 1fr);
+    grid-template-rows: 44px 54px var(--time-schedule-timeline-render-height);
     height: 100%;
     border-right: 1px solid #e7ebf1;
     background: #f8fafc;
@@ -2930,7 +3637,7 @@ button, select {
   .time-schedule__axisLabels {
     position: relative;
     min-height: 0;
-    overflow: hidden; }
+    overflow: visible; }
   .time-schedule__axisLabel {
     font-size: 0.78rem;
     font-weight: 700;
@@ -2945,9 +3652,13 @@ button, select {
     color: #6b7280;
     white-space: nowrap;
     pointer-events: none; }
+  .time-schedule__axisLabel:first-child {
+    transform: translateY(0); }
+  .time-schedule__axisLabel:last-child {
+    transform: translateY(-50%); }
   .time-schedule__membersArea {
     display: grid;
-    grid-template-rows: 44px 54px minmax(0, 1fr);
+    grid-template-rows: 44px 54px var(--time-schedule-timeline-render-height);
     min-width: 0;
     height: 100%; }
   .time-schedule__memberHeaderRow {
@@ -2958,6 +3669,95 @@ button, select {
     position: sticky;
     top: 0;
     z-index: 4; }
+  .time-schedule__memberHeaderCell {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    min-width: 0;
+    height: 100%;
+    border-right: 1px solid #e7ebf1;
+    background: #f8fafc; }
+    .time-schedule__memberHeaderCell:last-child {
+      border-right: 0; }
+  .time-schedule__memberHeaderCell .time-schedule__memberHeader {
+    width: 100%;
+    min-width: 0;
+    padding-right: 62px;
+    border-right: 0; }
+  .time-schedule__bulkPullbackButton {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    z-index: 3;
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease; }
+  .time-schedule__memberWeekButton {
+    position: absolute;
+    top: 50%;
+    right: 32px;
+    z-index: 3;
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease; }
+  .time-schedule__memberWeekButton:hover {
+    background: rgba(15, 23, 42, 0.08);
+    color: #334155;
+    transform: translateY(-50%) scale(1.04); }
+  .time-schedule__memberWeekButton:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.24);
+    outline-offset: 2px; }
+  .time-schedule__memberWeekButtonIcon {
+    display: block;
+    width: 18px;
+    height: 18px;
+    background-color: currentColor;
+    -webkit-mask-image: url("/static/img/週間予定.svg");
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+    mask-image: url("/static/img/週間予定.svg");
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain; }
+  .time-schedule__bulkPullbackButton:hover {
+    background: rgba(15, 23, 42, 0.08);
+    color: #334155;
+    transform: translateY(-50%) scale(1.04); }
+  .time-schedule__bulkPullbackButton:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.24);
+    outline-offset: 2px; }
+  .time-schedule__bulkPullbackButtonIcon {
+    display: block;
+    width: 18px;
+    height: 18px;
+    background-color: currentColor;
+    -webkit-mask-image: url("/static/img/bulk-pullback.svg");
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+    mask-image: url("/static/img/bulk-pullback.svg");
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain; }
   .time-schedule__currentRow {
     display: grid;
     grid-template-columns: repeat(var(--member-count), minmax(0, 1fr));
@@ -3025,15 +3825,13 @@ button, select {
     background: #f8fafc;
     appearance: none;
     -webkit-appearance: none;
-    cursor: pointer;
+    cursor: default;
     color: #1f2937;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: background-color 0.2s ease, box-shadow 0.2s ease; }
-    .time-schedule__memberHeader:hover {
-      background: #eef4fb; }
+    transition: box-shadow 0.2s ease; }
     .time-schedule__memberHeader:focus-visible {
       outline: none;
       position: relative;
@@ -3095,16 +3893,24 @@ button, select {
       border-right: 0; }
   .time-schedule__events {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--time-schedule-height);
+    overflow: hidden;
     z-index: 1; }
   .time-schedule__event {
     position: absolute;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
     padding: 6px 8px;
     border-left: 4px solid #2563eb;
     border-radius: 8px; }
     .time-schedule__event:hover {
+      overflow-y: auto;
       filter: brightness(0.98); }
   .time-schedule__event[data-status='日常点検'], .time-schedule__event[data-status='定期点検'] {
     background: #fef3c7;
@@ -3117,6 +3923,14 @@ button, select {
     border-left-color: #f59e0b; }
   .time-schedule__currentCell[data-status='日常点検'] .time-schedule__currentTime, .time-schedule__currentCell[data-status='定期点検'] .time-schedule__currentTime, .time-schedule__currentCell[data-status='日常点検'] .time-schedule__currentStatus, .time-schedule__currentCell[data-status='定期点検'] .time-schedule__currentStatus, .time-schedule__currentCell[data-status='日常点検'] .time-schedule__currentMain, .time-schedule__currentCell[data-status='定期点検'] .time-schedule__currentMain {
     color: #6b7280; }
+  .time-schedule__event[data-plan-status='承認待ち'], .time-schedule__event[data-plan-status='完了'] {
+    opacity: 0.52;
+    filter: grayscale(0.35) saturate(0.65);
+    box-shadow: none; }
+  .time-schedule__event[data-plan-status='承認待ち'] .time-schedule__eventTitle, .time-schedule__event[data-plan-status='完了'] .time-schedule__eventTitle {
+    color: #6b7280; }
+  .is-move-mode .time-schedule__event[data-plan-status='承認待ち'], .is-move-mode .time-schedule__event[data-plan-status='完了'] {
+    cursor: not-allowed; }
   .time-schedule__eventTitle {
     font-size: 0.66rem;
     font-weight: 700;
@@ -3125,7 +3939,11 @@ button, select {
     word-break: break-word; }
   .time-schedule__breakBands {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--time-schedule-height);
+    overflow: hidden;
     z-index: 0;
     pointer-events: none; }
   .time-schedule__breakBand {
@@ -3167,36 +3985,51 @@ button, select {
     text-align: center;
     z-index: 2;
     background: rgba(255, 255, 255, 0.85); }
-  .time-schedule--memberWeek .time-schedule__axis {
-    grid-template-rows: 44px minmax(0, 1fr); }
-  .time-schedule--memberWeek .time-schedule__membersArea {
-    grid-template-rows: 44px minmax(0, 1fr); }
-  .time-schedule--memberWeek .time-schedule__axisHeaderSpacer {
-    border-bottom: 1px solid #d9e0ea; }
-  .time-schedule--memberWeek .time-schedule__memberHeaderRow {
-    border-bottom: 1px solid #d9e0ea; }
-  .time-schedule--memberWeek .time-schedule__memberHeader--day {
-    flex-direction: column;
-    gap: 2px;
-    padding: 6px 8px;
-    cursor: default; }
-    .time-schedule--memberWeek .time-schedule__memberHeader--day:hover {
-      background: #f8fafc; }
-  .time-schedule--memberWeek .time-schedule__memberHeaderSub {
-    font-size: 0.78rem;
-    font-weight: 400;
-    line-height: 1.55;
-    letter-spacing: 0.02em;
-    color: #6b7280;
-    white-space: nowrap; }
-  .time-schedule--memberWeek .time-schedule__grid {
-    min-height: 0; }
-  .time-schedule--memberWeek .time-schedule__eventTitle {
-    font-size: 0.66rem;
-    font-weight: 700;
-    line-height: 1.1;
-    overflow: hidden;
-    word-break: break-word; }
+  .time-schedule--memberWeek {
+    --time-schedule-fixed-rows-height: 44px; }
+    .time-schedule--memberWeek .time-schedule__axis {
+      grid-template-rows: 44px var(--time-schedule-timeline-render-height); }
+    .time-schedule--memberWeek .time-schedule__membersArea {
+      grid-template-rows: 44px var(--time-schedule-timeline-render-height); }
+    .time-schedule--memberWeek .time-schedule__axisHeaderSpacer {
+      border-bottom: 1px solid #d9e0ea; }
+    .time-schedule--memberWeek .time-schedule__memberHeaderRow {
+      border-bottom: 1px solid #d9e0ea;
+      z-index: 30;
+      overflow: visible; }
+    .time-schedule--memberWeek .time-schedule__memberHeader--day {
+      position: relative;
+      flex-direction: column;
+      gap: 2px;
+      padding: 6px 34px 6px 8px;
+      cursor: default;
+      z-index: 1;
+      overflow: visible; }
+      .time-schedule--memberWeek .time-schedule__memberHeader--day:hover {
+        background: #f8fafc; }
+    .time-schedule--memberWeek .time-schedule__bulkPullbackButton--day {
+      right: 6px;
+      opacity: 0.72;
+      z-index: 20; }
+    .time-schedule--memberWeek .time-schedule__bulkPullbackButton--day:hover,
+    .time-schedule--memberWeek .time-schedule__bulkPullbackButton--day:focus-visible {
+      opacity: 1;
+      z-index: 40; }
+    .time-schedule--memberWeek .time-schedule__memberHeaderSub {
+      font-size: 0.78rem;
+      font-weight: 400;
+      line-height: 1.55;
+      letter-spacing: 0.02em;
+      color: #6b7280;
+      white-space: nowrap; }
+    .time-schedule--memberWeek .time-schedule__grid {
+      min-height: 0; }
+    .time-schedule--memberWeek .time-schedule__eventTitle {
+      font-size: 0.66rem;
+      font-weight: 700;
+      line-height: 1.1;
+      overflow: hidden;
+      word-break: break-word; }
   .time-schedule__dragTimeLabel {
     font-size: 0.78rem;
     font-weight: 700;
@@ -3220,24 +4053,180 @@ button, select {
     border-top: 2px dashed rgba(15, 118, 110, 0.9);
     pointer-events: none;
     z-index: 5; }
+  .time-schedule__dragDurationBlock {
+    position: absolute;
+    z-index: 6;
+    box-sizing: border-box;
+    pointer-events: none;
+    border: 2px dashed var(--schedule-drag-highlight-border, rgba(245, 158, 11, 0.95));
+    background: var(--schedule-drag-highlight-bg, rgba(254, 240, 138, 0.42));
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.75) inset; }
+  .time-schedule__rangeSelectionBlock {
+    position: absolute;
+    z-index: 7;
+    box-sizing: border-box;
+    pointer-events: none;
+    border: 2px solid rgba(37, 99, 235, 0.55);
+    border-radius: 8px;
+    background: rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.75) inset, 0 8px 20px rgba(37, 99, 235, 0.12); }
+  .time-schedule__rangeSelectionBlock.is-final {
+    pointer-events: auto;
+    cursor: grab;
+    border-color: rgba(37, 99, 235, 0.72);
+    background: rgba(37, 99, 235, 0.14); }
+  .time-schedule__rangeSelectionBlock.is-moving {
+    cursor: grabbing;
+    z-index: 12;
+    border-color: rgba(14, 116, 144, 0.82);
+    background: rgba(14, 116, 144, 0.16);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8) inset, 0 12px 26px rgba(14, 116, 144, 0.2); }
   .time-schedule .time-schedule__memberHeader {
     transition: background-color 0.18s ease; }
     .time-schedule .time-schedule__memberHeader.is-drag-target {
       background: rgba(37, 99, 235, 0.14); }
+    .time-schedule .time-schedule__memberHeader.is-bulk-registration-target {
+      background: rgba(16, 185, 129, 0.14);
+      box-shadow: inset 0 -2px 0 rgba(16, 185, 129, 0.65); }
   .time-schedule .time-schedule__memberColumn {
     transition: background-color 0.18s ease; }
     .time-schedule .time-schedule__memberColumn.is-drag-target {
       background: linear-gradient(180deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0.06) 100%); }
+    .time-schedule .time-schedule__memberColumn.is-bulk-registration-target {
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%); }
   .time-schedule .time-schedule__currentCell {
     transition: background-color 0.18s ease; }
     .time-schedule .time-schedule__currentCell.is-drag-target {
       background: rgba(37, 99, 235, 0.1); }
+    .time-schedule .time-schedule__currentCell.is-bulk-registration-target {
+      background: rgba(16, 185, 129, 0.1);
+      border-left-color: rgba(16, 185, 129, 0.85); }
+
+/* ==============================
+   Schedule drag preview
+   ============================== */
+.schedule-drag-preview {
+  position: fixed;
+  z-index: 10000;
+  box-sizing: border-box;
+  pointer-events: none;
+  will-change: transform; }
+
+.schedule-drag-preview--test-card {
+  max-width: 220px;
+  padding: 10px 12px;
+  border: 1px solid rgba(245, 158, 11, 0.95);
+  border-radius: 10px;
+  background: rgba(255, 251, 235, 0.96);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18); }
+
+.schedule-drag-preview--test-card .detail-card__titleLine {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.55;
+  display: block;
+  overflow: hidden; }
+
+.detail-card.is-dragging-source {
+  opacity: 0.45; }
 
 /* ==============================
    Utilities
    ============================== */
 .display-none {
   display: none !important; }
+
+/* ==============================
+   schedule-page / compact nav
+   ============================== */
+@container schedule-main (max-width: 860px) {
+  .schedule-page__title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap; }
+  .schedule-page__title[data-compact-title] {
+    font-size: 0; }
+  .schedule-page__title[data-compact-title]::before {
+    content: attr(data-compact-title);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.2; }
+  .schedule-page__titleWeekday {
+    font-size: 0.9rem; }
+  .schedule-page__nav {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "controls title";
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 0;
+    min-height: auto; }
+  .schedule-page__titleGroup {
+    position: static;
+    transform: none;
+    grid-area: title;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    width: 100%;
+    min-width: 0; }
+  .schedule-page__titleLine {
+    min-width: 0;
+    overflow: hidden; }
+  .schedule-page__activeDateAlias {
+    flex: 0 0 auto; }
+  .schedule-page__navButtons {
+    flex: 0 0 auto; }
+  .schedule-page__teamButtons {
+    display: none; }
+  .schedule-page__teamDropdown:not([hidden]) {
+    display: block;
+    grid-area: controls;
+    justify-self: start;
+    width: 90px; }
+  .schedule-page__memberActions {
+    grid-area: controls;
+    justify-self: start; }
+  .schedule-page__returnButton {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    gap: 0; }
+  .schedule-page__returnButtonText {
+    display: none; }
+  .schedule-page_returnButtonIcon {
+    width: 18px;
+    height: 18px; }
+  .schedule-page__drawerPanelBody[data-role='schedule-test-cards-body'] {
+    position: relative;
+    overflow: hidden; }
+  .schedule-page__drawerPanelBody[data-role='schedule-test-cards-body'] > .spinner-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    border-radius: inherit; }
+  .time-schedule {
+    --time-schedule-axis-width: 36px;
+    --time-schedule-min-width: 100px; }
+    .time-schedule__axisLabel {
+      padding-right: 6px;
+      font-size: 0.72rem; }
+    .time-schedule__memberHeader {
+      padding: 0 4px;
+      font-size: 0.74rem; }
+    .time-schedule__currentCell {
+      padding: 4px 5px; }
+    .time-schedule__event {
+      padding: 4px 5px; }
+    .time-schedule__event.is-range-selected {
+      outline: 2px solid rgba(37, 99, 235, 0.82);
+      outline-offset: -2px;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.75) inset, 0 6px 16px rgba(37, 99, 235, 0.18); } }
 
 /* ==============================
    Responsive

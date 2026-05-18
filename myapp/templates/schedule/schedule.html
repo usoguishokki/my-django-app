@@ -13,7 +13,12 @@
 {% endblock %}
 
 {% block content %}
-<section class="schedule-page page" data-page="schedule" data-ui-root="drawer">
+<section
+  class="schedule-page page"
+  data-page="schedule"
+  data-ui-root="drawer"
+  data-arrow-icon-url="{% static 'img/arrow.svg' %}"
+>
   {% include "includes/components/drawer_stack.html" with panels_template="schedule/drawer_panels__schedule.html" %}
   <div
     class="schedule-page__contentLayout"
@@ -30,36 +35,47 @@
         <nav class="schedule-page__sidebarNav" aria-label="補助パネル一覧">
           <button
             type="button"
-            class="schedule-page__sidebarIconButton"
+            class="schedule-page__sidebarIconButton schedule-page__sidebarIconButton--support ui-tooltip ui-tooltip--right"
             data-role="schedule-panel-button"
             data-panel-id="support"
+            data-tooltip="オプション"
             aria-label="スケジュール補助を開く"
             aria-pressed="false"
           >
-            補
+            <span
+              class="schedule-page__sidebarIcon schedule-page__sidebarIcon--option"
+              aria-hidden="true"
+            ></span>
           </button>
-
+        
           <button
             type="button"
-            class="schedule-page__sidebarIconButton"
+            class="schedule-page__sidebarIconButton schedule-page__sidebarIconButton--test ui-tooltip ui-tooltip--right"
             data-role="schedule-panel-button"
             data-panel-id="test"
-            aria-label="テストカードを開く"
+            data-tooltip="カードを配る"
+            aria-label="カードを開く"
             aria-pressed="false"
           >
-            テ
+            <span
+              class="schedule-page__sidebarIcon schedule-page__sidebarIcon--distribute"
+              aria-hidden="true"
+            ></span>
           </button>
-
+        
           <button
             type="button"
-            class="schedule-page__sidebarIconButton schedule-page__sidebarIconButton--editMode"
+            class="schedule-page__sidebarIconButton schedule-page__sidebarIconButton--editMode ui-tooltip ui-tooltip--right"
             data-role="schedule-edit-mode-button"
             data-ui-action="schedule:open-edit-mode"
+            data-tooltip="編集モード"
             aria-label="編集モードを開く"
             aria-pressed="false"
-            title="編集モード"
           >
-            編
+            <span
+              class="schedule-page__sidebarIcon schedule-page__sidebarIcon--edit"
+              aria-hidden="true"
+            ></span>
           </button>
         </nav>
       </div>
@@ -68,7 +84,7 @@
     <aside
       class="schedule-page__filterPane"
       data-role="schedule-filter-pane"
-      aria-label="テストカードフィルター"
+      aria-label="カードフィルター"
       aria-hidden="true"
     >
       <div class="schedule-page__filterPaneInner">
@@ -227,18 +243,39 @@
 
           <button
             type="button"
-            class="ui-btn ui-btn--sm ui-btn--outline schedule-page__drawerFilterButton"
+            class="ui-btn ui-btn--sm ui-btn--outline schedule-page__bulkRegistrationButton ui-tooltip ui-tooltip--bottom"
+            data-ui-action="schedule:open-bulk-registration-drawer"
+            data-tooltip="一括登録"
+            aria-label="一括登録"
+            data-bulk-registration-mode="open"
+            data-icon-only="1"
+          >
+            <span
+              class="schedule-page__bulkRegistrationButtonIcon"
+              aria-hidden="true"
+            ></span>
+                  
+            <span
+              class="schedule-page__srOnly"
+              data-role="bulk-registration-button-label"
+            >
+              一括登録
+            </span>
+          </button>
+          
+          <button
+            type="button"
+            class="ui-btn ui-btn--sm ui-btn--outline schedule-page__drawerFilterButton ui-tooltip ui-tooltip--bottomRight"
             data-ui-action="schedule:toggle-filter-pane"
             data-role="schedule-filter-button"
-            aria-label="テストカードのフィルターを開く"
+            data-tooltip="フィルター"
+            aria-label="カードのフィルターを開く"
             aria-pressed="false"
           >
-            <img
+            <span
               class="schedule-page__drawerFilterIcon"
-              src="{% static 'img/filter.svg' %}"
-              alt=""
               aria-hidden="true"
-            >
+            ></span>
           </button>
         </header>
       
@@ -351,12 +388,97 @@
             </button>
           </div>
 
+          <div
+            class="custom-dropdown schedule-page__teamDropdown"
+            data-role="schedule-team-dropdown"
+            data-state="closed"
+            hidden
+          >
+            <button
+              type="button"
+              class="custom-dropdown__trigger"
+              data-role="schedule-team-dropdown-trigger"
+              data-ui-action="schedule:toggle-team-dropdown"
+              aria-expanded="false"
+            >
+              <span
+                class="custom-dropdown__triggerText"
+                data-role="schedule-team-dropdown-trigger-text"
+              >
+                A班
+              </span>
+              <img
+                class="custom-dropdown__triggerIcon custom-dropdown__triggerIconImage"
+                src="{% static 'img/arrow.svg' %}"
+                alt=""
+                aria-hidden="true"
+              >
+            </button>
+          
+            <div
+              class="custom-dropdown__panel"
+              data-role="schedule-team-dropdown-panel"
+              hidden
+            >
+              <div class="custom-dropdown__list" data-role="schedule-team-dropdown-list">
+                <button
+                  type="button"
+                  class="custom-dropdown__option is-selected"
+                  data-role="schedule-team-dropdown-option"
+                  data-ui-action="schedule:change-team"
+                  data-value="A"
+                  data-affiliation-id="1"
+                  aria-selected="true"
+                >
+                  A班
+                </button>
+              
+                <button
+                  type="button"
+                  class="custom-dropdown__option"
+                  data-role="schedule-team-dropdown-option"
+                  data-ui-action="schedule:change-team"
+                  data-value="B"
+                  data-affiliation-id="2"
+                  aria-selected="false"
+                >
+                  B班
+                </button>
+              
+                <button
+                  type="button"
+                  class="custom-dropdown__option"
+                  data-role="schedule-team-dropdown-option"
+                  data-ui-action="schedule:change-team"
+                  data-value="C"
+                  data-affiliation-id="3"
+                  aria-selected="false"
+                >
+                  C班
+                </button>
+              
+                <button
+                  type="button"
+                  class="custom-dropdown__option"
+                  data-role="schedule-team-dropdown-option"
+                  data-ui-action="schedule:change-team"
+                  data-value="DAY"
+                  data-affiliation-id="6"
+                  aria-selected="false"
+                >
+                  常昼
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="schedule-page__memberActions" data-role="schedule-member-actions">
             <button
               type="button"
               class="ui-btn ui-btn--sm ui-btn--outline schedule-page__returnButton"
               data-role="schedule-return-team-day"
               data-ui-action="schedule:return-team-day"
+              aria-label="班表示へ戻る"
               hidden
             >
               <img
@@ -387,7 +509,13 @@
                 >
                   山田 太郎
                 </span>
-                <span class="custom-dropdown__triggerIcon" aria-hidden="true">▾</span>
+              
+                <img
+                  class="custom-dropdown__triggerIcon custom-dropdown__triggerIconImage"
+                  src="{% static 'img/arrow.svg' %}"
+                  alt=""
+                  aria-hidden="true"
+                >
               </button>
           
               <div
@@ -405,6 +533,12 @@
           <div class="schedule-page__titleGroup">
             <div class="schedule-page__titleLine">
               <h1 class="schedule-page__title" data-role="schedule-title"></h1>
+          
+              <span
+                class="schedule-page__titleWeekday"
+                data-role="schedule-title-weekday"
+                hidden
+              ></span>
           
               <span
                 class="schedule-page__activeDateAlias"

@@ -1,0 +1,65 @@
+<svg
+  width="26"
+  height="26"
+  viewBox="0 0 26 26"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  aria-label="週間予定"
+  role="img"
+>
+  <!-- calendar top line -->
+  <path
+    d="M5 6.5H21"
+    stroke="currentColor"
+    stroke-width="1.6"
+    stroke-linecap="round"
+  />
+
+  <!-- side hints -->
+  <path
+    d="M5 6.5C3.8 6.5 3 7.3 3 8.5V10"
+    stroke="currentColor"
+    stroke-width="1.6"
+    stroke-linecap="round"
+  />
+  <path
+    d="M21 6.5C22.2 6.5 23 7.3 23 8.5V10"
+    stroke="currentColor"
+    stroke-width="1.6"
+    stroke-linecap="round"
+  />
+
+  <!-- rings -->
+  <rect
+    x="7"
+    y="3"
+    width="2.4"
+    height="5"
+    rx="1.2"
+    stroke="currentColor"
+    stroke-width="1.4"
+  />
+  <rect
+    x="16.6"
+    y="3"
+    width="2.4"
+    height="5"
+    rx="1.2"
+    stroke="currentColor"
+    stroke-width="1.4"
+  />
+
+  <!-- MON → SUN -->
+  <text
+    x="13"
+    y="17.2"
+    text-anchor="middle"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="5.2"
+    font-weight="700"
+    letter-spacing="-0.2"
+    fill="currentColor"
+  >
+    MON→SUN
+  </text>
+</svg>

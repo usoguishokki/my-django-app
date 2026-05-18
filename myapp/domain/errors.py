@@ -40,10 +40,6 @@ class InvalidMachineSelection(DomainError):
         self.raw = raw
         super().__init__(detail if raw is None else f"{detail}: {raw}")
         
-class InvalidScheduleDayParams(DomainError):
-    def __init__(self, detail: str = "invalid schedule day params"):
-        super().__init__(detail)
-        
 class InvalidScheduleRequestParams(DomainError):
     def __init__(self, detail: str = "invalid schedule request params"):
         super().__init__(detail)
@@ -51,4 +47,54 @@ class InvalidScheduleRequestParams(DomainError):
 
 class InvalidScheduleDayParams(InvalidScheduleRequestParams):
     def __init__(self, detail: str = "invalid schedule day params"):
+        super().__init__(detail)
+        
+class ScheduleEventMoveError(DomainError):
+    """
+    スケジュールイベント移動処理の基底例外。
+    """
+    pass
+
+
+class ScheduleEventMoveNotFound(ScheduleEventMoveError):
+    def __init__(self, detail: str = "schedule event move target not found"):
+        super().__init__(detail)
+
+
+class ScheduleApproverNotFound(ScheduleEventMoveError):
+    def __init__(self, detail: str = "schedule approver not found"):
+        super().__init__(detail)
+        
+class InvalidScheduleEventRetractParams(DomainError):
+    def __init__(self, detail: str = "invalid schedule event retract params"):
+        super().__init__(detail)
+
+
+class ScheduleEventRetractNotFound(DomainError):
+    def __init__(self, detail: str = "schedule event retract target not found"):
+        super().__init__(detail)
+    
+class ScheduleEventRetractNotAllowed(DomainError):
+    def __init__(self, detail: str = "schedule event retract not allowed"):
+        super().__init__(detail)
+
+class ScheduleBulkRegistrationError(DomainError):
+    """
+    スケジュール一括登録処理の基底例外。
+    """
+    pass
+
+
+class InvalidScheduleBulkRegistrationParams(ScheduleBulkRegistrationError):
+    def __init__(self, detail: str = "invalid schedule bulk registration params"):
+        super().__init__(detail)
+
+
+class ScheduleBulkRegistrationMemberNotFound(ScheduleBulkRegistrationError):
+    def __init__(self, detail: str = "schedule bulk registration member not found"):
+        super().__init__(detail)
+
+
+class ScheduleBulkRegistrationShiftPatternNotFound(ScheduleBulkRegistrationError):
+    def __init__(self, detail: str = "schedule bulk registration shift pattern not found"):
         super().__init__(detail)

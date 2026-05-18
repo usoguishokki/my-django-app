@@ -1125,7 +1125,7 @@ def calendar_view(request):
                     )
             
                     #work_schedule_entry_ins.change_time_frames(registration_date, registration_end_date)
-                    
+
                     data_plan_ids = data.get('dataPlanIds') or []
                     target_plans = plan_base_qs().filter(plan_id__in=data_plan_ids)
                     

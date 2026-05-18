@@ -416,6 +416,7 @@ export function executeScheduleEventMove(p = {}) {
         planId,
         holderId,
         planTime,
+        assignedAffiliationId = '',
     } = p;
 
     if (!planId) throw new Error('planId is required');
@@ -429,6 +430,57 @@ export function executeScheduleEventMove(p = {}) {
             planId,
             holderId,
             planTime,
+            assignedAffiliationId,
+        },
+    });
+}
+
+export function executeScheduleBulkEventMove(p = {}) {
+    const {
+        payloads = [],
+    } = p;
+
+    if (!Array.isArray(payloads) || payloads.length === 0) {
+        throw new Error('payloads is required');
+    }
+
+    return asynchronousCommunication({
+        url: '/api/schedule/events/bulk-move/',
+        method: 'POST',
+        data: {
+            events: payloads,
+        },
+    });
+}
+
+export function executeScheduleEventRetract(p = {}) {
+    const { planId } = p;
+  
+    if (!planId) throw new Error('planId is required');
+  
+    return asynchronousCommunication({
+      url: '/api/schedule/events/retract/',
+      method: 'POST',
+      data: {
+        planId,
+      },
+    });
+}
+
+export function executeScheduleBulkEventRetract(p = {}) {
+    const {
+        planIds = [],
+    } = p;
+
+    if (!Array.isArray(planIds) || planIds.length === 0) {
+        throw new Error('planIds is required');
+    }
+
+    return asynchronousCommunication({
+        url: '/api/schedule/events/bulk-retract/',
+        method: 'POST',
+        data: {
+            planIds,
         },
     });
 }
@@ -456,4 +508,58 @@ export function fetchScheduleTestCardsWeek({
       url: `/api/schedule/test-cards/week/?${params.toString()}`,
       method: 'GET',
     });
-  }
+}
+
+export function fetchScheduleTestCardTeamOptions({
+    date = null,
+    dateAlias = '',
+  } = {}) {
+    const params = new URLSearchParams();
+  
+    if (date) {
+      params.set('date', date);
+    }
+  
+    if (dateAlias) {
+      params.set('date_alias', dateAlias);
+    }
+  
+    const queryString = params.toString();
+  
+    return asynchronousCommunication({
+      url: queryString
+        ? `/api/schedule/test-cards/team-options/?${queryString}`
+        : '/api/schedule/test-cards/team-options/',
+      method: 'GET',
+    });
+}
+
+export function executeBulkRegistration(p = {}) {
+    const {
+        dateStart,
+        dateEnd,
+        dataPlanIds = [],
+        member,
+        mode = 'commit',
+    } = p;
+
+    if (!dateStart) throw new Error('dateStart is required');
+    if (!dateEnd) throw new Error('dateEnd is required');
+    if (!member) throw new Error('member is required');
+
+    if (!Array.isArray(dataPlanIds) || dataPlanIds.length === 0) {
+        throw new Error('dataPlanIds is required');
+    }
+
+    return asynchronousCommunication({
+        url: '/api/schedule/events/bulk-registration/',
+        method: 'POST',
+        data: {
+            dateStart,
+            dateEnd,
+            dataPlanIds,
+            member,
+            mode,
+        },
+    });
+}

@@ -110,6 +110,22 @@ export class ScheduleEditInteractionService {
       this.editMemberDropdownService.sync();
       this.onSyncSubmitButton?.();
     }
+
+    resetDropIndicators({ selectedEditEvent } = {}) {
+      const scheduleContainer = this.getScheduleContainer?.();
+    
+      this.dragTimeIndicatorService.reset();
+      this.dragTargetHighlighter.reset(scheduleContainer);
+    
+      if (selectedEditEvent) {
+        this.editSummaryService.syncAfter(selectedEditEvent);
+      } else {
+        this.editSummaryService.resetAfter();
+      }
+    
+      this.editMemberDropdownService.sync();
+      this.onSyncSubmitButton?.();
+    }
     
     resetEdit() {
       this.resetDrag();

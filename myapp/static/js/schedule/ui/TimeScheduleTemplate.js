@@ -62,19 +62,52 @@ export class TimeScheduleTemplate {
 
   static createMemberHeaders(members) {
     return members.map((member) => `
-      <button
-        type="button"
-        class="time-schedule__memberHeader"
-        data-job-title="${member.job_title ?? ''}"
+      <div
+        class="time-schedule__memberHeaderCell"
         data-member-id="${member.id ?? ''}"
         data-member-name="${member.name ?? ''}"
-        data-ui-action="schedule:open-member-week"
-        aria-label="${member.name}の週間予定を開く"
       >
-        <span class="time-schedule__memberHeaderName">
-          ${member.name}
-        </span>
-      </button>
+        <div
+          class="time-schedule__memberHeader"
+          data-job-title="${member.job_title ?? ''}"
+          data-member-id="${member.id ?? ''}"
+          data-member-name="${member.name ?? ''}"
+        >
+          <span class="time-schedule__memberHeaderName">
+            ${member.name}
+          </span>
+        </div>
+  
+        <button
+          type="button"
+          class="time-schedule__memberWeekButton ui-tooltip ui-tooltip--bottomRight"
+          data-ui-action="schedule:open-member-week"
+          data-member-id="${member.id ?? ''}"
+          data-member-name="${member.name ?? ''}"
+          data-tooltip="週間予定"
+          aria-label="${member.name}の週間予定を開く"
+        >
+          <span
+            class="time-schedule__memberWeekButtonIcon"
+            aria-hidden="true"
+          ></span>
+        </button>
+  
+        <button
+          type="button"
+          class="time-schedule__bulkPullbackButton ui-tooltip ui-tooltip--bottomRight"
+          data-ui-action="schedule:open-bulk-pullback-drawer"
+          data-member-id="${member.id ?? ''}"
+          data-member-name="${member.name ?? ''}"
+          data-tooltip="一括引き戻し"
+          aria-label="${member.name}の予定を一括引き戻し"
+        >
+          <span
+            class="time-schedule__bulkPullbackButtonIcon"
+            aria-hidden="true"
+          ></span>
+        </button>
+      </div>
     `).join('');
   }
 

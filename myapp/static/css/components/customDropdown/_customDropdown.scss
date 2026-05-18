@@ -205,6 +205,28 @@
     padding: 10px 12px;
     color: #64748b;
   }
+
+  &__triggerIconImage {
+    display: block;
+    flex: 0 0 auto;
+
+    width: 14px;
+    height: 14px;
+
+    object-fit: contain;
+    pointer-events: none;
+    opacity: 0.75;
+
+    transform: rotate(-90deg);
+    transition:
+      transform 0.16s ease,
+      opacity 0.16s ease;
+  }
+
+  &[data-state='open'] &__triggerIconImage {
+    opacity: 1;
+    transform: rotate(90deg);
+  }
 }
 
 @media (max-width: 480px) {

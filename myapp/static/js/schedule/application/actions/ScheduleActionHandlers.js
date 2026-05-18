@@ -28,8 +28,10 @@ export class ScheduleActionHandlers {
           this.dependencies.updateTeamButtonsByAffiliationId,
         updateRangeButtonsByHours:
           this.dependencies.updateRangeButtonsByHours,
+        teamDropdownService:
+          this.dependencies.teamDropdownService,
       }),
-
+      
       ...buildScheduleMemberViewActionHandlers({
         state: this.dependencies.state,
         render: this.dependencies.render,
@@ -48,33 +50,52 @@ export class ScheduleActionHandlers {
         handleFilterPaneToggle:
           this.dependencies.handleFilterPaneToggle,
         handleEditSubmit: this.dependencies.handleEditSubmit,
+        handleEditRetract: this.dependencies.handleEditRetract,
       }),
       
       ...buildScheduleTestCardActionHandlers({
         state: this.dependencies.state,
         testCardRenderService:
           this.dependencies.testCardRenderService,
-      
+
         handleTestCardMachineChange:
           this.dependencies.handleTestCardMachineChange,
-      
+
         handleTestCardCaseChange:
           this.dependencies.handleTestCardCaseChange,
-      
+
         handleTestCardInspectionTypeChange:
           this.dependencies.handleTestCardInspectionTypeChange,
-      
+
         handleTestCardTimeZoneChange:
           this.dependencies.handleTestCardTimeZoneChange,
-      
+
         handleTestCardProcessChange:
           this.dependencies.handleTestCardProcessChange,
-      
+
         handleTestCardDateAliasChange:
           this.dependencies.handleTestCardDateAliasChange,
-      
+
         handleTestCardTeamChange:
           this.dependencies.handleTestCardTeamChange,
+
+        openBulkRegistrationDrawer:
+          this.dependencies.openBulkRegistrationDrawer,
+        
+        openBulkPullbackDrawer:
+          this.dependencies.openBulkPullbackDrawer,
+
+        backToTestCardsPanel:
+          this.dependencies.backToTestCardsPanel,
+
+        bulkRegistrationMemberDropdownService:
+          this.dependencies.bulkRegistrationMemberDropdownService,
+
+        handleBulkRegistrationSubmit:
+          this.dependencies.handleBulkRegistrationSubmit,
+
+        handleBulkPullbackSubmit:
+          this.dependencies.handleBulkPullbackSubmit, 
       }),
     };
   }

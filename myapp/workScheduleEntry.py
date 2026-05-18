@@ -59,237 +59,6 @@ class WorkScheduleEntry:
             return point
     
         return value
-        
-        
-    '''
-    def _build_worker_frames(self):
-        
-        if self.target_inf.shift_pattern_name == '1直':
-            self.worker_frames = {
-                'time_frame_1': {
-                    'timeZone': '稼働中',
-                    'start': self.target_inf.shift_start_time,
-                    'end': self.target_inf.hot_time_start_a,
-                    'maxTime': [(self.target_inf.hot_time_start_a - self.target_inf.shift_start_time).total_seconds() / 60],
-                }, 
-                'time_frame_2': {
-                    'timeZone': '停止中', 
-                    'start': self.target_inf.hot_time_start_a, 
-                    'end': self.target_inf.hot_time_end_a,
-                    'maxTime': [(self.target_inf.hot_time_end_a - self.target_inf.hot_time_start_a).total_seconds() / 60],
-                },
-                'time_frame_3': {
-                    'timeZone': '稼働中', 
-                    'start': self.target_inf.hot_time_end_a, 
-                    'end': self.target_inf.field_worker_lunch_time_start,
-                    'maxTime': [(self.target_inf.field_worker_lunch_time_start - self.target_inf.hot_time_end_a).total_seconds() / 60],
-                },
-                'time_frame_4': {
-                    'timeZone': '停止中', 
-                    'start': self.target_inf.field_worker_lunch_time_start, 
-                    'end': self.target_inf.field_worker_lunch_time_end,
-                    'maxTime': [(self.target_inf.field_worker_lunch_time_end - self.target_inf.field_worker_lunch_time_start).total_seconds() / 60],
-                },
-                'time_frame_5': {
-                    'timeZone': '稼働中', 
-                    'start': self.target_inf.field_worker_lunch_time_end, 
-                    'end': self.target_inf.hot_time_start_b,
-                    'maxTime': [(self.target_inf.hot_time_start_b - self.target_inf.field_worker_lunch_time_end).total_seconds() / 60],
-                },
-                'time_frame_6': {
-                    'timeZone': '停止中', 
-                    'start': self.target_inf.hot_time_start_b, 
-                    'end': self.target_inf.hot_time_end_b,
-                    'maxTime': [(self.target_inf.hot_time_end_b - self.target_inf.hot_time_start_b).total_seconds() / 60],
-                },
-                'time_frame_7': {
-                    'timeZone': '稼働中', 
-                    'start': self.target_inf.hot_time_end_b, 
-                    'end': self.target_inf.shift_end_time,
-                    'maxTime': [(self.target_inf.shift_end_time - self.target_inf.hot_time_end_b).total_seconds() / 60],
-                }
-            }
-        elif self.target_inf.shift_pattern_name == '2直':
-            self.worker_frames = {
-                'time_frame_1': {
-                    'timeZone': '稼働中', 
-                    'start': self.target_inf.shift_start_time, 
-                    'end': self.target_inf.shift_change_time_start,
-                    'maxTime': [(self.target_inf.shift_change_time_start - self.target_inf.shift_start_time).total_seconds() / 60],
-                },
-                'time_frame_2': {
-                    'timeZone': '停止中', 
-                    'start': self.target_inf.shift_change_time_start, 
-                    'end': self.target_inf.shift_change_time_end,
-                    'maxTime': [(self.target_inf.shift_change_time_end - self.target_inf.shift_change_time_start).total_seconds() / 60],
-                },
-                'time_frame_3': {
-                    'timeZone': '稼働中', 
-                    'start': self.target_inf.shift_change_time_end, 
-                    'end': self.target_inf.hot_time_start_a,
-                    'maxTime': [(self.target_inf.hot_time_start_a - self.target_inf.shift_change_time_end).total_seconds() / 60],
-                },
-                'time_frame_4': {
-                    'timeZone': '停止中', 
-                    'start': self.target_inf.hot_time_start_a, 
-                    'end': self.target_inf.hot_time_end_a,
-                    'maxTime': [(self.target_inf.hot_time_end_a - self.target_inf.hot_time_start_a).total_seconds() / 60],
-                },
-                'time_frame_5': {
-                    'timeZone': '稼働中', 
-                    'start': self.target_inf.hot_time_end_a, 
-                    'end': self.target_inf.field_worker_lunch_time_start,
-                    'maxTime': [(self.target_inf.field_worker_lunch_time_start -self.target_inf.hot_time_end_a).total_seconds() / 60],
-                },
-                'time_frame_6': {
-                    'timeZone': '停止中', 
-                    'start': self.target_inf.field_worker_lunch_time_start, 
-                    'end': self.target_inf.field_worker_lunch_time_end,
-                    'maxTime': [(self.target_inf.field_worker_lunch_time_end - self.target_inf.field_worker_lunch_time_start).total_seconds() / 60],
-                },
-                'time_frame_7': {
-                    'timeZone': '稼働中', 
-                    'start': self.target_inf.field_worker_lunch_time_end, 
-                    'end': self.target_inf.shift_end_time,
-                    'maxTime': [(self.target_inf.shift_end_time - self.target_inf.field_worker_lunch_time_end).total_seconds() / 60],
-                }
-            }
-        elif self.target_inf.shift_pattern_name == '3直':
-            self.worker_frames = {
-                'time_frame_1': {
-                    'timeZone':'稼働中', 
-                    'start': self.target_inf.shift_start_time, 
-                    'end': self.target_inf.hot_time_start_a,
-                    'maxTime': [(self.target_inf.hot_time_start_a - self.target_inf.shift_start_time).total_seconds() / 60],
-                },
-                'time_frame_2': {
-                    'timeZone':'停止中', 
-                    'start': self.target_inf.hot_time_start_a, 
-                    'end': self.target_inf.hot_time_end_a,
-                    'maxTime': [(self.target_inf.hot_time_end_a - self.target_inf.hot_time_start_a).total_seconds() / 60],
-                },
-                'time_frame_3': {
-                    'timeZone':'稼働中', 
-                    'start': self.target_inf.hot_time_end_a, 
-                    'end': self.target_inf.shift_change_time_start,
-                    'maxTime': [(self.target_inf.shift_change_time_start - self.target_inf.hot_time_end_a).total_seconds() / 60],
-                },
-                'time_frame_4': {
-                    'timeZone':'停止中', 
-                    'start': self.target_inf.shift_change_time_start, 
-                    'end': self.target_inf.shift_change_time_end,
-                    'maxTime': [(self.target_inf.shift_change_time_end - self.target_inf.shift_change_time_start).total_seconds() / 60],
-                },
-                'time_frame_5': {
-                    'timeZone':'稼働中', 
-                    'start': self.target_inf.shift_change_time_end, 
-                    'end': self.target_inf.shift_end_time,
-                    'maxTime': [(self.target_inf.shift_end_time - self.target_inf.shift_change_time_end).total_seconds() / 60],
-                }
-            }
-        elif self.target_inf.shift_pattern_name == '常昼':
-            self.worker_frames = {
-                'time_frame_1': {
-                    'timeZone': '稼働中',
-                    'start': self.target_inf.shift_start_time,
-                    'end': self.target_inf.hot_time_start_a,
-                    'maxTime': [(self.target_inf.hot_time_start_a - self.target_inf.shift_start_time).total_seconds() / 60]
-                },
-                'time_frame_2': {
-                    'timeZone': '停止中',
-                    'start': self.target_inf.hot_time_start_a,
-                    'end': self.target_inf.hot_time_end_a,
-                    'maxTime':[(self.target_inf.hot_time_end_a - self.target_inf.hot_time_start_a).total_seconds() / 60]
-                },
-                'time_frame_3': {
-                    'timeZone': '稼働中',
-                    'start': self.target_inf.hot_time_end_a,
-                    'end': self.target_inf.field_worker_lunch_time_start,
-                    'maxTime':[(self.target_inf.field_worker_lunch_time_start - self.target_inf.hot_time_end_a).total_seconds() / 60]
-                },
-                'time_frame_4': {
-                    'timeZone': '停止中',
-                    'start': self.target_inf.field_worker_lunch_time_start,
-                    'end': self.target_inf.field_worker_lunch_time_end,
-                    'maxTime': [(self.target_inf.field_worker_lunch_time_end - self.target_inf.field_worker_lunch_time_start).total_seconds() / 60]
-                },
-                'time_frame_5': {
-                    'timeZone': '稼働中',
-                    'start': self.target_inf.field_worker_lunch_time_end,
-                    'end': self.target_inf.shift_lunch_time_start,
-                    'maxTime': [(self.target_inf.shift_lunch_time_start - self.target_inf.field_worker_lunch_time_end).total_seconds() / 60]
-                },
-                'time_frame_6': {
-                    'timeZone': '稼働中',
-                    'start': self.target_inf.shift_lunch_time_end,
-                    'end': self.target_inf.hot_time_start_b,
-                    'maxTime': [(self.target_inf.hot_time_start_b - self.target_inf.shift_lunch_time_end).total_seconds() / 60]
-                },
-                'time_frame_7': {
-                    'timeZone': '停止中',
-                    'start': self.target_inf.hot_time_start_b,
-                    'end': self.target_inf.hot_time_end_b,
-                    'maxTime':[(self.target_inf.hot_time_end_b - self.target_inf.hot_time_start_b).total_seconds() / 60]
-                },
-                'time_frame_8': {
-                    'timeZone': '稼働中',
-                    'start': self.target_inf.hot_time_end_b,
-                    'end': self.target_inf.shift_change_time_start,
-                    'maxTime':[(self.target_inf.shift_change_time_start - self.target_inf.hot_time_end_b).total_seconds() / 60]
-                },
-                'time_frame_9': {
-                    'timeZone': '停止中',
-                    'start': self.target_inf.shift_change_time_start,
-                    'end': self.target_inf.end_date_time,
-                    'maxTime': [(self.target_inf.end_date_time - self.target_inf.shift_change_time_start).total_seconds() / 60]
-                }
-            }
-        elif self.target_inf.shift_pattern_name == '連2A' or self.target_inf.shift_pattern_name == '連2B':
-            self.worker_frames = {
-                'time_frame_1': {
-                    'timeZone': '稼働中',
-                    'start': self.target_inf.shift_start_time,
-                    'end': self.target_inf.hot_time_start_a,
-                    'maxTime': [(self.target_inf.hot_time_start_a - self.target_inf.shift_start_time).total_seconds() / 60]           
-                },
-                'time_frame_2': {
-                    'timeZone': '停止中',
-                    'start': self.target_inf.hot_time_start_a,
-                    'end': self.target_inf.hot_time_end_a,
-                    'maxTime': [(self.target_inf.hot_time_end_a - self.target_inf.hot_time_start_a).total_seconds() / 60]
-                },
-                'time_frame_3': {
-                    'timeZone': '稼働中',
-                    'start': self.target_inf.hot_time_end_a,
-                    'end': self.target_inf.field_worker_lunch_time_start,
-                    'maxTime': [(self.target_inf.field_worker_lunch_time_start - self.target_inf.hot_time_end_a).total_seconds() / 60]
-                },
-                'time_frame_4': {
-                    'timeZone': '停止中',
-                    'start': self.target_inf.field_worker_lunch_time_start,
-                    'end': self.target_inf.field_worker_lunch_time_end,
-                    'maxTime': [(self.target_inf.field_worker_lunch_time_end - self.target_inf.field_worker_lunch_time_start).total_seconds() / 60]
-                },
-                'time_frame_5': {
-                    'timeZone': '稼働中',
-                    'start': self.target_inf.field_worker_lunch_time_end,
-                    'end': self.target_inf.hot_time_start_b,
-                    'maxTime': [(self.target_inf.hot_time_start_b - self.target_inf.field_worker_lunch_time_end).total_seconds() / 60]
-                },
-                'time_frame_6': {
-                    'timeZone': '停止中',
-                    'start': self.target_inf.hot_time_start_b,
-                    'end': self.target_inf.hot_time_end_b,
-                    'maxTime': [(self.target_inf.hot_time_end_b - self.target_inf.hot_time_start_b).total_seconds() / 60] 
-                },
-                'time_frame_7': {
-                    'timeZone': '稼働中',
-                    'start': self.target_inf.hot_time_end_b,
-                    'end': self.target_inf.end_date_time,
-                    'maxTime': [(self.target_inf.end_date_time - self.target_inf.hot_time_end_b).total_seconds() / 60]
-                }
-            }
-    '''
     
     def _build_worker_frames_for_date(self, base_date):
         """
@@ -477,8 +246,6 @@ class WorkScheduleEntry:
         temp.sort(key=lambda x: x["start"])
         return temp
 
-
-
     def _clip_frames_to_registration_window(self, frames, registration_date, registration_end_date):
         clipped = []
 
@@ -498,17 +265,7 @@ class WorkScheduleEntry:
             })
 
         return clipped
-    
-    
-
-
-
-            
-    
-            
-            
-            
-            
+           
     def set_time_frames(self, registration_date, registration_end_date):
         """
         registration_date ～ registration_end_date を基準に
@@ -539,11 +296,6 @@ class WorkScheduleEntry:
         }
 
         self.base_time_frame = self.time_frame
-
-        
-    
-    
-    
         
     def _find_line_frame(self, seg_start, seg_end):
         for frame in self.line_frames.values():
@@ -558,9 +310,6 @@ class WorkScheduleEntry:
                 return wf
         return None
 
-        
-            
-    
     def change_time_frames(self, registration_start, registration_end):
         updated = {
             'start_updated': False,

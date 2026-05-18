@@ -1,5 +1,13 @@
 from datetime import timedelta, time
+from myapp.domain.org_constants import normalize_team_key
 
+from myapp.domain.schedule_time_window import (
+    clip_time_window,
+    get_duration_minutes,
+)
+
+def _format_time_hhmm(value):
+    return value.strftime('%H:%M') if value else ''
 
 def present_schedule_members(members_qs):
     return [
@@ -10,9 +18,23 @@ def present_schedule_members(members_qs):
         }
         for member in members_qs
     ]
+    
+COMMON_TEST_CARD_PRACTITIONER_ID = 7
 
 
-def present_schedule_items(plans_qs):
+def get_assigned_affiliation_id(plan):
+    practitioner_id = getattr(
+        getattr(plan, 'inspection_no', None),
+        'practitioner_id',
+        None,
+    )
+
+    if practitioner_id == COMMON_TEST_CARD_PRACTITIONER_ID:
+        return None
+
+    return getattr(plan, 'calendar_affiliation_id', None)
+
+def present_schedule_items(plans_qs, *, window=None):
     items = []
 
     for plan in plans_qs:
@@ -27,18 +49,46 @@ def present_schedule_items(plans_qs):
 
         man_hours = inspection.man_hours or 0
         end_dt = plan_time + timedelta(minutes=man_hours)
-        
-        plan_date = plan_time.date()
+
+        display_start_dt = plan_time
+        display_end_dt = end_dt
+        day_key = plan_time.date().isoformat()
+
+        if window is not None:
+            display_start_dt, display_end_dt = clip_time_window(
+                start=plan_time,
+                end=end_dt,
+                window=window,
+            )
+            day_key = window.start.date().isoformat()
 
         items.append({
             'id': str(plan.plan_id),
             'inspectionNo': inspection.inspection_no or '',
             'memberId': holder.member_id,
-            'dayKey': plan_date.isoformat(),
-            'startTime': plan_time.strftime('%H:%M'),
-            'endTime': end_dt.strftime('%H:%M'),
+
+            # 表示上の所属日。
+            # 4:30をまたいで表示対象日にかぶる予定は、表示対象日に載せる。
+            'dayKey': day_key,
+
+            # 現在のフロント表示用。
+            # 表示範囲からはみ出した部分は 4:30 でクリップする。
+            'startTime': display_start_dt.strftime('%H:%M'),
+            'endTime': display_end_dt.strftime('%H:%M'),
+
+            # 今後フロント側で「元の開始/終了」と「表示用開始/終了」を分けるために保持。
+            'originalStartTime': plan_time.isoformat(),
+            'originalEndTime': end_dt.isoformat(),
+            'displayStartTime': display_start_dt.isoformat(),
+            'displayEndTime': display_end_dt.isoformat(),
+            'displayDurationMinutes': get_duration_minutes(
+                start=display_start_dt,
+                end=display_end_dt,
+            ),
+
             'title': inspection.wark_name or '',
             'status': inspection.status or '',
+            'planStatus': plan.status or '',
             'lineName': line.line_name if line else '',
             'machineName': control.machine if control else '',
             'workName': inspection.wark_name or '',
@@ -74,7 +124,9 @@ def present_team_schedules(calendar_rows):
     for row in calendar_rows:
         pattern = row.pattern
         affilation = row.affilation
+
         start_time = pattern.start_time if pattern else None
+        end_time = pattern.end_time if pattern else None
 
         team_schedules.append({
             'affiliationId': row.affilation_id,
@@ -82,6 +134,7 @@ def present_team_schedules(calendar_rows):
             'patternId': row.pattern_id,
             'patternName': pattern.pattern_name if pattern else '',
             'startTime': start_time.strftime('%H:%M') if start_time else '',
+            'endTime': end_time.strftime('%H:%M') if end_time else '',
         })
 
     return team_schedules
@@ -140,6 +193,7 @@ def present_schedule_member_week_items(plans_qs):
             'endTime': end_dt.strftime('%H:%M'),
             'title': inspection.wark_name or '',
             'status': inspection.status or '',
+            'planStatus': plan.status or '',
             'lineName': line.line_name if line else '',
             'machineName': control.machine if control else '',
             'workName': inspection.wark_name or '',
@@ -198,6 +252,7 @@ def present_schedule_test_cards_week_items(plans_qs):
                 'manHours': inspection.man_hours if inspection else '',
                 'dayOfWeek': inspection.day_of_week if inspection else '',
                 'practitionerId': inspection.practitioner_id if inspection else '',
+                'assignedAffiliationId': get_assigned_affiliation_id(plan),
                 'interval': rule.interval if rule else None,
                 'unit': rule.unit if rule else '',
                 'detailItems': [
@@ -218,15 +273,68 @@ def build_schedule_test_cards_week_payload(
     *,
     target_date,
     items,
-    date_alias_options=None,
-    active_date_alias=None,
+    date_alias_options,
+    active_date_alias,
+    team_schedules=None,
 ):
     return {
         'status': 'success',
         'data': {
-            'targetDate': target_date.isoformat(),
+            'targetDate': target_date.isoformat() if target_date else '',
             'items': items,
-            'dateAliases': date_alias_options or [],
             'activeDateAlias': active_date_alias,
+            'teamSchedules': team_schedules or [],
+            'filterOptions': {
+                'dateAliases': date_alias_options,
+            },
+        },
+    }
+
+def present_schedule_test_card_team_options(calendar_rows):
+    """
+    テストカードの班ボタン用に、A/B/C班ごとの shiftPattern を返す。
+
+    フロント側の ScheduleTestCardTeamTemplate が期待する形式:
+      key
+      label
+      affiliationId
+      affiliationName
+      shiftPatternId
+      shiftPatternName
+    """
+    team_options = []
+
+    for row in calendar_rows:
+        pattern = row.pattern
+        affilation = row.affilation
+        affilation_name = affilation.affilation if affilation else ''
+        team_key = normalize_team_key(affilation_name)
+
+        team_options.append({
+            'key': team_key,
+            'label': team_key,
+            'affiliationId': row.affilation_id,
+            'affiliationName': affilation_name,
+            'shiftPatternId': row.pattern_id,
+            'shiftPatternName': pattern.pattern_name if pattern else '',
+            'startTime': _format_time_hhmm(pattern.start_time if pattern else None),
+            'endTime': _format_time_hhmm(pattern.end_time if pattern else None),
+        })
+
+    return team_options
+
+
+def build_schedule_test_card_team_options_payload(
+    *,
+    target_date,
+    active_date_alias,
+    team_options,
+):
+    return {
+        'status': 'success',
+        'data': {
+            'targetDate': target_date.isoformat() if target_date else '',
+            'activeDateAlias': active_date_alias,
+            'teamOptions': team_options,
         },
     }

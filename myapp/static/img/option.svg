@@ -1,0 +1,13 @@
+<svg
+  width="26"
+  height="26"
+  viewBox="0 0 26 26"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  aria-label="オプション"
+  role="img"
+>
+  <circle cx="7.5" cy="13" r="1.8" fill="currentColor" />
+  <circle cx="13" cy="13" r="1.8" fill="currentColor" />
+  <circle cx="18.5" cy="13" r="1.8" fill="currentColor" />
+</svg>

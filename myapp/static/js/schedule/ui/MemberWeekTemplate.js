@@ -51,19 +51,38 @@ export class MemberWeekTemplate {
   }
 
   static createDayHeaders(days) {
-    return days.map((day) => `
-      <div
-        class="time-schedule__memberHeader time-schedule__memberHeader--day"
-        data-day-key="${day.key}"
-      >
-        <span class="time-schedule__memberHeaderName">
-          ${day.label}
-        </span>
-        <span class="time-schedule__memberHeaderSub">
-          ${day.dateText}
-        </span>
-      </div>
-    `).join('');
+    return days.map((day) => {
+      const dayLabel = `${day.label} ${day.dateText}`.trim();
+  
+      return `
+        <div
+          class="time-schedule__memberHeader time-schedule__memberHeader--day"
+          data-day-key="${day.key}"
+        >
+          <span class="time-schedule__memberHeaderName">
+            ${day.label}
+          </span>
+          <span class="time-schedule__memberHeaderSub">
+            ${day.dateText}
+          </span>
+  
+          <button
+            type="button"
+            class="time-schedule__bulkPullbackButton time-schedule__bulkPullbackButton--day ui-tooltip ui-tooltip--bottomRight"
+            data-ui-action="schedule:open-bulk-pullback-drawer"
+            data-day-key="${day.key ?? ''}"
+            data-day-label="${dayLabel}"
+            data-tooltip="この曜日を一括引き戻し"
+            aria-label="${dayLabel}の予定を一括引き戻し"
+          >
+            <span
+              class="time-schedule__bulkPullbackButtonIcon"
+              aria-hidden="true"
+            ></span>
+          </button>
+        </div>
+      `;
+    }).join('');
   }
 
   static createDayColumns(days) {

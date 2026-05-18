@@ -1,0 +1,48 @@
+<svg
+  width="36"
+  height="36"
+  viewBox="0 0 36 36"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  aria-label="カードを配る"
+  role="img"
+>
+  <!-- back card -->
+  <rect
+    x="4.5"
+    y="11"
+    width="11"
+    height="13"
+    rx="2"
+    stroke="currentColor"
+    stroke-width="2"
+  />
+
+  <!-- front card -->
+  <rect
+    x="8.5"
+    y="7"
+    width="11"
+    height="13"
+    rx="2"
+    stroke="currentColor"
+    stroke-width="2"
+  />
+
+  <!-- arrow line -->
+  <path
+    d="M21 18H30"
+    stroke="currentColor"
+    stroke-width="2.4"
+    stroke-linecap="round"
+  />
+
+  <!-- arrow head -->
+  <path
+    d="M26.5 13.5L31 18L26.5 22.5"
+    stroke="currentColor"
+    stroke-width="2.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

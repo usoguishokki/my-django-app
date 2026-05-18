@@ -1,8 +1,11 @@
 @import 'common';
 @import 'foundation/typography';
 @import 'components/button/button';
+@import 'components/tooltip/tooltip';
+@import 'components/toggle/toggle';
 @import 'components/customDropdown/_customDropdown';
 @import 'components/drawer/_drawer.scss';
+@import 'components/input/input';
 
 /* ==============================
    Tokens
@@ -27,6 +30,11 @@ $schedule-event-text: #1e3a8a;
 
 $schedule-event-yellow-bg: #fff7d8;
 $schedule-event-yellow-border: #f59e0b;
+
+$schedule-drag-preview-bg: rgba(255, 251, 235, 0.96);
+$schedule-drag-preview-border: rgba(245, 158, 11, 0.95);
+$schedule-drag-preview-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+$schedule-drag-preview-source-opacity: 0.45;
 
 $schedule-status-inspection-bg: #fef3c7;
 $schedule-status-inspection-border: #f59e0b;
@@ -70,11 +78,15 @@ $schedule-job-title-marker-radius: 2px;
 $schedule-rail-width: 64px;
 $schedule-drawer-max-width: 320px;
 $schedule-filter-max-width: 220px;
+$schedule-bulk-registration-drawer-max-width: 760px;
 
 $schedule-side-panel-header-height: 42px;
 
 
 @mixin schedule-side-panel-header($gap: null) {
+  position: relative;
+  z-index: 20;
+
   display: flex;
   align-items: center;
 
@@ -88,11 +100,10 @@ $schedule-side-panel-header-height: 42px;
   box-sizing: border-box;
 
   padding: 0 12px;
-  overflow: hidden;
+  overflow: visible;
 
   border-bottom: 1px solid rgba(148, 163, 184, 0.14);
   background: #f8fafc;
-  z-index: 1;
 }
 
 
@@ -155,6 +166,35 @@ $schedule-side-panel-header-height: 42px;
     --schedule-drawer-width: 0px;
   }
 
+  &__contentLayout[data-drawer-variant='bulk-registration'] {
+    --schedule-drawer-max-width: #{$schedule-bulk-registration-drawer-max-width};
+  }
+
+  &__contentLayout[data-drawer-variant='bulk-pullback'] {
+    --schedule-drawer-max-width: #{$schedule-bulk-registration-drawer-max-width};
+  }
+
+  &__contentLayout[data-drawer-variant='bulk-pullback'] {
+    .schedule-page__bulkRegistrationButton,
+    .schedule-page__drawerFilterButton {
+      display: none;
+    }
+  }
+
+  &__bulkRegistrationPanel[data-mode='bulk-pullback'] {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  &__bulkRegistrationPanelActions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+
+    min-height: 56px;
+    padding-top: 12px;
+  }
+
+
   &__main,
   &__drawer,
   &__filterPane {
@@ -180,7 +220,8 @@ $schedule-side-panel-header-height: 42px;
 .schedule-page {
   &__sidebarRail {
     position: relative;
-    z-index: 20;
+    z-index: 80;
+    overflow: visible;
     border-right: 1px solid #e2e8f0;
     background: #ffffff;
   }
@@ -247,6 +288,50 @@ $schedule-side-panel-header-height: 42px;
       color: #1d4ed8;
       box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
     }
+  }
+
+  &__sidebarIcon {
+    display: block;
+    width: 32px;
+    height: 32px;
+  
+    background-color: currentColor;
+    pointer-events: none;
+  }
+  
+  &__sidebarIcon--option {
+    -webkit-mask-image: url('/static/img/option.svg');
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+  
+    mask-image: url('/static/img/option.svg');
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+  }
+
+  &__sidebarIcon--distribute {
+    -webkit-mask-image: url('/static/img/distribute.svg');
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+  
+    mask-image: url('/static/img/distribute.svg');
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+  }
+  &__sidebarIcon--edit {
+    -webkit-mask-image: url('/static/img/edit.svg');
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+  
+    mask-image: url('/static/img/edit.svg');
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
   }
 }
 
@@ -342,6 +427,7 @@ $schedule-side-panel-header-height: 42px;
   }
 
   &__drawerPanelTitle {
+    @include type-ui;
     flex: 1 1 auto;
     min-width: 0;
     margin: 0;
@@ -376,21 +462,100 @@ $schedule-side-panel-header-height: 42px;
     white-space: nowrap;
   }
 
+  &__bulkRegistrationButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
+    padding: 0;
+
+    border-radius: 999px;
+    border-color: rgba(15, 23, 42, 0.12);
+    background: #ffffff;
+    color: #334155;
+
+    white-space: nowrap;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  &__bulkRegistrationButton:hover {
+    background: #f8fafc;
+    border-color: rgba(15, 23, 42, 0.2);
+    transform: translateY(-1px);
+  }
+
+  &__bulkRegistrationButton:focus-visible {
+    outline: 3px solid rgba($schedule-primary, 0.24);
+    outline-offset: 2px;
+  }
+
+  &__bulkRegistrationButtonIcon {
+    display: block;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    background-color: currentColor;
+
+    -webkit-mask-image: url('/static/img/一括登録.svg');
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+
+    mask-image: url('/static/img/一括登録.svg');
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+  }
+
+  &__bulkRegistrationButton[data-icon-only='1'] {
+    display: inline-grid;
+    place-items: center;
+  }
+
+  &__bulkRegistrationButton[data-icon-only='0'] {
+    width: auto;
+    min-width: auto;
+    padding: 0 10px;
+  }
+
+  &__srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    white-space: nowrap;
+    border: 0;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+  }
+
   &__drawerFilterButton {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
   
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
     padding: 0;
   
     border-radius: 999px;
     border-color: rgba(15, 23, 42, 0.12);
-    background: #1e293b;
+    background: #ffffff;
+    color: #334155;
   
     white-space: nowrap;
     transition:
@@ -401,7 +566,7 @@ $schedule-side-panel-header-height: 42px;
   }
   
   &__drawerFilterButton:hover {
-    background: #0f172a;
+    background: #f8fafc;
     border-color: rgba(15, 23, 42, 0.2);
     transform: translateY(-1px);
   }
@@ -414,16 +579,30 @@ $schedule-side-panel-header-height: 42px;
   &__drawerFilterButton[aria-pressed='true'] {
     background: $schedule-primary;
     border-color: rgba($schedule-primary, 0.32);
+    color: #ffffff;
     box-shadow:
       0 0 0 3px rgba($schedule-primary, 0.18),
       0 8px 18px rgba(37, 99, 235, 0.18);
   }
   
   &__drawerFilterIcon {
-    width: 22px;
-    height: 22px;
     display: block;
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+  
+    background-color: currentColor;
     pointer-events: none;
+  
+    -webkit-mask-image: url('/static/img/filter.svg');
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+  
+    mask-image: url('/static/img/filter.svg');
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
   }
 
   &__drawerPanelBody {
@@ -453,12 +632,145 @@ $schedule-side-panel-header-height: 42px;
     box-shadow: none;
   }
 }
+
+/* ==============================
+   Bulk registration drawer top
+   ============================== */
+
+/* ==============================
+   Bulk registration drawer top
+   ============================== */
+
+.schedule-page {
+  &__bulkRegistrationPanel {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    row-gap: 12px;
+
+    min-width: 0;
+    min-height: 0;
+  }
+
+  &__bulkRegistrationPanelTop {
+    min-width: 0;
+
+    .registration-drawer-top {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 14px;
+      flex-wrap: nowrap;
+
+      width: 100%;
+      min-width: 0;
+      padding: 0;
+    }
+
+    .registration-drawer-top__memberField {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+
+      flex: 0 0 auto;
+      width: auto;
+      min-width: max-content;
+    }
+
+    .registration-drawer-top__memberDropdown {
+      flex: 0 0 auto;
+      width: 140px;
+      min-width: 0;
+    }
+
+    .registration-drawer-top__memberDropdown .custom-dropdown__trigger {
+      width: 100%;
+      min-height: 32px;
+    }
+
+    .drawerTableTop {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      flex-wrap: nowrap;
+
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .drawerTableTop__range {
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 10px;
+
+      flex: 0 1 auto;
+      min-width: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .drawerTableTop__group {
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 8px;
+
+      flex: 0 0 auto;
+      min-width: max-content;
+    }
+
+    .drawerTableTop__sep {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+  }
+
+  &__bulkRegistrationPanelTable {
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+}
+
+.drawer__table--no-rowclick {
+  tbody tr.is-register-off {
+    background: rgba(148, 163, 184, 0.08);
+    box-shadow: inset 3px 0 0 rgba(148, 163, 184, 0.45);
+  }
+
+  tbody tr.is-register-off > td {
+    color: rgba(71, 85, 105, 0.58);
+  }
+
+  tbody tr.is-register-off > td:not(:first-child) {
+    opacity: 0.62;
+  }
+
+  tbody tr.is-register-off .toggle {
+    opacity: 1;
+  }
+}
+
+
+.registration-drawer-top__label {
+  @include type-ui-sm;
+
+  white-space: nowrap;
+  color: rgba(71, 85, 105, 0.95);
+}
+
   
 /* ==============================
    schedule-page / main
    ============================== */
 .schedule-page {
   &__main {
+    #{'container-name'}: schedule-main;
+    #{'container-type'}: inline-size;
+  
     min-width: 0;
     min-height: 0;
     padding: 16px 20px 20px;
@@ -526,11 +838,24 @@ $schedule-side-panel-header-height: 42px;
   }
 
   &__titleLine {
-    display: flex;
+    display: inline-flex;
     align-items: baseline;
-    gap: 2px;
+    gap: 6px;
     min-width: 0;
+  }
+
+  &__titleWeekday {
+    flex: 0 0 auto;
+
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1;
+    color: rgba(71, 85, 105, 0.95);
     white-space: nowrap;
+  }
+
+  &__titleWeekday[hidden] {
+    display: none;
   }
 
   &__title {
@@ -665,14 +990,28 @@ $schedule-side-panel-header-height: 42px;
   }
 
   &__memberDropdown {
-    width: 150px;
+    width: 130px;
     min-width: 0;
-    margin-left: 32px;
+    margin-left: 12px;
   }
 
   &__memberDropdown[hidden] {
     display: none;
   }
+
+  .schedule-page__memberDropdown,
+  .schedule-page__teamDropdown,
+  .registration-drawer-top__memberDropdown {
+    &[data-state='closed'] .custom-dropdown__triggerIconImage {
+      transform: rotate(90deg);
+    }
+  
+    &[data-state='open'] .custom-dropdown__triggerIconImage {
+      transform: rotate(-90deg);
+    }
+  }
+
+  
 
   &__memberWeekLabel {
     grid-column: 1;
@@ -714,6 +1053,31 @@ $schedule-side-panel-header-height: 42px;
     display: none;
   }
 }
+
+.schedule-page {
+  &__teamDropdown {
+    display: none;
+    width: 160px;
+    min-width: 0;
+  }
+
+  &__teamDropdown[hidden] {
+    display: none !important;
+  }
+
+  &__teamDropdown .custom-dropdown__trigger {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  &__teamDropdown .custom-dropdown__panel {
+    margin-top: 8px;
+    z-index: 20;
+  }
+}
+
+
+
   
   
 /* ==============================
@@ -1110,9 +1474,41 @@ $schedule-side-panel-header-height: 42px;
     color: #1d4ed8;
   }
 
+  &__editFooterActions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+  
+  &__editRetract,
   &__editSubmit {
     flex-shrink: 0;
     min-width: 120px;
+  }
+  
+  &__editRetract {
+    border-color: rgba(220, 38, 38, 0.45);
+    background: #fff;
+    color: #b91c1c;
+  }
+  
+  &__editRetract:hover:not(:disabled) {
+    border-color: rgba(220, 38, 38, 0.75);
+    background: #fef2f2;
+    color: #991b1b;
+  }
+  
+  &__editRetract:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18);
+  }
+  
+  &__editRetract:disabled {
+    border-color: rgba(148, 163, 184, 0.35);
+    background: #f8fafc;
+    color: #94a3b8;
   }
 }
 
@@ -1321,28 +1717,95 @@ $schedule-side-panel-header-height: 42px;
    Time schedule
    ============================== */
 .time-schedule {
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   max-height: 75vh;
   border: 1px solid $schedule-border;
   border-radius: $schedule-radius-lg;
   background: $schedule-surface;
   box-shadow: $schedule-shadow;
 
+  overscroll-behavior: contain;
+
+  --time-schedule-axis-width: #{$time-schedule-axis-width};
+  --time-schedule-min-width: #{$time-schedule-min-width};
+  
+  --time-schedule-end-cap: 28px;
+  
+  --time-schedule-timeline-render-height: calc(
+    var(--time-schedule-height) + var(--time-schedule-end-cap)
+  );
+  
+  --time-schedule-layout-height: calc(
+    #{$time-schedule-header-height} +
+    #{$time-schedule-current-row-height} +
+    var(--time-schedule-timeline-render-height)
+  );
+  
+  // Firefox
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+
+  // Chrome / Edge / Safari
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background-color: transparent;
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  &:hover {
+    scrollbar-color: rgba(100, 116, 139, 0.35) transparent;
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 116, 139, 0.42);
+  }
+
+  &:hover::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(71, 85, 105, 0.62);
+  }
+
   &__layout {
     display: grid;
-    grid-template-columns: $time-schedule-axis-width minmax(0, 1fr);
-    min-width: $time-schedule-min-width;
-    height: var(--time-schedule-height);
+    grid-template-columns: var(--time-schedule-axis-width) minmax(0, 1fr);
+    min-width: var(--time-schedule-min-width);
+
+    // 実タイムライン高さ + 最終ラベル用余白
+    --time-schedule-timeline-render-height: calc(
+      var(--time-schedule-height) + var(--time-schedule-end-cap)
+    );
+
+    // ヘッダー + 現在行 + タイムライン表示高さ
+    height: calc(
+      #{$time-schedule-header-height} +
+      #{$time-schedule-current-row-height} +
+      var(--time-schedule-timeline-render-height)
+    );
+
     position: relative;
     box-sizing: border-box;
   }
+
 
   &__axis {
     display: grid;
     grid-template-rows:
       $time-schedule-header-height
       $time-schedule-current-row-height
-      minmax(0, 1fr);
+      var(--time-schedule-timeline-render-height);
+
     height: 100%;
     border-right: 1px solid $schedule-border-light;
     background: #f8fafc;
@@ -1372,7 +1835,7 @@ $schedule-side-panel-header-height: 42px;
   &__axisLabels {
     position: relative;
     min-height: 0;
-    overflow: hidden;
+    overflow: visible;
   }
   
   &__axisLabel {
@@ -1390,12 +1853,21 @@ $schedule-side-panel-header-height: 42px;
     pointer-events: none;
   }
 
+  &__axisLabel:first-child {
+    transform: translateY(0);
+  }
+  
+  &__axisLabel:last-child {
+    transform: translateY(-50%);
+  }
+
   &__membersArea {
     display: grid;
     grid-template-rows:
       $time-schedule-header-height
       $time-schedule-current-row-height
-      minmax(0, 1fr);
+      var(--time-schedule-timeline-render-height);
+  
     min-width: 0;
     height: 100%;
   }
@@ -1409,7 +1881,138 @@ $schedule-side-panel-header-height: 42px;
     top: 0;
     z-index: 4;
   }
+
+  &__memberHeaderCell {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    min-width: 0;
+    height: 100%;
+    border-right: 1px solid $schedule-border-light;
+    background: #f8fafc;
+
+    &:last-child {
+      border-right: 0;
+    }
+  }
+
+  &__memberHeaderCell &__memberHeader {
+    width: 100%;
+    min-width: 0;
+    padding-right: 62px;
+    border-right: 0;
+  }
+
+  &__bulkPullbackButton {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    z-index: 3;
+
+    display: inline-grid;
+    place-items: center;
+
+    width: 24px;
+    height: 24px;
+    padding: 0;
+
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #64748b;
+
+    cursor: pointer;
+    transform: translateY(-50%);
+
+    transition:
+      background-color 0.18s ease,
+      color 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  &__memberWeekButton {
+    position: absolute;
+    top: 50%;
+    right: 32px;
+    z-index: 3;
   
+    display: inline-grid;
+    place-items: center;
+  
+    width: 24px;
+    height: 24px;
+    padding: 0;
+  
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #64748b;
+  
+    cursor: pointer;
+    transform: translateY(-50%);
+  
+    transition:
+      background-color 0.18s ease,
+      color 0.18s ease,
+      transform 0.18s ease;
+  }
+  
+  &__memberWeekButton:hover {
+    background: rgba(15, 23, 42, 0.08);
+    color: #334155;
+    transform: translateY(-50%) scale(1.04);
+  }
+  
+  &__memberWeekButton:focus-visible {
+    outline: 3px solid rgba($schedule-primary, 0.24);
+    outline-offset: 2px;
+  }
+  
+  &__memberWeekButtonIcon {
+    display: block;
+    width: 18px;
+    height: 18px;
+    background-color: currentColor;
+  
+    -webkit-mask-image: url('/static/img/週間予定.svg');
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+  
+    mask-image: url('/static/img/週間予定.svg');
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+  }
+
+  &__bulkPullbackButton:hover {
+    background: rgba(15, 23, 42, 0.08);
+    color: #334155;
+    transform: translateY(-50%) scale(1.04);
+  }
+
+  &__bulkPullbackButton:focus-visible {
+    outline: 3px solid rgba($schedule-primary, 0.24);
+    outline-offset: 2px;
+  }
+
+  &__bulkPullbackButtonIcon {
+    display: block;
+    width: 18px;
+    height: 18px;
+    background-color: currentColor;
+
+    -webkit-mask-image: url('/static/img/bulk-pullback.svg');
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+
+    mask-image: url('/static/img/bulk-pullback.svg');
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+  }
+
   &__currentRow {
     display: grid;
     grid-template-columns: repeat(var(--member-count), minmax(0, 1fr));
@@ -1472,7 +2075,7 @@ $schedule-side-panel-header-height: 42px;
 
   &__memberHeader {
     @include type-th;
-
+  
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1485,29 +2088,24 @@ $schedule-side-panel-header-height: 42px;
     background: #f8fafc;
     appearance: none;
     -webkit-appearance: none;
-    cursor: pointer;
-
+    cursor: default;
+  
     color: $schedule-text;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-
+  
     transition:
-      background-color 0.2s ease,
       box-shadow 0.2s ease;
-
-    &:hover {
-      background: #eef4fb;
-    }
-
+  
     &:focus-visible {
       outline: none;
       position: relative;
       z-index: 1;
       box-shadow: inset 0 0 0 2px rgba(37, 99, 235, 0.22);
     }
-
+  
     &:last-child {
       border-right: 0;
     }
@@ -1595,20 +2193,31 @@ $schedule-side-panel-header-height: 42px;
 
   &__events {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+  
+    height: var(--time-schedule-height);
+    overflow: hidden;
+  
     z-index: 1;
   }
 
   &__event {
     position: absolute;
     box-sizing: border-box;
-    overflow: hidden;
+
+    overflow-x: hidden;
+    overflow-y: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
 
     padding: 6px 8px;
     border-left: 4px solid $schedule-primary;
     border-radius: $schedule-radius-sm;
 
     &:hover {
+      overflow-y: auto;
       filter: brightness(0.98);
     }
   }
@@ -1639,6 +2248,23 @@ $schedule-side-panel-header-height: 42px;
     color: $schedule-text-muted;
   }
 
+  &__event[data-plan-status='承認待ち'],
+  &__event[data-plan-status='完了'] {
+    opacity: 0.52;
+    filter: grayscale(0.35) saturate(0.65);
+    box-shadow: none;
+  }
+
+  &__event[data-plan-status='承認待ち'] .time-schedule__eventTitle,
+  &__event[data-plan-status='完了'] .time-schedule__eventTitle {
+    color: $schedule-text-muted;
+  }
+
+  .is-move-mode &__event[data-plan-status='承認待ち'],
+  .is-move-mode &__event[data-plan-status='完了'] {
+    cursor: not-allowed;
+  }
+
   &__eventTitle {
     @include type-schedule-meta;
     overflow: hidden;
@@ -1647,7 +2273,13 @@ $schedule-side-panel-header-height: 42px;
 
   &__breakBands {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+  
+    height: var(--time-schedule-height);
+    overflow: hidden;
+  
     z-index: 0;
     pointer-events: none;
   }
@@ -1702,44 +2334,70 @@ $schedule-side-panel-header-height: 42px;
      ============================== */
   
   &--memberWeek {
-   .time-schedule__axis {
-     grid-template-rows:
-       $time-schedule-header-height
-       minmax(0, 1fr);
-   }
-   .time-schedule__membersArea {
-     grid-template-rows:
-       $time-schedule-header-height
-       minmax(0, 1fr);
-   }
-   .time-schedule__axisHeaderSpacer {
-     border-bottom: 1px solid $schedule-border;
-   }
-   .time-schedule__memberHeaderRow {
-     border-bottom: 1px solid $schedule-border;
-   }
-   .time-schedule__memberHeader--day {
-     flex-direction: column;
-     gap: 2px;
-     padding: 6px 8px;
-     cursor: default;
-     &:hover {
-       background: #f8fafc;
-     }
-   }
-   .time-schedule__memberHeaderSub {
-     @include type-small;
-     color: $schedule-text-muted;
-     white-space: nowrap;
-   }
-   .time-schedule__grid {
-     min-height: 0;
-   }
-   .time-schedule__eventTitle {
-     @include type-schedule-meta;
-     overflow: hidden;
-     word-break: break-word;
-   }
+    --time-schedule-fixed-rows-height: #{$time-schedule-header-height};
+    .time-schedule__axis {
+      grid-template-rows:
+        $time-schedule-header-height
+        var(--time-schedule-timeline-render-height);
+    }
+
+    .time-schedule__membersArea {
+      grid-template-rows:
+        $time-schedule-header-height
+        var(--time-schedule-timeline-render-height);
+    }
+  
+    .time-schedule__axisHeaderSpacer {
+      border-bottom: 1px solid $schedule-border;
+    }
+  
+    .time-schedule__memberHeaderRow {
+      border-bottom: 1px solid $schedule-border;
+      z-index: 30;
+      overflow: visible;
+    }
+  
+    .time-schedule__memberHeader--day {
+      position: relative;
+      flex-direction: column;
+      gap: 2px;
+      padding: 6px 34px 6px 8px;
+      cursor: default;
+      z-index: 1;
+      overflow: visible;
+  
+      &:hover {
+        background: #f8fafc;
+      }
+    }
+  
+    .time-schedule__bulkPullbackButton--day {
+      right: 6px;
+      opacity: 0.72;
+      z-index: 20;
+    }
+
+    .time-schedule__bulkPullbackButton--day:hover,
+    .time-schedule__bulkPullbackButton--day:focus-visible {
+      opacity: 1;
+      z-index: 40;
+    }
+  
+    .time-schedule__memberHeaderSub {
+      @include type-small;
+      color: $schedule-text-muted;
+      white-space: nowrap;
+    }
+  
+    .time-schedule__grid {
+      min-height: 0;
+    }
+  
+    .time-schedule__eventTitle {
+      @include type-schedule-meta;
+      overflow: hidden;
+      word-break: break-word;
+    }
   }
 
   &__dragTimeLabel {
@@ -1767,12 +2425,61 @@ $schedule-side-panel-header-height: 42px;
     z-index: 5;
   }
 
+  &__dragDurationBlock {
+    position: absolute;
+    z-index: 6;
+    box-sizing: border-box;
+    pointer-events: none;
+  
+    border: 2px dashed var(--schedule-drag-highlight-border, rgba(245, 158, 11, 0.95));
+    background: var(--schedule-drag-highlight-bg, rgba(254, 240, 138, 0.42));
+    border-radius: 8px;
+  
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.75) inset;
+  }
+
+  &__rangeSelectionBlock {
+    position: absolute;
+    z-index: 7;
+    box-sizing: border-box;
+    pointer-events: none;
+
+    border: 2px solid rgba(37, 99, 235, 0.55);
+    border-radius: 8px;
+    background: rgba(37, 99, 235, 0.10);
+
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.75) inset,
+      0 8px 20px rgba(37, 99, 235, 0.12);
+  }
+
+  &__rangeSelectionBlock.is-final {
+    pointer-events: auto;
+    cursor: grab;
+    border-color: rgba(37, 99, 235, 0.72);
+    background: rgba(37, 99, 235, 0.14);
+  }
+
+  &__rangeSelectionBlock.is-moving {
+    cursor: grabbing;
+    z-index: 12;
+    border-color: rgba(14, 116, 144, 0.82);
+    background: rgba(14, 116, 144, 0.16);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.8) inset,
+      0 12px 26px rgba(14, 116, 144, 0.20);
+  }
   .time-schedule {
     &__memberHeader {
       transition: background-color 0.18s ease;
   
       &.is-drag-target {
         background: rgba(37, 99, 235, 0.14);
+      }
+
+      &.is-bulk-registration-target {
+        background: rgba(16, 185, 129, 0.14);
+        box-shadow: inset 0 -2px 0 rgba(16, 185, 129, 0.65);
       }
     }
   
@@ -1786,6 +2493,14 @@ $schedule-side-panel-header-height: 42px;
           rgba(37, 99, 235, 0.06) 100%
         );
       }
+
+      &.is-bulk-registration-target {
+        background: linear-gradient(
+          180deg,
+          rgba(16, 185, 129, 0.10) 0%,
+          rgba(16, 185, 129, 0.05) 100%
+        );
+      }
     }
 
     &__currentCell {
@@ -1794,8 +2509,43 @@ $schedule-side-panel-header-height: 42px;
       &.is-drag-target {
         background: rgba(37, 99, 235, 0.10);
       }
+
+      &.is-bulk-registration-target {
+        background: rgba(16, 185, 129, 0.10);
+        border-left-color: rgba(16, 185, 129, 0.85);
+      }
     }
   }
+}
+
+/* ==============================
+   Schedule drag preview
+   ============================== */
+.schedule-drag-preview {
+  position: fixed;
+  z-index: 10000;
+  box-sizing: border-box;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.schedule-drag-preview--test-card {
+  max-width: 220px;
+  padding: 10px 12px;
+  border: 1px solid $schedule-drag-preview-border;
+  border-radius: 10px;
+  background: $schedule-drag-preview-bg;
+  box-shadow: $schedule-drag-preview-shadow;
+}
+
+.schedule-drag-preview--test-card .detail-card__titleLine {
+  @include type-ui-sm;
+  display: block;
+  overflow: hidden;
+}
+
+.detail-card.is-dragging-source {
+  opacity: $schedule-drag-preview-source-opacity;
 }
 
 /* ==============================
@@ -1803,6 +2553,154 @@ $schedule-side-panel-header-height: 42px;
    ============================== */
 .display-none {
   display: none !important;
+}
+
+/* ==============================
+   schedule-page / compact nav
+   ============================== */
+
+@container schedule-main (max-width: 860px) {
+  .schedule-page{
+    &__title{
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  
+    &__title[data-compact-title] {
+      font-size: 0;
+    }
+  
+    &__title[data-compact-title]::before {
+      content: attr(data-compact-title);
+  
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    &__titleWeekday {
+      font-size: 0.9rem;
+    }
+  
+    &__nav {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-areas: "controls title";
+      align-items: center;
+      column-gap: 12px;
+      row-gap: 0;
+  
+      min-height: auto;
+    }
+  
+    &__titleGroup {
+      position: static;
+      transform: none;
+  
+      grid-area: title;
+  
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+  
+      width: 100%;
+      min-width: 0;
+    }
+  
+    &__titleLine {
+      min-width: 0;
+      overflow: hidden;
+    }
+  
+    &__activeDateAlias {
+      flex: 0 0 auto;
+    }
+  
+    &__navButtons {
+      flex: 0 0 auto;
+    }
+  
+    &__teamButtons {
+      display: none;
+    }
+  
+    &__teamDropdown:not([hidden]) {
+      display: block;
+      grid-area: controls;
+      justify-self: start;
+      width: 90px;
+    }
+  
+    &__memberActions {
+      grid-area: controls;
+      justify-self: start;
+    }
+
+    &__returnButton {
+      width: 40px;
+      min-width: 40px;
+      height: 40px;
+      min-height: 40px;
+      padding: 0;
+      gap: 0;
+    }
+
+    &__returnButtonText {
+      display: none;
+    }
+
+    &_returnButtonIcon {
+      width: 18px;
+      height: 18px;
+    }
+
+    &__drawerPanelBody[data-role='schedule-test-cards-body'] {
+      position: relative;
+      overflow: hidden;
+    }
+  
+    &__drawerPanelBody[data-role='schedule-test-cards-body'] > .spinner-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      border-radius: inherit;
+    }
+  }
+
+
+  .time-schedule {
+    --time-schedule-axis-width: 36px;
+    --time-schedule-min-width: 100px;
+
+    &__axisLabel {
+      padding-right: 6px;
+      font-size: 0.72rem;
+    }
+
+    &__memberHeader {
+      padding: 0 4px;
+      font-size: 0.74rem;
+    }
+
+    &__currentCell {
+      padding: 4px 5px;
+    }
+
+    &__event {
+      padding: 4px 5px;
+    }
+
+    &__event.is-range-selected {
+      outline: 2px solid rgba(37, 99, 235, 0.82);
+      outline-offset: -2px;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.75) inset,
+        0 6px 16px rgba(37, 99, 235, 0.18);
+    }
+  }
 }
 
 /* ==============================

@@ -33,6 +33,7 @@ export class ScheduleEventTemplate {
         data-start-time="${event.startTime}"
         data-end-time="${event.endTime}"
         data-status="${event.status ?? ''}"
+        data-plan-status="${event.planStatus ?? ''}"
       >
           ${showLabel ? `
             <div class="time-schedule__eventTitle">

@@ -12,10 +12,7 @@ import {
       const planDate = planTime.slice(0, 10);
       const planHourMinute = planTime.slice(11, 16);
   
-      const durationMinutes = this.calculateDurationMinutes(
-        beforeEvent.startTime,
-        beforeEvent.endTime
-      );
+      const durationMinutes = this.getDurationMinutes(beforeEvent);
   
       const endTime = this.addMinutesToTime(planHourMinute, durationMinutes);
   
@@ -58,9 +55,27 @@ import {
         return 0;
       }
     
-      return this.calculateDurationMinutes(
+      const durationFromTimeRange = this.calculateDurationMinutes(
         eventInfo.startTime,
         eventInfo.endTime
       );
+    
+      if (durationFromTimeRange > 0) {
+        return durationFromTimeRange;
+      }
+    
+      return this.toPositiveMinutes(
+        eventInfo.durationMinutes ?? eventInfo.manHours
+      );
+    }
+    
+    static toPositiveMinutes(value) {
+      const minutes = Number(value);
+    
+      if (!Number.isFinite(minutes) || minutes <= 0) {
+        return 0;
+      }
+    
+      return minutes;
     }
 }

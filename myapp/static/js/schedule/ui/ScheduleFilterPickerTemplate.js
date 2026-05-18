@@ -49,7 +49,7 @@ export class ScheduleFilterPickerTemplate {
           </span>
           <img
             class="schedule-page__filterValueIcon"
-            src="/static/img/矢印.svg"
+            src="/static/img/arrow.svg"
             alt=""
             aria-hidden="true"
           >

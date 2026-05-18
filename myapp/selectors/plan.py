@@ -3,11 +3,16 @@ from typing import Iterable, Optional
 
 from datetime import date, datetime, time, timedelta
 
-from django.db.models import F, Prefetch, Q
+from django.db.models import Count, F, Prefetch, Q, Sum
+from django.db.models.functions import Coalesce
 
 from myapp.models import Plan_tb, CheckStatus, Db_details_tb, PlanStatus
 
 from myapp.domain.periods import get_week_range, get_fiscal_year_range
+from myapp.domain.schedule_time_window import (
+    build_schedule_day_window,
+    build_schedule_day_candidate_start,
+)
 
 EXCLUDED_INSPECTION_STATUSES = (
     CheckStatus.ABOLISHED,
@@ -204,20 +209,28 @@ def filter_this_week_plan_time_plans(qs=None):
 def select_schedule_day_plans(*, affiliation_id: int, target_date: date):
     """
     スケジュール画面用:
-    指定所属・指定日(06:30〜翌06:30)に入る Plan を返す。
-    担当者は Plan_tb.holder を使う。
+    指定所属・指定日 4:30〜翌4:30 に重なる可能性がある Plan を返す。
+
+    注意:
+      plan_time + man_hours の正確な重なり判定は service 側で行う。
+      selector ではDBで絞れる範囲だけ絞る。
     """
 
-    start_dt = datetime.combine(target_date, time(hour=6, minute=30))
-    end_dt = start_dt + timedelta(days=1)
-    
+    window = build_schedule_day_window(target_date)
+    candidate_start_dt = build_schedule_day_candidate_start(window)
+
     return (
         plan_base_qs()
         .filter(
             holder__profile__belongs_id=affiliation_id,
             plan_time__isnull=False,
-            plan_time__gte=start_dt,
-            plan_time__lt=end_dt,
+
+            # 終了時刻は man_hours が必要なのでDB側では確定できない。
+            # そのため「表示終了より前に開始した予定」を候補にする。
+            plan_time__lt=window.end,
+
+            # 過去を無制限に拾わないための候補幅。
+            plan_time__gte=candidate_start_dt,
         )
         .order_by('plan_time', 'plan_id')
     )
@@ -271,3 +284,69 @@ def filter_test_card_plans_by_shift_pattern(
         Q(inspection_no__practitioner_id=shift_pattern_id)
         | Q(inspection_no__practitioner_id=ALWAYS_INCLUDE_PRACTITIONER_ID)
     )
+    
+def select_bulk_registration_target_plans(*, plan_ids):
+    """
+    一括登録対象のPlanを取得する。
+    """
+    if not plan_ids:
+        return Plan_tb.objects.none()
+
+    return (
+        plan_base_qs()
+        .filter(plan_id__in=plan_ids)
+        .order_by('plan_id')
+    )
+
+
+def select_member_registration_overlap_plan_candidates(
+    *,
+    member_id,
+    window_end,
+):
+    """
+    一括登録対象時間帯と重なる可能性がある既存予定を取得する。
+
+    実際に重なるかどうかは、
+    plan_time + man_hours が必要なため service 側で判定する。
+    """
+    return (
+        plan_base_qs()
+        .filter(
+            holder_id=member_id,
+            plan_time__isnull=False,
+            plan_time__lt=window_end,
+        )
+        .exclude(
+            status__in=[
+                PlanStatus.COMPLETED.value,
+                PlanStatus.APPROVAL_WAITING.value,
+            ]
+        )
+        .order_by('plan_time', 'plan_id')
+    )
+
+
+def aggregate_plan_count_and_man_hours(*, plan_ids):
+    """
+    Plan件数と工数合計を集計する。
+    """
+    if not plan_ids:
+        return {
+            'count': 0,
+            'man_hours': 0,
+        }
+
+    agg = (
+        plan_base_qs()
+        .filter(plan_id__in=plan_ids)
+        .aggregate(
+            count=Count('plan_id'),
+            man_hours=Coalesce(Sum('inspection_no__man_hours'), 0),
+        )
+    )
+
+    return {
+        'count': agg['count'] or 0,
+        'man_hours': agg['man_hours'] or 0,
+    }

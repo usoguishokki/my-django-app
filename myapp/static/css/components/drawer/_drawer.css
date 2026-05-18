@@ -859,11 +859,11 @@
   margin: 0; }
 
 .ui-fieldGroup.ui-fieldGroup--datetime .ui-input--date {
-  width: 150px;
+  width: 140px;
   max-width: 100%; }
 
 .ui-fieldGroup.ui-fieldGroup--datetime .ui-input--time {
-  width: 110px;
+  width: 80px;
   max-width: 100%; }
 
 .drawerTableTop__sep {
@@ -994,14 +994,30 @@
   overflow-wrap: anywhere; }
 
 .detail-card.click-card {
-  max-height: 210px; }
+  max-height: 210px;
+  overflow: hidden; }
 
-.click-card__button {
-  height: 100%; }
+.detail-card.click-card .click-card__button {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 210px;
+  overflow: hidden; }
 
-.detail-card__body {
+.detail-card.click-card .detail-card__header {
+  flex: 0 0 auto; }
+
+.detail-card.click-card .detail-card__body {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto; }
+  max-height: 140px;
+  overflow-y: hidden;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable; }
+
+/* カードにマウスを乗せた時だけスクロール可能にする */
+.detail-card.click-card:hover .detail-card__body {
+  overflow-y: auto; }
 
 /*# sourceMappingURL=_drawer.css.map */

@@ -328,6 +328,24 @@ export class ScheduleTestCardFilterService {
   getDrawerPanelFilterSummary() {
     return this.getActiveFilterSummaries().join(' / ');
   }
+
+  getFilteredItemCount() {
+    return this.getFilteredItems().length;
+  }
+  
+  getDrawerPanelMeta({
+    count = this.getFilteredItemCount(),
+    emptyFilterText = 'フィルターなし',
+  } = {}) {
+    const countText = `対象 ${count} 件`;
+    const filterSummary = this.getDrawerPanelFilterSummary();
+  
+    if (!filterSummary) {
+      return `${countText} / ${emptyFilterText}`;
+    }
+  
+    return `${countText} / ${filterSummary}`;
+  }
   
   getActiveFilterSummaries() {
     return this.buildFilterConfigs()

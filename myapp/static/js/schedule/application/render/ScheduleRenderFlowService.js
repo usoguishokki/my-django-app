@@ -113,6 +113,7 @@ export class ScheduleRenderFlowService {
         affiliationId: this.state.getSelectedAffiliationId(),
       });
     
+      this.syncTeamDayDate(response);
       this.syncActiveDateAlias(response);
     
       this.affiliationService.syncTeamSchedules(
@@ -123,6 +124,15 @@ export class ScheduleRenderFlowService {
         preservedScroll,
         isMemberWeekView: false,
       });
+    }
+
+    syncTeamDayDate(response) {
+      const date =
+        response?.data?.date
+        ?? response?.date
+        ?? this.state.getSelectedDate();
+    
+      this.state.setCurrentTeamDayDate?.(date);
     }
 
     syncActiveDateAlias(response) {

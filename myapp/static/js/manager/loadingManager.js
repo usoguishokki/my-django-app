@@ -74,6 +74,148 @@ export const forceHideLoadingScreen = () => {
     _loadingClosed = true;
 };
 
+const ELEMENT_LOADING_HOST_CLASS = 'element-loading-host';
+const ELEMENT_LOADING_OVERLAY_CLASS = 'spinner-overlay';
+
+function getElementLoadingCount(targetEl) {
+  return Number(targetEl?.dataset?.loadingCount ?? 0);
+}
+
+function setElementLoadingCount(targetEl, count) {
+  if (!targetEl) {
+    return;
+  }
+
+  targetEl.dataset.loadingCount = String(Math.max(0, count));
+}
+
+/**
+ * 任意の要素内にローディングオーバーレイを表示する
+ * @param {HTMLElement} targetEl
+ * @param {{title?: string, sub?: string, size?: 'sm'|'md'|'lg'}} options
+ * @returns {HTMLElement|null}
+ */
+export function mountElementLoading(
+  targetEl,
+  {
+    title = '読み込み中',
+    sub = 'しばらくお待ちください',
+    size = 'md',
+  } = {}
+) {
+  if (!targetEl) {
+    return null;
+  }
+
+  const currentCount = getElementLoadingCount(targetEl);
+  setElementLoadingCount(targetEl, currentCount + 1);
+
+  targetEl.setAttribute('aria-busy', 'true');
+  targetEl.classList.add('element-loading-host');
+
+  const existingOverlay = targetEl.querySelector(
+    ':scope > .spinner-overlay'
+  );
+
+  if (existingOverlay) {
+    activateElementLoadingOverlay(existingOverlay);
+    return existingOverlay;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'spinner-overlay is-active';
+  overlay.setAttribute('role', 'status');
+  overlay.setAttribute('aria-live', 'polite');
+
+  overlay.innerHTML = `
+    <div class="spinner-card is-visible">
+      <div class="spinner spinner--${size}" aria-hidden="true"></div>
+      <div class="spinner-text">
+        <span class="title">${title}</span>
+        <span class="sub">${sub}</span>
+      </div>
+    </div>
+  `;
+
+  targetEl.appendChild(overlay);
+
+  return overlay;
+}
+
+/**
+ * 任意の要素内のローディングオーバーレイを非表示にする
+ * @param {HTMLElement} targetEl
+ * @param {{duration?: number}} options
+ */
+export async function unmountElementLoading(
+  targetEl,
+  {
+    duration = 180,
+  } = {}
+) {
+  if (!targetEl) {
+    return;
+  }
+
+  const nextCount = getElementLoadingCount(targetEl) - 1;
+  setElementLoadingCount(targetEl, nextCount);
+
+  if (nextCount > 0) {
+    return;
+  }
+
+  targetEl.removeAttribute('aria-busy');
+  targetEl.classList.remove(ELEMENT_LOADING_HOST_CLASS);
+  targetEl.removeAttribute('data-loading-count');
+
+  const overlay = targetEl.querySelector(
+    `:scope > .${ELEMENT_LOADING_OVERLAY_CLASS}`
+  );
+
+  if (!overlay) {
+    return;
+  }
+
+  overlay.classList.remove('is-active');
+  overlay.querySelector('.spinner-card')?.classList.remove('is-visible');
+
+  await wait(duration);
+
+  overlay.remove();
+}
+
+/**
+ * 任意の要素にローディングを表示しながら非同期処理を実行する
+ * @param {HTMLElement} targetEl
+ * @param {() => Promise<any>} task
+ * @param {{title?: string, sub?: string, size?: 'sm'|'md'|'lg', duration?: number}} options
+ */
+function waitNextFrame() {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      resolve();
+    });
+  });
+}
+
+export async function withElementLoading(
+  targetEl,
+  task,
+  options = {}
+) {
+  mountElementLoading(targetEl, options);
+
+  await waitNextFrame();
+
+  try {
+    return await task();
+  } finally {
+    await unmountElementLoading(targetEl, {
+      duration: options.duration,
+    });
+  }
+}
+
 
 
 /**
@@ -394,4 +536,18 @@ export async function swapSkeletonToGantt(rootEl, render, { duration = 240, easi
     void (gantt?.offsetHeight); void (names?.offsetHeight);
     [gantt, names].forEach(el => { if (el) el.style.opacity = '1'; });
     await wait(duration);
+}
+
+function activateElementLoadingOverlay(overlay) {
+  if (!overlay) {
+    return;
+  }
+
+  overlay.classList.add('is-active');
+
+  const card = overlay.querySelector('.spinner-card');
+
+  if (card) {
+    card.classList.add('is-visible');
+  }
 }

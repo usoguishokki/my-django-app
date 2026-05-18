@@ -51,7 +51,7 @@ urlpatterns = [
     path('api/plans/', views.api_plans, name='api_plans'),
     path("api/", include("myapp.urls_api")),
     path('csv-download/', views.csv_download_page, name='csvDownloadPage'),
-    path('schedule/', views.schedule_page, name='schedulePage'),
+    path('timeTable/', views.schedule_page, name='timeTable'),
     
     
 #API

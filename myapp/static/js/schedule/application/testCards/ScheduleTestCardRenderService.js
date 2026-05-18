@@ -36,11 +36,11 @@ export class ScheduleTestCardRenderService {
       return;
     }
   
-    const filterSummary = this.filterService.getDrawerPanelFilterSummary();
+    const metaText = this.filterService.getDrawerPanelMeta();
   
     titleElement.replaceChildren(
       this.createDrawerPanelTitleMain(),
-      this.createDrawerPanelTitleMeta(filterSummary)
+      this.createDrawerPanelTitleMeta(metaText)
     );
   }
 
@@ -52,10 +52,10 @@ export class ScheduleTestCardRenderService {
     return element;
   }
   
-  createDrawerPanelTitleMeta(filterSummary = '') {
+  createDrawerPanelTitleMeta(metaText = '') {
     const element = document.createElement('span');
     element.className = 'schedule-page__drawerPanelTitleMeta';
-    element.textContent = filterSummary || 'フィルターなし';
+    element.textContent = metaText || '対象 0 件 / フィルターなし';
   
     return element;
   }

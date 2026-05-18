@@ -1,5 +1,5 @@
 // static/js/utils/dateTime.js
-
+const JAPANESE_WEEKDAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'];
 /**
  * 0埋め
  * @param {number} n
@@ -242,4 +242,267 @@ export function getJsDay(dateLike) {
   const d = parseUiDateTimeLike(dateLike);
   if (!d) return null;
   return d.getDay();
+}
+
+/**
+ * 日付表示を compact 表示へ変換する
+ *
+ * examples:
+ * - "2026-05-04" -> "05-04"
+ * - "2026/5/4" -> "05-04"
+ * - "2026-05-04 - 2026-05-10" -> "05-04 - 05-10"
+ * - "2026/5/4 ～ 2026/5/10" -> "05-04 ～ 05-10"
+ * - Date -> "05-04"
+ *
+ * @param {string|Date|number|null|undefined} value
+ * @param {{separator?: string}} [options]
+ * @returns {string}
+ */
+export function formatCompactDateLabel(value, { separator = '-' } = {}) {
+  if (value == null) {
+    return '';
+  }
+
+  if (value instanceof Date || typeof value === 'number') {
+    return formatDate(value, `MM${separator}DD`);
+  }
+
+  const text = String(value).trim();
+
+  return text.replace(
+    /\b\d{4}[-/](\d{1,2})[-/](\d{1,2})\b/g,
+    (_, month, day) => {
+      return `${pad(month)}${separator}${pad(day)}`;
+    }
+  );
+}
+
+/**
+ * input[type="date"] 用に YYYY-MM-DD へ整形する
+ *
+ * @param {string|Date|number|null|undefined} value
+ * @returns {string}
+ */
+export function normalizeDateInputValue(value) {
+  if (value == null) {
+    return '';
+  }
+
+  if (value instanceof Date) {
+    return formatDate(value, 'YYYY-MM-DD');
+  }
+
+  const text = String(value).trim();
+
+  const match = text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+
+  if (!match) {
+    return '';
+  }
+
+  const [, year, month, day] = match;
+
+  return `${year}-${pad(month)}-${pad(day)}`;
+}
+
+/**
+ * YYYY-MM-DD / YYYY/MM/DD 形式の日付をローカルDateに変換する
+ *
+ * @param {string|Date|number|null|undefined} value
+ * @returns {Date|null}
+ */
+export function parseDateOnlyToLocalDate(value) {
+  if (value == null) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value === 'number') {
+    const date = new Date(value);
+
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const dateValue = normalizeDateInputValue(value);
+
+  if (!dateValue) {
+    return null;
+  }
+
+  const date = new Date(`${dateValue}T00:00:00`);
+
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/**
+ * 日付から曜日ラベルを取得する
+ *
+ * @param {string|Date|number|null|undefined} value
+ * @returns {string}
+ */
+export function formatJapaneseWeekdayLabel(value) {
+  const date = parseDateOnlyToLocalDate(value);
+
+  if (!date) {
+    return '';
+  }
+
+  return JAPANESE_WEEKDAY_LABELS[date.getDay()] ?? '';
+}
+
+/**
+ * タイトル横に表示する曜日ラベルを取得する
+ *
+ * examples:
+ * - "2026-05-04" -> "(月)"
+ * - "2026-05-04 - 2026-05-10" -> "(月〜日)"
+ *
+ * @param {string|Date|number|null|undefined} value
+ * @returns {string}
+ */
+export function formatTitleWeekdayLabel(value) {
+  if (value == null) {
+    return '';
+  }
+
+  if (value instanceof Date || typeof value === 'number') {
+    const weekday = formatJapaneseWeekdayLabel(value);
+
+    return weekday ? `(${weekday})` : '';
+  }
+
+  const text = String(value).trim();
+
+  const dateTexts = [
+    ...text.matchAll(/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b/g),
+  ].map((match) => match[0]);
+
+  if (!dateTexts.length) {
+    return '';
+  }
+
+  const firstWeekday = formatJapaneseWeekdayLabel(dateTexts[0]);
+
+  if (!firstWeekday) {
+    return '';
+  }
+
+  if (dateTexts.length === 1) {
+    return `(${firstWeekday})`;
+  }
+
+  const lastWeekday = formatJapaneseWeekdayLabel(
+    dateTexts[dateTexts.length - 1]
+  );
+
+  if (!lastWeekday || firstWeekday === lastWeekday) {
+    return `(${firstWeekday})`;
+  }
+
+  return `(${firstWeekday}〜${lastWeekday})`;
+}
+
+
+
+
+/**
+ * input[type="time"] 用に HH:mm へ整形する
+ *
+ * examples:
+ * - "6:30" -> "06:30"
+ * - "06:30:00" -> "06:30"
+ *
+ * @param {string|null|undefined} value
+ * @returns {string}
+ */
+export function normalizeTimeInputValue(value) {
+  const text = String(value ?? '').trim();
+
+  const match = text.match(/^(\d{1,2}):(\d{1,2})/);
+
+  if (!match) {
+    return '';
+  }
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+
+  if (
+    Number.isNaN(hours) ||
+    Number.isNaN(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return '';
+  }
+
+  return `${pad(hours)}:${pad(minutes)}`;
+}
+
+/**
+ * input[type="date"] 用の日付に日数を加算する
+ *
+ * @param {string|Date|number|null|undefined} value
+ * @param {number} days
+ * @returns {string}
+ */
+export function addDaysToDateInputValue(value, days = 0) {
+  const dateValue = normalizeDateInputValue(value);
+
+  if (!dateValue) {
+    return '';
+  }
+
+  const date = new Date(`${dateValue}T00:00:00`);
+  date.setDate(date.getDate() + Number(days || 0));
+
+  return formatDate(date, 'YYYY-MM-DD');
+}
+
+/**
+ * input[type="time"] 用の値を分に変換する
+ *
+ * @param {string|null|undefined} value
+ * @returns {number|null}
+ */
+export function timeInputValueToMinutes(value) {
+  const timeValue = normalizeTimeInputValue(value);
+
+  if (!timeValue) {
+    return null;
+  }
+
+  const [hours, minutes] = timeValue.split(':').map(Number);
+
+  if (
+    Number.isNaN(hours) ||
+    Number.isNaN(minutes)
+  ) {
+    return null;
+  }
+
+  return hours * 60 + minutes;
+}
+
+/**
+ * 終了時刻が翌日になるか判定する
+ *
+ * @param {string|null|undefined} startTime
+ * @param {string|null|undefined} endTime
+ * @returns {boolean}
+ */
+export function isNextDayTimeRange(startTime, endTime) {
+  const startMinutes = timeInputValueToMinutes(startTime);
+  const endMinutes = timeInputValueToMinutes(endTime);
+
+  if (startMinutes === null || endMinutes === null) {
+    return false;
+  }
+
+  return endMinutes <= startMinutes;
 }

@@ -11,25 +11,40 @@ export class ScheduleEditSummaryService {
     }
   
     return {
+      sourceType: eventEl.dataset.dragSource ?? 'schedule-event',
       planId: eventEl.dataset.planId ?? '',
       workName: eventEl.dataset.workName ?? '',
       memberId: eventEl.dataset.memberId ?? '',
       startTime: eventEl.dataset.startTime ?? '',
       endTime: eventEl.dataset.endTime ?? '',
+      durationMinutes:
+        eventEl.dataset.durationMinutes ??
+        eventEl.dataset.manHours ??
+        '',
+      manHours: eventEl.dataset.manHours ?? '',
       inspectionNo: eventEl.dataset.inspectionNo ?? '',
-      planDate: eventEl.dataset.dayKey ?? this.getSelectedDate(),
+      planDate:
+        eventEl.dataset.dayKey ??
+        eventEl.dataset.planDate ??
+        this.getSelectedDate(),
+      status: eventEl.dataset.status ?? '',
+      planStatus: eventEl.dataset.planStatus ?? '',
     };
   }
 
-  syncBefore(eventInfo) {
+  syncBefore(eventInfo, options = {}) {
     this.renderSummary(this.elements?.editBeforeSummary, eventInfo, {
       editableMember: false,
+      editableDateTime: false,
+      ...options,
     });
   }
-
-  syncAfter(eventInfo) {
+  
+  syncAfter(eventInfo, options = {}) {
     this.renderSummary(this.elements?.editAfterSummary, eventInfo, {
       editableMember: true,
+      editableDateTime: true,
+      ...options,
     });
   }
 
@@ -46,19 +61,29 @@ export class ScheduleEditSummaryService {
     this.syncAfter(null);
   }
 
-  renderSummary(summaryEl, eventInfo, { editableMember = false } = {}) {
+  renderSummary(
+    summaryEl,
+    eventInfo,
+    {
+      editableMember = false,
+      editableDateTime = false,
+    } = {}
+  ) {
     if (!summaryEl) {
       return;
     }
-
+  
     if (!eventInfo) {
       summaryEl.classList.add('is-empty');
-      summaryEl.innerHTML = this.buildEmptySummaryHtml({ editableMember });
+      summaryEl.innerHTML = this.buildEmptySummaryHtml({
+        editableMember,
+        editableDateTime,
+      });
       return;
     }
-
+  
     const memberName = this.getMemberNameById(eventInfo.memberId);
-
+  
     summaryEl.classList.remove('is-empty');
     summaryEl.innerHTML = this.buildFilledSummaryHtml({
       workName: eventInfo.workName,
@@ -67,11 +92,18 @@ export class ScheduleEditSummaryService {
       dateText: eventInfo.planDate || this.getSelectedDate(),
       startTime: eventInfo.startTime || '',
       endTime: eventInfo.endTime || '',
+      timeText: eventInfo.timeText || '',
       editableMember,
+      editableDateTime,
     });
   }
 
-  buildEmptySummaryHtml({ editableMember = false } = {}) {
+  buildEmptySummaryHtml(
+    {
+      editableMember = false,
+      editableDateTime = false,
+    } = {}
+  ) {
     return `
       <div class="schedule-page__editSummaryRow schedule-page__editSummaryRow--work">
         <span class="schedule-page__editSummaryLabel">作業名:</span>
@@ -145,7 +177,9 @@ export class ScheduleEditSummaryService {
     dateText = '',
     startTime = '',
     endTime = '',
+    timeText = '',
     editableMember = false,
+    editableDateTime = false,
     memberId = '',
   }) {
     return `
@@ -205,7 +239,7 @@ export class ScheduleEditSummaryService {
       </div>
   
       ${
-        editableMember
+        editableDateTime
           ? `
             <div class="schedule-page__editSummaryRow schedule-page__editSummaryRow--date">
               <span class="schedule-page__editSummaryLabel">日付:</span>
@@ -238,7 +272,12 @@ export class ScheduleEditSummaryService {
             <div class="schedule-page__editSummaryRow schedule-page__editSummaryRow--time">
               <span class="schedule-page__editSummaryLabel">時間:</span>
               <span class="schedule-page__editSummaryValue">
-                ${startTime && endTime ? `${startTime} - ${endTime}` : '-'}
+                ${
+                  timeText
+                  || (startTime && endTime ? `${startTime} - ${endTime}` : '')
+                  || startTime
+                  || '-'
+                }
               </span>
             </div>
           `

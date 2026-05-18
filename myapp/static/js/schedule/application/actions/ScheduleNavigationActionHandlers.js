@@ -1,9 +1,10 @@
 export function buildScheduleNavigationActionHandlers({
-    state,
-    render,
-    updateTeamButtonsByAffiliationId,
-    updateRangeButtonsByHours,
-  }) {
+  state,
+  render,
+  updateTeamButtonsByAffiliationId,
+  updateRangeButtonsByHours,
+  teamDropdownService,
+}) {
     return {
       'schedule:prev-day': async () => {
         state.moveDay(-1);
@@ -17,13 +18,16 @@ export function buildScheduleNavigationActionHandlers({
   
       'schedule:change-team': async ({ element }) => {
         const affiliationId = element?.dataset?.affiliationId ?? '';
-  
+      
         if (!affiliationId) {
           return;
         }
-  
+      
         state.setSelectedAffiliationId(affiliationId);
         updateTeamButtonsByAffiliationId(String(affiliationId));
+      
+        teamDropdownService?.close?.();
+      
         await render();
       },
   
@@ -33,6 +37,10 @@ export function buildScheduleNavigationActionHandlers({
         state.setVisibleHours(hours);
         updateRangeButtonsByHours(state.getVisibleHours());
         await render();
+      },
+
+      'schedule:toggle-team-dropdown': () => {
+        teamDropdownService?.toggle?.();
       },
     };
 }

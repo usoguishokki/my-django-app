@@ -3,6 +3,9 @@ import {
   fetchScheduleMemberWeek,
   fetchInspectionCardDetail,
   fetchScheduleTestCardsWeek,
+  fetchScheduleTestCardTeamOptions,
+  executeBulkRegistration,
+  executeScheduleBulkEventRetract,
 } from '../../../api/fetchers.js';
 
 export class ScheduleDataService {
@@ -29,9 +32,27 @@ export class ScheduleDataService {
     });
   }
 
+  fetchTestCardTeamOptions({
+    date = null,
+    dateAlias = '',
+  } = {}) {
+    return fetchScheduleTestCardTeamOptions({
+      date,
+      dateAlias,
+    });
+  }
+
   fetchInspectionCardDetail({ inspectionNo }) {
     return fetchInspectionCardDetail({
       inspectionNo,
     });
+  }
+
+  executeBulkRegistration(params = {}) {
+    return executeBulkRegistration(params);
+  }
+
+  executeScheduleBulkEventRetract(params = {}) {
+    return executeScheduleBulkEventRetract(params);
   }
 }

@@ -2,6 +2,8 @@ from django.db.models import QuerySet
 
 from myapp.models import Member_tb
 
+    
+TEAM_LEADER_JOB_TITLE = '班長'
 
 def member_base_qs() -> QuerySet:
     """
@@ -36,5 +38,26 @@ def select_member_by_member_id(member_id: str):
     return (
         member_base_qs()
         .filter(member_id=member_id)
+        .first()
+    )
+
+def select_team_leader_by_affiliation_id(affiliation_id: int):
+    """
+    所属IDから班長を1件取得する。
+
+    注意:
+      - 班長判定は UserProfile.job_title == '班長' とする
+      - 複数いる場合は member_id 順で安定させる
+    """
+    if not affiliation_id:
+        return None
+
+    return (
+        member_base_qs()
+        .filter(
+            profile__belongs_id=affiliation_id,
+            profile__job_title=TEAM_LEADER_JOB_TITLE,
+        )
+        .order_by('member_id')
         .first()
     )

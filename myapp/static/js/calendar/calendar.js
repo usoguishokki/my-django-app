@@ -1232,8 +1232,6 @@ class CalendarUI {
         cell.showTable?.();
     }
 
-    
-
     getBulkActionConfig(mode) {
         const range = this.state?.memberTimeRange ?? {};
         const start = splitDateTimeLocal(range.start ?? '');

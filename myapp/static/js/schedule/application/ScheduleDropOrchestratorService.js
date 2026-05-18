@@ -24,6 +24,7 @@ export class ScheduleDropOrchestratorService {
       planId: dragState.eventData?.planId ?? '',
       holderId: resolvedDrop?.holderId ?? '',
       planTime: resolvedDrop?.planTime ?? '',
+      assignedAffiliationId: dragState.eventData?.assignedAffiliationId ?? '',
     };
 
     const isValid =

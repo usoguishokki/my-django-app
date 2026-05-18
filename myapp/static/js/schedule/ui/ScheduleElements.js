@@ -13,6 +13,7 @@ export function getScheduleElements(root = document) {
     panels: [...root.querySelectorAll('[data-role="schedule-panel"]')],
 
     title: root.querySelector('[data-role="schedule-title"]'),
+    titleWeekday: root.querySelector('[data-role="schedule-title-weekday"]'),
     scheduleActiveDateAlias: root.querySelector(
       '[data-role="schedule-active-date-alias"]'
     ),
@@ -22,7 +23,34 @@ export function getScheduleElements(root = document) {
     prevButton: root.querySelector('[data-role="schedule-prev-day"]'),
     nextButton: root.querySelector('[data-role="schedule-next-day"]'),
 
-    teamButtons: [...root.querySelectorAll('[data-ui-action="schedule:change-team"]')],
+    teamButtons: [
+      ...root.querySelectorAll(
+        '[data-role="schedule-team-buttons"] [data-ui-action="schedule:change-team"]'
+      ),
+    ],
+    
+    teamDropdown: root.querySelector('[data-role="schedule-team-dropdown"]'),
+    
+    teamDropdownTrigger: root.querySelector(
+      '[data-role="schedule-team-dropdown-trigger"]'
+    ),
+    
+    teamDropdownTriggerText: root.querySelector(
+      '[data-role="schedule-team-dropdown-trigger-text"]'
+    ),
+    
+    teamDropdownPanel: root.querySelector(
+      '[data-role="schedule-team-dropdown-panel"]'
+    ),
+    
+    teamDropdownList: root.querySelector(
+      '[data-role="schedule-team-dropdown-list"]'
+    ),
+    
+    teamDropdownOptions: [
+      ...root.querySelectorAll('[data-role="schedule-team-dropdown-option"]'),
+    ],
+    
     rangeButtons: [...root.querySelectorAll('[data-ui-action="schedule:change-range"]')],
 
     legend: root.querySelector('[data-role="schedule-legend"]'),
@@ -69,5 +97,7 @@ export function getScheduleElements(root = document) {
     testCardFilterBody: root.querySelector('[data-role="schedule-test-card-filter-body"]'),
 
     testCardCaseSelect: root.querySelector('[data-role="schedule-test-card-case-select"]'),
+
+    arrowIconUrl: root?.dataset?.arrowIconUrl ?? '/static/img/arrow.svg',
   };
 }

@@ -3,8 +3,7 @@
 @import '../components/toggle/toggle';
 @import '../components/button/button';
 @import '../components/input/input';
-
-
+@import '../components/customDropdown/customDropdown';
 
 // ==============================
 // Calendar layout tokens（DRY）
@@ -21,6 +20,10 @@ $cal-col-areas-min: 340px;  // これ以上は潰れない
 $cal-col-areas-max: 520px;  // ✅ 上限を設けて “細く” 保つ
 
 $calendar-bottom-row-min: 52px;
+
+.registration-drawer-top__memberDropdown {
+    display: none;
+}
 
 .open-modal {
     display: none;

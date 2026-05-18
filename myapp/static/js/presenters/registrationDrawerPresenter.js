@@ -2,10 +2,10 @@ export function buildRegistrationDrawerTableVM(rows, { title = '登録候補' } 
   return {
     title,
     columns: [
-      { key: 'controlName', label: '設備', type: 'text', widthPx: 220 },
-      { key: 'workName', label: '作業', type: 'text', widthPx: 220 },
-      { key: 'period', label: '周期', type: 'text', widthPx: 90 },
-      { key: 'manHour', label: '工数', type: 'text', widthPx: 90, align: 'right' },
+      { key: 'controlName', label: '設備', type: 'text', widthPx: 120 },
+      { key: 'workName', label: '作業', type: 'text', widthPx: 120 },
+      { key: 'period', label: '周期', type: 'text', widthPx: 30 },
+      { key: 'manHour', label: '工数', type: 'text', widthPx: 30, align: 'right' },
 
       // ★ 4列目：トグル
       {
@@ -25,7 +25,7 @@ export function buildRegistrationDrawerTableVM(rows, { title = '登録候補' } 
           // 任意：無効化条件
           disabled: !!row.disabled,
         }),
-        widthPx: 100,
+        widthPx: 50,
       },
     ],
     rows: rows.map((r, i) => ({

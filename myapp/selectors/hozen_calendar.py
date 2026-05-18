@@ -74,3 +74,26 @@ def get_date_alias_by_date(target_date: date) -> Optional[str]:
         .values_list("date_alias", flat=True)
         .first()
     )
+    
+def get_first_date_by_date_alias(*, date_alias: str, base_date: date):
+    """
+    date_alias に紐づく代表日を1件返す。
+    同じ date_alias が年度をまたいで存在する可能性があるため、
+    base_date の年度範囲で絞り込む。
+    """
+    if not date_alias or date_alias == 'all':
+        return None
+
+    fiscal_year_start, fiscal_year_end = get_fiscal_year_range(base_date)
+
+    return (
+        Hozen_calendar_tb.objects
+        .filter(
+            date_alias=date_alias,
+            h_date__gte=fiscal_year_start,
+            h_date__lt=fiscal_year_end,
+        )
+        .order_by('h_date')
+        .values_list('h_date', flat=True)
+        .first()
+    )
