@@ -1,0 +1,75 @@
+<svg
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-label="作業履歴"
+>
+  <title>作業履歴</title>
+
+  <!-- clipboard -->
+  <path
+    d="M11 5.5H9.5C8.12 5.5 7 6.62 7 8V24.5C7 25.88 8.12 27 9.5 27H22.5C23.88 27 25 25.88 25 24.5V8C25 6.62 23.88 5.5 22.5 5.5H21"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- clip -->
+  <path
+    d="M12.6 4.5H19.4C20.28 4.5 21 5.22 21 6.1V7.2C21 7.64 20.64 8 20.2 8H11.8C11.36 8 11 7.64 11 7.2V6.1C11 5.22 11.72 4.5 12.6 4.5Z"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linejoin="round"
+  />
+
+  <!-- work log lines -->
+  <path
+    d="M11 13H17"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linecap="round"
+  />
+  <path
+    d="M11 18H15.2"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linecap="round"
+  />
+  <path
+    d="M11 23H15"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linecap="round"
+  />
+
+  <!-- history clock -->
+  <path
+    d="M23 14.5C25.48 14.5 27.5 16.52 27.5 19C27.5 21.48 25.48 23.5 23 23.5C20.52 23.5 18.5 21.48 18.5 19C18.5 17.78 18.99 16.68 19.78 15.87"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- history arrow -->
+  <path
+    d="M18.55 15.65H20.95V18.05"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- clock hands -->
+  <path
+    d="M23 16.8V19.15L24.7 20.2"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

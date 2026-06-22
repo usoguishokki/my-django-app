@@ -53,6 +53,8 @@ export class ScheduleTestCardFilterService {
   }
 
   getFilteredItems() {
+    this.syncDynamicFilterSelections();
+  
     return this.filterItems(this.getItems());
   }
 
@@ -90,7 +92,7 @@ export class ScheduleTestCardFilterService {
     if (exclude !== 'machine') {
       filteredItems = ScheduleTestCardMachineFilter.filter(
         filteredItems,
-        this.state.getSelectedTestCardMachineName()
+        this.state.getSelectedTestCardMachineName?.() ?? 'all'
       );
     }
   
@@ -116,6 +118,8 @@ export class ScheduleTestCardFilterService {
   }
 
   buildFilterConfigs() {
+    this.syncDynamicFilterSelections();
+
     const selectedCaseKey = String(
       this.state.getSelectedTestCardCaseKey?.() ?? 'all'
     );
@@ -264,6 +268,81 @@ export class ScheduleTestCardFilterService {
         isActive: String(key) === String(selectedValue),
       };
     });
+  }
+
+  syncDynamicFilterSelections() {
+    let hasChanged = false;
+  
+    for (let index = 0; index < 2; index += 1) {
+      const isProcessChanged = this.resetProcessSelectionIfMissing();
+      const isMachineChanged = this.resetMachineSelectionIfMissing();
+  
+      if (!isProcessChanged && !isMachineChanged) {
+        break;
+      }
+  
+      hasChanged = true;
+    }
+  
+    return hasChanged;
+  }
+  
+  resetProcessSelectionIfMissing() {
+    const selectedProcessName =
+      this.state.getSelectedTestCardProcessName?.() ?? 'all';
+  
+    if (this.hasProcessOption(selectedProcessName)) {
+      return false;
+    }
+  
+    this.state.setSelectedTestCardProcessName?.('all');
+    return true;
+  }
+  
+  resetMachineSelectionIfMissing() {
+    const selectedMachineName =
+      this.state.getSelectedTestCardMachineName?.() ?? 'all';
+  
+    if (this.hasMachineOption(selectedMachineName)) {
+      return false;
+    }
+  
+    this.state.setSelectedTestCardMachineName?.('all');
+    return true;
+  }
+  
+  hasProcessOption(processName) {
+    if (this.isAllFilterValue(processName)) {
+      return true;
+    }
+  
+    const processItems = ScheduleTestCardProcessBuilder.build(
+      this.getProcessOptionSourceItems(),
+      processName
+    );
+  
+    return this.hasOption(processItems, processName);
+  }
+  
+  hasMachineOption(machineName) {
+    if (this.isAllFilterValue(machineName)) {
+      return true;
+    }
+  
+    const machineItems = ScheduleTestCardMachineBuilder.build(
+      this.getMachineOptionSourceItems(),
+      machineName
+    );
+  
+    return this.hasOption(machineItems, machineName);
+  }
+  
+  hasOption(items = [], value = '') {
+    const normalizedValue = String(value ?? '').trim();
+  
+    return items.some(
+      (item) => String(item?.key ?? '').trim() === normalizedValue
+    );
   }
 
   buildDateAliasFilterConfig() {

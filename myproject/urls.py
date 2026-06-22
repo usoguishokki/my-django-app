@@ -39,7 +39,6 @@ urlpatterns = [
     path('workContents/', views.workContents_view, name='workContets'),
     path('card/<str:control_no>/', views.card_by_control_view, name='card_by_control'),
     path('inspectionStadards/', views.inspectionStadards_view, name='inspectionStadards'),
-    path('inspectionHistory/', views.inspectionHistory_view, name='inspectionHistory'),
     path('achievements/', views.achievements_view, name='achievements'),
     path('plannedMaintenance/', views.planned_maintenance_view, name='plannedMaintenance'),
     path('mobileLider/', views.equipment_ledger_view, name='mobileLider'),

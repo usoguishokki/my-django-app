@@ -72,6 +72,8 @@ from myapp.domain.errors import (
     ScheduleEventRetractNotAllowed,
 )
 
+DELAYED_PLAN_STATUS = '遅れ'
+
 def get_plan_end_time(plan):
     """
     Plan の終了予定時刻を返す。
@@ -319,6 +321,14 @@ def build_schedule_test_cards_week_result(
         active_date_alias=active_date_alias,
     )
 
+def resolve_retracted_plan_status(current_status):
+    normalized_status = str(current_status or '').strip()
+
+    if normalized_status == DELAYED_PLAN_STATUS:
+        return DELAYED_PLAN_STATUS
+
+    return PlanStatus.WAITING.value
+
 @transaction.atomic
 def retract_schedule_event(payload):
     params = build_schedule_event_retract_params(payload)
@@ -328,7 +338,7 @@ def retract_schedule_event(payload):
         raise ScheduleEventRetractNotFound('plan not found')
 
     plan.plan_time = None
-    plan.status = PlanStatus.WAITING.value
+    plan.status = resolve_retracted_plan_status(plan.status)
     plan.approver = None
 
     # 引き戻しなら holder も初期化するのが自然です。

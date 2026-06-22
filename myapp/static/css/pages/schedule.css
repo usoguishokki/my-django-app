@@ -972,17 +972,32 @@ button, select {
     color: #64748b;
     font-weight: 400; }
   .custom-dropdown__triggerIcon {
+    display: inline-block;
     flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+    margin-left: auto;
     color: #475569;
-    font-size: 0.85rem;
-    line-height: 1;
-    transition: transform 0.18s ease, color 0.18s ease; }
+    background-color: currentColor;
+    font-size: 0;
+    line-height: 0;
+    pointer-events: none;
+    -webkit-mask-image: url("/static/img/arrow.svg");
+    mask-image: url("/static/img/arrow.svg");
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    transform: rotate(90deg);
+    transition: transform 0.18s ease, color 0.18s ease, opacity 0.18s ease; }
   .custom-dropdown[data-state='open'] .custom-dropdown__trigger {
     border-color: #93c5fd;
     box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08), 0 6px 18px rgba(15, 23, 42, 0.06);
     background: #ffffff; }
   .custom-dropdown[data-state='open'] .custom-dropdown__triggerIcon {
-    transform: rotate(180deg);
+    transform: rotate(-90deg);
     color: #2563eb; }
   .custom-dropdown__panel {
     position: absolute;
@@ -1036,6 +1051,7 @@ button, select {
     border: none;
     background: transparent;
     color: #111827;
+    font-weight: 400;
     text-align: left;
     cursor: pointer;
     border-radius: 10px;
@@ -1062,16 +1078,6 @@ button, select {
     letter-spacing: 0.02em;
     padding: 10px 12px;
     color: #64748b; }
-  .custom-dropdown__triggerIconImage {
-    display: block;
-    flex: 0 0 auto;
-    width: 14px;
-    height: 14px;
-    object-fit: contain;
-    pointer-events: none;
-    opacity: 0.75;
-    transform: rotate(-90deg);
-    transition: transform 0.16s ease, opacity 0.16s ease; }
   .custom-dropdown[data-state='open'] .custom-dropdown__triggerIconImage {
     opacity: 1;
     transform: rotate(90deg); }

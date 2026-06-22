@@ -68,11 +68,39 @@
   }
 
   &__triggerIcon {
+    display: inline-block;
     flex: 0 0 auto;
+  
+    width: 12px;
+    height: 12px;
+    margin-left: auto;
+  
     color: #475569;
-    font-size: $fs-th;
-    line-height: 1;
-    transition: transform 0.18s ease, color 0.18s ease;
+    background-color: currentColor;
+  
+    font-size: 0;
+    line-height: 0;
+  
+    pointer-events: none;
+  
+    -webkit-mask-image: url('/static/img/arrow.svg');
+    mask-image: url('/static/img/arrow.svg');
+  
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+  
+    -webkit-mask-position: center;
+    mask-position: center;
+  
+    -webkit-mask-size: contain;
+    mask-size: contain;
+  
+    transform: rotate(90deg);
+  
+    transition:
+      transform 0.18s ease,
+      color 0.18s ease,
+      opacity 0.18s ease;
   }
 
   &[data-state='open'] &__trigger {
@@ -84,7 +112,7 @@
   }
 
   &[data-state='open'] &__triggerIcon {
-    transform: rotate(180deg);
+    transform: rotate(-90deg);
     color: #2563eb;
   }
 
@@ -164,6 +192,7 @@
     border: none;
     background: transparent;
     color: #111827;
+    font-weight: $fw-regular;
     text-align: left;
     cursor: pointer;
     border-radius: 10px;
@@ -204,23 +233,6 @@
     @include type-small;
     padding: 10px 12px;
     color: #64748b;
-  }
-
-  &__triggerIconImage {
-    display: block;
-    flex: 0 0 auto;
-
-    width: 14px;
-    height: 14px;
-
-    object-fit: contain;
-    pointer-events: none;
-    opacity: 0.75;
-
-    transform: rotate(-90deg);
-    transition:
-      transform 0.16s ease,
-      opacity 0.16s ease;
   }
 
   &[data-state='open'] &__triggerIconImage {

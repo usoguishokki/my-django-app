@@ -17,105 +17,274 @@
 {% block content %}
 
 <div id="parentFilterArea" class="planned-maintenance-container" data-ui-root="drawer">
-
-    <div class="equipment-info" id="controlNo">
-      <div class="equipment-info__bar">
-
-        <div class="equipment-info__left">
-          <label class="equipment-info__field">
-            <span class="equipment-info__titleLabel">設備名</span>
-            <select
-              id="controlNameSelect"
-              class="equipment-info__select"
-              aria-label="設備名を選択"
-            >
-              <option class="is-placeholder-option" value="" selected disabled hidden>選択してください</option>
-              {% for c in controls %}
-                <option
-                  value="{{ c.machine }}"
-                  data-machine="{{ c.machine }}"
-                  data-control-no="{{ c.control_no }}"
+  <div class="inspection-standard-page-layout">
+    <div class="inspection-standard-page-layout__main">
+      <div class="equipment-info" id="controlNo">
+        <div class="equipment-info__bar">
+          <div class="equipment-info__left">
+            <div class="equipment-info__field">
+              <span class="equipment-info__titleLabel">設備名</span>
+        
+                <div
+                  id="controlNameDropdown"
+                  class="custom-dropdown equipment-info__dropdown"
+                  data-role="inspection-standard-control-name-dropdown"
+                  data-state="closed"
                 >
-                  {{ c.machine }}
-                </option>
-              {% endfor %}
-            </select>
-          </label>
-        </div>
-
-        <div class="equipment-info__right">
-          <label class="equipment-info__field">
-            <span class="equipment-info__metaLabel">管理番号</span>
-            <select
-              id="controlNoSelect"
-              class="equipment-info__select"
-              aria-label="管理番号を選択"
-            >
-              <option class="is-placeholder-option" value="" selected disabled hidden>選択してください</option>
-              {% for c in controls %}
-                <option
-                  value="{{ c.control_no }}"
-                  data-machine="{{ c.machine }}"
-                  data-control-no="{{ c.control_no }}"
+                  <input
+                    type="hidden"
+                    data-role="dropdown-input"
+                    value=""
+                  >
+                  <button
+                    type="button"
+                    class="custom-dropdown__trigger equipment-info__dropdownTrigger"
+                    data-role="dropdown-trigger"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="設備名を選択"
+                  >
+                    <span
+                      class="custom-dropdown__triggerText"
+                      data-role="dropdown-trigger-text"
+                    >
+                      選択してください
+                    </span>
+                    <span
+                      class="custom-dropdown__triggerIcon"
+                      aria-hidden="true"
+                    ></span>
+                  </button>
+        
+                  <div
+                    class="custom-dropdown__panel"
+                    data-role="dropdown-panel"
+                    hidden
+                  >
+                    <div
+                      class="custom-dropdown__list"
+                      data-role="dropdown-list"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+      
+            <div class="equipment-info__right">
+              <div class="equipment-info__field">
+                <span class="equipment-info__metaLabel">管理番号</span>
+        
+                <div
+                  id="controlNoDropdown"
+                  class="custom-dropdown equipment-info__dropdown"
+                  data-role="inspection-standard-control-no-dropdown"
+                  data-state="closed"
                 >
-                  {{ c.control_no }}
-                </option>
-              {% endfor %}
-            </select>
-          </label>
+                  <input
+                    type="hidden"
+                    data-role="dropdown-input"
+                    value=""
+                  >
+                  <button
+                    type="button"
+                    class="custom-dropdown__trigger equipment-info__dropdownTrigger"
+                    data-role="dropdown-trigger"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="管理番号を選択"
+                  >
+                    <span
+                      class="custom-dropdown__triggerText"
+                      data-role="dropdown-trigger-text"
+                    >
+                      選択してください
+                    </span>
+        
+                    <span
+                      class="custom-dropdown__triggerIcon"
+                      aria-hidden="true"
+                    ></span>
+                  </button>
+        
+                  <div
+                    class="custom-dropdown__panel"
+                    data-role="dropdown-panel"
+                    hidden
+                  >
+                    <div
+                      class="custom-dropdown__list"
+                      data-role="dropdown-list"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="equipment-info__actions"
+            aria-label="カード操作"
+          >
+            <button
+              type="button"
+              class="inspection-standard-add-card-button inspection-standard-history-button"
+              data-role="inspection-standard-history-button"
+              data-ui-action="inspection-standard:show-history-list"
+            >
+              <span class="inspection-standard-add-card-button__label">
+                履歴確認
+              </span>
+            </button>
+          
+            <button
+              type="button"
+              class="inspection-standard-add-card-button"
+              data-role="inspection-standard-add-card-button"
+              data-ui-action="inspection-standard:show-add-card"
+              disabled
+              aria-disabled="true"
+            >
+              <span class="inspection-standard-add-card-button__label">
+                カードの追加
+              </span>
+            </button>
+          </div>
         </div>
-
       </div>
+
+      <section
+        class="inspection-standard-standard-page"
+        data-role="inspection-standard-standard-page"
+      >
+        <div class="table-scroll" id="tableScroll">
+          <table id="myTable">
+            <colgroup>
+              <col class="inspection-no-content" id="inspectionNoCol">
+              <col class="work-name-content" id="workNameCol">
+              <col class="applicable-device-content" id="applicableDeviceCol">
+              <col class="method-content" id="methodCol">
+              <col class="contents-content" id="contentsCol">
+              <col class="period-content" id="periodCol">
+              <col class="timezone-content" id="timezoneCol">
+              <col class="standard-content" id="standardCol">
+              <col class="remarks-content" id="remarksCol">
+            </colgroup>
+          
+            <thead>
+              <tr class="table-th" id="tableTh">
+                <th class="inspection-no-content inspection-no-column" id="inspectionNoColumn">カードNo</th>
+                <th class="work-name-content work-name-column" id="workNameColumn">作業名</th>
+                <th class="applicable-device-content applicable-device-column" id="applicableDeviceColumn">該当装置</th>
+                <th class="method-content method-column" id="methodColumn">方法</th>
+                <th class="contents-content contents-column" id="contentsColumn">点検方法</th>
+                <th class="period-content period-column" id="periodColumn">周期</th>
+                <th class="timezone-content timezone-column" id="timezoneColumn">時間帯</th>
+                <th class="standard-content standard-column" id="standardColumn">基準処置</th>
+                <th class="remarks-content remarks-column" id="remarksColumn">備考</th>
+              </tr>
+            </thead>
+          
+            <tbody>
+              {% for application in applications_data_list %}
+              <tr>
+                <td class="inspection-no-content inspection-no-row">{{ application.id }}</td>
+                <td class="work-name-content work-name-row">{{ application.status }}</td>
+                <td class="applicable-device-content applicable-device-row">{{ application.work_name }}</td>
+                <td class="method-content method-row">{{ application.points_to_note }}</td>
+                <td class="contents-content contents-row">{{ application.result }}</td>
+                <td class="period-content period-row">{{ application.applicant_name }}</td>
+                <td class="timezone-content timezone-row">{{ application.approver_name }}</td>
+                <td class="standard-content standard-row"></td>
+                <td class="remarks-content remarks-row"></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section
+        class="inspection-standard-history-page"
+        data-role="inspection-standard-history-page"
+        hidden
+      >
+        <div class="inspection-standard-history-page__header">
+          <div>
+            <h2
+              class="inspection-standard-history-page__title"
+              data-role="inspection-standard-history-title"
+            >
+              変更履歴
+            </h2>
+          </div>
+        
+          <button
+            type="button"
+            class="inspection-standard-history-page__back-button"
+            data-ui-action="inspection-standard:show-standard-list"
+          >
+            一覧に戻る
+          </button>
+        </div>
+      
+        <div
+          class="inspection-standard-history-page__content"
+          data-role="inspection-standard-history-content"
+        >
+          <div
+            class="inspection-standard-history-page__empty"
+            data-role="inspection-standard-history-empty"
+          >
+            履歴確認を押すと変更履歴を表示します。
+          </div>
+        
+          <div
+            class="inspection-standard-history-page__table-scroll"
+            data-role="inspection-standard-history-table-scroll"
+            hidden
+          >
+            <table class="inspection-standard-history-table">
+              <thead>
+                <tr>
+                  <th>日時</th>
+                  <th>操作</th>
+                  <th>設備名</th>
+                  <th>カードNo</th>
+                  <th>内容</th>
+                  <th>実施者</th>
+                  <th>班長承認</th>
+                  <th>組長承認</th>
+                  <th>工長承認</th>
+                </tr>
+              </thead>
+            
+              <tbody data-role="inspection-standard-history-tbody"></tbody>
+            </table>
+          </div>
+          <nav
+            class="inspection-standard-history-pagination"
+            data-role="inspection-standard-history-pagination"
+            aria-label="変更履歴ページ切替"
+            hidden
+          ></nav>
+        </div>
+      </section>
+      
     </div>
+  </div>
 
-    <div class="table-scroll" id="tableScroll">
-      <table id="myTable">
-        <colgroup>
-          <col class="inspection-no-content" id="inspectionNoCol">
-          <col class="work-name-content" id="workNameCol">
-          <col class="applicable-device-content" id="applicableDeviceCol">
-          <col class="method-content" id="methodCol">
-          <col class="contents-content" id="contentsCol">
-          <col class="period-content" id="periodCol">
-          <col class="timezone-content" id="timezoneCol">
-          <col class="standard-content" id="standardCol">
-          <col class="remarks-content" id="remarksCol">
-        </colgroup>
-
-        <thead>
-          <tr class="table-th" id="tableTh">
-            <th class="inspection-no-content inspection-no-column" id="inspectionNoColumn">カードNo</th>
-            <th class="work-name-content work-name-column" id="workNameColumn">作業名</th>
-            <th class="applicable-device-content applicable-device-column" id="applicableDeviceColumn">該当装置</th>
-            <th class="method-content method-column" id="methodColumn">方法</th>
-            <th class="contents-content contents-column" id="contentsColumn">点検方法</th>
-            <th class="period-content period-column" id="periodColumn">周期</th>
-            <th class="timezone-content timezone-column" id="timezoneColumn">時間帯</th>
-            <th class="standard-content standard-column" id="standardColumn">基準処置</th>
-            <th class="remarks-content remarks-column" id="remarksColumn">備考</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {% for application in applications_data_list %}
-            <tr>
-              <td class="inspection-no-content inspection-no-row">{{ application.id }}</td>
-              <td class="work-name-content work-name-row">{{ application.status }}</td>
-              <td class="applicable-device-content applicable-device-row">{{ application.work_name }}</td>
-              <td class="method-content method-row">{{ application.points_to_note }}</td>
-              <td class="contents-content contents-row">{{ application.result }}</td>
-              <td class="period-content period-row">{{ application.applicant_name }}</td>
-              <td class="timezone-content timezone-row">{{ application.approver_name }}</td>
-              <td class="standard-content standard-row"></td>
-              <td class="remarks-content remarks-row"></td>
-            </tr>
-          {% endfor %}
-        </tbody>
-
-      </table>
-    </div>
-    {% include "includes/components/drawer_stack.html" with panels_template="../../inspectionStandards/drawer_panels__inspectionStandards.html" %}
-
+  {% include "includes/components/drawer_stack.html" with panels_template="../../inspectionStandards/drawer_panels__inspectionStandards.html" %}
+    <script
+      id="inspectionStandardControlsData"
+      type="application/json"
+    >
+    [
+      {% for c in controls %}
+        {
+          "machine": "{{ c.machine|default_if_none:''|escapejs }}",
+          "controlNo": "{{ c.control_no|default_if_none:''|escapejs }}"
+        }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ]
+    </script>
 </div> <!-- /#parentFilterArea -->
 
 <form method="post">

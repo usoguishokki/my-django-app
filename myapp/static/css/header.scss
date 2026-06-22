@@ -2,6 +2,9 @@
 @import 'variables';
 @import 'mixins';
 
+$z-header: 10000;
+$z-header-dropdown: 10010;
+
 :root { --header-h: 8vh; }
 
 .l-header {
@@ -16,7 +19,7 @@
     padding: 7px 20px;
     background-color: #2c3e50;
     box-sizing: border-box;
-    z-index: 999;
+    z-index: $z-header;
 }
 
 .menu-item {
@@ -76,7 +79,7 @@
         border-radius: 4px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         padding: 10px;
-        z-index: 9999;
+        z-index: $z-header-dropdown;
 
         /* レイアウト設定 */
         display: grid;
@@ -229,6 +232,10 @@
             }
 
             .planned-maintenance {
+                display: none;
+            }
+
+            .time-table-link {
                 display: none;
             }
 

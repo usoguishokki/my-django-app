@@ -97,3 +97,43 @@ def get_first_date_by_date_alias(*, date_alias: str, base_date: date):
         .values_list('h_date', flat=True)
         .first()
     )
+    
+def select_hozen_calendar_rows_for_plan_sync(*, start_date, end_date):
+    """
+    Plan_tb同期用の保全カレンダーを取得する。
+    対象期間内だけを返す。
+    """
+
+    return (
+        Hozen_calendar_tb.objects
+        .filter(
+            h_date__gte=start_date,
+            h_date__lte=end_date,
+        )
+        .order_by('h_date', 'h_id')
+    )
+
+
+def select_hozen_calendar_rows_for_plan_sync_lookup(*, start_date, end_date):
+    """
+    NEXT_DATE_TAG判定用。
+    end_dateの翌日まで取得する。
+    """
+
+    from datetime import timedelta
+
+    return (
+        Hozen_calendar_tb.objects
+        .filter(
+            h_date__gte=start_date,
+            h_date__lte=end_date + timedelta(days=1),
+        )
+        .order_by('h_date', 'h_id')
+    )
+
+
+def build_calendar_by_date(calendar_rows):
+    return {
+        row.h_date: row
+        for row in calendar_rows
+    }

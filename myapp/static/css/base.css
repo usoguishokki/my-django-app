@@ -261,7 +261,7 @@
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 20000;
   overflow: auto;
   background-color: rgba(0, 0, 0, 0.4); }
   .modal__content {
@@ -269,6 +269,7 @@
     font-weight: 400;
     line-height: 1.55;
     position: relative;
+    z-index: 20010;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -405,6 +406,12 @@
   .registration-modal__loading .loading-text {
     margin: 0;
     white-space: nowrap; }
+
+.modal__confirmBtn:disabled,
+.modal__confirmBtn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.52;
+  filter: grayscale(0.2); }
 
 input:-webkit-autofill,
 input:-webkit-autofill:hover,

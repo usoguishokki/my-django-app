@@ -2317,6 +2317,8 @@ export class ScheduleController {
   
     this.syncPendingEditPreview(pendingEditEvent);
 
+    const isTestCardDrop = this.isTestCardDrag(dragState);
+
     const isCommitted = await this.editCommitService.commitMove({
       payload,
       committedEditEvent: this.editSessionService.getPendingForCommit(),
@@ -2324,9 +2326,10 @@ export class ScheduleController {
       failureMessage: '登録に失敗しました。',
       keepDragPreviewUntilRender: true,
       resetDragOnFailure: true,
+      showSuccessMessage: !isTestCardDrop,
     });
     
-    if (isCommitted && this.isTestCardDrag(dragState)) {
+    if (isCommitted && isTestCardDrop) {
       this.removeCommittedTestCard(payload.planId);
     }
   }

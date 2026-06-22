@@ -4,6 +4,9 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
+import uuid
+
+from django.utils import timezone
 """
 初期のmakemigrationsの実行後に作成される、initial.pyに以下のコードを追加する必要ある。(カスタムマイグレーション)
 なぜ？ Menber_tb menber_idとpasswordを同じにするため。
@@ -59,13 +62,19 @@ class DayOfWeek(models.IntegerChoices):
     SUN = 6, "日"
     
 class CheckStatus(models.TextChoices):
+    DAILY = "日常点検", "日常点検"
     PERIODIC = "定期点検", "定期点検"
+    SYMPTOM_MGMT = "兆候管理", "兆候管理"
+    AUTOMATE = "自動化", "自動化"
     MAKER = "メーカ", "メーカ"
     ABOLISHED = "廃止", "廃止"
-    DAILY = "日常点検", "日常点検"
-    AUTOMATE = "自動化", "自動化"
-    SYMPTOM_MGMT = "兆候管理", "兆候管理"
     
+class DbDetailStatus(models.TextChoices):
+    NORMAL = '通常', '通常'
+    MAKER = 'メーカ', 'メーカ'
+    AUTOMATION = '自動化', '自動化'
+    ABOLISHED = '廃止', '廃止'
+
 class TimeZoneStatus(models.TextChoices):
     RUNNING = "稼働中", "稼働中"
     STOPPED = "停止中", "停止中"
@@ -77,6 +86,29 @@ class PlanStatus(models.TextChoices):
     COMPLETED = "完了", "完了"
     SENT_BACK = "差戻し", "差戻し"
     DELAYED = "遅れ", "遅れ"
+
+
+class InspectionStandardHistorySource(models.TextChoices):
+    CARD_CREATE = "CARD_CREATE", "カード追加"
+    CARD_ABOLISH = "CARD_ABOLISH", "カード削除"
+    COMMON_ITEMS_UPDATE = "COMMON_ITEMS_UPDATE", "共通項目変更"
+    DETAIL_CREATE = "DETAIL_CREATE", "項目追加"
+    DETAIL_UPDATE = "DETAIL_UPDATE", "項目変更"
+    DETAIL_ABOLISH = "DETAIL_ABOLISH", "項目削除"
+    PLAN_SYNC = "PLAN_SYNC", "計画同期"
+
+
+class InspectionStandardHistoryOperation(models.TextChoices):
+    CREATE = "CREATE", "追加"
+    UPDATE = "UPDATE", "変更"
+    ABOLISH = "ABOLISH", "廃止"
+    DELETE = "DELETE", "削除"
+
+
+class InspectionStandardHistoryTargetType(models.TextChoices):
+    CHECK = "CHECK", "点検カード"
+    DETAIL = "DETAIL", "点検項目"
+    PLAN = "PLAN", "計画"
     
 
 class DateTag(models.TextChoices):
@@ -329,6 +361,11 @@ class Check_tb(models.Model):
     inspection_no = models.CharField('inspection_no', unique=True, blank=True, null=True, max_length=20)
     wark_name = models.CharField('wark_name', blank=False, null=True, max_length=100)
     man_hours = models.IntegerField('man_hours', blank=True, null=True,default=1)
+    required_person_count = models.PositiveSmallIntegerField(
+        'required_person_count',
+        default=1,
+        validators=[MinValueValidator(1)],
+    )
     control_no = models.ForeignKey(
         to=Control_tb, 
         on_delete=models.CASCADE, 
@@ -393,25 +430,25 @@ class Check_tb(models.Model):
     
     class Meta:
         constraints = [
-            # anchor_month は NULL か 1..12
             models.CheckConstraint(
                 check=Q(anchor_month__isnull=True) | (Q(anchor_month__gte=1) & Q(anchor_month__lte=12)),
                 name="check_tb_anchor_month_null_or_1_12",
             ),
-            # anchor_year は NULL か >= 1（必要なら範囲を狭めてもOK）
             models.CheckConstraint(
                 check=Q(anchor_year__isnull=True) | Q(anchor_year__gte=1),
                 name="check_tb_anchor_year_null_or_gte_1",
             ),
-            # week_of_month は NULL か choices の値（DBによっては choices だけでは守れないため）
             models.CheckConstraint(
                 check=Q(week_of_month__isnull=True) | Q(week_of_month__in=[1, 2, 3, 4, 6]),
                 name="check_tb_week_of_month_null_or_valid",
             ),
-            
             models.CheckConstraint(
                 check=Q(day_of_week__isnull=True) | Q(day_of_week__in=[0, 1, 2, 3, 4, 5, 6]),
                 name="check_tb_day_of_week_null_or_0_6",
+            ),
+            models.CheckConstraint(
+                check=Q(required_person_count__gte=1),
+                name="check_tb_required_person_count_gte_1",
             ),
         ]
     
@@ -435,8 +472,8 @@ class Db_details_tb(models.Model):
     inspection_man_hours = models.IntegerField('inspection_man_hours', blank=True, null=True, default=1)
     status = models.CharField(
         max_length=16,
-        choices=CheckStatus.choices,
-        default=CheckStatus.PERIODIC,
+        choices=DbDetailStatus.choices,
+        default=DbDetailStatus.NORMAL,
     )
     
     def __str__(self):
@@ -505,6 +542,13 @@ class Plan_tb(DateFilterable): #DateFilterableが'models.Modelを継承してい
         blank=False, null=True, 
         related_name="plans_by_date"
     )#計画日(点検カードを実施する日)
+    planned_affilation = models.ForeignKey(
+        to=Affilation_tb,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="planned_plans",
+    )#計画作成時点の担当班
     plan_time = models.DateTimeField('plan_time', null=True)#タイムテーブルで日付を指定して配った日
     implementation_date =  models.DateTimeField('implementation_date', null=True, blank=True)#実施日
     result_man_hours = models.IntegerField('man_hours', null=True, blank=True)#実施時間
@@ -537,6 +581,381 @@ class Plan_tb(DateFilterable): #DateFilterableが'models.Modelを継承してい
 
     def __str__(self):
         return f"Plan {self.plan_id} ({self.status})"
+
+class InspectionStandardHistory(models.Model):
+    """
+    点検基準書の変更履歴ヘッダー。
+    1回のユーザー操作を1件として保存する。
+    """
+
+    id = models.BigAutoField(primary_key=True)
+
+    event_id = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+    )
+
+    source = models.CharField(
+        max_length=32,
+        choices=InspectionStandardHistorySource.choices,
+    )
+
+    summary = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+    )
+
+    control = models.ForeignKey(
+        Control_tb,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='inspection_standard_histories',
+    )
+
+    control_no_snapshot = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+    )
+
+    machine_snapshot = models.CharField(
+        max_length=40,
+        blank=True,
+        default='',
+    )
+
+    inspection_check = models.ForeignKey(
+        Check_tb,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='inspection_standard_histories',
+    )
+
+    inspection_no_snapshot = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+    )
+
+    operated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='inspection_standard_histories',
+    )
+
+    operated_by_member_id_snapshot = models.CharField(
+        max_length=10,
+        blank=True,
+        default='',
+    )
+
+    operated_by_name_snapshot = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+    )
+
+    operated_at = models.DateTimeField(
+        default=timezone.now,
+    )
+
+    note = models.CharField(
+        max_length=300,
+        blank=True,
+        default='',
+    )
+    
+    team_leader_approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='team_leader_approved_inspection_standard_histories',
+        db_column='team_leader_appr_by_id',
+    )
+
+    team_leader_approved_by_member_id_snapshot = models.CharField(
+        max_length=10,
+        blank=True,
+        default='',
+        db_column='team_leader_appr_member_id',
+    )
+
+    team_leader_approved_by_name_snapshot = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        db_column='team_leader_appr_name',
+    )
+
+    team_leader_approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_column='team_leader_appr_at',
+    )
+    
+    leader_approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='leader_approved_inspection_standard_histories',
+        db_column='leader_appr_by_id',
+    )
+
+    leader_approved_by_member_id_snapshot = models.CharField(
+        max_length=10,
+        blank=True,
+        default='',
+        db_column='leader_appr_member_id',
+    )
+
+    leader_approved_by_name_snapshot = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        db_column='leader_appr_name',
+    )
+
+    leader_approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_column='leader_appr_at',
+    )
+
+    foreman_approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='foreman_approved_inspection_standard_histories',
+        db_column='foreman_appr_by_id',
+    )
+
+    foreman_approved_by_member_id_snapshot = models.CharField(
+        max_length=10,
+        blank=True,
+        default='',
+        db_column='foreman_appr_member_id',
+    )
+
+    foreman_approved_by_name_snapshot = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        db_column='foreman_appr_name',
+    )
+
+    foreman_approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_column='foreman_appr_at',
+    )
+
+    class Meta:
+        db_table = 'inspection_standard_history'
+        indexes = [
+            models.Index(
+                fields=['operated_at'],
+                name='ish_at_idx',
+            ),
+            models.Index(
+                fields=['source', 'operated_at'],
+                name='ish_src_at_idx',
+            ),
+            models.Index(
+                fields=['control_no_snapshot', 'operated_at'],
+                name='ish_ctrl_at_idx',
+            ),
+            models.Index(
+                fields=['inspection_no_snapshot', 'operated_at'],
+                name='ish_no_at_idx',
+            ),
+            models.Index(
+                fields=['team_leader_approved_at'],
+                name='ish_team_lead_appr_at_idx',
+            ),
+            models.Index(
+                fields=['leader_approved_at'],
+                name='ish_lead_appr_at_idx',
+            ),
+            models.Index(
+                fields=['foreman_approved_at'],
+                name='ish_fore_appr_at_idx',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.get_source_display()} - {self.inspection_no_snapshot} - {self.operated_at}'
+
+class InspectionStandardHistoryTarget(models.Model):
+    """
+    点検基準書の変更履歴対象。
+
+    1回の履歴操作で影響を受けた対象を保存する。
+    """
+
+    id = models.BigAutoField(primary_key=True)
+
+    history = models.ForeignKey(
+        InspectionStandardHistory,
+        on_delete=models.CASCADE,
+        related_name='targets',
+        db_index=False,
+    )
+
+    target_type = models.CharField(
+        max_length=16,
+        choices=InspectionStandardHistoryTargetType.choices,
+    )
+
+    operation = models.CharField(
+        max_length=16,
+        choices=InspectionStandardHistoryOperation.choices,
+    )
+
+    inspection_check = models.ForeignKey(
+        Check_tb,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='inspection_standard_history_targets',
+        db_index=False,
+    )
+
+    detail = models.ForeignKey(
+        Db_details_tb,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='inspection_standard_history_targets',
+        db_index=False,
+    )
+
+    plan = models.ForeignKey(
+        Plan_tb,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='inspection_standard_history_targets',
+        db_index=False,
+    )
+
+    target_pk_snapshot = models.CharField(
+        max_length=32,
+        blank=True,
+        default='',
+    )
+
+    label_snapshot = models.CharField(
+        max_length=150,
+        blank=True,
+        default='',
+    )
+
+    before_snapshot = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+    after_snapshot = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = 'inspection_std_hist_target'
+        indexes = [
+            models.Index(
+                fields=['history'],
+                name='isht_hist_idx',
+            ),
+            models.Index(
+                fields=['target_type', 'operation'],
+                name='isht_type_op_idx',
+            ),
+            models.Index(
+                fields=['target_type', 'target_pk_snapshot'],
+                name='isht_type_pk_idx',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.get_target_type_display()} - {self.get_operation_display()}'
+
+class InspectionStandardHistoryFieldChange(models.Model):
+    """
+    点検基準書のフィールド単位変更履歴。
+
+    例:
+      - wark_name: 変更前A → 変更後B
+      - status: 通常 → 廃止
+      - inspection_man_hours: 3 → 5
+    """
+
+    id = models.BigAutoField(primary_key=True)
+
+    target = models.ForeignKey(
+        InspectionStandardHistoryTarget,
+        on_delete=models.CASCADE,
+        related_name='field_changes',
+        db_index=False,
+    )
+
+    field_name = models.CharField(
+        max_length=64,
+    )
+
+    field_label = models.CharField(
+        max_length=64,
+        blank=True,
+        default='',
+    )
+
+    before_value = models.TextField(
+        blank=True,
+        default='',
+    )
+
+    after_value = models.TextField(
+        blank=True,
+        default='',
+    )
+
+    before_display = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+    )
+
+    after_display = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+    )
+
+    class Meta:
+        db_table = 'inspection_std_hist_field'
+        indexes = [
+            models.Index(
+                fields=['target'],
+                name='ishf_target_idx',
+            ),
+            models.Index(
+                fields=['field_name'],
+                name='ishf_field_idx',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.field_name}: {self.before_display} -> {self.after_display}'
+
+
    
 class WeeklyDuty(DateFilterable): #DateFilterableが'models.Modelを継承しているのでmodels.Modelに出なくて大丈夫
     date_filter_field = 'plan__p_date'
@@ -557,7 +976,12 @@ class WeeklyDuty(DateFilterable): #DateFilterableが'models.Modelを継承して
         on_delete=models.CASCADE, 
         related_name='weekly_duties'
     )
-    status = status = models.CharField('status', max_length=20, choices=PlanStatus.choices, default=PlanStatus.WAITING)#ステータス
+    status = models.CharField(
+        'status',
+        max_length=20,
+        choices=PlanStatus.choices,
+        default=PlanStatus.WAITING,
+    )
     this_week = models.BooleanField('this_week' ,default=False)
     
     def __str__(self):

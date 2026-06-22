@@ -4,13 +4,14 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Iterable
+from typing import Iterable, Optional
 
 from myapp.domain.periods import YearMonth
 from myapp.domain.checks.constants import CSV_EXCLUDED_CHECK_STATUSES
 from myapp.models import (
     Check_tb,
     Hozen_calendar_tb,
+    Plan_tb,
     PlanRuleCondition,
     PlanScheduleRule,
     DateTag,
@@ -25,6 +26,9 @@ class CsvOccurrence:
     check: Check_tb
     year_month: YearMonth
     calendar_row: Hozen_calendar_tb
+    plan: Optional[Plan_tb] = None
+    implementation_calendar_row: Optional[Hozen_calendar_tb] = None
+    
     
 def exclude_long_holiday_rows(
     *,

@@ -98,3 +98,31 @@ class ScheduleBulkRegistrationMemberNotFound(ScheduleBulkRegistrationError):
 class ScheduleBulkRegistrationShiftPatternNotFound(ScheduleBulkRegistrationError):
     def __init__(self, detail: str = "schedule bulk registration shift pattern not found"):
         super().__init__(detail)
+
+
+class InspectionStandardError(DomainError):
+    """
+    点検基準書機能の基底例外。
+    """
+    pass
+
+
+class InvalidInspectionStandardParams(InspectionStandardError):
+    """
+    点検基準書APIの入力値が不正な場合。
+    """
+
+    def __init__(self, raw: Optional[str] = None, *, detail: str = "invalid inspection standard params"):
+        self.raw = raw
+        self.detail = detail
+        super().__init__(detail if raw is None else f"{detail}: {raw}")
+
+
+class InspectionStandardNotFound(InspectionStandardError):
+    """
+    点検基準書の更新・追加対象が見つからない場合。
+    """
+
+    def __init__(self, detail: str = "inspection standard target not found"):
+        self.detail = detail
+        super().__init__(detail)

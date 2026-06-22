@@ -16,6 +16,62 @@ export class ScheduleTimeLayoutService {
     return ScheduleDayBoundary.toRelativeMinuteFromTimeString(timeText);
   }
 
+  static toRelativeMinuteFromDate(date = new Date()) {
+    return ScheduleDayBoundary.toRelativeMinuteFromDate(date);
+  }
+
+  static getCurrentRelativeMinute(now = new Date()) {
+    return ScheduleDayBoundary.getCurrentRelativeMinute(now);
+  }
+
+  static getLinearEndMinute({
+    startMinute,
+    durationMinutes,
+  } = {}) {
+    if (
+      !Number.isFinite(startMinute) ||
+      !Number.isFinite(durationMinutes)
+    ) {
+      return null;
+    }
+
+    return startMinute + durationMinutes;
+  }
+
+  static isRelativeMinuteInDuration({
+    targetMinute,
+    startMinute,
+    durationMinutes,
+  } = {}) {
+    if (
+      !Number.isFinite(targetMinute) ||
+      !Number.isFinite(startMinute) ||
+      !Number.isFinite(durationMinutes) ||
+      durationMinutes <= 0
+    ) {
+      return false;
+    }
+
+    const normalizedTargetMinute =
+      targetMinute < startMinute
+        ? targetMinute + this.TOTAL_MINUTES
+        : targetMinute;
+
+    const endMinute = this.getLinearEndMinute({
+      startMinute,
+      durationMinutes,
+    });
+    
+    if (!Number.isFinite(endMinute)) {
+      return false;
+    }
+    
+    return (
+      startMinute <= normalizedTargetMinute &&
+      normalizedTargetMinute < endMinute
+    );
+  }
+
   static parseTimeString(timeText) {
     return ScheduleDayBoundary.parseTimeString(timeText);
   }

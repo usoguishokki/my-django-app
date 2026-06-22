@@ -1,7 +1,8 @@
 # myapp/selectors/calendar.py
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
+from typing import Iterable
 
 from collections import defaultdict
 from django.db.models import Q, QuerySet, OuterRef, Subquery
@@ -34,6 +35,31 @@ def calendar_rows_for_year_months(year_months: list[YearMonth]) -> QuerySet[Hoze
     return (
         Hozen_calendar_tb.objects
         .filter(condition)
+        .order_by("h_date", "h_id")
+    )
+
+
+def calendar_rows_for_dates(
+    dates: Iterable[date],
+) -> QuerySet[Hozen_calendar_tb]:
+    """
+    指定した日付一覧に該当する保全カレンダーを返す。
+
+    CSVの実績日が計画月とズレた場合でも、
+    Plan_tb.implementation_date に対応する date_alias を取得するために使う。
+    """
+    normalized_dates = {
+        value.date() if isinstance(value, datetime) else value
+        for value in dates
+        if value
+    }
+
+    if not normalized_dates:
+        return Hozen_calendar_tb.objects.none()
+
+    return (
+        Hozen_calendar_tb.objects
+        .filter(h_date__in=normalized_dates)
         .order_by("h_date", "h_id")
     )
 

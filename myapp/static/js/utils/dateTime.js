@@ -306,6 +306,30 @@ export function normalizeDateInputValue(value) {
 }
 
 /**
+ * 日付を日本語表記に変換する
+ *
+ * examples:
+ * - "2026-06-10" -> "2026年06月10日"
+ * - "2026/6/3" -> "2026年06月03日"
+ * - "2026-06-10T14:20:30" -> "2026年06月10日"
+ * - Date -> "2026年06月10日"
+ *
+ * @param {string|Date|number|null|undefined} value
+ * @returns {string}
+ */
+export function formatJapaneseDateLabel(value) {
+  const dateValue = normalizeDateInputValue(value);
+
+  if (!dateValue) {
+    return '';
+  }
+
+  const [year, month, day] = dateValue.split('-');
+
+  return `${year}年${month}月${day}日`;
+}
+
+/**
  * YYYY-MM-DD / YYYY/MM/DD 形式の日付をローカルDateに変換する
  *
  * @param {string|Date|number|null|undefined} value

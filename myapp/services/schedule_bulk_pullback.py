@@ -8,6 +8,12 @@ from myapp.domain.errors import (
     ScheduleEventRetractNotAllowed,
 )
 
+DELAYED_PLAN_STATUS = '遅れ'
+
+RETRACTABLE_PLAN_STATUSES = frozenset([
+    PlanStatus.IN_PROGRESS.value,
+    DELAYED_PLAN_STATUS,
+])
 
 def parse_bulk_retract_payload(payload):
     if not isinstance(payload, dict):
@@ -44,6 +50,19 @@ def select_bulk_retract_plans(plan_ids):
         .select_related('inspection_no')
     )
 
+def normalize_plan_status(status):
+    return str(status or '').strip()
+
+def is_bulk_retractable_plan_status(status):
+    return normalize_plan_status(status) in RETRACTABLE_PLAN_STATUSES
+
+def resolve_retracted_plan_status(current_status):
+    normalized_status = normalize_plan_status(current_status)
+
+    if normalized_status == DELAYED_PLAN_STATUS:
+        return DELAYED_PLAN_STATUS
+
+    return PlanStatus.WAITING.value
 
 def validate_bulk_retract_targets(*, plans, plan_ids):
     found_plan_ids = {
@@ -63,7 +82,7 @@ def validate_bulk_retract_targets(*, plans, plan_ids):
         )
 
     for plan in plans:
-        if plan.status != PlanStatus.IN_PROGRESS.value:
+        if not is_bulk_retractable_plan_status(plan.status):
             raise ScheduleEventRetractNotAllowed(
                 (
                     'schedule event retract not allowed: '
@@ -71,7 +90,6 @@ def validate_bulk_retract_targets(*, plans, plan_ids):
                     f'status={plan.status}'
                 )
             )
-
 
 def sort_plans_by_plan_ids(*, plans, plan_ids):
     order_map = {
@@ -127,7 +145,7 @@ def bulk_retract_schedule_events(*, payload, requested_user):
 
     for plan in sorted_plans:
         plan.plan_time = None
-        plan.status = PlanStatus.WAITING.value
+        plan.status = resolve_retracted_plan_status(plan.status)
         plan.holder = None
         plan.approver = None
 

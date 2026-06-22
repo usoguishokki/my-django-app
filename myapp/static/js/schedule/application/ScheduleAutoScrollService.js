@@ -70,11 +70,8 @@ export class ScheduleAutoScrollService {
     const minuteHeight =
       ScheduleViewConfigService.getMinuteHeight(visibleHours);
 
-    const now = new Date();
-    const currentRelativeMinute = ScheduleTimeLayoutService.toRelativeMinute(
-      now.getHours(),
-      now.getMinutes()
-    );
+    const currentRelativeMinute =
+      ScheduleTimeLayoutService.getCurrentRelativeMinute();
 
     const targetMinute = Math.max(currentRelativeMinute - offsetMinutes, 0);
     const targetTop = ScheduleTimeLayoutService.toPositionPx(

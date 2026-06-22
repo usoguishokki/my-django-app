@@ -3,10 +3,10 @@ from typing import Iterable, Optional
 
 from datetime import date, datetime, time, timedelta
 
-from django.db.models import Count, F, Prefetch, Q, Sum
+from django.db.models import Count, F, Max, Prefetch, Q, Sum
 from django.db.models.functions import Coalesce
 
-from myapp.models import Plan_tb, CheckStatus, Db_details_tb, PlanStatus
+from myapp.models import Calendar_tb, Plan_tb, CheckStatus, Db_details_tb, PlanStatus
 
 from myapp.domain.periods import get_week_range, get_fiscal_year_range
 from myapp.domain.schedule_time_window import (
@@ -39,7 +39,8 @@ TEST_CARD_STATUSES = (
     PlanStatus.DELAYED.value,
 )
 
-ALWAYS_INCLUDE_PRACTITIONER_ID = 7
+HOLIDAY_PRACTITIONER_ID = 7
+DEFAULT_HOLIDAY_AFFILATION_ID = 1
 
 def apply_test_card_common_filters(qs):
     """
@@ -48,6 +49,10 @@ def apply_test_card_common_filters(qs):
     qs = filter_status_plans(
         qs=qs,
         statuses=TEST_CARD_STATUSES,
+    )
+
+    qs = qs.filter(
+        plan_time__isnull=True,
     )
 
     return qs.prefetch_related(
@@ -282,7 +287,7 @@ def filter_test_card_plans_by_shift_pattern(
 
     return plans_qs.filter(
         Q(inspection_no__practitioner_id=shift_pattern_id)
-        | Q(inspection_no__practitioner_id=ALWAYS_INCLUDE_PRACTITIONER_ID)
+        | Q(inspection_no__practitioner_id=HOLIDAY_PRACTITIONER_ID)
     )
     
 def select_bulk_registration_target_plans(*, plan_ids):
@@ -350,3 +355,274 @@ def aggregate_plan_count_and_man_hours(*, plan_ids):
         'count': agg['count'] or 0,
         'man_hours': agg['man_hours'] or 0,
     }
+
+
+def select_existing_plan_p_date_ids_by_check_and_date_range(
+    *,
+    check,
+    start_date,
+    end_date,
+) -> set[int]:
+    """
+    配布待ち削除後に残っているPlanの日付IDを取得する。
+
+    実施待ち / 承認待ち / 完了 / 差戻し / 遅れなどがある日は、
+    新しい配布待ちPlanを重複作成しない。
+    """
+
+    return set(
+        Plan_tb.objects
+        .filter(
+            inspection_no=check,
+            p_date__h_date__gte=start_date,
+            p_date__h_date__lte=end_date,
+        )
+        .values_list('p_date_id', flat=True)
+    )
+
+
+def build_planned_affilation_id_by_p_date_id(
+    *,
+    check,
+    calendar_rows,
+) -> dict[int, int]:
+    """
+    Plan作成時点の担当班を p_date_id ごとに解決する。
+
+    方針:
+      - practitioner_id=7 は A班として扱う
+      - それ以外は Calendar_tb の c_date_id + pattern_id から一意に決まる場合のみ採用
+      - 一意に決まらない場合や勤務カレンダーがない場合は NULL のままにする
+    """
+
+    rows = [
+        row
+        for row in calendar_rows
+        if row is not None and row.pk
+    ]
+
+    if not rows:
+        return {}
+
+    practitioner_id = getattr(check, "practitioner_id", None)
+
+    if not practitioner_id:
+        return {}
+
+    p_date_ids = [
+        row.pk
+        for row in rows
+    ]
+
+    if int(practitioner_id) == HOLIDAY_PRACTITIONER_ID:
+        return {
+            p_date_id: DEFAULT_HOLIDAY_AFFILATION_ID
+            for p_date_id in p_date_ids
+        }
+
+    resolved_rows = (
+        Calendar_tb.objects
+        .filter(
+            c_date_id__in=p_date_ids,
+            pattern_id=practitioner_id,
+        )
+        .values("c_date_id")
+        .annotate(
+            affilation_count=Count("affilation_id", distinct=True),
+            resolved_affilation_id=Max("affilation_id"),
+        )
+        .filter(
+            affilation_count=1,
+        )
+    )
+
+    return {
+        row["c_date_id"]: row["resolved_affilation_id"]
+        for row in resolved_rows
+        if row["c_date_id"] and row["resolved_affilation_id"]
+    }
+
+
+def bulk_create_waiting_plans_for_check(
+    *,
+    check,
+    calendar_rows,
+) -> list[Plan_tb]:
+    """
+    対象Checkの配布待ちPlanを作成し、作成後Planを返す。
+
+    Oracle環境では bulk_create 後のPK反映に依存しないよう、
+    作成後に再取得して返す。
+    """
+
+    rows = list(calendar_rows)
+
+    if not rows:
+        return []
+
+    p_date_ids = [
+        row.pk
+        for row in rows
+        if row is not None and row.pk
+    ]
+
+    planned_affilation_id_by_p_date_id = build_planned_affilation_id_by_p_date_id(
+        check=check,
+        calendar_rows=rows,
+    )
+
+    Plan_tb.objects.bulk_create(
+        [
+            Plan_tb(
+                inspection_no=check,
+                p_date=row,
+                planned_affilation_id=planned_affilation_id_by_p_date_id.get(row.pk),
+                status=PlanStatus.WAITING.value,
+            )
+            for row in rows
+        ],
+        batch_size=500,
+    )
+
+    return list(
+        Plan_tb.objects
+        .select_related(
+            'p_date',
+            'inspection_no',
+            'planned_affilation',
+        )
+        .filter(
+            inspection_no=check,
+            p_date_id__in=p_date_ids,
+            status=PlanStatus.WAITING.value,
+        )
+        .order_by('p_date__h_date', 'plan_id')
+    )
+
+
+def select_waiting_plan_calendar_rows_by_check_and_date_range(
+    *,
+    check,
+    start_date,
+    end_date,
+):
+    """
+    preview用。
+    対象Checkの削除予定になる配布待ちPlanの日付を返す。
+    """
+    plans = (
+        Plan_tb.objects
+        .filter(
+            inspection_no=check,
+            p_date__h_date__gte=start_date,
+            p_date__h_date__lte=end_date,
+            status=PlanStatus.WAITING.value,
+        )
+        .select_related('p_date')
+        .order_by('p_date__h_date')
+    )
+
+    return [
+        plan.p_date
+        for plan in plans
+        if plan.p_date is not None
+    ]
+
+
+def select_non_waiting_plan_p_date_ids_by_check_and_date_range(
+    *,
+    check,
+    start_date,
+    end_date,
+) -> set[int]:
+    """
+    preview用。
+    配布待ち以外の既存Planの日付IDを取得する。
+
+    実際の同期処理では配布待ちPlanを削除してから再作成するため、
+    previewでも配布待ちは重複判定から除外する。
+    """
+
+    return set(
+        Plan_tb.objects
+        .filter(
+            inspection_no=check,
+            p_date__h_date__gte=start_date,
+            p_date__h_date__lte=end_date,
+        )
+        .exclude(status=PlanStatus.WAITING.value)
+        .values_list('p_date_id', flat=True)
+    )
+
+
+def delete_not_completed_plans_by_check(*, check) -> int:
+    """
+    対象Checkに紐づくPlanのうち、完了以外を削除する。
+
+    仕様:
+      - 完了Planは履歴として残す
+      - 配布待ち / 実施待ち / 承認待ち / 差戻し / 遅れ などは削除する
+    """
+
+    if check is None:
+        return 0
+
+    deleted_count, _ = (
+        Plan_tb.objects
+        .filter(inspection_no=check)
+        .exclude(status=PlanStatus.COMPLETED)
+        .delete()
+    )
+
+    return deleted_count
+
+def select_waiting_plans_for_update_by_check_and_date_range(
+    *,
+    check,
+    start_date,
+    end_date,
+) -> list[Plan_tb]:
+    """
+    対象Checkの対象期間内の配布待ちPlanを削除前に取得する。
+
+    履歴用snapshotを取るため、delete前に呼び出す。
+    """
+
+    return list(
+        Plan_tb.objects
+        .select_for_update()
+        .select_related(
+            'p_date',
+            'inspection_no',
+        )
+        .filter(
+            inspection_no=check,
+            p_date__h_date__gte=start_date,
+            p_date__h_date__lte=end_date,
+            status=PlanStatus.WAITING.value,
+        )
+        .order_by('p_date__h_date', 'plan_id')
+    )
+
+
+def delete_plans_by_ids(*, plan_ids: Iterable[int]) -> int:
+    """
+    指定Plan IDのPlanを削除する。
+    """
+
+    ids = [
+        plan_id
+        for plan_id in plan_ids
+        if plan_id
+    ]
+
+    if not ids:
+        return 0
+
+    deleted_count, _ = (
+        Plan_tb.objects
+        .filter(plan_id__in=ids)
+        .delete()
+    )
+
+    return deleted_count

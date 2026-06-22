@@ -1,0 +1,72 @@
+<svg
+  width="40"
+  height="40"
+  viewBox="0 0 40 40"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-label="刻目変更"
+>
+  <style>
+    :root {
+      --pencil-edit-fg: rgba(30, 64, 175, 0.96);
+    }
+  </style>
+
+  <defs>
+    <mask id="pencil-edit-mask">
+      <rect width="40" height="40" fill="white" />
+
+      <!-- ferrule separation -->
+      <path
+        d="M15.7 11.8H24.3"
+        stroke="black"
+        stroke-width="1.9"
+        stroke-linecap="round"
+      />
+
+      <!-- tip cutout -->
+      <path
+        d="M17.45 29.25
+           C18.05 28.25 19.25 28.25 20 29.2
+           C20.75 28.25 21.95 28.25 22.55 29.25
+           L20 31.9
+           L17.45 29.25Z"
+        fill="black"
+      />
+    </mask>
+  </defs>
+
+  <g transform="rotate(45 20 20)" mask="url(#pencil-edit-mask)">
+    <!-- eraser -->
+    <path
+      d="M16 7.2
+         C16 5.9 17 4.9 18.3 4.9
+         H21.7
+         C23 4.9 24 5.9 24 7.2
+         V11.1
+         H16
+         V7.2Z"
+      fill="var(--pencil-edit-fg)"
+    />
+
+    <!-- body -->
+    <path
+      d="M16 12.4
+         H24
+         V27.2
+         H16
+         V12.4Z"
+      fill="var(--pencil-edit-fg)"
+    />
+
+    <!-- pencil tip -->
+    <path
+      d="M16 27.1
+         H24
+         L20 34.4
+         L16 27.1Z"
+      fill="var(--pencil-edit-fg)"
+    />
+  </g>
+</svg>

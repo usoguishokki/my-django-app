@@ -12,7 +12,11 @@ export class inspectionStandardManager {
             period: { datasetKey: 'period' },
             inspection_no__time_zone: { datasetKey: 'time_zone' },
             standard: { datasetKey: 'standard' },
-            remarks: { datasetKey: 'remarks' }
+            remarks: { datasetKey: 'remarks' },
+    
+            // 廃止状態表示用
+            is_check_abolished: { datasetKey: 'is_check_abolished' },
+            is_detail_abolished: { datasetKey: 'is_detail_abolished' },
         };
     }
 

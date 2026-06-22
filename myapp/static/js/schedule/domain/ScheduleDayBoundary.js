@@ -63,6 +63,21 @@ export class ScheduleDayBoundary {
         minutes,
       });
     }
+
+    static toRelativeMinuteFromDate(date = new Date()) {
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return null;
+      }
+  
+      return this.toRelativeMinute(
+        date.getHours(),
+        date.getMinutes()
+      );
+    }
+  
+    static getCurrentRelativeMinute(now = new Date()) {
+      return this.toRelativeMinuteFromDate(now);
+    }
   
     static toLocalDateTimeStringFromParts({
       dateObj,

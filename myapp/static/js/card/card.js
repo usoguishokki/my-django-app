@@ -173,15 +173,6 @@ class ModalHandler {
                 this.animationflg = false
             }
         });
-        document.addEventListener('click', (e) => {
-            if (e.target.matches('[data-overlay-close]')) {
-              this.hideFilterOverlay();
-            }
-          });
-          
-          document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') this.hideFilterOverlay();
-          });
 
         const textarea = document.getElementById('issueDetails');
         const buttonContainer = document.getElementById('textInsertButtonContainer');
@@ -417,43 +408,30 @@ class ModalHandler {
                 this.resetIssueDetails();
                 this.animationflg = false;
                 
-                if (this.carousel.indices != 0) {
-                    for (const [dropdownId, attr] of Object.entries(this.dropdownManger.dropdowns)) {
-                        const dropdown = document.getElementById(dropdownId);
-                        this.dropdownManger.updateOptionCount(
-                            dropdown, 
-                            attr, 
-                            data
-                        );
-                    };
-                    this.carousel.totalSlides -= 1;
+                this.updateDropdownOptionCounts(data);
+                this.carousel.totalSlides -= 1;
+
+                if (this.carousel.indices.length > 0) {
                     this.showOverModal();
+                
                     setTimeout(() => {
                         document.getElementById('overModal').style.display = 'none';
                         this.carousel.moveSlide(0);
                     }, 800);
                 } else {
-                    for (const [dropdownId, attr] of Object.entries(this.dropdownManger.dropdowns)) {
-                        const dropdown = document.getElementById(dropdownId);
-                        this.dropdownManger.updateOptionCount(
-                            dropdown, 
-                            attr, 
-                            data
-                        );
-                    };
-                    this.carousel.totalSlides -= 1;
                     if  (this.carousel.totalSlides === 0) {
                         this.showCompletionMessage();
                         return;
                     }
-
+                
                     this.showOverModal();
+                
                     setTimeout(() => {
                         document.getElementById('overModal').style.display = 'none';
-
+                    
                         this.carousel.handleNoSlidesAvailable();
                         this.showFilterOverlay();
-                    }, 800)              
+                    }, 800);
                 }
 
                 const completedPlanId = this.slide.getAttribute('plan-id');
@@ -467,38 +445,9 @@ class ModalHandler {
     }
 
     showCompletionMessage() {
-        const modal = document.getElementById('overModal');
-        if (!modal) return;
-
-        const svg = modal.querySelector('svg');
-        if (svg) svg.remove();
-
-        const messageDiv = modal.querySelector('.submit-message');
-        if (messageDiv) {
-            messageDiv.innerHTML = `
-                全て終了しました。<br>お疲れ様した。<br>
-                <span id="countdown">3秒後<br>homeに戻ります。 </span>
-            `;
-        }
-        modal.style.display = 'flex';
-
-        let countdown = 3;
-        const countdownSpan = document.getElementById('countdown');
-
-        const intervalId = setInterval(() => {
-            countdown--;
-            if (countdownSpan) {
-                countdownSpan.innerHTML = `${countdown}秒後<br>homeに戻ります。`;
-            }
-
-            if (countdown === 0) {
-                clearInterval(intervalId);
-                const basePath = window.location.origin;
-                modal.style.display = 'none';
-                showLoadingScreen();
-                window.location.href = `${basePath}/home/`;
-            }
-        }, 1000);
+        showLoadingScreen();
+    
+        window.location.href = `${window.location.origin}/home/`;
     }
 
     getSlideAttributes() {
@@ -506,6 +455,18 @@ class ModalHandler {
             'data-line-name': this.slide.getAttribute('data-line-name'),
             'data-machine-name': this.slide.getAttribute('data-machine-name')
         };
+    }
+    
+    updateDropdownOptionCounts(data) {
+        for (const [dropdownId, attr] of Object.entries(this.dropdownManger.dropdowns)) {
+            const dropdown = document.getElementById(dropdownId);
+    
+            this.dropdownManger.updateOptionCount(
+                dropdown,
+                attr,
+                data
+            );
+        }
     }
 
     showOverModal() {
@@ -722,30 +683,27 @@ class Carousel {
     }
 
     applyInspectionStatusClass(slide) {
-        // 1) 一旦すべて外す（排他制御の基本）
         slide.classList.remove(...SLIDE_STATE_CLASSES);
-
+    
         const inspectionStatus = slide?.dataset?.inspectionStatus ?? '';
         const timeZone = slide?.dataset?.timeZone ?? '';
-
-        // 2) 条件に合うクラスを1つだけ決定
+    
         let nextClass = null;
-
+    
         if (inspectionStatus === INSPECTION_STATUS_DAILY) {
-            slide.classList.add('is-daily-inspection');
+            nextClass = 'is-daily-inspection';
+        } else if (
+            inspectionStatus === INSPECTION_STATUS_PERIODIC
+            && timeZone === TIME_ZONE_STOPPED
+        ) {
+            nextClass = 'is-stopped-timezone';
+        } else if (inspectionStatus === INSPECTION_STATUS_PERIODIC) {
+            nextClass = 'is-periodic-inspection';
         }
-          
-        if (inspectionStatus === INSPECTION_STATUS_PERIODIC && timeZone === TIME_ZONE_STOPPED) {
-            slide.classList.add('is-stopped-timezone');
-
+    
+        if (nextClass) {
+            slide.classList.add(nextClass);
         }
-          
-        if (inspectionStatus === INSPECTION_STATUS_PERIODIC) {
-            slide.classList.add('is-periodic-inspection');
-        }
-
-        // 3) 1つだけ付与（該当なしなら何もしない）
-        if (nextClass) slide.classList.add(nextClass);
     }
     
 
@@ -840,6 +798,8 @@ class Carousel {
     }
 
     handleNoSlidesAvailable() {
+        this.removeNoSlidesMessage();
+    
         // 「表示する内容がありません。」というメッセージを表示
         const messageElement = document.createElement('div');
         messageElement.textContent = '表示する内容がありません';
@@ -848,7 +808,7 @@ class Carousel {
         messageElement.style.textAlign = 'center';
         messageElement.style.padding = '30px';
         this.carousel.appendChild(messageElement);
-
+    
         //不要なボタンを非表示にする
         const buttonsToHide = ['carouselButtonLeft', 'carouselButtonRight', 'implementation-button'];
         buttonsToHide.forEach(buttonId => {

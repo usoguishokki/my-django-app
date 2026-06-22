@@ -1,8 +1,8 @@
 import json
 from datetime import datetime
 
-from django.db.models import F, Q, OuterRef, Subquery, IntegerField
-from django.db.models.functions import TruncDate
+from django.db.models import F, Q, OuterRef, Subquery, IntegerField, CharField
+from django.db.models.functions import Coalesce, TruncDate
 
 from django.db.models.aggregates import Count
 from myapp.models import Calendar_tb, Hozen_calendar_tb, Practitioner_tb
@@ -51,13 +51,31 @@ def build_kpi_plan_queryset(*, filters_json: Optional[str]):
     )
 
     # KPIで使う列を annotate（DB側で付与）
+    # planned_affilation を優先し、未設定の場合だけ従来の Calendar_tb 判定にフォールバックする。
     qs = qs.annotate(
-        aff_id     = Subquery(cal_base.values("affilation_id")[:1]),
-        aff_name   = Subquery(cal_base.values("affilation__affilation")[:1]),
-        month      = F("p_date__h_month"),
-        week       = F("p_date__h_week"),
-        impl_month = Subquery(impl_cal_base.values("h_month")[:1]),
-        impl_week  = Subquery(impl_cal_base.values("h_week")[:1]),
+        calendar_aff_id=Subquery(
+            cal_base.values("affilation_id")[:1],
+            output_field=IntegerField(),
+        ),
+        calendar_aff_name=Subquery(
+            cal_base.values("affilation__affilation")[:1],
+            output_field=CharField(),
+        ),
+    ).annotate(
+        aff_id=Coalesce(
+            F("planned_affilation_id"),
+            F("calendar_aff_id"),
+            output_field=IntegerField(),
+        ),
+        aff_name=Coalesce(
+            F("planned_affilation__affilation"),
+            F("calendar_aff_name"),
+            output_field=CharField(),
+        ),
+        month=F("p_date__h_month"),
+        week=F("p_date__h_week"),
+        impl_month=Subquery(impl_cal_base.values("h_month")[:1]),
+        impl_week=Subquery(impl_cal_base.values("h_week")[:1]),
         practitioner_count=Subquery(pract_cnt_sq, output_field=IntegerField()),
     )
 
@@ -108,7 +126,7 @@ def kpi_rows(qs):
     """
     return qs.values(
         "month", "week", "impl_month", "impl_week",
-        "aff_name", "implementation_date", "status",
+        "aff_id", "aff_name", "implementation_date", "status",
         "p_date__h_date", "plan_id",
         "inspection_no__practitioner_id",
         "inspection_no__man_hours",

@@ -4,19 +4,26 @@ from django.views.decorators.http import require_GET, require_POST
 
 from myapp.domain.periods import build_fiscal_year_months, build_month_range
 from myapp.presenters.control import build_control_machine_options_payload
-from myapp.selectors.calendar import calendar_rows_for_year_months
-from myapp.selectors.check import check_csv_export_qs
+from myapp.selectors.calendar import (
+    calendar_rows_for_dates,
+    calendar_rows_for_year_months,
+)
 from myapp.selectors.control import get_controls_for_inspection_standard_machine_options
+from myapp.selectors.csv_download import get_plan_rows_for_csv
 from myapp.services.csv_download.inspection_standard import build_inspection_standard_csv_response
 
 from myapp.services.csv_download.csv_builder import build_csv_response
 from myapp.services.csv_download.row_presenter import present_occurrence_rows
-from myapp.services.csv_download.schedule_expander import expand_checks_to_occurrences
 
 from myapp.domain.errors import (
     InvalidCsvDownloadParams,
     InvalidCsvDownloadType,
     InvalidMachineSelection,
+)
+
+from myapp.services.csv_download.plan_result_matcher import (
+    build_occurrences_from_plans,
+    collect_plan_implementation_dates,
 )
 
 
@@ -29,6 +36,7 @@ def _json_error(message: str, *, status: int = 400) -> JsonResponse:
         status=status,
         json_dumps_params={"ensure_ascii": False},
     )
+
 
 def _build_target_months_from_post(request):
     option = (request.POST.get("planResultOption") or "").strip()
@@ -53,7 +61,6 @@ def _build_target_months_from_post(request):
             raise InvalidCsvDownloadParams(str(exc)) from exc
 
     raise InvalidCsvDownloadType(option)
-
 
 
 @login_required
@@ -87,21 +94,33 @@ def inspection_standard_download_api(request):
 def inspection_plan_result_download_api(request):
     try:
         target_months = _build_target_months_from_post(request)
-    except ValueError as exc:
+    except (InvalidCsvDownloadParams, InvalidCsvDownloadType) as exc:
         return _json_error(str(exc))
 
-    #テスト
-    target_months = build_month_range("2026-04", "2027-03")
-    
-    
-    
-    checks = list(check_csv_export_qs())
     calendar_rows = list(calendar_rows_for_year_months(target_months))
 
-    occurrences = expand_checks_to_occurrences(
-        checks=checks,
-        target_months=target_months,
-        calendar_rows=calendar_rows,
+    plans = list(
+        get_plan_rows_for_csv(
+            p_date_ids=[
+                row.pk
+                for row in calendar_rows
+                if row.pk
+            ],
+        )
+    )
+    
+    implementation_calendar_rows = list(
+        calendar_rows_for_dates(
+            collect_plan_implementation_dates(plans)
+        )
+    )
+    
+    occurrences = build_occurrences_from_plans(
+        plans=plans,
+        calendar_rows=[
+            *calendar_rows,
+            *implementation_calendar_rows,
+        ],
     )
 
     rows = present_occurrence_rows(occurrences)

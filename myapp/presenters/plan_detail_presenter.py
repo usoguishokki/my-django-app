@@ -5,6 +5,10 @@ from myapp.presenters.formatters import (
     as_text, as_int, dt_iso, d_iso, member_brief, safe_get,
 )
 
+from myapp.presenters.plan_schedule_rule import present_plan_schedule_rule
+
+
+
 # --------------------------
 # small builders（共通）
 # --------------------------
@@ -26,16 +30,63 @@ def _db_details_rows(check) -> List[dict]:
     return rows
 
 
+def _practitioner_pattern_payload(practitioner) -> dict:
+    if practitioner is None:
+        return {
+            "id": 0,
+            "name": "",
+        }
+
+    return {
+        "id": as_int(safe_get(practitioner, "pattern_id", 0)),
+        "name": as_text(safe_get(practitioner, "pattern_name", "")),
+    }
+
+
 def _check_payload(check) -> dict:
-    # ※この check は「plan内に入る」想定（plan_detail_apiの互換を維持）
+    """
+    Check_tb を詳細表示・共通項目変更で使いやすい形に整形する。
+
+    既存フロント互換:
+      - practitioner_pattern_id は残す
+
+    共通項目変更用:
+      - status
+      - safe_point
+      - rule
+      - practitioner_pattern
+    """
+
+    practitioner = safe_get(check, "practitioner", None)
+    practitioner_pattern = _practitioner_pattern_payload(practitioner)
+
+    rule = safe_get(check, 'rule', None)
+
     return {
         "id": as_int(safe_get(check, "id", 0)),
         "inspection_no": as_text(safe_get(check, "inspection_no", "")),
-        "work_name": as_text(safe_get(check, "wark_name", "")),  # 綴り合わせ
+
+        "work_name": as_text(safe_get(check, "wark_name", "")),
         "man_hours": as_int(safe_get(check, "man_hours", 0)),
+        "required_person_count": as_int(
+            safe_get(check, "required_person_count", 1)
+        ),
         "day_of_week": as_text(safe_get(check, "day_of_week", "")),
         "time_zone": as_text(safe_get(check, "time_zone", "")),
-        "practitioner_pattern_id": as_int(safe_get(check, "practitioner_id", 0)),
+        "status": as_text(safe_get(check, "status", "")),
+        "safe_point": as_text(safe_get(check, "safe_point", "")),
+        
+        "anchor_year": as_text(safe_get(check, "anchor_year", "")),
+        "anchor_month": as_text(safe_get(check, "anchor_month", "")),
+        "week_of_month": as_text(safe_get(check, "week_of_month", "")),
+
+        # 既存互換
+        "practitioner_pattern_id": practitioner_pattern["id"],
+        "practitioner_pattern_name": practitioner_pattern["name"],
+
+        # 共通項目変更フォーム用
+        "practitioner_pattern": practitioner_pattern,
+        "rule": present_plan_schedule_rule(rule),
     }
 
 

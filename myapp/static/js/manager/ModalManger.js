@@ -90,6 +90,8 @@ export class ModalManger {
      * @param {string} [args.color='default']
      * @param {string} [args.confirmText='OK']
      * @param {string} [args.cancelText='キャンセル']
+     * @param {boolean} [args.confirmDisabled=false]
+     * @param {Function} [args.onOpen]
      * @returns {Promise<boolean>}
      */
     static showConfirmModal({
@@ -97,15 +99,19 @@ export class ModalManger {
         color = 'default',
         confirmText = 'OK',
         cancelText = 'キャンセル',
+        confirmDisabled = false,
+        onOpen = () => {},
     }) {
         return new Promise((resolve) => {
             if (!this.ensureInitialized()) {
                 resolve(false);
                 return;
             }
-    
+
             const modalMessage = this.getOrCreateModalMessage();
-    
+            const disabledAttribute = confirmDisabled ? 'disabled' : '';
+            const ariaDisabled = confirmDisabled ? 'true' : 'false';
+
             modalMessage.innerHTML = `
                 <div class="modal__confirmBody">
                     <div class="modal__confirmMessage">${message}</div>
@@ -114,6 +120,8 @@ export class ModalManger {
                             type="button"
                             class="modal__confirmBtn modal__confirmBtn--ok"
                             data-role="modal-confirm-ok"
+                            aria-disabled="${ariaDisabled}"
+                            ${disabledAttribute}
                         >
                             ${UIManger.escapeHtml(confirmText)}
                         </button>
@@ -127,24 +135,32 @@ export class ModalManger {
                     </div>
                 </div>
             `;
-    
+
             this.openModalWithColor(color);
-    
+
             const finish = (result) => {
                 this.closeModal();
                 resolve(result);
             };
-    
+
             const closeSpan = this.myModal?.querySelector('.close');
             if (closeSpan) {
                 closeSpan.onclick = () => finish(false);
             }
-    
+
             const okButton = modalMessage.querySelector('[data-role="modal-confirm-ok"]');
             const cancelButton = modalMessage.querySelector('[data-role="modal-confirm-cancel"]');
-    
+
             okButton?.addEventListener('click', () => finish(true), { once: true });
             cancelButton?.addEventListener('click', () => finish(false), { once: true });
+
+            onOpen({
+                modalEl: this.myModal,
+                modalContentEl: this.modalContent,
+                modalMessageEl: modalMessage,
+                confirmButtonEl: okButton,
+                cancelButtonEl: cancelButton,
+            });
         });
     }
 

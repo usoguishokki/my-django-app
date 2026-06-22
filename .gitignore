@@ -45,3 +45,19 @@ myproject/settings_backup/
 
 myproject/settings.py
 web.config
+
+# Local auth/cache
+token_cache.bin
+*_cache.bin
+
+# Local debug scripts
+debug_*.py
+
+# Local one-off scripts
+MTBF算出コード.py
+予備品.py
+保全システム.py
+健康管理.py
+
+# Node.js
+/node_modules/

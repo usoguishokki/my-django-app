@@ -1,550 +1,927 @@
-import { asynchronousCommunication } from '../asyncCommunicator/asyncCommunicator.js';
-
-import { initializeLoadingScreen } from '../manager/loadingManager.js';
+import { ModalManger } from '../manager/ModalManger.js';
 import { UIManger } from '../manager/UIManger.js';
-import { TableManager } from '../manager/TableManger.js';
+import { initializeLoadingScreen } from '../manager/loadingManager.js';
 
 import { inspectionStandardManager } from './inspectionStandardsMappingConfig.js';
 
+
 import { DrawerStack } from '../ui/componets/drawer/DrawerStack.js';
-import { panelBinder } from '../ui/bindings/panelBinder.js';
+import { bindUIActions } from '../ui/componets/actions/UIActionDispatcher.js';
+import { SectionEditSession } from '../ui/componets/sectionEdit/SectionEditSession.js';
 
+import { INSPECTION_STANDARD_DRAWER_ACTIONS } from './domain/InspectionStandardActions.js';
+import { INSPECTION_STANDARD_DRAWER_MODES } from './domain/InspectionStandardDrawerModes.js';
+import {
+  renderInspectionStandardCardAddDetailItemHTML,
+} from './ui/InspectionStandardEditFormRenderer.js';
+import {
+  renderInspectionStandardCardAddConfirmHTML,
+} from './ui/InspectionStandardCardAddRenderer.js';
+import { InspectionStandardCardAddSubmitService } from './application/add/InspectionStandardCardAddSubmitService.js';
+import { InspectionStandardEditPanelService } from './application/edit/InspectionStandardEditPanelService.js';
+import { InspectionStandardEditSubmitService } from './application/edit/InspectionStandardEditSubmitService.js';
+import { bindInspectionStandardIntegerInputRestrictions } from './application/edit/InspectionStandardIntegerInputRestrictionService.js';
+import { InspectionStandardEditFlowService } from './application/edit/InspectionStandardEditFlowService.js';
+import { validateInspectionStandardCardAddRequiredFields } from './application/edit/InspectionStandardRequiredFieldValidationService.js';
+import { InspectionStandardTableService } from './application/table/InspectionStandardTableService.js';
+import { InspectionStandardCardAddDrawerService } from './application/add/InspectionStandardCardAddDrawerService.js';
+import { InspectionStandardDetailDrawerService } from './application/details/InspectionStandardDetailDrawerService.js';
+import { InspectionStandardFilterService } from './application/filters/InspectionStandardFilterService.js';
+import { InspectionStandardDrawerHeaderService } from './application/drawers/InspectionStandardDrawerHeaderService.js';
+import { InspectionStandardHistoryPageService } from './application/history/InspectionStandardHistoryPageService.js';
 
-import { buildPlanDetailCardsVM, buildExtraDetailVM } from '../presenters/planDetailPresenter.js';
+import { InspectionStandardHistoryDetailDrawerService } from './application/history/InspectionStandardHistoryDetailDrawerService.js';
 
-import { buildInspectionCardPlansTableVM } from '../presenters/inspectionCardPlansPresenter.js';
-
-import { renderGenericTableHTML } from '../ui/renderers/genericTableRenderer.js';
-import { buildWorkHistoryTableVM } from '../presenters/workHistoryTablePresenter.js'
-
-import { renderPlanDetailCardsHTML, renderExtraDetailHTML } from '../ui/renderers/planDetailCardsRenderer.js';
-import { renderInspectionCardPlansTableHTML } from '../ui/renderers/inspectionCardPlansTableRenderer.js';
-
-import { fetchInspectionCardDetail, fetchInspectionPlansHistory, fetchPlanDetail } from "../api/fetchers.js";
-
-  
+const INSPECTION_STANDARD_PAGE_MODES = Object.freeze({
+  STANDARD: 'standard',
+  HISTORY: 'history',
+});
 
 class inspectionStandards {
-    constructor() {
-        this.inspectionStandardManager = new inspectionStandardManager();
-        this.table = document.getElementById('myTable');
-        this.drawers = null;
-        this._inited = false;
-        this.spinnerId = 'inspectionStandardsSpinner'
-    }
+  constructor() {
+    this.inspectionStandardManager = new inspectionStandardManager();
+    this.table = document.getElementById('myTable');
+    this.drawers = null;
+    this._inited = false;
+    this.addCardButton = null;
+    this.canAddCard = false;
+    this.cardAddContext = null;
+    this.spinnerId = 'inspectionStandardsSpinner';
 
-    async init() {
-        if (this._inited) return;
-        if (!this.table) {
-            console.warn('[InspectionStandards] #myTable not found at init');
-            return;
-        }
-        this.parentArea = document.getElementById('parentFilterArea');
-        this.setupDrawers();
-        this.tbody = this.table.querySelector('tbody');
-        this.initialTbody = this.tbody ? this.tbody.innerHTML : '';
+    this.pageMode = INSPECTION_STANDARD_PAGE_MODES.STANDARD;
+  
+    this.activeInspectionContext = null;
+    this.activeInspectionDetailVM = null;
+    this.sectionEditSession = new SectionEditSession();
     
-        // 3) テーブル/ドロップダウン等の本格セットアップ
-        this.tableSetup();         // TableManager作成・列マッピングなど
+    this.editPanelService = new InspectionStandardEditPanelService({
+      getDrawers: () => this.drawers,
+      getActiveDetailVM: () => this.activeInspectionDetailVM,
+      getSelectedSectionId: () => this.sectionEditSession.getSelectedSectionId(),
+    });
     
-        // 4) 同一inspection_noのホバー強調（委譲）※TableManager後
-        this._bindHoverGroup();
-    
-        this._bindEquipmentSelects();
+    this.editSubmitService = new InspectionStandardEditSubmitService({
+      sectionEditSession: this.sectionEditSession,
+      editPanelService: this.editPanelService,
+      getActiveInspectionContext: () => this.activeInspectionContext,
+      getActiveDetailVM: () => this.activeInspectionDetailVM,
+      setActiveDetailVM: (vm) => {
+        this.activeInspectionDetailVM = vm;
+      },
+      getDrawers: () => this.drawers,
+    });
 
+    this.detailDrawerService = new InspectionStandardDetailDrawerService({
+      getDrawers: () => this.drawers,
+      setActiveDetailVM: (vm) => {
+        this.activeInspectionDetailVM = vm;
+      },
+    });
 
-        this._inited = true;
-    }
-
-    setupDrawers() {
-      // root は data-ui-root="drawer" を優先
-      this.$root =
-        document.querySelector('[data-ui-root="drawer"]') ||
-        document.getElementById('parentFilterArea');
+    this.historyDetailDrawerService = new InspectionStandardHistoryDetailDrawerService({
+      getDrawers: () => this.drawers,
+      onApproved: async () => {
+        await this.historyPageService?.reload({
+          filters: this.historyPageService?.currentFilters ?? {},
+        });
+      },
+    });
     
-      if (!this.$root) {
-        console.warn('[InspectionStandards] root not found');
-        return;
+    this.drawerHeaderService = new InspectionStandardDrawerHeaderService({
+      getDrawers: () => this.drawers,
+    });
+
+    this.editFlowService = new InspectionStandardEditFlowService({
+      sectionEditSession: this.sectionEditSession,
+      editPanelService: this.editPanelService,
+      drawerHeaderService: this.drawerHeaderService,
+      getDrawers: () => this.drawers,
+      getActiveDetailVM: () => this.activeInspectionDetailVM,
+      getActiveInspectionContext: () => this.activeInspectionContext,
+    });
+
+    this.cardAddDrawerService = new InspectionStandardCardAddDrawerService({
+      getDrawers: () => this.drawers,
+    });
+
+    this.cardAddSubmitService = new InspectionStandardCardAddSubmitService();
+    
+    this.tableService = null;
+    this.filterService = null;
+    this.standardPageEl = null;
+    this.historyPageEl = null;
+    this.historyPageService = null;
+    
+    this.unbindUIActions = null;
+    this.unbindIntegerInputRestrictions = null;
+  }
+
+  async init() {
+      if (this._inited) return;
+      if (!this.table) {
+          console.warn('[InspectionStandards] #myTable not found at init');
+          return;
       }
-    
-      const stackEl = this.$root.querySelector('[data-drawer-stack]');
-      if (!stackEl) {
-        console.warn('[InspectionStandards] drawer stack not found: [data-drawer-stack]');
-        return;
-      }
-    
-      this.drawers = new DrawerStack({
-        stackEl,
-        rootEl: this.$root,
-        rootClassBase: 'page',          // 既存drawer scssが page--drawer-* を見ている想定
-        order: ['cell', 'plan', 'extra'], // drawer_stack.html 側の data-panel と合わせる
-        enableEscapeClose: true,
-        side: 'right',
-        actionsByPanel: {
-          plan: {
-            'open-plan-extra': ({ payload, type}) => {
-              if (type !== 'click') return;
+      this.parentArea = document.getElementById('parentFilterArea');
 
-              const planId = Number(payload?.planId ?? 0);
-              if (!Number.isFinite(planId) || planId <= 0) return;
+      this.standardPageEl = this.parentArea?.querySelector(
+        '[data-role="inspection-standard-standard-page"]'
+      );
+      
+      this.historyPageEl = this.parentArea?.querySelector(
+        '[data-role="inspection-standard-history-page"]'
+      );
+      
+      this.addCardButton = this.parentArea?.querySelector(
+        '[data-role="inspection-standard-add-card-button"]'
+      );
+      
+      this.historyPageService = new InspectionStandardHistoryPageService({
+        rootEl: this.parentArea,
+      });
+      
+      this.historyPageService.init();
+      
+      this._setAddCardButtonEnabled(false);
 
-              this._openExtraFromHistoryRow({ planId }).catch(console.error);
-            },
-          },
+      this.setupDrawers();
+      this.tableService = new InspectionStandardTableService({
+        table: this.table,
+        manager: this.inspectionStandardManager,
+        onRowClick: (row) => this._openPlanDetailFromRow(row),
+      });
+      
+      this.tableService.init();
+
+      this.filterService = new InspectionStandardFilterService({
+        parentArea: this.parentArea,
+        tableService: this.tableService,
+        spinnerId: this.spinnerId,
+      
+        shouldFetchDetails: () => this._isStandardMode(),
+      
+        onFiltersChanged: ({ filters }) => {
+          this._handleFiltersChanged({
+            filters,
+          });
+        },
+      
+        onDetailsLoadStart: () => {
+          this.cardAddContext = null;
+          this._setAddCardButtonEnabled(false);
+        },
+      
+        onDetailsLoaded: ({ filters, details }) => {
+          const machine = String(filters?.machine ?? '').trim();
+          const controlNo = String(filters?.control_no ?? filters?.controlNo ?? '').trim();
+      
+          this.cardAddContext = {
+            machine,
+            controlNo,
+            detailCount: Array.isArray(details) ? details.length : 0,
+          };
+      
+          this._setAddCardButtonEnabled(
+            Boolean(machine || controlNo)
+          );
+        },
+      
+        onDetailsCleared: () => {
+          this.cardAddContext = null;
+          this._setAddCardButtonEnabled(false);
+        },
+      
+        onDetailsLoadFailed: () => {
+          this.cardAddContext = null;
+          this._setAddCardButtonEnabled(false);
         },
       });
-    }
-
-    _bindEquipmentSelects() {
-      this.$controlNameSelect = document.getElementById('controlNameSelect');
-      this.$controlNoSelect   = document.getElementById('controlNoSelect');
-    
-      if (!this.$controlNameSelect || !this.$controlNoSelect) {
-        console.warn('[InspectionStandards] control selects not found');
-        return;
-      }
-    
-      const raf = () => new Promise(requestAnimationFrame);
-
-      const applyPlaceholderClass = (selectEl) => {
-        selectEl.classList.toggle('is-placeholder', !selectEl.value);
-      };
-    
-      applyPlaceholderClass(this.$controlNameSelect);
-      applyPlaceholderClass(this.$controlNoSelect);
-    
-      // ★追加：同期による二重発火ガード
-      this._syncingSelect = false;
-    
-      const handleChange = async (source, { machine, controlNo }) => {
-        if (this._syncingSelect) return;
-    
-        // ① すぐ出す
-        this._showFilterSpinner();
-    
-        // ② 同期（相手の値を変える）
-        this._syncingSelect = true;
-        try {
-          if (source === 'name') this._syncControlNoSelect(controlNo);
-          if (source === 'no')   this._syncControlNameSelect(machine);
-    
-          applyPlaceholderClass(this.$controlNameSelect);
-          applyPlaceholderClass(this.$controlNoSelect);
-        } finally {
-          this._syncingSelect = false;
-        }
-    
-        // ③ 描画を通す
-        await raf();
-    
-        // ④ fetch（通信しない場合は _applyFiltersAndFetch 内で hide する設計）
-        await this._applyFiltersAndFetch({ machine, control_no: controlNo });
-      };
-    
-      this.$controlNameSelect.addEventListener('change', async (e) => {
-        const opt = e.target.selectedOptions?.[0];
-        const machine   = opt?.dataset?.machine ?? '';
-        const controlNo = opt?.dataset?.controlNo ?? '';
-        await handleChange('name', { machine, controlNo });
-      });
-    
-      this.$controlNoSelect.addEventListener('change', async (e) => {
-        const opt = e.target.selectedOptions?.[0];
-        const machine   = opt?.dataset?.machine ?? '';
-        const controlNo = opt?.dataset?.controlNo ?? '';
-        await handleChange('no', { machine, controlNo });
-      });
-    }
-
-
-    _syncControlNoSelect(controlNo) {
-        if (!this.$controlNoSelect) return;
-        const options = Array.from(this.$controlNoSelect.options);
-        const hit = options.find(o => (o.dataset?.controlNo ?? o.value) === controlNo);
-        if (hit) this.$controlNoSelect.value = hit.value;
-    }
-
-    _syncControlNameSelect(machine) {
-        if (!this.$controlNameSelect) return;
-        const options = Array.from(this.$controlNameSelect.options);
-        const hit = options.find(o => (o.dataset?.machine ?? o.value) === machine);
-        if (hit) this.$controlNameSelect.value = hit.value;
-    }
-
-    async _applyFiltersAndFetch(filters) {
-        // 未選択なら初期状態に戻す（任意）
-        const hasAny = !!(filters?.machine || filters?.control_no);
-        if (!hasAny) {
-          if (this.tbody) this.tbody.innerHTML = this.initialTbody;
-          UIManger.hideSpinner?.({ id: 'inspectionStandardsSpinner' });
-          return;
-        }
       
-        await this.setupAsyncCommunication(filters);
+      this.filterService.init();
+      
+      this._inited = true;
+  }
+
+  setupDrawers() {
+    // root は data-ui-root="drawer" を優先
+    this.$root =
+      document.querySelector('[data-ui-root="drawer"]') ||
+      document.getElementById('parentFilterArea');
+  
+    if (!this.$root) {
+      console.warn('[InspectionStandards] root not found');
+      return;
     }
-
-    _openPlanDetailFromRow(row) {
-      if (!this.drawers) {
-        console.warn('[InspectionStandards] drawers not initialized');
-        return;
-      }
+  
+    const stackEl = this.$root.querySelector('[data-drawer-stack]');
+    if (!stackEl) {
+      console.warn('[InspectionStandards] drawer stack not found: [data-drawer-stack]');
+      return;
+    }
+  
+    this.drawers = new DrawerStack({
+      stackEl,
+      rootEl: this.$root,
+      rootClassBase: 'page',
+      order: ['cell', 'plan', 'extra'],
+      enableEscapeClose: true,
+      side: 'right',
+      actionsByPanel: {
+        plan: {
+          'open-plan-extra': ({ payload, type}) => {
+            if (type !== 'click') return;
     
-      // まずは2枚だけ開く（cell + plan）
-      this.drawers.openToLevel(2);
+            const planId = Number(payload?.planId ?? 0);
+            if (!Number.isFinite(planId) || planId <= 0) return;
     
-      // タイトルだけ仮で入れておく（あとでデータ連動）
-      const inspectionNo = row.getAttribute('data-inspection_no') || '';
-      const workName = row.getAttribute('data-wark_name') || ''
+            this.detailDrawerService.openExtraFromHistoryRow({ planId }).catch(console.error);
+          },
+        },
+      },
+    });
+    
+    this.bindUIActions();
+    this.bindIntegerInputRestrictions();
+  }
 
-      const cellTitle = `${inspectionNo} / ${workName}`
+  bindUIActions() {
+    if (!this.$root) return;
+  
+    this.unbindUIActions?.();
+  
+    this.unbindUIActions = bindUIActions(
+      this.$root,
+      this.buildUIActionHandlers()
+    );
+  }
 
-      const cell = this.drawers.panel('cell');
-      const plan = this.drawers.panel('plan');
+  bindIntegerInputRestrictions() {
+    if (!this.$root) return;
+  
+    this.unbindIntegerInputRestrictions?.();
+  
+    this.unbindIntegerInputRestrictions =
+      bindInspectionStandardIntegerInputRestrictions({
+        rootEl: this.$root,
+      });
+  }
+  
+  buildUIActionHandlers() {
+    return {
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SHOW_HISTORY_DETAIL]: async ({ payload }) => {
+        await this.historyDetailDrawerService.open({
+          historyId: payload?.historyId,
+        });
+      },
 
-      cell?.setTitle('読み込み中');
-      plan?.setTitle('読み込み中');
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.CHANGE_HISTORY_APPROVAL_CONFIRM]: ({ element }) => {
+        this.historyDetailDrawerService.handleApprovalConfirmChange({
+          element,
+        });
+      },
 
-      this._loadInspectionCardDetail({ inspectionNo, cellTitle }).catch((e) => {
-        console.error(e);
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.APPROVE_HISTORY]: async ({ element, payload }) => {
+        await this.historyDetailDrawerService.approve({
+          element,
+          payload,
+        });
+      },
+
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SHOW_HISTORY_LIST]: async () => {
+        await this._openHistoryListPage();
+      },
+  
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SHOW_STANDARD_LIST]: () => {
+        this._openStandardListPage();
+      },
+
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SHOW_ADD_CARD]: () => {
+        this._openAddCardDrawer();
+      },
+
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.ADD_CARD_DETAIL_ITEM]: () => {
+        this._appendAddCardDetailItem();
+      },
+  
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SHOW_ADD_CARD_DETAIL_STEP]: ({ element }) => {
+        this._switchAddCardStep({
+          element,
+          step: 'detail',
+        });
+      },
+
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SHOW_ADD_CARD_COMMON_STEP]: ({ element }) => {
+        this._switchAddCardStep({
+          element,
+          step: 'common',
+        });
+      },
+
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SHOW_HISTORY]: async ({ element }) => {
+        const inspectionNo = this._resolveInspectionNoFromActionElement(element);
+  
+        if (!inspectionNo) return;
+  
+        await this._showHistoryDrawerPanel({ inspectionNo });
+      },
+
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SHOW_EDIT]: ({ element }) => {
+        const inspectionNo = this._resolveInspectionNoFromActionElement(element);
+  
+        if (!inspectionNo) return;
+  
+        this.editFlowService.enterEditMode({ inspectionNo });
+      },
+  
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SELECT_EDIT_SECTION]: ({ element }) => {
+        const sectionId = element?.dataset?.sectionId || '';
+  
+        if (!sectionId) return;
+  
+        this.editFlowService.selectSection({ sectionId });
+      },
+  
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SAVE_EDIT_SECTION]: async ({ element }) => {
+        await this.editSubmitService.saveSelectedEditSection({ element });
+      },
+      
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SAVE_ADD_ITEM]: async ({ element }) => {
+        await this.editSubmitService.saveAddItem({ element });
+      },
+      
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SAVE_DELETE_ITEM]: async ({ element }) => {
+        await this.editSubmitService.saveDeleteItem({ element });
+      },
+      
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SAVE_ABOLISH_CARD]: async ({ element }) => {
+        await this.editSubmitService.saveAbolishCard({ element });
+      },
+
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SAVE_COMMON_ITEMS]: async ({ element }) => {
+        await this.editSubmitService.saveCommonItems({ element });
+      },
+  
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SELECT_EDIT_OPERATION]: ({ element, payload }) => {
+        this.editFlowService.selectOperationFromAction({
+          element,
+          payload,
+        });
+      },
+
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SAVE_ADD_CARD]: async ({ element }) => {
+        await this._submitAddCard({ element });
+      },
+    };
+  }
+
+  async _openHistoryListPage() {
+    this._setPageMode(INSPECTION_STANDARD_PAGE_MODES.HISTORY);
+  
+    this.filterService?.clearFilters({
+      resetTable: true,
+      notify: false,
+    });
+  
+    this._setAddCardButtonEnabled(false);
+    this._showHistoryPage();
+  
+    await this.historyPageService?.load({
+      filters: {},
+    });
+  }
+
+  _openStandardListPage() {
+    this._setPageMode(INSPECTION_STANDARD_PAGE_MODES.STANDARD);
+
+    this.filterService?.clearFilters({
+      resetTable: true,
+      notify: false,
+    });
+
+    this.historyPageService?.clear?.();
+
+    this._setAddCardButtonEnabled(false);
+    this._showStandardPage();
+  }
+
+  _showHistoryPage() {
+    if (this.standardPageEl) {
+      this.standardPageEl.hidden = true;
+    }
+  
+    if (this.historyPageEl) {
+      this.historyPageEl.hidden = false;
+    }
+  }
+  
+  _showStandardPage() {
+    if (this.standardPageEl) {
+      this.standardPageEl.hidden = false;
+    }
+  
+    if (this.historyPageEl) {
+      this.historyPageEl.hidden = true;
+    }
+  }
+
+  async _showHistoryDrawerPanel({ inspectionNo }) {
+    if (!inspectionNo) return;
+  
+    this._resetDrawerPanelWidths();
+  
+    this.drawers?.openToLevel(2);
+  
+    this.sectionEditSession.reset();
+  
+    this.drawerHeaderService.setCellDrawerActionActive(
+      INSPECTION_STANDARD_DRAWER_MODES.HISTORY
+    );
+  
+    this.editPanelService.renderDetailCardsViewMode();
+  
+    await this.detailDrawerService.loadInspectionHistory({ inspectionNo });
+  }
+
+  _openAddCardDrawer() {
+    if (!this.canAddCard) return;
+  
+    if (!this.drawers) {
+      console.warn('[InspectionStandards] drawers not initialized');
+      return;
+    }
+  
+    this.sectionEditSession?.reset?.();
+  
+    this.activeInspectionContext = null;
+    this.activeInspectionDetailVM = null;
+  
+    this.cardAddDrawerService.open({
+      context: this.cardAddContext ?? {},
+    }).catch((error) => {
+      console.error('[InspectionStandards] add card drawer failed:', error);
+    });
+  }
+
+  _resetDrawerPanelWidths() {
+    ['cell', 'plan', 'extra'].forEach((panelKey) => {
+      this.drawers?.panel(panelKey)?.setWide?.(false);
+    });
+  }
+
+  _resolveInspectionNoFromActionElement(element) {
+    return (
+      element?.dataset?.inspectionNo ||
+      this.activeInspectionContext?.inspectionNo ||
+      ''
+    );
+  }
+
+  _isStandardMode() {
+    return this.pageMode === INSPECTION_STANDARD_PAGE_MODES.STANDARD;
+  }
+
+  _isHistoryMode() {
+    return this.pageMode === INSPECTION_STANDARD_PAGE_MODES.HISTORY;
+  }
+
+  _setPageMode(pageMode) {
+    this.pageMode = pageMode;
+  }
+
+  _handleFiltersChanged({
+    filters = {},
+  } = {}) {
+    if (!this._isHistoryMode()) return;
+  
+    this.historyPageService?.reload({
+      filters,
+    });
+  }
+
+  _openPlanDetailFromRow(row) {
+    if (isTruthyAttributeValue(row?.getAttribute?.('data-is_check_abolished'))) {
+      return;
+    }
+  
+    if (!this.drawers) {
+      console.warn('[InspectionStandards] drawers not initialized');
+      return;
+    }
+  
+    this._resetDrawerPanelWidths();
+  
+    // まずは2枚だけ開く（cell + plan）
+    this.drawers.openToLevel(2);
+  
+    // タイトルだけ仮で入れておく（あとでデータ連動）
+    const inspectionNo = row.getAttribute('data-inspection_no') || '';
+    const workName = row.getAttribute('data-wark_name') || '';
+    const cellTitle = `${inspectionNo} / ${workName}`;
+    this.activeInspectionContext = {
+      inspectionNo,
+      workName,
+      cellTitle,
+    };
+    
+    this.activeInspectionDetailVM = null;
+    this.sectionEditSession.reset();
+    const cell = this.drawers.panel('cell');
+    const plan = this.drawers.panel('plan');
+    cell?.setTitle('読み込み中');
+    plan?.setTitle('読み込み中');
+    
+    this.drawerHeaderService.renderCellDrawerActions({
+      inspectionNo,
+      activeMode: INSPECTION_STANDARD_DRAWER_MODES.HISTORY,
+    });
+    
+    this.detailDrawerService
+      .loadInspectionCardDetail({ inspectionNo, cellTitle })
+      .catch((error) => {
+        console.error(error);
         cell?.setTitle?.(`カードNo: ${inspectionNo}（エラー）`);
-        cell?.setBodyHTML?.(`<p class="drawer__placeholder">読み込みに失敗しました</p>`);
+        cell?.setBodyHtml?.(
+          '<p class="drawer__placeholder">読み込みに失敗しました</p>'
+        );
       });
-
-      
-      this._loadInspectionHistory({ inspectionNo }).catch((e) => {
-        console.error(e);
+    
+    this.detailDrawerService
+      .loadInspectionHistory({ inspectionNo })
+      .catch((error) => {
+        console.error(error);
         plan?.setTitle?.(`履歴（エラー）: ${inspectionNo}`);
-        // plan パネルは data-role="body" があるのでそこに仮文言を入れる
-        plan?.setBodyHtml?.(`<p class="drawer__placeholder">読み込みに失敗しました</p>`);
+        plan?.setBodyHtml?.(
+          '<p class="drawer__placeholder">読み込みに失敗しました</p>'
+        );
       });
-    }
+  }
 
-    async _loadInspectionCardDetail({ inspectionNo, cellTitle }) {
-      const cell = this.drawers?.panel('cell');
-      if (!cell) return;
-    
-      try {
-        const res = await fetchInspectionCardDetail({ inspectionNo });
-        
-        const inspectionManHour = res.plan.check.man_hours 
-    
-        // plannedMaintenance.js と同じ作り（vm2/html2）
-        const title = `${cellTitle} ${inspectionManHour}分`;
-        const vm2 = buildPlanDetailCardsVM(res, { title });
-        const html2 = renderPlanDetailCardsHTML(vm2);
-    
-        cell.showBody?.();
+  _setAddCardButtonEnabled(enabled) {
+    this.canAddCard = Boolean(enabled);
+  
+    if (!this.addCardButton) return;
+  
+    this.addCardButton.disabled = !this.canAddCard;
+    this.addCardButton.setAttribute(
+      'aria-disabled',
+      this.canAddCard ? 'false' : 'true'
+    );
+  }
 
-        panelBinder.setTitle(cell.titleEl, vm2.title);
-        panelBinder.setBodyHTML(cell.bodyEl, html2);
-    
-      } catch (e) {
-        console.error(e);
-        panelBinder.showError(cell.titleEl, cell.bodyEl);
-      }
-    }
-
-    async _loadInspectionHistory({ inspectionNo }) {
-      const plan = this.drawers?.panel('plan');
-      if (!plan) return;
-
-      plan.setTitle?.(`履歴: ${inspectionNo}（読み込み中…）`);
-      plan.showEmpty?.('データを読み込んでいます…');
-
-      plan.showTable?.();
-      plan.clearTable?.();
-      plan.clearBody?.();
-    
-      try {
-        const res = await fetchInspectionPlansHistory({ inspectionNo });
-
-        //const vm = buildInspectionCardPlansTableVM(res, { title: '点検履歴' });
-
-        const vm = buildWorkHistoryTableVM(res, { title: '作業履歴' });
-
-        const html = renderGenericTableHTML(vm);
-        
-        plan.setTitle?.(vm.title);
-
-        plan.showTable?.();
-        plan.setTableHtml?.(html);
-
-      } catch(e) {
-        console.error(e);
-        plan.setTitle?.(`履歴: ${inspectionNo}（エラー）`);
-        // エラー時は empty を見せるのが一番安全
-        plan.showEmpty?.('読み込みに失敗しました');
-      }
-    }
-
-    _bindHistoryRowClickOnce() {
-      if (this._historyRowClickBound) return;
-    
-      const planPanel = this.drawers?.panel('plan');
-      if (!planPanel?.tableEl) return;
-    
-      planPanel.tableEl.addEventListener('click', (e) => {
-        const tr = e.target.closest('tr[data-plan-id]');
-        if (!tr) return;
-    
-        const planId = Number(tr.getAttribute('data-plan-id') || 0);
-        if (!planId) return;
-    
-        // ★ panel3へ
-        this._openExtraFromHistoryRow({ planId }).catch(console.error);
+  _switchAddCardStep({
+    element,
+    step,
+  } = {}) {
+    const formEl = element?.closest(
+      '[data-role="inspection-standard-card-add-form"]'
+    );
+  
+    if (!formEl) return;
+  
+    formEl.dataset.step = step;
+  
+    formEl
+      .querySelectorAll('[data-role="inspection-standard-card-add-step"]')
+      .forEach((stepEl) => {
+        const isActive = stepEl.dataset.step === step;
+  
+        stepEl.hidden = !isActive;
+        stepEl.classList.toggle('is-hidden', !isActive);
       });
-    
-      this._historyRowClickBound = true;
-    }
-
-    async _openExtraFromHistoryRow({ planId }) {
-      const extra = this.drawers?.panel('extra');
-      if (!extra) return;
-    
-      // ③まで開く
-      this.drawers.openToLevel(3);
-    
-      // skeleton
-      extra.setTitle?.('点検結果（読み込み中…）');
-      extra.showBody?.();
-      extra.setBodyHtml?.(`<p class="drawer__placeholder">データを読み込んでいます…</p>`);
-    
-      try {
-        const res = await fetchPlanDetail({ planId });
-    
-        const title = `plan_id: ${planId}`;
-        const vm3 = buildExtraDetailVM(res, { title });
-        const html3 = renderExtraDetailHTML(vm3);
-    
-        extra.showBody?.();
-        panelBinder.setTitle(extra.titleEl, '点検結果');
-        panelBinder.setBodyHTML(extra.bodyEl, html3);
-    
-      } catch (e) {
-        console.error(e);
-        extra.showBody?.();
-        panelBinder.showError(extra.titleEl, extra.bodyEl);
-      }
-    }
-
-
-
-    tableSetup() {
-        const onRowClick = (row) => {
-            const inspectionNo = row.getAttribute('data-inspection_no');
-            if (!inspectionNo) {
-                console.warn('[onRowClick] data-inspection_no is missing on row:', row);
-                return;
-            }
-            this._openPlanDetailFromRow(row);
-        };
-
-        this.tableManager = new TableManager('myTable', {
-            onRowClick,
-            isDraggable: false
-        }, null, this.inspectionStandardManager);
-        this.statusConfig = this.inspectionStandardManager.statusConfig();
-        this._toggleColumnVisible('label' ,'');
-    }
-
-    openSubviewSkeleton({ label = '' }) {
-      this._openPanel(this.$subview);
-      this.openPanels(1);
-    
-      // ①のスケルトン（binder化してるなら binder を使ってOK）
-      if (this.$cellDetailTitle) {
-        this.$cellDetailTitle.textContent = `${label}（読み込み中…）`;
-      }
-      if (this.$cellDetailEmptyMsg) {
-        this.$cellDetailEmptyMsg.style.display = 'block';
-        this.$cellDetailEmptyMsg.textContent = 'データを読み込んでいます…';
-      }
-      if (this.$cellDetailTable) {
-        this.$cellDetailTable.innerHTML = '';
-      }
-    }
-
-    _bindHoverGroup() {
-        let currentKey = null;
-        let highlighted = [];
-
-        const clearHighlight = () => {
-            highlighted.forEach(tr => tr.classList.remove('is-hover-group'));
-            highlighted = [];
-            currentKey  = null
-        };
-
-        const highlightGroup = (key) => {
-            if (!key || key === currentKey) return;
-            clearHighlight();
-            highlighted = Array.from(
-                this.tbody.querySelectorAll(
-                    `tr[data-inspection_no="${CSS.escape(String(key))}"]`
-                )
-            );
-            highlighted.forEach(tr => tr.classList.add('is-hover-group'));
-            currentKey = key; 
-        };
-
-        this.tbody.addEventListener('mouseover', (e) => {
-            const tr = e.target.closest('tr');
-            if (!tr || !this.tbody.contains(tr)) return;
-            highlightGroup(tr.getAttribute('data-inspection_no'));
-        });
-
-        this.tbody.addEventListener('mouseout', (e) => {
-            const fromTr = e.target.closest('tr');
-            if (!fromTr) return;
-
-            const toEl = e.relatedTarget;
-            const toTr = toEl && toEl.closest ? toEl.closest('tr') : null;
-
-            if (toTr && this.tbody.contains(toTr)) {
-                const fromKey = fromTr.getAttribute('data-inspection_no');
-                const toKey = toTr.getAttribute('data-inspection_no');
-                if (fromKey === toKey) return;
-                return;
-            }
-
-            clearHighlight();
-        })
-
-        this.tbody.addEventListener('mouseleave', clearHighlight);
-    }
-
-    _toggleColumnVisible(property, value) {
-        const statusColumnsConfig = Object.values(this.statusConfig).find(config => config[property] === value) || null;
-        this.tableManager.toggleColumnVisible(statusColumnsConfig.columnsStyle);
-        return statusColumnsConfig
-    }
-
-
-    _showFilterSpinner() {
-      const spinnerContainer = this.parentArea;
-    
-      UIManger.showSpinner?.({
-        container: spinnerContainer,
-        id: this.spinnerId,
-        size: 'lg',
-        title: '点検基準書を取得中…',
-        sub: 'データを読み込んでいます',
-        delayMs: 300, // ← ここを0に
-      });
-    
-    }
-    
-    _hideFilterSpinner() {
-      UIManger.hideSpinner?.({ id: this.spinnerId });
-    }
-
-    async setupAsyncCommunication(filters) {
-        const params = {
-          url: '/inspectionStadards/',
-          method: 'POST',
-          data: { action: 'get_details', data: filters }
-        };
-      
-        if (!this.tbody) return;
-
-        this._reqSeq = (this._reqSeq ?? 0) + 1;
-        const mySeq = this._reqSeq;
-      
-      
-        const nextFrame = () => new Promise(requestAnimationFrame);
-      
-        try {
-      
-          this.tbody.innerHTML = ''; // ここから重い処理OK
-      
-          this.tbody.classList.remove('fade-enter-active');
-          this.tbody.classList.add('fade-enter');
-      
-          const data = await asynchronousCommunication(params);
-          if (mySeq !== this._reqSeq) return;
-      
-          const details = data?.details || [];
-          this.tableManager.createTableRow(details);
-      
-          await nextFrame(); // ★ DOM追加後に一旦描画（体感を滑らかに）
-          this.removeDuplicateBorders();
-      
-          requestAnimationFrame(() => {
-            this.tbody.classList.add('fade-enter-active');
-            const onEnd = (e) => {
-              if (e.target !== this.tbody) return;
-              this.tbody.classList.remove('fade-enter', 'fade-enter-active');
-              this.tbody.removeEventListener('transitionend', onEnd);
-            };
-            this.tbody.addEventListener('transitionend', onEnd);
-          });
-      
-        } catch (err) {
-          console.error('[setupAsyncCommunication] failed:', err);
-          this.tbody?.classList.remove('fade-enter', 'fade-enter-active');
-        } finally {
-          if (mySeq === this._reqSeq) {
-            UIManger.hideSpinner?.({ id: this.spinnerId });
-          }
+  
+    const stepperEl = formEl.querySelector(
+      '[data-role="inspection-standard-card-add-stepper"]'
+    );
+  
+    stepperEl?.setAttribute('data-current-step', step);
+  
+    formEl
+      .querySelectorAll('[data-step-control]')
+      .forEach((controlEl) => {
+        const isActive = controlEl.dataset.stepControl === step;
+  
+        controlEl.classList.toggle('is-active', isActive);
+  
+        if (isActive) {
+          controlEl.setAttribute('aria-current', 'step');
+        } else {
+          controlEl.removeAttribute('aria-current');
         }
-      
+      });
+  
+    this._updateAddCardDrawerTitleByStep({ step });
+  }
+
+  _updateAddCardDrawerTitleByStep({ step } = {}) {
+    const stepLabelMap = {
+      common: '共通項目',
+      detail: '点検項目',
+    };
+  
+    const stepLabel = stepLabelMap[step] ?? '';
+  
+    const context = this.cardAddContext ?? {};
+    const machine = String(context.machine ?? '').trim();
+    const controlNo = String(context.controlNo ?? '').trim();
+  
+    const detailLabels = [
+      machine ? `設備名: ${machine}` : '',
+      controlNo ? `管理番号: ${controlNo}` : '',
+    ].filter(Boolean);
+  
+    const baseTitle = stepLabel
+      ? `カードの追加 / ${stepLabel}`
+      : 'カードの追加';
+  
+    const title = detailLabels.length
+      ? `${baseTitle}（${detailLabels.join('　')}）`
+      : baseTitle;
+  
+    this.drawers?.panel('cell')?.setTitle?.(title);
+  }
+
+  _appendAddCardDetailItem() {
+    const formEl = this.$root?.querySelector(
+      '[data-role="inspection-standard-card-add-form"]'
+    );
+  
+    const listEl = formEl?.querySelector(
+      '[data-role="inspection-standard-card-add-detail-items"]'
+    );
+  
+    if (!listEl) return;
+  
+    const nextIndex = listEl.querySelectorAll(
+      '[data-role="inspection-standard-card-add-detail-item"]'
+    ).length;
+  
+    listEl.insertAdjacentHTML(
+      'beforeend',
+      renderInspectionStandardCardAddDetailItemHTML({
+        section: {},
+        index: nextIndex,
+        excludeKeys: ['status'],
+      })
+    );
+  
+    const addedItemEl = listEl.lastElementChild;
+  
+    // status など customDropdown がある場合に備えて、次ステップで初期化処理をここに入れる
+    // this.editPanelService.initializeDetailItemDropdowns?.({ rootEl: addedItemEl });
+  
+    addedItemEl?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+    });
+  }
+
+  async _submitAddCard({ element } = {}) {
+    const formEl = element?.closest(
+      '[data-role="inspection-standard-card-add-form"]'
+    );
+  
+    if (!formEl) return;
+  
+    const context = this.cardAddContext ?? {};
+  
+    const validation = validateInspectionStandardCardAddRequiredFields({
+      formEl,
+    });
+  
+    if (!validation.isValid) {
+      this._moveToAddCardStepByControl({
+        controlEl: validation.firstInvalidControlEl,
+      });
+  
+      this._showAddCardValidationError({
+        message: validation.message,
+      });
+  
+      validation.firstInvalidControlEl?.scrollIntoView?.({
+        behavior: 'smooth',
+        block: 'center',
+      });
+  
+      return;
     }
-      
-
-    removeDuplicateBorders() {
-        const columnsToCheck = ['inspection-no-content', 'work-name-content', 'applicable-device-content',
-                                'method-content', 'timezone-content'];
-
-        let lastIndexArray = []
-        columnsToCheck.forEach((className, index) => {
-            const cells = this.table.querySelectorAll(`tbody td.${className}`);
-            let standardCell = null;
-
-            cells.forEach((cell, cellIndex) => {
-                if (lastIndexArray.includes(cellIndex)) {
-                    standardCell = null;
-                    return;
-                }
-
-                const currentCellValue = cell.textContent.trim();
-                const nextCell = cells[cellIndex+1];
-
-                if (!currentCellValue || !nextCell) return;
-
-                const nextCellValue = nextCell.textContent.trim();
-                
-                if (currentCellValue === nextCellValue) {
-                    if (!UIManger.isValidValue(standardCell)) {
-                        standardCell = cell;
-                        
-                    }
-
-                    standardCell.rowSpan = standardCell.rowSpan + 1
-                    nextCell.style.display = 'none'
-                } else {
-                    standardCell = null;
-
-                    if (className === 'inspection-no-content') {
-                        lastIndexArray.push(cellIndex)
-                    }
-                }
-
-            });
-        
+  
+    const commonEntries = this._collectAddCardCommonEntries({ formEl });
+    const detailItems = this._collectAddCardDetailItems({ formEl });
+  
+    const shouldRequireScroll = detailItems.length > 1;
+  
+    const confirmed = await ModalManger.showConfirmModal({
+      message: renderInspectionStandardCardAddConfirmHTML({
+        context,
+        commonEntries,
+        detailItems,
+      }),
+      color: 'default',
+      confirmText: '登録',
+      cancelText: 'キャンセル',
+      confirmDisabled: shouldRequireScroll,
+      onOpen: ({ modalEl, confirmButtonEl }) => {
+        if (!shouldRequireScroll) return;
+  
+        this._setupAddCardConfirmScrollGate({
+          modalEl,
+          confirmButtonEl,
         });
-        lastIndexArray.forEach(index => {
-            const row = this.table.rows[index+2];
+      },
+    });
+  
+    if (!confirmed) return;
+  
+    const response = await this.cardAddSubmitService.create({
+      button: element,
+      formEl,
+      context,
+      commonEntries,
+      detailItems,
+    });
+  
+    if (!response?.success) return;
+  
+    this._setAddCardButtonEnabled(false);
+  
+    this.drawers?.panel('cell')?.setBodyHtml?.(`
+      <div class="drawer__placeholder">
+        カードを追加しました。設備を再選択すると一覧に反映されます。
+      </div>
+    `);
+  }
 
-            for (const cell of row.cells) {
-                UIManger.toggleClass(cell, 'thick-top-border', 'add');
-            }
-        })
+  _moveToAddCardStepByControl({ controlEl } = {}) {
+    const stepEl = controlEl?.closest(
+      '[data-role="inspection-standard-card-add-step"]'
+    );
+  
+    const step = stepEl?.dataset?.step;
+  
+    if (!step) return;
+  
+    this._switchAddCardStep({
+      element: controlEl,
+      step,
+    });
+  }
+  
+  _showAddCardValidationError({ message } = {}) {
+    const safeMessage = UIManger
+      .escapeHtml(String(message ?? ''))
+      .replaceAll('\n', '<br>');
+  
+    ModalManger.showModal(
+      `
+        <div class="inspection-standard-message-modal inspection-standard-message-modal--error">
+          <div class="inspection-standard-message-modal__icon" aria-hidden="true"></div>
+  
+          <div class="inspection-standard-message-modal__content">
+            <div class="inspection-standard-message-modal__title">
+              入力内容を確認してください
+            </div>
+  
+            <div class="inspection-standard-message-modal__text">
+              ${safeMessage}
+            </div>
+          </div>
+        </div>
+      `,
+      'default',
+      false
+    );
+  }
+
+
+  _setupAddCardConfirmScrollGate({
+    modalEl,
+    confirmButtonEl,
+  } = {}) {
+    const detailListEl = modalEl?.querySelector(
+      '[data-role="inspection-standard-card-add-confirm-detail-list"][data-require-scroll="true"]'
+    );
+  
+    if (!detailListEl || !confirmButtonEl) return;
+  
+    const noticeEl = modalEl.querySelector(
+      '[data-role="inspection-standard-card-add-confirm-scroll-notice"]'
+    );
+  
+    const enableConfirm = () => {
+      confirmButtonEl.disabled = false;
+      confirmButtonEl.setAttribute('aria-disabled', 'false');
+  
+      if (noticeEl) {
+        noticeEl.classList.add('is-completed');
+        noticeEl.textContent = '点検項目を確認しました。登録できます。';
+      }
+    };
+  
+    const isScrolledToBottom = () => {
+      const threshold = 4;
+  
+      return (
+        detailListEl.scrollTop + detailListEl.clientHeight >=
+        detailListEl.scrollHeight - threshold
+      );
+    };
+  
+    const updateState = () => {
+      if (!isScrolledToBottom()) return;
+  
+      enableConfirm();
+      detailListEl.removeEventListener('scroll', updateState);
+    };
+  
+    detailListEl.addEventListener('scroll', updateState);
+    requestAnimationFrame(updateState);
+  }
+  
+
+  _collectAddCardCommonEntries({ formEl } = {}) {
+    const commonStepEl = formEl?.querySelector(
+      '[data-role="inspection-standard-card-add-step"][data-step="common"]'
+    );
+  
+    if (!commonStepEl) return [];
+  
+    return Array.from(
+      commonStepEl.querySelectorAll('[data-common-edit-field]')
+    ).map((controlEl) => this._buildAddCardFormEntry({
+      controlEl,
+      fieldAttributeName: 'commonEditField',
+    }));
+  }
+  
+  _collectAddCardDetailItems({ formEl } = {}) {
+    const detailItemEls = formEl?.querySelectorAll(
+      '[data-role="inspection-standard-card-add-detail-item"]'
+    );
+  
+    return Array.from(detailItemEls ?? []).map((itemEl, index) => {
+      const entries = Array.from(
+        itemEl.querySelectorAll('[data-section-edit-field]')
+      ).map((controlEl) => this._buildAddCardFormEntry({
+        controlEl,
+        fieldAttributeName: 'sectionEditField',
+      }));
+  
+      return {
+        index,
+        entries,
+      };
+    });
+  }
+  
+  _buildAddCardFormEntry({
+    controlEl,
+    fieldAttributeName,
+  } = {}) {
+    const key = controlEl?.dataset?.[fieldAttributeName] ?? '';
+  
+    const fieldEl = controlEl?.closest('.inspection-standard-edit-form__field');
+    const label = fieldEl
+      ?.querySelector('.inspection-standard-edit-form__label')
+      ?.textContent
+      ?.trim() || key;
+  
+    return {
+      key,
+      label,
+      value: this._getAddCardControlValue(controlEl),
+      displayValue: this._getAddCardControlDisplayValue(controlEl),
+    };
+  }
+  
+  _getAddCardControlValue(controlEl) {
+    return String(controlEl?.value ?? '').trim();
+  }
+  
+  _getAddCardControlDisplayValue(controlEl) {
+    const dropdownEl = controlEl?.closest('.custom-dropdown');
+  
+    if (dropdownEl) {
+      const triggerText = dropdownEl
+        .querySelector('[data-role="dropdown-trigger-text"]')
+        ?.textContent
+        ?.trim();
+  
+      if (triggerText) return triggerText;
     }
+  
+    return String(controlEl?.value ?? '').trim();
+  }
 }
 
+function isTruthyAttributeValue(value) {
+  const normalized = String(value ?? '').trim().toLowerCase();
+
+  return normalized === 'true' || normalized === '1';
+}
 
 document.addEventListener('DOMContentLoaded', async() => {
-    initializeLoadingScreen();
-    const app = new inspectionStandards();
-    await app.init();
+  initializeLoadingScreen();
+  const app = new inspectionStandards();
+  await app.init();
 
 });

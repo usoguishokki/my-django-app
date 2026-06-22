@@ -247,6 +247,245 @@ export function fetchInspectionPlansHistory(p = {}) {
     });
 }
 
+export function fetchInspectionStandardHistoryList(p = {}) {
+    const params = new URLSearchParams();
+
+    const inspectionNo = String(p.inspectionNo ?? '').trim();
+    const machine = String(p.machine ?? '').trim();
+    const controlNo = String(
+        p.controlNo ??
+        p.control_no ??
+        ''
+    ).trim();
+
+    if (inspectionNo) {
+        params.set('inspection_no', inspectionNo);
+    }
+
+    if (machine) {
+        params.set('machine', machine);
+    }
+
+    if (controlNo) {
+        params.set('control_no', controlNo);
+    }
+
+    const queryString = params.toString();
+
+    return asynchronousCommunication({
+        url: queryString
+            ? `/api/inspection-standards/history/?${queryString}`
+            : '/api/inspection-standards/history/',
+        method: 'GET',
+    });
+}
+
+
+export function fetchInspectionStandardHistoryDetail(p = {}) {
+    const historyId = p.historyId;
+
+    if (!historyId) {
+        throw new Error('historyId is required');
+    }
+
+    return asynchronousCommunication({
+        url: `/api/inspection-standards/history/${encodeURIComponent(String(historyId))}/`,
+        method: 'GET',
+    });
+}
+
+
+export function executeInspectionStandardHistoryApproval(p = {}) {
+    const historyId = p.historyId;
+    const approvalRole = String(p.approvalRole ?? '').trim();
+
+    if (!historyId) {
+        throw new Error('historyId is required');
+    }
+
+    if (!approvalRole) {
+        throw new Error('approvalRole is required');
+    }
+
+    return asynchronousCommunication({
+        url: `/api/inspection-standards/history/${encodeURIComponent(String(historyId))}/approve/`,
+        method: 'POST',
+        data: {
+            approvalRole,
+        },
+    });
+}
+
+
+export function fetchInspectionStandardCommonItemsPlanPreview(p = {}) {
+    const {
+      checkId,
+      inspectionNo,
+      values = {},
+      changeReason = '',
+    } = p;
+  
+    if (!checkId) throw new Error('checkId is required');
+    if (!inspectionNo) throw new Error('inspectionNo is required');
+  
+    return asynchronousCommunication({
+      url: `/api/inspection-standards/common-items/${encodeURIComponent(String(checkId))}/plan-preview/`,
+      method: 'POST',
+      data: {
+        inspection_no: inspectionNo,
+        values,
+        change_reason: changeReason,
+      },
+    });
+}
+
+
+export function executeInspectionStandardCommonItemsUpdate(p = {}) {
+    const {
+      checkId,
+      inspectionNo,
+      values = {},
+      changeReason = '',
+    } = p;
+  
+    if (!checkId) throw new Error('checkId is required');
+    if (!inspectionNo) throw new Error('inspectionNo is required');
+  
+    return asynchronousCommunication({
+      url: `/api/inspection-standards/common-items/${encodeURIComponent(String(checkId))}/update/`,
+      method: 'POST',
+      data: {
+        inspection_no: inspectionNo,
+        values,
+        change_reason: changeReason,
+      },
+    });
+}
+
+
+export function fetchInspectionStandardCommonItemOptions() {
+    return asynchronousCommunication({
+      url: '/api/inspection-standards/common-item-options/',
+      method: 'GET',
+    });
+  }
+
+  export function executeInspectionStandardDetailUpdate(p = {}) {
+    const {
+        inspectionNo,
+        detailId,
+        values = {},
+        changeReason = '',
+    } = p;
+
+    if (!inspectionNo) throw new Error('inspectionNo is required');
+    if (!detailId) throw new Error('detailId is required');
+
+    return asynchronousCommunication({
+        url: `/api/inspection-standards/details/${encodeURIComponent(String(detailId))}/update/`,
+        method: 'POST',
+        data: {
+            inspection_no: inspectionNo,
+            values,
+            change_reason: changeReason,
+        },
+    });
+}
+
+export function executeInspectionStandardDetailCreate(p = {}) {
+    const {
+        inspectionNo,
+        values = {},
+        changeReason = '',
+    } = p;
+
+    if (!inspectionNo) throw new Error('inspectionNo is required');
+
+    return asynchronousCommunication({
+        url: '/api/inspection-standards/details/create/',
+        method: 'POST',
+        data: {
+            inspection_no: inspectionNo,
+            values,
+            change_reason: changeReason,
+        },
+    });
+}
+
+
+export function executeInspectionStandardDetailDelete(p = {}) {
+    const {
+        inspectionNo,
+        detailId,
+        changeReason = '',
+    } = p;
+
+    if (!inspectionNo) throw new Error('inspectionNo is required');
+    if (!detailId) throw new Error('detailId is required');
+
+    return asynchronousCommunication({
+        url: `/api/inspection-standards/details/${encodeURIComponent(String(detailId))}/delete/`,
+        method: 'POST',
+        data: {
+            inspection_no: inspectionNo,
+            change_reason: changeReason,
+        },
+    });
+}
+
+
+export function executeInspectionStandardCardCreate(p = {}) {
+    const {
+      controlNo,
+      commonValues = {},
+      detailItems = [],
+      changeReason = '',
+    } = p;
+
+    if (!controlNo) throw new Error('controlNo is required');
+
+    if (!commonValues || typeof commonValues !== 'object') {
+        throw new Error('commonValues is required');
+    }
+
+    if (!Array.isArray(detailItems) || detailItems.length === 0) {
+        throw new Error('detailItems is required');
+    }
+
+    return asynchronousCommunication({
+        url: '/api/inspection-standards/cards/create/',
+        method: 'POST',
+        data: {
+            control_no: controlNo,
+            common_values: commonValues,
+            detail_items: detailItems,
+            change_reason: changeReason,
+        },
+    });
+}
+
+
+export function executeInspectionStandardCardAbolish(p = {}) {
+    const {
+        checkId,
+        inspectionNo,
+        changeReason = '',
+    } = p;
+
+    if (!checkId) throw new Error('checkId is required');
+    if (!inspectionNo) throw new Error('inspectionNo is required');
+
+    return asynchronousCommunication({
+        url: `/api/inspection-standards/cards/${encodeURIComponent(String(checkId))}/abolish/`,
+        method: 'POST',
+        data: {
+            inspection_no: inspectionNo,
+            change_reason: changeReason,
+        },
+    });
+}
+
+
 
 /**
  * カード表示用の詳細を取得

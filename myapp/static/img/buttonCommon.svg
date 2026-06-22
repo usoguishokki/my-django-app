@@ -1,0 +1,81 @@
+<svg
+  width="40"
+  height="40"
+  viewBox="0 0 40 40"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-label="共通の内容変更"
+>
+  <style>
+    :root {
+      --common-edit-fg: rgba(3, 105, 161, 0.98);
+      --common-edit-highlight: rgba(255, 255, 255, 0.95);
+    }
+  </style>
+
+  <path
+    d="M11 8.5H23.7L29 13.8V27.2C29 28.5 27.9 29.6 26.6 29.6H12.8C11.5 29.6 10.4 28.5 10.4 27.2V9.1C10.4 8.8 10.7 8.5 11 8.5Z"
+    stroke="var(--common-edit-fg)"
+    stroke-width="2.2"
+    stroke-linejoin="round"
+  />
+
+  <path
+    d="M23.7 8.7V13.1C23.7 13.8 24.2 14.3 24.9 14.3H28.6"
+    stroke="var(--common-edit-fg)"
+    stroke-width="2.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <path
+    d="M14.2 16.2H22.2"
+    stroke="var(--common-edit-fg)"
+    stroke-width="2.1"
+    stroke-linecap="round"
+  />
+
+  <path
+    d="M14.2 20.8H20.1"
+    stroke="var(--common-edit-fg)"
+    stroke-width="2.1"
+    stroke-linecap="round"
+    opacity="0.78"
+  />
+
+  <g transform="rotate(-45 25.5 24.5)">
+    <path
+      d="M23 17.3H28C28.7 17.3 29.2 17.8 29.2 18.5V27.7H21.8V18.5C21.8 17.8 22.3 17.3 23 17.3Z"
+      fill="var(--common-edit-fg)"
+    />
+
+    <path
+      d="M22.3 20H28.7"
+      stroke="var(--common-edit-highlight)"
+      stroke-width="1.4"
+      stroke-linecap="round"
+    />
+
+    <path
+      d="M21.8 27.6H29.2L25.5 32.4L21.8 27.6Z"
+      fill="var(--common-edit-fg)"
+    />
+
+    <path
+      d="M25.5 30.2L24.6 31.4H26.4L25.5 30.2Z"
+      fill="var(--common-edit-highlight)"
+    />
+  </g>
+
+  <path
+    d="M13.5 34H26.5"
+    stroke="var(--common-edit-fg)"
+    stroke-width="1.8"
+    stroke-linecap="round"
+  />
+
+  <circle cx="12" cy="34" r="2" fill="var(--common-edit-fg)" />
+  <circle cx="20" cy="34" r="2" fill="var(--common-edit-fg)" />
+  <circle cx="28" cy="34" r="2" fill="var(--common-edit-fg)" />
+</svg>

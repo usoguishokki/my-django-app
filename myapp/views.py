@@ -48,7 +48,6 @@ from myapp.selectors.calendar import (
     annotate_plan_affiliation_from_calendar
 )
 
-
 from myapp.selectors.members import (
     select_members_by_affiliation_id,
 )
@@ -57,8 +56,15 @@ from myapp.domain.sort_keys.inspection_no import inspection_no_sort_key
 from myapp.domain.checks.constants import NON_ACTIVE_CHECK_STATUSES
 from myapp.domain.sort_keys.member_sort import build_member_dict
 from myapp.domain.schedule_initial_filters import build_schedule_initial_filters
+from myapp.domain.errors import InvalidMachineSelection
 
 from myapp.services.member_profile_service import build_members_with_profiles
+from myapp.domain.errors import InvalidMachineSelection
+from myapp.services.inspection_standards import (
+    build_inspection_standards_context,
+    build_inspection_standard_details_payload,
+)
+
 logger = logging.getLogger('myapp')
 
 def hozen_common_data():
@@ -1492,101 +1498,57 @@ def extract_number_from_key(item, key):
      
 @login_required
 def inspectionStadards_view(request):
-    cache_manager_if = request.cache_manager_if
-    affiliation_pattern_times_dict, team_profiles = set_profiles_dict(request, cache_manager_if)
-    organization_code = request.organization_code
-    login_number = team_profiles['login_number']
-    user_dict = profile(cache_manager_if, login_number)
     if request.method == 'GET':
-        controls = Control_tb.objects.filter(
-            line_name__organization__organization=organization_code
+        context = build_inspection_standards_context(
+            organization_code=request.organization_code,
         )
-        return render(request, 'inspectionStandards/inspectionStandards.html', {'controls': controls})
-    elif request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+
+        return render(
+            request,
+            'inspectionStandards/inspectionStandards.html',
+            context,
+        )
+
+    if (
+        request.method == 'POST'
+        and request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    ):
         data, action, parse_error = extract_request_data(request)
+
         if parse_error:
-            return handle_view_error(parse_error, status_code=400, message='Invalid JSON data')
-        if action == "get_details":
-            filter_data = data.get('data')
-            
-            result_data = Control_tb.objects.filter(**filter_data)
-            control_no = result_data[0].control_no
-            details_queryset = Db_details_tb.objects.filter(
-                inspection_no__control_no__control_no = control_no
-
-            ).values(
-                'inspection_no__inspection_no', 'inspection_no__wark_name', 'applicable_device',
-                'method', 'contents', 'inspection_no__time_zone', 'standard', 'remarks'
+            return handle_view_error(
+                parse_error,
+                status_code=400,
+                message='Invalid JSON data',
             )
-            
-            sorted_details = sorted(
-                details_queryset,
-                key=lambda item: inspection_no_sort_key(item.get('inspection_no__inspection_no'))
-            )
-            details_list = list(sorted_details)
-            
-            return JsonResponse({
-                    'status': 'success',
-                    'details': details_list
-            })
-            
-@login_required
-def inspectionHistory_view(request):
-    qs = request.GET
-    inspection_no = _get_param(qs, "inspectionNo", str, default=None)
-    if not inspection_no:
-        return HttpResponseBadRequest("inspectionNo is required")
 
-    pract_qs = (
-        Practitioner_tb.objects
-        .select_related('member_id')
-        .only("member_id__name")
-    )
-        
-    plans_qs  = (
-        Plan_tb.objects
-        .select_related('inspection_no__control_no', 'approver')
-        .prefetch_related(Prefetch('practitioners', queryset=pract_qs,  to_attr="prefetched_practitioners"))
-        .filter(
-            inspection_no__inspection_no=inspection_no,
-            implementation_date__isnull=False,
+        if action != 'get_details':
+            return JsonResponse(
+                {
+                    'status': 'error',
+                    'message': 'Unsupported action.',
+                },
+                status=400,
+                json_dumps_params={'ensure_ascii': False},
+            )
+
+        try:
+            payload = build_inspection_standard_details_payload(
+                filter_data=data.get('data'),
+            )
+        except InvalidMachineSelection as e:
+            return handle_view_error(
+                e,
+                status_code=400,
+                message=str(e),
+            )
+
+        return JsonResponse(
+            payload,
+            json_dumps_params={'ensure_ascii': False},
         )
-        .order_by('-implementation_date', '-plan_id')
-    )
-    first_plan = plans_qs.first()
-    if not first_plan:
-        return render(request, "inspectionHistory.html", {
-            "results": [],
-            "control_name": "",
-            "inspection_no": inspection_no,
-        })
-        
-    control_name = getattr(first_plan.inspection_no.control_no, "machine", "")
-    wark_name = getattr(first_plan.inspection_no, "wark_name", "")
-    results = []
-    for p in plans_qs:
-        practitioner_names = [
-            pr.member_id.name
-            for pr in getattr(p, "prefetched_practitioners", [])
-            if getattr(pr, 'member_id', None)
-        ]
-            
-            
-        results.append({
-            'implementation_date': p.implementation_date,
-            'resultManHour': p.result_man_hours,
-            'result': p.result,
-            'points_to_note': p.points_to_note,
-            'practitioner': practitioner_names,
-            'approver': getattr(p.approver, 'name', '')
-        })
-    return render(request, 
-                  'inspectionHistory.html', 
-                  {'results': results,
-                   'control_name': control_name,
-                   'wark_name': wark_name,
-                   'inspection_no': inspection_no
-                })
+
+    return HttpResponseBadRequest('Unsupported request.')
     
     
 @login_required

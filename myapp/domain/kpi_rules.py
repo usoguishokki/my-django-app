@@ -91,15 +91,26 @@ def get_actual_period_key(
         return plan_date if in_window else None
 
     if period_view == "week":
-        # 完了していて、週情報が揃っている必要
-        if impl_month is None or impl_week is None:
-            return None
         if plan_month is None or plan_week is None:
             return None
 
-        # ★ 計画週と実施週が一致したときだけ「計画内実績」
+        # 夜勤跨ぎ・3直などで、実施日時が計画日のシフト許容範囲内なら、
+        # 実施日の保全カレンダー週ではなく、計画週の実績として扱う。
+        in_plan_window = is_impl_in_plan_window(
+            plan_date=plan_date,
+            implementation_date=implementation_date,
+            team_key=team_key,
+            shift_pattern_map=shift_pattern_map,
+            pattern_time_map=pattern_time_map,
+        )
+        if in_plan_window:
+            return (plan_month, plan_week)
+
+        if impl_month is None or impl_week is None:
+            return None
+
         if (impl_month, impl_week) == (plan_month, plan_week):
-            return (plan_month, plan_week)  # 計画週に積む
+            return (plan_month, plan_week)
 
         return None
     
@@ -234,17 +245,16 @@ def is_recovery_row(
     eff_impl_week = impl_week
 
     if plan_date is not None and team_key is not None:
-        w = get_shift_window(
-            plan_date,
-            team_key,
+        in_plan_window = is_impl_in_plan_window(
+            plan_date=plan_date,
+            implementation_date=implementation_date,
+            team_key=team_key,
             shift_pattern_map=shift_pattern_map,
             pattern_time_map=pattern_time_map,
         )
-        if w:
-            start_dt, end_dt = w
-            if start_dt <= impl_dt < end_dt:
-                eff_impl_month = plan_month
-                eff_impl_week = plan_week
+        if in_plan_window:
+            eff_impl_month = plan_month
+            eff_impl_week = plan_week
 
     # --- week ---
     if period_view == "week":
@@ -378,12 +388,23 @@ def get_actual_outside_period_key(
         )
         
     if period_view == "week":
-        if impl_month is None or impl_week is None:
-            return None
         if plan_month is None or plan_week is None:
             return None
 
-        # ★ 計画週と不一致なら「計画外実績」として実施週に積む
+        # 計画日のシフト許容範囲内なら、計画内実績なので計画外にはしない。
+        in_plan_window = is_impl_in_plan_window(
+            plan_date=plan_date,
+            implementation_date=implementation_date,
+            team_key=team_key,
+            shift_pattern_map=shift_pattern_map,
+            pattern_time_map=pattern_time_map,
+        )
+        if in_plan_window:
+            return None
+
+        if impl_month is None or impl_week is None:
+            return None
+
         if (impl_month, impl_week) != (plan_month, plan_week):
             return (impl_month, impl_week)
 

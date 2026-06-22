@@ -1,5 +1,6 @@
 import { ScheduleViewModelBuilder } from '../domain/ScheduleViewModelBuilder.js';
 import { MemberWeekViewModelBuilder } from '../domain/MemberWeekViewModelBuilder.js';
+import { ScheduleTimeLayoutService } from '../domain/ScheduleTimeLayoutService.js';
 
 export class ScheduleRenderService {
   constructor({
@@ -51,9 +52,8 @@ export class ScheduleRenderService {
   }
 
   buildCurrentSchedules(members = [], events = []) {
-    const now = new Date();
-    const currentMinute =
-      now.getHours() * 60 + now.getMinutes();
+    const currentRelativeMinute =
+      ScheduleTimeLayoutService.getCurrentRelativeMinute();
 
     return members.map((member) => {
       const currentEvent = events.find((event) => {
@@ -61,10 +61,11 @@ export class ScheduleRenderService {
           return false;
         }
 
-        const startMinute = event.startMinute;
-        const endMinute = startMinute + event.durationMinutes;
-
-        return currentMinute >= startMinute && currentMinute < endMinute;
+        return ScheduleTimeLayoutService.isRelativeMinuteInDuration({
+          targetMinute: currentRelativeMinute,
+          startMinute: event.startMinute,
+          durationMinutes: event.durationMinutes,
+        });
       });
 
       if (!currentEvent) {

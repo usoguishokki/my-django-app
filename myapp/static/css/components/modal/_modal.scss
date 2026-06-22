@@ -2,18 +2,23 @@
 @import '../../mixins';
 @import '../../foundation/typography.scss';
 
+$z-modal-overlay: 20000 !default;
+$z-modal-content: 20010 !default;
+
 .modal {
     display: none;
     position: fixed;
     inset: 0;
-    z-index: 9999;
+    z-index: $z-modal-overlay;
     overflow: auto;
     background-color: rgba(0, 0, 0, 0.4);
   
     &__content {
         @include type-ui-regular;
-      
+  
         position: relative;
+        z-index: $z-modal-content;
+    
         display: flex;
         flex-direction: column;
         gap: 14px;
@@ -215,3 +220,9 @@
     }
 }
 
+.modal__confirmBtn:disabled,
+.modal__confirmBtn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.52;
+  filter: grayscale(0.2);
+}

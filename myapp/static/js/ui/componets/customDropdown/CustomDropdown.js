@@ -14,6 +14,7 @@ export class CustomDropdown {
         placeholder: '選択してください',
         emptyText: '候補がありません',
         searchPlaceholder: '検索',
+        autoSelectFirst: true,
         onChange: null,
         ...options,
       };
@@ -202,10 +203,14 @@ export class CustomDropdown {
       const selectedItem = this.items.find(
         (item) => this.normalizeValue(item.value) === this.selectedValue
       );
-  
+    
+      const hasSelectedItem = Boolean(selectedItem);
+    
       this.triggerText.textContent =
         selectedItem?.label || this.options.placeholder || '選択してください';
-  
+    
+      this.triggerText.classList.toggle('is-placeholder', !hasSelectedItem);
+    
       if (this.hiddenInput) {
         this.hiddenInput.value = this.selectedValue;
       }
@@ -401,9 +406,14 @@ export class CustomDropdown {
       const hasSelected = this.items.some(
         (item) => this.normalizeValue(item.value) === this.selectedValue
       );
-  
-      if (!hasSelected && this.items.length > 0) {
+    
+      if (!hasSelected && this.items.length > 0 && this.options.autoSelectFirst) {
         this.selectedValue = this.normalizeValue(this.items[0].value);
+        return;
+      }
+    
+      if (!hasSelected) {
+        this.selectedValue = '';
       }
     }
   

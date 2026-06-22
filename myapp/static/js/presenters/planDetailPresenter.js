@@ -7,19 +7,89 @@ import {
   fmtPractitioners,
 } from './formatters.js';
 
-export function buildPlanDetailCardsVM(res, { title }) {
-  const details = res?.plan?.db_details ?? [];
+export function buildPlanDetailCardsVM(res, { title } = {}) {
+  const plan = res?.plan ?? {};
+  const check = plan?.check ?? {};
+
+  const details = Array.isArray(plan?.db_details)
+    ? plan.db_details
+    : [];
+
   return {
     title: fmtText(title),
-    cards: details.map(d => ({
-      device: fmtText(d?.applicable_device),
-      items: [
-        { label: '内容', value: fmtText(d?.contents) },
-        { label: '方法', value: fmtText(d?.method) },
-        { label: '基準', value: fmtText(d?.standard) },
-        { label: '工数', value: fmtManHours(d?.inspection_man_hours) },
-      ],
-    })),
+
+    // 共通項目変更フォームで使う元データ
+    commonItems: buildPlanCommonItemsVM(check),
+
+    cards: details.map((detail, index) => {
+      const sectionId = String(
+        detail?.id ??
+        detail?.detail_id ??
+        detail?.db_detail_id ??
+        `detail-${index + 1}`
+      );
+
+      return {
+        sectionId,
+        device: fmtText(detail?.applicable_device),
+
+        // section選択時に右側ドロワーの「変更後」で使う元データ
+        editData: {
+          sectionId,
+          applicableDevice: fmtText(detail?.applicable_device),
+          contents: fmtText(detail?.contents),
+          method: fmtText(detail?.method),
+          standard: fmtText(detail?.standard),
+          remarks: fmtText(detail?.remarks),
+          inspectionManHours: fmtText(detail?.inspection_man_hours),
+        },
+
+        items: [
+          { label: '内容', value: fmtText(detail?.contents) },
+          { label: '方法', value: fmtText(detail?.method) },
+          { label: '基準', value: fmtText(detail?.standard) },
+          { label: '工数', value: fmtManHours(detail?.inspection_man_hours) },
+        ],
+      };
+    }),
+  };
+}
+
+function buildPlanCommonItemsVM(check = {}) {
+  const rule = check?.rule ?? {};
+  const practitionerPattern = check?.practitioner_pattern ?? {};
+
+  return {
+    checkId: check?.id ?? '',
+    inspectionNo: fmtText(check?.inspection_no),
+
+    workName: fmtText(check?.work_name),
+
+    ruleId: rule?.id ?? '',
+    ruleName: fmtText(rule?.name),
+    period: fmtText(rule?.label),
+
+    anchorYear: fmtText(check?.anchor_year),
+    anchorMonth: fmtText(check?.anchor_month),
+    weekOfMonth: fmtText(check?.week_of_month),
+
+    practitionerPatternId:
+      practitionerPattern?.id ??
+      check?.practitioner_pattern_id ??
+      '',
+
+    practitionerPatternName: fmtText(
+      practitionerPattern?.name ??
+      check?.practitioner_pattern_name
+    ),
+
+    dayOfWeek: check?.day_of_week ?? '',
+    status: fmtText(check?.status),
+    timeZone: fmtText(check?.time_zone),
+
+    manHours: check?.man_hours ?? '',
+    requiredPersonCount: check?.required_person_count ?? '',
+    safePoint: fmtText(check?.safe_point),
   };
 }
 

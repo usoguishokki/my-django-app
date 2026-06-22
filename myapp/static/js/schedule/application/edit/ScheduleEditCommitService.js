@@ -27,6 +27,7 @@ export class ScheduleEditCommitService {
     failureMessage = '登録に失敗しました。',
     keepDragPreviewUntilRender = true,
     resetDragOnFailure = false,
+    showSuccessMessage = true,
   } = {}) {
     if (!payload) {
       console.warn('[ScheduleEditCommitService] payload is invalid');
@@ -46,7 +47,9 @@ export class ScheduleEditCommitService {
         keepDragPreviewUntilRender,
       });
 
-      await ScheduleFeedbackPresenter.showSaveSuccess(successMessage);
+      if (showSuccessMessage) {
+        await ScheduleFeedbackPresenter.showSaveSuccess(successMessage);
+      }
 
       return true;
     } catch (error) {

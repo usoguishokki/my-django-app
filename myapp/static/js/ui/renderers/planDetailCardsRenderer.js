@@ -4,7 +4,7 @@ import { UIManger } from '../../manager/UIManger.js';
  * View2: PlanDetail cards を描画するHTMLを返す（副作用なし）
  * vm: { title: string, cards: Array<{ device: string, items: Array<{label, value}> }> }
  */
-export function renderPlanDetailCardsHTML(vm) {
+export function renderPlanDetailCardsHTML(vm, options = {}) {
   const title = vm?.title ?? '';
   const cards = Array.isArray(vm?.cards) ? vm.cards : [];
 
@@ -17,18 +17,44 @@ export function renderPlanDetailCardsHTML(vm) {
   }
 
   return `
-    <div class="detail-cards" data-title="${UIManger.escapeHtml(title)}">
-      ${cards.map(renderPlanDetailCardHTML).join('')}
+    <div
+      class="detail-cards"
+      data-title="${UIManger.escapeHtml(title)}"
+      data-mode="${UIManger.escapeHtml(options.mode ?? 'view')}"
+    >
+      ${cards.map((card) => renderPlanDetailCardHTML(card, options)).join('')}
     </div>
   `;
 }
 
-function renderPlanDetailCardHTML(card) {
+function renderPlanDetailCardHTML(card, options = {}) {
   const device = card?.device ?? '対象設備';
   const items = Array.isArray(card?.items) ? card.items : [];
 
+  const sectionId = String(card?.sectionId ?? '');
+  const selectedSectionId = String(options.selectedSectionId ?? '');
+  const isSelectable = Boolean(options.selectable && sectionId);
+  const isSelected = isSelectable && sectionId === selectedSectionId;
+
+  const actionAttrs = isSelectable
+    ? `
+      data-role="inspection-standard-edit-section"
+      data-ui-action="${UIManger.escapeHtml(options.selectAction ?? '')}"
+      data-section-id="${UIManger.escapeHtml(sectionId)}"
+      role="button"
+      tabindex="0"
+      aria-selected="${isSelected ? 'true' : 'false'}"
+    `
+    : '';
+
+  const className = [
+    'detail-card',
+    isSelectable ? 'detail-card--selectable' : '',
+    isSelected ? 'is-selected' : '',
+  ].filter(Boolean).join(' ');
+
   return `
-    <section class="detail-card">
+    <section class="${className}" ${actionAttrs}>
       <header class="detail-card__header">
         <div class="detail-card__title">${UIManger.escapeHtml(device)}</div>
       </header>

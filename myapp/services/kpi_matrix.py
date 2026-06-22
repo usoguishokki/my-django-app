@@ -34,10 +34,16 @@ def build_kpi_matrix_response(params: KPIRequestParams, *, filters_json: Optiona
     month_ranges = get_month_ranges(fy_start, fy_end)
 
     day_ctx = None
+
     if params.period_view == "day":
         qs = qs.filter(p_date__h_date__gte=fy_start, p_date__h_date__lt=fy_end)
         day_ctx = build_day_context(fy_start=fy_start, fy_end=fy_end)
-    elif params.period_view not in ("week", "month"):
+
+    elif params.period_view in ("week", "month"):
+        # week/monthでも、夜勤跨ぎを計画側に寄せるためにシフト情報を使う。
+        day_ctx = build_day_context(fy_start=fy_start, fy_end=fy_end)
+
+    else:
         return {"status": "error", "message": "invalid period_view"}, 400
 
     rows = kpi_rows(qs)
@@ -47,7 +53,11 @@ def build_kpi_matrix_response(params: KPIRequestParams, *, filters_json: Optiona
         params.period_view,
         current_h_month,
         current_h_week,
-        all_period_keys=(day_ctx.all_days if day_ctx else None),
+        all_period_keys=(
+            day_ctx.all_days
+            if params.period_view == "day" and day_ctx
+            else None
+        ),
         month_ranges=month_ranges,
         pattern_time_map=(day_ctx.pattern_time_map if day_ctx else None),
         shift_pattern_map=(day_ctx.shift_pattern_map if day_ctx else None),
@@ -61,8 +71,16 @@ def build_kpi_matrix_response(params: KPIRequestParams, *, filters_json: Optiona
         team_keys_set=team_keys_set,
         current_h_month=current_h_month,
         current_h_week=current_h_week,
-        cal_rows=(day_ctx.cal_rows if day_ctx else None),
-        all_days=(day_ctx.all_days if day_ctx else None),
+        cal_rows=(
+            day_ctx.cal_rows
+            if params.period_view == "day" and day_ctx
+            else None
+        ),
+        all_days=(
+            day_ctx.all_days
+            if params.period_view == "day" and day_ctx
+            else None
+        ),
     )
 
     # 次ステップで period_view ごとの処理に進むので、いったんここまで返す

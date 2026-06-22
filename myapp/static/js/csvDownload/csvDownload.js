@@ -71,6 +71,11 @@ class CsvDownloadPage {
 
         this.startMonthCombobox = null;
         this.endMonthCombobox = null;
+        
+        this.startMonthComboboxRoot = null;
+        this.endMonthComboboxRoot = null;
+        this.startMonthComboboxHidden = null;
+        this.endMonthComboboxHidden = null;
 
         this.setupMachineCombobox();
         this.setupPlanResultMonthComboboxRefs();
@@ -78,24 +83,26 @@ class CsvDownloadPage {
 
     setupMachineCombobox() {
         this.machineComboboxRoot = this.root.querySelector(
-            '[data-role="combobox"][data-combobox-key="machine"]'
+            '[data-role="dropdown"][data-dropdown-key="machine"]'
         );
         if (!this.machineComboboxRoot) return;
 
         this.machineComboboxHidden =
-            this.machineComboboxRoot.querySelector('[data-role="combobox-hidden"]');
+            this.machineComboboxRoot.querySelector('[data-role="dropdown-input"]');
 
         this.machineComboboxTrigger =
-            this.machineComboboxRoot.querySelector('[data-role="combobox-trigger"]');
+            this.machineComboboxRoot.querySelector('[data-role="dropdown-trigger"]');
 
         this.machineComboboxTriggerText =
-            this.machineComboboxRoot.querySelector('[data-role="combobox-trigger-text"]');
+            this.machineComboboxRoot.querySelector('[data-role="dropdown-trigger-text"]');
 
         this.machineComboboxPanel =
-            this.machineComboboxRoot.querySelector('[data-role="combobox-panel"]');
+            this.machineComboboxRoot.querySelector('[data-role="dropdown-panel"]');
 
         this.machineComboboxList =
-            this.machineComboboxRoot.querySelector('[data-role="combobox-list"]');
+            this.machineComboboxRoot.querySelector('[data-role="dropdown-list"]');
+
+
 
         const machineDropdownMapping = CustomDropdownMappings.machineName;
 
@@ -107,16 +114,22 @@ class CsvDownloadPage {
             panelEl: this.machineComboboxPanel,
             listEl: this.machineComboboxList,
             placeholder: machineDropdownMapping.placeholder,
-            allValue: 'all',
+            allValue: '',
+            autoSelectFirst: false,
         });
+        
+        this.machineComboboxRoot.addEventListener(
+            'ui:dropdown-change',
+            this.handleUpdateDownloadConditions
+        );
     }
 
     setupPlanResultMonthComboboxRefs() {
         this.startMonthComboboxRoot = this.root.querySelector(
-            '[data-role="combobox"][data-combobox-key="start-month"]'
+            '[data-role="dropdown"][data-dropdown-key="start-month"]'
         );
         this.endMonthComboboxRoot = this.root.querySelector(
-            '[data-role="combobox"][data-combobox-key="end-month"]'
+            '[data-role="dropdown"][data-dropdown-key="end-month"]'
         );
     }
 
@@ -129,20 +142,16 @@ class CsvDownloadPage {
         listEl,
         placeholder,
         allValue = '',
+        autoSelectFirst = true,
     }) {
         if (!rootEl || !hiddenInputEl || !triggerEl || !triggerTextEl || !panelEl || !listEl) {
             return null;
         }
-
-        return new CustomDropdown({
-            rootEl,
-            hiddenInputEl,
-            triggerEl,
-            triggerTextEl,
-            panelEl,
-            listEl,
+    
+        return new CustomDropdown(rootEl, {
+            value: allValue,
             placeholder,
-            allValue,
+            autoSelectFirst,
         });
     }
 
@@ -151,17 +160,20 @@ class CsvDownloadPage {
             return;
         }
 
-        const startHiddenInput = this.startMonthComboboxRoot?.querySelector('[data-role="combobox-hidden"]');
-        const startTrigger = this.startMonthComboboxRoot?.querySelector('[data-role="combobox-trigger"]');
-        const startTriggerText = this.startMonthComboboxRoot?.querySelector('[data-role="combobox-trigger-text"]');
-        const startPanel = this.startMonthComboboxRoot?.querySelector('[data-role="combobox-panel"]');
-        const startList = this.startMonthComboboxRoot?.querySelector('[data-role="combobox-list"]');
+        const startHiddenInput = this.startMonthComboboxRoot?.querySelector('[data-role="dropdown-input"]');
+        const startTrigger = this.startMonthComboboxRoot?.querySelector('[data-role="dropdown-trigger"]');
+        const startTriggerText = this.startMonthComboboxRoot?.querySelector('[data-role="dropdown-trigger-text"]');
+        const startPanel = this.startMonthComboboxRoot?.querySelector('[data-role="dropdown-panel"]');
+        const startList = this.startMonthComboboxRoot?.querySelector('[data-role="dropdown-list"]');
 
-        const endHiddenInput = this.endMonthComboboxRoot?.querySelector('[data-role="combobox-hidden"]');
-        const endTrigger = this.endMonthComboboxRoot?.querySelector('[data-role="combobox-trigger"]');
-        const endTriggerText = this.endMonthComboboxRoot?.querySelector('[data-role="combobox-trigger-text"]');
-        const endPanel = this.endMonthComboboxRoot?.querySelector('[data-role="combobox-panel"]');
-        const endList = this.endMonthComboboxRoot?.querySelector('[data-role="combobox-list"]');
+        const endHiddenInput = this.endMonthComboboxRoot?.querySelector('[data-role="dropdown-input"]');
+
+        this.startMonthComboboxHidden = startHiddenInput;
+        this.endMonthComboboxHidden = endHiddenInput;
+        const endTrigger = this.endMonthComboboxRoot?.querySelector('[data-role="dropdown-trigger"]');
+        const endTriggerText = this.endMonthComboboxRoot?.querySelector('[data-role="dropdown-trigger-text"]');
+        const endPanel = this.endMonthComboboxRoot?.querySelector('[data-role="dropdown-panel"]');
+        const endList = this.endMonthComboboxRoot?.querySelector('[data-role="dropdown-list"]');
 
         this.startMonthCombobox = this.createCombobox({
             rootEl: this.startMonthComboboxRoot,
@@ -185,9 +197,6 @@ class CsvDownloadPage {
             allValue: '',
         });
 
-        this.startMonthCombobox?.init();
-        this.endMonthCombobox?.init();
-
         const monthItems = buildFiscalYearMonthOptions();
         this.startMonthCombobox?.setItems(monthItems);
         this.endMonthCombobox?.setItems(monthItems);
@@ -209,7 +218,6 @@ class CsvDownloadPage {
     init() {
         if (!this.form) return;
 
-        this.machineCombobox?.init();
         this.machineCombobox?.setDisabled(true);
 
         this.setupPlanResultMonthComboboxes();
@@ -422,8 +430,13 @@ class CsvDownloadPage {
 
     setMachineOptions(items = []) {
         const mapping = CustomDropdownMappings.machineName;
-        const mappedItems = mapping.mapItems(items);
+    
+        const mappedItems = mapping
+            .mapItems(items)
+            .filter((item) => item.value !== 'all');
+    
         this.machineCombobox?.setItems(mappedItems);
+        this.machineCombobox?.setValue('');
     }
 
     getSelectedDownloadType() {
@@ -440,11 +453,11 @@ class CsvDownloadPage {
     }
 
     getStartMonthValue() {
-        return this.startMonthCombobox?.getValue()?.trim() ?? '';
+        return this.startMonthComboboxHidden?.value?.trim() ?? '';
     }
-
+    
     getEndMonthValue() {
-        return this.endMonthCombobox?.getValue()?.trim() ?? '';
+        return this.endMonthComboboxHidden?.value?.trim() ?? '';
     }
 
     clearMonthDropdownValues() {
