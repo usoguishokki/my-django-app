@@ -41,6 +41,9 @@ from myapp.api.inspection_standards import (
     inspection_standard_history_approve_api,
 )
 
+from myapp.api.home.dashboard import home_overall_progress_api
+
+
 urlpatterns = [
     path("kpi-matrix/", kpi_matrix_api, name="kpi_matrix_api"),
     path("kpi-matrix/cell-detail/", kpi_matrix_cell_detail_api, name="kpi_matrix_cell_detail_api"),
@@ -144,5 +147,10 @@ urlpatterns = [
         'schedule/events/bulk-move/',
         schedule_bulk_move_api,
         name='schedule_bulk_move_api',
+    ),
+    path(
+        "home-dashboard/overall/",
+        home_overall_progress_api,
+        name="home_dashboard_overall_api",
     ),
 ]

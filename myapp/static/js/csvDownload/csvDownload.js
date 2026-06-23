@@ -55,6 +55,8 @@ class CsvDownloadPage {
         this.planResultHelp = this.planResultFields?.querySelector('.csv-download__help') ?? null;
 
         this.submitButton = this.root.querySelector('.csv-download__submit');
+        this.downloadStatus = this.root.querySelector('[data-role="csv-download-status"]');
+        this.submitButtonDefaultText = this.submitButton?.textContent?.trim() || 'CSVをダウンロード';
 
         this.unbindUIActions = null;
         this.isSubmitting = false;
@@ -241,7 +243,12 @@ class CsvDownloadPage {
 
     updateSubmitButtonState() {
         if (!this.submitButton) return;
-
+    
+        if (this.isSubmitting) {
+            this.submitButton.disabled = true;
+            return;
+        }
+    
         const selectedType = this.getSelectedDownloadType();
         let canSubmit = false;
 
@@ -268,15 +275,57 @@ class CsvDownloadPage {
         this.submitButton.disabled = !canSubmit;
     }
 
+    setDownloadBusy(isBusy) {
+        this.isSubmitting = Boolean(isBusy);
+    
+        this.form?.classList.toggle('is-downloading', this.isSubmitting);
+        this.form?.setAttribute('aria-busy', this.isSubmitting ? 'true' : 'false');
+    
+        if (this.downloadStatus) {
+            this.downloadStatus.hidden = !this.isSubmitting;
+        }
+    
+        if (this.submitButton) {
+            this.submitButton.disabled = true;
+            this.submitButton.textContent = this.isSubmitting
+                ? 'CSV作成中...'
+                : this.submitButtonDefaultText;
+        }
+    
+        this.typeInputs.forEach((input) => {
+            input.disabled = this.isSubmitting;
+        });
+    
+        this.machineCombobox?.setDisabled(this.isSubmitting || this.getSelectedDownloadType() !== CsvDownloadPage.DOWNLOAD_TYPES.INSPECTION_STANDARD);
+    
+        const selectedOption = this.getSelectedPlanResultOption();
+        const enableMonthRange =
+            !this.isSubmitting &&
+            this.getSelectedDownloadType() === CsvDownloadPage.DOWNLOAD_TYPES.INSPECTION_PLAN_RESULT &&
+            selectedOption === CsvDownloadPage.PLAN_RESULT_OPTION_VALUES.CUSTOM_RANGE;
+    
+        this.startMonthCombobox?.setDisabled(!enableMonthRange);
+        this.endMonthCombobox?.setDisabled(!enableMonthRange);
+    
+        this.root
+            .querySelectorAll('[data-role="option-button"]')
+            .forEach((button) => {
+                button.disabled = this.isSubmitting;
+                button.classList.toggle('is-disabled', this.isSubmitting);
+                button.setAttribute('aria-disabled', this.isSubmitting ? 'true' : 'false');
+            });
+    
+        if (!this.isSubmitting) {
+            this.updateSubmitButtonState();
+        }
+    }
+
     handleSubmit = async ({ event }) => {
         event.preventDefault();
     
         if (this.isSubmitting) return;
-        this.isSubmitting = true;
     
-        if (this.submitButton) {
-            this.submitButton.disabled = true;
-        }
+        this.setDownloadBusy(true);
     
         try {
             const selectedType = this.getSelectedDownloadType();
@@ -293,8 +342,7 @@ class CsvDownloadPage {
             console.error('[CsvDownloadPage] CSV download failed:', error);
             alert(error?.message || 'CSVのダウンロードに失敗しました。');
         } finally {
-            this.isSubmitting = false;
-            this.updateSubmitButtonState();
+            this.setDownloadBusy(false);
         }
     };
 

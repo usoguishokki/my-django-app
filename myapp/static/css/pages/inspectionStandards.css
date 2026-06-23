@@ -2842,18 +2842,18 @@ button, select {
 /* 履歴確認：列幅 */
 .inspection-standard-history-table th:nth-child(1),
 .inspection-standard-history-table td:nth-child(1) {
+  width: 5.5rem;
+  min-width: 5.5rem;
+  white-space: nowrap; }
+
+/* ID */
+.inspection-standard-history-table th:nth-child(2),
+.inspection-standard-history-table td:nth-child(2) {
   width: 9.5rem;
   min-width: 9.5rem;
   white-space: nowrap; }
 
 /* 日時 */
-.inspection-standard-history-table th:nth-child(2),
-.inspection-standard-history-table td:nth-child(2) {
-  width: 9rem;
-  min-width: 9rem;
-  white-space: nowrap; }
-
-/* 操作 */
 .inspection-standard-history-table th:nth-child(3),
 .inspection-standard-history-table td:nth-child(3) {
   width: 12rem;

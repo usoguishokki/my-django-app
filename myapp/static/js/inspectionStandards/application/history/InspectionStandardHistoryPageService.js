@@ -311,8 +311,8 @@ export class InspectionStandardHistoryPageService {
         role="button"
         aria-label="変更履歴の詳細を表示"
       >
+        <td>${this._escape(row.historyId)}</td>
         <td>${this._escape(row.operatedAtText)}</td>
-        <td>${this._escape(row.operationLabel)}</td>
         <td>${this._escape(row.machine)}</td>
         <td>${this._escape(row.inspectionNo)}</td>
         <td>${this._escape(row.summary)}</td>
@@ -339,16 +339,7 @@ export class InspectionStandardHistoryPageService {
           history.operated_at
         )
       ),
-      operationLabel: this._pickText(
-        history.operationLabel,
-        history.operation_label,
-        history.sourceLabel,
-        history.source_label,
-        history.actionLabel,
-        history.action_label,
-        history.action,
-        history.operation
-      ),
+      
       machine: this._pickText(
         history.machine,
         history.machineSnapshot,

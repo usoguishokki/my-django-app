@@ -601,6 +601,8 @@ export function executeInspectionStandardDownload(p = {}) {
     });
 }
 
+const CSV_DOWNLOAD_TIMEOUT_MS = 120000;
+
 export function executeInspectionPlanResultDownload(p = {}) {
     const {
         planResultOption,
@@ -621,6 +623,7 @@ export function executeInspectionPlanResultDownload(p = {}) {
             end_month: endMonth,
         },
         fallbackFilename: 'inspection_plan_result.csv',
+        timeout: CSV_DOWNLOAD_TIMEOUT_MS,
     });
 }
 

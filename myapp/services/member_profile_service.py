@@ -16,8 +16,3 @@ def serialize_member_profile(profile):
         'shift_start_time': profile.shift_start_time,
         'shift_end_time': profile.shift_end_time,
     }
-
-
-def build_members_with_profiles(profiles):
-    sorted_profiles = sort_profiles(profiles)
-    return [serialize_member_profile(profile) for profile in sorted_profiles]

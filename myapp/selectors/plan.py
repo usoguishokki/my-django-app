@@ -78,19 +78,10 @@ def select_test_card_plans_by_date_alias(
     date_alias: str,
     base_date: date | None = None,
 ):
-    if not date_alias:
-        return Plan_tb.objects.none()
-
-    qs = plan_base_qs()
-    qs = qs.filter(p_date__date_alias=date_alias)
-
-    if base_date is not None:
-        fiscal_year_start, fiscal_year_end = get_fiscal_year_range(base_date)
-
-        qs = qs.filter(
-            p_date__h_date__gte=fiscal_year_start,
-            p_date__h_date__lt=fiscal_year_end,
-        )
+    qs = filter_plans_by_date_alias(
+        date_alias=date_alias,
+        base_date=base_date,
+    )
 
     qs = apply_test_card_common_filters(qs)
 
@@ -115,6 +106,38 @@ def plan_base_qs():
         )
         .exclude(inspection_no__status__in=EXCLUDED_INSPECTION_STATUSES)
     )
+
+def filter_plans_by_date_alias(
+    qs=None,
+    *,
+    date_alias: str,
+    base_date: date | None = None,
+):
+    """
+    指定 date_alias の Plan に絞る。
+
+    base_date が渡された場合は、同じ date_alias が年度をまたいで
+    混ざらないように、base_date の年度範囲で絞る。
+    """
+    if qs is None:
+        qs = plan_base_qs()
+
+    if not date_alias:
+        return qs.none()
+
+    qs = qs.filter(
+        p_date__date_alias=date_alias,
+    )
+
+    if base_date is not None:
+        fiscal_year_start, fiscal_year_end = get_fiscal_year_range(base_date)
+
+        qs = qs.filter(
+            p_date__h_date__gte=fiscal_year_start,
+            p_date__h_date__lt=fiscal_year_end,
+        )
+
+    return qs
 
 def plans_by_inspection_no_qs(
     *,

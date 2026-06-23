@@ -208,3 +208,42 @@ def attach_plan_results_to_occurrences(
         )
 
     return attached
+
+
+def iter_occurrences_from_plans(
+    *,
+    plans: Iterable[Plan_tb],
+    calendar_rows: Iterable[Hozen_calendar_tb],
+):
+    """
+    Plan_tbを正としてCSV行用Occurrenceを逐次生成する。
+
+    build_occurrences_from_plans() と違い、全件リストを作らない。
+    大量CSV出力時のメモリ使用量を減らす。
+    """
+    calendar_by_date = build_calendar_row_by_date(calendar_rows)
+
+    for plan in plans:
+        check = getattr(plan, "inspection_no", None)
+        calendar_row = getattr(plan, "p_date", None)
+
+        if check is None or calendar_row is None:
+            continue
+
+        year_month = build_year_month_from_calendar_row(calendar_row)
+        if year_month is None:
+            continue
+
+        implementation_calendar_row = None
+
+        implementation_date = get_plan_implementation_date(plan)
+        if implementation_date is not None:
+            implementation_calendar_row = calendar_by_date.get(implementation_date)
+
+        yield CsvOccurrence(
+            check=check,
+            year_month=year_month,
+            calendar_row=calendar_row,
+            plan=plan,
+            implementation_calendar_row=implementation_calendar_row,
+        )

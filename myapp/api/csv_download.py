@@ -12,8 +12,8 @@ from myapp.selectors.control import get_controls_for_inspection_standard_machine
 from myapp.selectors.csv_download import get_plan_rows_for_csv
 from myapp.services.csv_download.inspection_standard import build_inspection_standard_csv_response
 
-from myapp.services.csv_download.csv_builder import build_csv_response
-from myapp.services.csv_download.row_presenter import present_occurrence_rows
+from myapp.services.csv_download.streaming_csv_builder import stream_csv_response
+from myapp.services.csv_download.row_presenter import present_occurrence_row
 
 from myapp.domain.errors import (
     InvalidCsvDownloadParams,
@@ -22,8 +22,8 @@ from myapp.domain.errors import (
 )
 
 from myapp.services.csv_download.plan_result_matcher import (
-    build_occurrences_from_plans,
     collect_plan_implementation_dates,
+    iter_occurrences_from_plans,
 )
 
 
@@ -115,17 +115,20 @@ def inspection_plan_result_download_api(request):
         )
     )
     
-    occurrences = build_occurrences_from_plans(
+    occurrences = iter_occurrences_from_plans(
         plans=plans,
         calendar_rows=[
             *calendar_rows,
             *implementation_calendar_rows,
         ],
     )
+    
+    rows = (
+        present_occurrence_row(occ)
+        for occ in occurrences
+    )
 
-    rows = present_occurrence_rows(occurrences)
-
-    return build_csv_response(
+    return stream_csv_response(
         rows=rows,
         filename="inspection_plan_result.csv",
     )

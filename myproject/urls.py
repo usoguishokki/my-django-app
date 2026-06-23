@@ -34,7 +34,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('login/', views.login_view, name='login'),
     path('home/', views.home_view, name='home'),
-    path('calendar/', views.calendar_view, name='calendar'),
     path('card/', views.card_view, name='card'),
     path('workContents/', views.workContents_view, name='workContets'),
     path('card/<str:control_no>/', views.card_by_control_view, name='card_by_control'),

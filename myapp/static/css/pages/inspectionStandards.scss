@@ -2566,8 +2566,8 @@ $z-inspection-standard-drawer-tooltip: 5030;
 }
 
 /* 履歴確認：列幅 */
-@include history-table-nowrap-column(1, 9.5rem);     /* 日時 */
-@include history-table-nowrap-column(2, 9rem);       /* 操作 */
+@include history-table-nowrap-column(1, 5.5rem);     /* ID */
+@include history-table-nowrap-column(2, 9.5rem);     /* 日時 */
 @include history-table-ellipsis-column(3, 12rem);    /* 設備名 */
 @include history-table-nowrap-column(4, 10rem);      /* カードNo */
 

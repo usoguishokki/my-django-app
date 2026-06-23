@@ -124,6 +124,15 @@
         </section>
 
         <div class="csv-download__actions">
+            <p
+                class="csv-download__downloadStatus"
+                data-role="csv-download-status"
+                hidden
+                aria-live="polite"
+            >
+                CSVを作成しています。完了まで画面を操作せずお待ちください。
+            </p>
+        
             <button type="submit" class="csv-download__submit ui-btn ui-btn--primary ui-btn--md" disabled>
                 CSVをダウンロード
             </button>
