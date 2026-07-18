@@ -44,7 +44,6 @@ htmlcov/
 *.map
 myproject/settings_backup/
 
-myproject/settings.py
 web.config
 
 # Local auth/cache
