@@ -156,8 +156,8 @@ def validate_approver_job_title(
         raise InspectionStandardError(
             f'{role_config.label}は{role_config.required_job_title}のみ実行できます。'
         )
-        
-        
+
+
 def validate_approval_state(
     *,
     history: InspectionStandardHistory,

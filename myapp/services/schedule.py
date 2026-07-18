@@ -208,7 +208,7 @@ def should_assign_approver_on_registration(*, current_status, was_unscheduled):
         PlanStatus.WAITING.value,
         PlanStatus.DELAYED.value,
     }
-    
+
 def resolve_retracted_plan_status(current_status):
     normalized_status = str(current_status or '').strip()
 

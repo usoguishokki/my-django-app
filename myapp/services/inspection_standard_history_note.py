@@ -61,7 +61,7 @@ def update_inspection_standard_history_note(
             '班長・組長・工長の承認が完了しているため、'
             '変更理由は編集できません。'
         )
-    
+
 
     if is_inspection_standard_history_fully_approved(history):
         raise InspectionStandardError(
