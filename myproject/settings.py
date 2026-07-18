@@ -193,12 +193,11 @@ USE_TZ = False
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'myapp/static'),
     os.path.join(BASE_DIR, 'frontend/build/static'),
 ]
 
 #collectstaticを利用する時にコメント化を解除
-STATIC_ROOT = r'C:\inetpub\wwwroot\sitefolder\myproject\staticfiles'
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
