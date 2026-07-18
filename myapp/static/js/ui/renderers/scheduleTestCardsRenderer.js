@@ -1,6 +1,11 @@
 import { UIManger } from '../../manager/UIManger.js';
 import { labelForAttrValue, formatJsDayToDowLabel } from '../formatters/labelFormatters.js';
+
 import { getJsDay } from '../../utils/dateTime.js';
+
+import {
+  renderDetailItemsHTML,
+} from './detailItemsRenderer.js';
 
 function formatDayOfWeek(dayOfWeek, planDate) {
   if (dayOfWeek !== '' && dayOfWeek != null) {
@@ -44,35 +49,6 @@ function formatTitleLine2(item) {
   const period = formatPeriod(item?.interval, item?.unit);
 
   return [manHours, dayOfWeek, period].filter(Boolean).join('_');
-}
-
-function renderDetailItemsHTML(detailItems = []) {
-    if (!Array.isArray(detailItems) || detailItems.length === 0) {
-      return `
-        <p class="detail-card__emptyMessage">
-          ${UIManger.escapeHtml('内容はありません。')}
-        </p>
-      `;
-    }
-  
-    return `
-      <div class="detail-card__detailItems">
-        ${detailItems
-          .map(
-            (detail) => `
-              <div class="detail-card__detailItem">
-                <div class="detail-card__detailItemDevice">
-                  ${UIManger.escapeHtml(detail?.applicableDevice ?? '')}
-                </div>
-                <div class="detail-card__detailItemContents">
-                  ${UIManger.escapeHtml(detail?.contents ?? '')}
-                </div>
-              </div>
-            `
-          )
-          .join('')}
-      </div>
-    `;
 }
 
 function renderTestCardHTML(item) {

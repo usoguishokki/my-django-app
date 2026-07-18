@@ -361,7 +361,10 @@ def update_inspection_standard_common_items(
             check=check,
         )
 
-        resolved = resolve_common_item_components(values=values)
+        resolved = resolve_common_item_update_components(
+            values=values,
+            current_anchor_year=check.anchor_year,
+        )
 
         apply_common_item_update_values_to_check(
             check=check,
@@ -479,11 +482,14 @@ def resolve_common_item_anchor_year(
     """
     基準年の保存値を周期に応じて解決する。
 
-    PLAN_RULE_CONDITION 管理の周期では使用しないため None。
-    年周期のみ保存対象。
+    1Yでは基準年を使用しないためNone。
+    2Y以上の年周期のみ保存対象。
     """
 
     if is_condition_managed_schedule_rule(rule):
+        return None
+
+    if is_one_year_schedule_rule(rule):
         return None
 
     if not is_yearly_schedule_rule(rule):
@@ -560,15 +566,16 @@ def is_yearly_schedule_rule(rule) -> bool:
     return unit == 'Y'
 
 
+def is_one_year_schedule_rule(rule) -> bool:
+    """
+    周期が1Yか判定する。
+    """
+
+    return get_schedule_rule_period_key(rule) == (1, 'Y')
+
+
 def is_daily_schedule_rule(rule) -> bool:
-    try:
-        interval = int(getattr(rule, 'interval', 0) or 0)
-    except (TypeError, ValueError):
-        interval = 0
-
-    unit = str(getattr(rule, 'unit', '') or '').strip().upper()
-
-    return interval == 1 and unit == 'D'
+    return get_schedule_rule_period_key(rule) == (1, 'D')
 
 
 def build_inspection_standard_common_items_plan_preview(
@@ -600,7 +607,10 @@ def build_inspection_standard_common_items_plan_preview(
 
     before_snapshot = capture_plan_schedule_snapshot(check=check)
 
-    resolved = resolve_common_item_update_components(values=values)
+    resolved = resolve_common_item_update_components(
+        values=values,
+        current_anchor_year=check.anchor_year,
+    )
 
     # 保存しない。メモリ上のcheckだけ、周期計算用に変更する。
     apply_resolved_common_item_schedule_to_check(
@@ -678,13 +688,27 @@ def resolve_common_item_components(*, values: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def resolve_common_item_update_components(*, values: dict[str, Any]) -> dict[str, Any]:
+def resolve_common_item_update_components(
+    *,
+    values: dict[str, Any],
+    current_anchor_year,
+) -> dict[str, Any]:
     """
-    後方互換用。
-    新規コードでは resolve_common_item_components() を使う。
+    共通項目更新用の関連オブジェクトと保存値を解決する。
+
+    1Yの場合は、入力された基準年で上書きせず、
+    Check_tbに保存されている現在値を維持する。
     """
 
-    return resolve_common_item_components(values=values)
+    resolved = resolve_common_item_components(values=values)
+
+    if not is_one_year_schedule_rule(resolved['rule']):
+        return resolved
+
+    return {
+        **resolved,
+        'anchor_year': current_anchor_year,
+    }
 
 
 def apply_resolved_common_item_schedule_to_check(

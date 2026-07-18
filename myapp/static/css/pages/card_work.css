@@ -1,0 +1,2470 @@
+@charset "UTF-8";
+/* ==========================================================================
+  Typography Tokens (Readable-first)
+  --------------------------------------------------------------------------
+  @doc
+  - 目的: 文字サイズ/行間/太さを“用途”で標準化し、画面間のブレを無くす
+  - 方針: 「読みやすさ優先」(業務UIでの可読性を最優先)
+  - 使い方:
+      1) 基本はトークン（$fs-*, $lh-*, $fw-*）を参照して指定
+      2) 可能なら mixin（type-td/type-th/type-ui...）経由で当てる
+  - 禁止:
+      - 個別SCSSで font-size をベタ書き乱発しない（例外: 微調整が必要な特殊UIのみ）
+  @example
+    .table td { font-size: $fs-td; line-height: $lh-relaxed; font-weight: $fw-regular; }
+========================================================================== */
+/* --------------------------------------------------------------------------
+  Font Size Scale
+  --------------------------------------------------------------------------
+  @doctag typography.font-size
+  @rule
+    - base(1rem) を基準に、用途ごとの“意味”でトークンを選ぶ
+    - 迷ったら: UI = $fs-ui / 表本文 = $fs-td / 見出し = $fs-th
+--------------------------------------------------------------------------- */
+/** @doctag typography.token
+ *  @name $fs-base
+ *  @type font-size
+ *  @use 画面全体の基準サイズ。body / root container の基準に使う。
+ *  @when 「この画面の標準文字」を決めたいとき
+ *  @example body { font-size: $fs-base; }
+ */
+/** @doctag typography.token
+  *  @name $fs-label
+  *  @type font-size
+  *  @use ラベル/補助見出し用（filterラベル、フォーム項目名、セクション注釈）
+  *  @when “主情報より弱く”見せたいとき（ただし読めるサイズ）
+  *  @example .select-label { font-size: $fs-label; }
+  */
+/** @doctag typography.token
+  *  @name $fs-th
+  *  @type font-size
+  *  @use テーブルヘッダ/カード見出し用（th、card-title）
+  *  @when 情報の「列の意味」や「見出し」を強調したいとき
+  *  @example thead th { font-size: $fs-th; }
+  */
+/** @doctag typography.token
+  *  @name $fs-td
+  *  @type font-size
+  *  @use テーブル本文（最重要の“読む”領域）
+  *  @when 一覧を目で追う、長時間読む、現場で使うUI（可読性優先）
+  *  @example tbody td { font-size: $fs-td; }
+  */
+/** @doctag typography.token
+  *  @name $fs-ui
+  *  @type font-size
+  *  @use UI操作系（ボタン、input、select、カレンダー操作ボタン、補助UI）
+  *  @when クリック/タップ対象で“読めること”が重要なとき
+  *  @example .button { font-size: $fs-ui; }
+  */
+/** @doctag typography.token
+  *  @name $fs-title
+  *  @type font-size
+  *  @use タイトル（モーダルのh3、セクション主見出し）
+  *  @when 画面/モーダル内の「主題」を示したいとき
+  *  @example .modal h3 { font-size: $fs-title; }
+  */
+/** @doctag typography.token
+  *  @name $fs-kpi
+  *  @type font-size
+  *  @use KPI/数値カードの強調表示（card-content、合計値など）
+  *  @when “パッと見で数字を把握”させたいとき（ただし暴れない範囲）
+  *  @example .kpi { font-size: $fs-kpi; }
+  */
+/* --------------------------------------------------------------------------
+   Line Height
+   --------------------------------------------------------------------------
+   @doctag typography.line-height
+   @rule
+     - 読みやすさ優先: 本文は $lh-relaxed を基本にする
+     - UIラベル/ボタン等は詰めすぎない範囲で $lh-normal
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $lh-tight
+  *  @type line-height
+  *  @use 見出し・短いラベル向け（詰まり過ぎ防止に注意）
+  *  @when 1行で完結する見出し/ヘッダ
+  */
+/** @doctag typography.token
+  *  @name $lh-normal
+  *  @type line-height
+  *  @use UI一般（ボタン、input、短文）
+  *  @when UIが間延びしないバランスを取りたいとき
+  */
+/** @doctag typography.token
+  *  @name $lh-relaxed
+  *  @type line-height
+  *  @use 長時間読む領域（テーブル本文、説明文、一覧）
+  *  @when “目が疲れない”を優先したいとき（業務画面は基本これ）
+  */
+/* --------------------------------------------------------------------------
+   Font Weight
+   --------------------------------------------------------------------------
+   @doctag typography.font-weight
+   @rule
+     - 本文は $fw-regular（軽め）で読み疲れを減らす
+     - 見出し/重要値は $fw-strong（ただし太すぎ注意）
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $fw-regular
+  *  @type font-weight
+  *  @use 本文の基本（テーブルtd、説明文）
+  *  @when “読む量が多い”ところは基本これ
+  */
+/** @doctag typography.token
+  *  @name $fw-strong
+  *  @type font-weight
+  *  @use 見出し/強調（th、タイトル、KPI）
+  *  @when 情報の階層を明確にしたいとき
+  */
+/* @doctag typography.usage-map
+  - Label        : $fs-label / $fw-strong / $lh-tight
+  - Table head   : $fs-th    / $fw-strong / $lh-tight
+  - Table body   : $fs-td    / $fw-regular / $lh-relaxed
+  - UI controls  : $fs-ui    / $fw-strong or $fw-regular / $lh-normal
+  - Modal title  : $fs-title / $fw-strong / $lh-tight
+  - KPI number   : $fs-kpi   / $fw-strong / $lh-tight
+*/
+/* =========================
+   Mixins（事故防止用）
+   ========================= */
+/* 説明文・補足テキスト（uppercase無し） */
+/* ==========================================================================
+  Typography Tokens (Readable-first)
+  --------------------------------------------------------------------------
+  @doc
+  - 目的: 文字サイズ/行間/太さを“用途”で標準化し、画面間のブレを無くす
+  - 方針: 「読みやすさ優先」(業務UIでの可読性を最優先)
+  - 使い方:
+      1) 基本はトークン（$fs-*, $lh-*, $fw-*）を参照して指定
+      2) 可能なら mixin（type-td/type-th/type-ui...）経由で当てる
+  - 禁止:
+      - 個別SCSSで font-size をベタ書き乱発しない（例外: 微調整が必要な特殊UIのみ）
+  @example
+    .table td { font-size: $fs-td; line-height: $lh-relaxed; font-weight: $fw-regular; }
+========================================================================== */
+/* --------------------------------------------------------------------------
+  Font Size Scale
+  --------------------------------------------------------------------------
+  @doctag typography.font-size
+  @rule
+    - base(1rem) を基準に、用途ごとの“意味”でトークンを選ぶ
+    - 迷ったら: UI = $fs-ui / 表本文 = $fs-td / 見出し = $fs-th
+--------------------------------------------------------------------------- */
+/** @doctag typography.token
+ *  @name $fs-base
+ *  @type font-size
+ *  @use 画面全体の基準サイズ。body / root container の基準に使う。
+ *  @when 「この画面の標準文字」を決めたいとき
+ *  @example body { font-size: $fs-base; }
+ */
+/** @doctag typography.token
+  *  @name $fs-label
+  *  @type font-size
+  *  @use ラベル/補助見出し用（filterラベル、フォーム項目名、セクション注釈）
+  *  @when “主情報より弱く”見せたいとき（ただし読めるサイズ）
+  *  @example .select-label { font-size: $fs-label; }
+  */
+/** @doctag typography.token
+  *  @name $fs-th
+  *  @type font-size
+  *  @use テーブルヘッダ/カード見出し用（th、card-title）
+  *  @when 情報の「列の意味」や「見出し」を強調したいとき
+  *  @example thead th { font-size: $fs-th; }
+  */
+/** @doctag typography.token
+  *  @name $fs-td
+  *  @type font-size
+  *  @use テーブル本文（最重要の“読む”領域）
+  *  @when 一覧を目で追う、長時間読む、現場で使うUI（可読性優先）
+  *  @example tbody td { font-size: $fs-td; }
+  */
+/** @doctag typography.token
+  *  @name $fs-ui
+  *  @type font-size
+  *  @use UI操作系（ボタン、input、select、カレンダー操作ボタン、補助UI）
+  *  @when クリック/タップ対象で“読めること”が重要なとき
+  *  @example .button { font-size: $fs-ui; }
+  */
+/** @doctag typography.token
+  *  @name $fs-title
+  *  @type font-size
+  *  @use タイトル（モーダルのh3、セクション主見出し）
+  *  @when 画面/モーダル内の「主題」を示したいとき
+  *  @example .modal h3 { font-size: $fs-title; }
+  */
+/** @doctag typography.token
+  *  @name $fs-kpi
+  *  @type font-size
+  *  @use KPI/数値カードの強調表示（card-content、合計値など）
+  *  @when “パッと見で数字を把握”させたいとき（ただし暴れない範囲）
+  *  @example .kpi { font-size: $fs-kpi; }
+  */
+/* --------------------------------------------------------------------------
+   Line Height
+   --------------------------------------------------------------------------
+   @doctag typography.line-height
+   @rule
+     - 読みやすさ優先: 本文は $lh-relaxed を基本にする
+     - UIラベル/ボタン等は詰めすぎない範囲で $lh-normal
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $lh-tight
+  *  @type line-height
+  *  @use 見出し・短いラベル向け（詰まり過ぎ防止に注意）
+  *  @when 1行で完結する見出し/ヘッダ
+  */
+/** @doctag typography.token
+  *  @name $lh-normal
+  *  @type line-height
+  *  @use UI一般（ボタン、input、短文）
+  *  @when UIが間延びしないバランスを取りたいとき
+  */
+/** @doctag typography.token
+  *  @name $lh-relaxed
+  *  @type line-height
+  *  @use 長時間読む領域（テーブル本文、説明文、一覧）
+  *  @when “目が疲れない”を優先したいとき（業務画面は基本これ）
+  */
+/* --------------------------------------------------------------------------
+   Font Weight
+   --------------------------------------------------------------------------
+   @doctag typography.font-weight
+   @rule
+     - 本文は $fw-regular（軽め）で読み疲れを減らす
+     - 見出し/重要値は $fw-strong（ただし太すぎ注意）
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $fw-regular
+  *  @type font-weight
+  *  @use 本文の基本（テーブルtd、説明文）
+  *  @when “読む量が多い”ところは基本これ
+  */
+/** @doctag typography.token
+  *  @name $fw-strong
+  *  @type font-weight
+  *  @use 見出し/強調（th、タイトル、KPI）
+  *  @when 情報の階層を明確にしたいとき
+  */
+/* @doctag typography.usage-map
+  - Label        : $fs-label / $fw-strong / $lh-tight
+  - Table head   : $fs-th    / $fw-strong / $lh-tight
+  - Table body   : $fs-td    / $fw-regular / $lh-relaxed
+  - UI controls  : $fs-ui    / $fw-strong or $fw-regular / $lh-normal
+  - Modal title  : $fs-title / $fw-strong / $lh-tight
+  - KPI number   : $fs-kpi   / $fw-strong / $lh-tight
+*/
+/* =========================
+   Mixins（事故防止用）
+   ========================= */
+/* 説明文・補足テキスト（uppercase無し） */
+/* ==========================================================================
+  UI Field (label + input)
+========================================================================== */
+.ui-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0; }
+
+.ui-field__label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.55;
+  white-space: nowrap;
+  color: rgba(71, 85, 105, 0.95); }
+
+/* ==========================================================================
+  UI Field Group (date+time など複数inputをまとめる)
+========================================================================== */
+.ui-fieldGroup {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 10px;
+  min-width: 0; }
+
+.ui-fieldGroup__label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.55;
+  white-space: nowrap;
+  color: rgba(71, 85, 105, 0.95);
+  padding-bottom: 2px; }
+
+/* よく使うバリエーション */
+.ui-fieldGroup--datetime {
+  align-items: flex-end; }
+
+/* ==========================================================================
+  Typography Tokens (Readable-first)
+  --------------------------------------------------------------------------
+  @doc
+  - 目的: 文字サイズ/行間/太さを“用途”で標準化し、画面間のブレを無くす
+  - 方針: 「読みやすさ優先」(業務UIでの可読性を最優先)
+  - 使い方:
+      1) 基本はトークン（$fs-*, $lh-*, $fw-*）を参照して指定
+      2) 可能なら mixin（type-td/type-th/type-ui...）経由で当てる
+  - 禁止:
+      - 個別SCSSで font-size をベタ書き乱発しない（例外: 微調整が必要な特殊UIのみ）
+  @example
+    .table td { font-size: $fs-td; line-height: $lh-relaxed; font-weight: $fw-regular; }
+========================================================================== */
+/* --------------------------------------------------------------------------
+  Font Size Scale
+  --------------------------------------------------------------------------
+  @doctag typography.font-size
+  @rule
+    - base(1rem) を基準に、用途ごとの“意味”でトークンを選ぶ
+    - 迷ったら: UI = $fs-ui / 表本文 = $fs-td / 見出し = $fs-th
+--------------------------------------------------------------------------- */
+/** @doctag typography.token
+ *  @name $fs-base
+ *  @type font-size
+ *  @use 画面全体の基準サイズ。body / root container の基準に使う。
+ *  @when 「この画面の標準文字」を決めたいとき
+ *  @example body { font-size: $fs-base; }
+ */
+/** @doctag typography.token
+  *  @name $fs-label
+  *  @type font-size
+  *  @use ラベル/補助見出し用（filterラベル、フォーム項目名、セクション注釈）
+  *  @when “主情報より弱く”見せたいとき（ただし読めるサイズ）
+  *  @example .select-label { font-size: $fs-label; }
+  */
+/** @doctag typography.token
+  *  @name $fs-th
+  *  @type font-size
+  *  @use テーブルヘッダ/カード見出し用（th、card-title）
+  *  @when 情報の「列の意味」や「見出し」を強調したいとき
+  *  @example thead th { font-size: $fs-th; }
+  */
+/** @doctag typography.token
+  *  @name $fs-td
+  *  @type font-size
+  *  @use テーブル本文（最重要の“読む”領域）
+  *  @when 一覧を目で追う、長時間読む、現場で使うUI（可読性優先）
+  *  @example tbody td { font-size: $fs-td; }
+  */
+/** @doctag typography.token
+  *  @name $fs-ui
+  *  @type font-size
+  *  @use UI操作系（ボタン、input、select、カレンダー操作ボタン、補助UI）
+  *  @when クリック/タップ対象で“読めること”が重要なとき
+  *  @example .button { font-size: $fs-ui; }
+  */
+/** @doctag typography.token
+  *  @name $fs-title
+  *  @type font-size
+  *  @use タイトル（モーダルのh3、セクション主見出し）
+  *  @when 画面/モーダル内の「主題」を示したいとき
+  *  @example .modal h3 { font-size: $fs-title; }
+  */
+/** @doctag typography.token
+  *  @name $fs-kpi
+  *  @type font-size
+  *  @use KPI/数値カードの強調表示（card-content、合計値など）
+  *  @when “パッと見で数字を把握”させたいとき（ただし暴れない範囲）
+  *  @example .kpi { font-size: $fs-kpi; }
+  */
+/* --------------------------------------------------------------------------
+   Line Height
+   --------------------------------------------------------------------------
+   @doctag typography.line-height
+   @rule
+     - 読みやすさ優先: 本文は $lh-relaxed を基本にする
+     - UIラベル/ボタン等は詰めすぎない範囲で $lh-normal
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $lh-tight
+  *  @type line-height
+  *  @use 見出し・短いラベル向け（詰まり過ぎ防止に注意）
+  *  @when 1行で完結する見出し/ヘッダ
+  */
+/** @doctag typography.token
+  *  @name $lh-normal
+  *  @type line-height
+  *  @use UI一般（ボタン、input、短文）
+  *  @when UIが間延びしないバランスを取りたいとき
+  */
+/** @doctag typography.token
+  *  @name $lh-relaxed
+  *  @type line-height
+  *  @use 長時間読む領域（テーブル本文、説明文、一覧）
+  *  @when “目が疲れない”を優先したいとき（業務画面は基本これ）
+  */
+/* --------------------------------------------------------------------------
+   Font Weight
+   --------------------------------------------------------------------------
+   @doctag typography.font-weight
+   @rule
+     - 本文は $fw-regular（軽め）で読み疲れを減らす
+     - 見出し/重要値は $fw-strong（ただし太すぎ注意）
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $fw-regular
+  *  @type font-weight
+  *  @use 本文の基本（テーブルtd、説明文）
+  *  @when “読む量が多い”ところは基本これ
+  */
+/** @doctag typography.token
+  *  @name $fw-strong
+  *  @type font-weight
+  *  @use 見出し/強調（th、タイトル、KPI）
+  *  @when 情報の階層を明確にしたいとき
+  */
+/* @doctag typography.usage-map
+  - Label        : $fs-label / $fw-strong / $lh-tight
+  - Table head   : $fs-th    / $fw-strong / $lh-tight
+  - Table body   : $fs-td    / $fw-regular / $lh-relaxed
+  - UI controls  : $fs-ui    / $fw-strong or $fw-regular / $lh-normal
+  - Modal title  : $fs-title / $fw-strong / $lh-tight
+  - KPI number   : $fs-kpi   / $fw-strong / $lh-tight
+*/
+/* =========================
+   Mixins（事故防止用）
+   ========================= */
+/* 説明文・補足テキスト（uppercase無し） */
+/* ==========================================================================
+  UI Input System
+  - 画面横断で使い回す汎用 input（text/date/time/datetime-local）
+  - class="ui-input" を付ければ統一される
+========================================================================== */
+/* tokens */
+/* base */
+.ui-input {
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  background: #ffffff;
+  color: rgba(11, 18, 32, 0.92);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.55;
+  font-weight: 400;
+  outline: none;
+  transition: border-color .14s ease, box-shadow .14s ease, background-color .14s ease, transform .06s ease, opacity .14s ease;
+  /* iOS/Chromium の date/time の見た目ブレ対策 */
+  -webkit-appearance: none;
+  appearance: none; }
+  .ui-input:not(:disabled):not(.is-disabled):hover {
+    border-color: rgba(20, 131, 205, 0.55);
+    background: #fbfdff; }
+  .ui-input:focus, .ui-input:focus-visible {
+    border-color: #1483cd;
+    box-shadow: 0 0 0 3px rgba(20, 131, 205, 0.25); }
+  .ui-input:disabled, .ui-input.is-disabled {
+    background: rgba(15, 23, 42, 0.03);
+    color: rgba(11, 18, 32, 0.45);
+    border-color: rgba(15, 23, 42, 0.1);
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.95; }
+
+/* size */
+.ui-input--sm {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.55;
+  font-weight: 400; }
+
+.ui-input--md {
+  height: 36px;
+  padding: 0 12px; }
+
+/* type-specific minor adjustments */
+.ui-input--date,
+.ui-input--time,
+.ui-input--datetime-local {
+  /* 数字が揃って見えて気持ちいい */
+  font-variant-numeric: tabular-nums;
+  cursor: pointer; }
+
+/* optional: focus時に少しだけ“触ってる感” */
+.ui-input:active {
+  transform: translateY(1px); }
+
+/* ==========================================================================
+  Typography Tokens (Readable-first)
+  --------------------------------------------------------------------------
+  @doc
+  - 目的: 文字サイズ/行間/太さを“用途”で標準化し、画面間のブレを無くす
+  - 方針: 「読みやすさ優先」(業務UIでの可読性を最優先)
+  - 使い方:
+      1) 基本はトークン（$fs-*, $lh-*, $fw-*）を参照して指定
+      2) 可能なら mixin（type-td/type-th/type-ui...）経由で当てる
+  - 禁止:
+      - 個別SCSSで font-size をベタ書き乱発しない（例外: 微調整が必要な特殊UIのみ）
+  @example
+    .table td { font-size: $fs-td; line-height: $lh-relaxed; font-weight: $fw-regular; }
+========================================================================== */
+/* --------------------------------------------------------------------------
+  Font Size Scale
+  --------------------------------------------------------------------------
+  @doctag typography.font-size
+  @rule
+    - base(1rem) を基準に、用途ごとの“意味”でトークンを選ぶ
+    - 迷ったら: UI = $fs-ui / 表本文 = $fs-td / 見出し = $fs-th
+--------------------------------------------------------------------------- */
+/** @doctag typography.token
+ *  @name $fs-base
+ *  @type font-size
+ *  @use 画面全体の基準サイズ。body / root container の基準に使う。
+ *  @when 「この画面の標準文字」を決めたいとき
+ *  @example body { font-size: $fs-base; }
+ */
+/** @doctag typography.token
+  *  @name $fs-label
+  *  @type font-size
+  *  @use ラベル/補助見出し用（filterラベル、フォーム項目名、セクション注釈）
+  *  @when “主情報より弱く”見せたいとき（ただし読めるサイズ）
+  *  @example .select-label { font-size: $fs-label; }
+  */
+/** @doctag typography.token
+  *  @name $fs-th
+  *  @type font-size
+  *  @use テーブルヘッダ/カード見出し用（th、card-title）
+  *  @when 情報の「列の意味」や「見出し」を強調したいとき
+  *  @example thead th { font-size: $fs-th; }
+  */
+/** @doctag typography.token
+  *  @name $fs-td
+  *  @type font-size
+  *  @use テーブル本文（最重要の“読む”領域）
+  *  @when 一覧を目で追う、長時間読む、現場で使うUI（可読性優先）
+  *  @example tbody td { font-size: $fs-td; }
+  */
+/** @doctag typography.token
+  *  @name $fs-ui
+  *  @type font-size
+  *  @use UI操作系（ボタン、input、select、カレンダー操作ボタン、補助UI）
+  *  @when クリック/タップ対象で“読めること”が重要なとき
+  *  @example .button { font-size: $fs-ui; }
+  */
+/** @doctag typography.token
+  *  @name $fs-title
+  *  @type font-size
+  *  @use タイトル（モーダルのh3、セクション主見出し）
+  *  @when 画面/モーダル内の「主題」を示したいとき
+  *  @example .modal h3 { font-size: $fs-title; }
+  */
+/** @doctag typography.token
+  *  @name $fs-kpi
+  *  @type font-size
+  *  @use KPI/数値カードの強調表示（card-content、合計値など）
+  *  @when “パッと見で数字を把握”させたいとき（ただし暴れない範囲）
+  *  @example .kpi { font-size: $fs-kpi; }
+  */
+/* --------------------------------------------------------------------------
+   Line Height
+   --------------------------------------------------------------------------
+   @doctag typography.line-height
+   @rule
+     - 読みやすさ優先: 本文は $lh-relaxed を基本にする
+     - UIラベル/ボタン等は詰めすぎない範囲で $lh-normal
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $lh-tight
+  *  @type line-height
+  *  @use 見出し・短いラベル向け（詰まり過ぎ防止に注意）
+  *  @when 1行で完結する見出し/ヘッダ
+  */
+/** @doctag typography.token
+  *  @name $lh-normal
+  *  @type line-height
+  *  @use UI一般（ボタン、input、短文）
+  *  @when UIが間延びしないバランスを取りたいとき
+  */
+/** @doctag typography.token
+  *  @name $lh-relaxed
+  *  @type line-height
+  *  @use 長時間読む領域（テーブル本文、説明文、一覧）
+  *  @when “目が疲れない”を優先したいとき（業務画面は基本これ）
+  */
+/* --------------------------------------------------------------------------
+   Font Weight
+   --------------------------------------------------------------------------
+   @doctag typography.font-weight
+   @rule
+     - 本文は $fw-regular（軽め）で読み疲れを減らす
+     - 見出し/重要値は $fw-strong（ただし太すぎ注意）
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $fw-regular
+  *  @type font-weight
+  *  @use 本文の基本（テーブルtd、説明文）
+  *  @when “読む量が多い”ところは基本これ
+  */
+/** @doctag typography.token
+  *  @name $fw-strong
+  *  @type font-weight
+  *  @use 見出し/強調（th、タイトル、KPI）
+  *  @when 情報の階層を明確にしたいとき
+  */
+/* @doctag typography.usage-map
+  - Label        : $fs-label / $fw-strong / $lh-tight
+  - Table head   : $fs-th    / $fw-strong / $lh-tight
+  - Table body   : $fs-td    / $fw-regular / $lh-relaxed
+  - UI controls  : $fs-ui    / $fw-strong or $fw-regular / $lh-normal
+  - Modal title  : $fs-title / $fw-strong / $lh-tight
+  - KPI number   : $fs-kpi   / $fw-strong / $lh-tight
+*/
+/* =========================
+   Mixins（事故防止用）
+   ========================= */
+/* 説明文・補足テキスト（uppercase無し） */
+/* ==========================================================================
+  UI Option Button Group
+  - 排他的単一選択用のボタングループ
+  - Button とは責務を分離した汎用コンポーネント
+========================================================================== */
+/* グループ */
+.ui-optionGroup {
+  display: inline-flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 8px; }
+
+/* ボタン本体 */
+.ui-optionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #0b1220;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.55;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease, box-shadow 0.14s ease, transform 0.06s ease, opacity 0.14s ease; }
+  .ui-optionButton:not(:disabled):not(.is-disabled):hover {
+    background: rgba(15, 23, 42, 0.04);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12); }
+  .ui-optionButton:active {
+    transform: translateY(1px); }
+  .ui-optionButton:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22); }
+  .ui-optionButton:not(:disabled):not(.is-disabled):focus-visible:hover {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22), 0 8px 18px rgba(0, 0, 0, 0.12); }
+  .ui-optionButton.is-selected, .ui-optionButton[aria-checked='true'] {
+    background: #e8f3ff;
+    color: #032e4a;
+    border-color: #1483cd; }
+  .ui-optionButton.is-disabled, .ui-optionButton:disabled {
+    pointer-events: none;
+    opacity: 0.45;
+    filter: grayscale(20%);
+    box-shadow: none;
+    transform: none; }
+
+.ui-optionButton__label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.55; }
+
+/* ==========================================================================
+  Typography Tokens (Readable-first)
+  --------------------------------------------------------------------------
+  @doc
+  - 目的: 文字サイズ/行間/太さを“用途”で標準化し、画面間のブレを無くす
+  - 方針: 「読みやすさ優先」(業務UIでの可読性を最優先)
+  - 使い方:
+      1) 基本はトークン（$fs-*, $lh-*, $fw-*）を参照して指定
+      2) 可能なら mixin（type-td/type-th/type-ui...）経由で当てる
+  - 禁止:
+      - 個別SCSSで font-size をベタ書き乱発しない（例外: 微調整が必要な特殊UIのみ）
+  @example
+    .table td { font-size: $fs-td; line-height: $lh-relaxed; font-weight: $fw-regular; }
+========================================================================== */
+/* --------------------------------------------------------------------------
+  Font Size Scale
+  --------------------------------------------------------------------------
+  @doctag typography.font-size
+  @rule
+    - base(1rem) を基準に、用途ごとの“意味”でトークンを選ぶ
+    - 迷ったら: UI = $fs-ui / 表本文 = $fs-td / 見出し = $fs-th
+--------------------------------------------------------------------------- */
+/** @doctag typography.token
+ *  @name $fs-base
+ *  @type font-size
+ *  @use 画面全体の基準サイズ。body / root container の基準に使う。
+ *  @when 「この画面の標準文字」を決めたいとき
+ *  @example body { font-size: $fs-base; }
+ */
+/** @doctag typography.token
+  *  @name $fs-label
+  *  @type font-size
+  *  @use ラベル/補助見出し用（filterラベル、フォーム項目名、セクション注釈）
+  *  @when “主情報より弱く”見せたいとき（ただし読めるサイズ）
+  *  @example .select-label { font-size: $fs-label; }
+  */
+/** @doctag typography.token
+  *  @name $fs-th
+  *  @type font-size
+  *  @use テーブルヘッダ/カード見出し用（th、card-title）
+  *  @when 情報の「列の意味」や「見出し」を強調したいとき
+  *  @example thead th { font-size: $fs-th; }
+  */
+/** @doctag typography.token
+  *  @name $fs-td
+  *  @type font-size
+  *  @use テーブル本文（最重要の“読む”領域）
+  *  @when 一覧を目で追う、長時間読む、現場で使うUI（可読性優先）
+  *  @example tbody td { font-size: $fs-td; }
+  */
+/** @doctag typography.token
+  *  @name $fs-ui
+  *  @type font-size
+  *  @use UI操作系（ボタン、input、select、カレンダー操作ボタン、補助UI）
+  *  @when クリック/タップ対象で“読めること”が重要なとき
+  *  @example .button { font-size: $fs-ui; }
+  */
+/** @doctag typography.token
+  *  @name $fs-title
+  *  @type font-size
+  *  @use タイトル（モーダルのh3、セクション主見出し）
+  *  @when 画面/モーダル内の「主題」を示したいとき
+  *  @example .modal h3 { font-size: $fs-title; }
+  */
+/** @doctag typography.token
+  *  @name $fs-kpi
+  *  @type font-size
+  *  @use KPI/数値カードの強調表示（card-content、合計値など）
+  *  @when “パッと見で数字を把握”させたいとき（ただし暴れない範囲）
+  *  @example .kpi { font-size: $fs-kpi; }
+  */
+/* --------------------------------------------------------------------------
+   Line Height
+   --------------------------------------------------------------------------
+   @doctag typography.line-height
+   @rule
+     - 読みやすさ優先: 本文は $lh-relaxed を基本にする
+     - UIラベル/ボタン等は詰めすぎない範囲で $lh-normal
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $lh-tight
+  *  @type line-height
+  *  @use 見出し・短いラベル向け（詰まり過ぎ防止に注意）
+  *  @when 1行で完結する見出し/ヘッダ
+  */
+/** @doctag typography.token
+  *  @name $lh-normal
+  *  @type line-height
+  *  @use UI一般（ボタン、input、短文）
+  *  @when UIが間延びしないバランスを取りたいとき
+  */
+/** @doctag typography.token
+  *  @name $lh-relaxed
+  *  @type line-height
+  *  @use 長時間読む領域（テーブル本文、説明文、一覧）
+  *  @when “目が疲れない”を優先したいとき（業務画面は基本これ）
+  */
+/* --------------------------------------------------------------------------
+   Font Weight
+   --------------------------------------------------------------------------
+   @doctag typography.font-weight
+   @rule
+     - 本文は $fw-regular（軽め）で読み疲れを減らす
+     - 見出し/重要値は $fw-strong（ただし太すぎ注意）
+ --------------------------------------------------------------------------- */
+/** @doctag typography.token
+  *  @name $fw-regular
+  *  @type font-weight
+  *  @use 本文の基本（テーブルtd、説明文）
+  *  @when “読む量が多い”ところは基本これ
+  */
+/** @doctag typography.token
+  *  @name $fw-strong
+  *  @type font-weight
+  *  @use 見出し/強調（th、タイトル、KPI）
+  *  @when 情報の階層を明確にしたいとき
+  */
+/* @doctag typography.usage-map
+  - Label        : $fs-label / $fw-strong / $lh-tight
+  - Table head   : $fs-th    / $fw-strong / $lh-tight
+  - Table body   : $fs-td    / $fw-regular / $lh-relaxed
+  - UI controls  : $fs-ui    / $fw-strong or $fw-regular / $lh-normal
+  - Modal title  : $fs-title / $fw-strong / $lh-tight
+  - KPI number   : $fs-kpi   / $fw-strong / $lh-tight
+*/
+/* =========================
+   Mixins（事故防止用）
+   ========================= */
+/* 説明文・補足テキスト（uppercase無し） */
+/* =========================================
+   Custom Dropdown / Combobox
+   ========================================= */
+.custom-dropdown {
+  position: relative;
+  width: 100%; }
+  .custom-dropdown__trigger {
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.55;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-height: 42px;
+    padding: 0 13px;
+    border: 1px solid #cfd8e3;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #111827;
+    box-sizing: border-box;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, transform 0.12s ease; }
+  .custom-dropdown__trigger:hover:not(:disabled) {
+    border-color: #b6c4d6;
+    background: #fbfdff; }
+  .custom-dropdown__trigger:focus, .custom-dropdown__trigger:focus-visible {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px rgba(37, 99, 235, 0.16); }
+  .custom-dropdown__trigger:disabled {
+    background: rgba(15, 23, 42, 0.03);
+    color: rgba(11, 18, 32, 0.45);
+    border-color: #d9e1ea;
+    box-shadow: none;
+    cursor: not-allowed; }
+  .custom-dropdown__triggerText {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap; }
+  .custom-dropdown__triggerText.is-placeholder {
+    color: #64748b;
+    font-weight: 400; }
+  .custom-dropdown__triggerIcon {
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+    margin-left: auto;
+    color: #475569;
+    background-color: currentColor;
+    font-size: 0;
+    line-height: 0;
+    pointer-events: none;
+    -webkit-mask-image: url("/static/img/arrow.svg");
+    mask-image: url("/static/img/arrow.svg");
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    transform: rotate(90deg);
+    transition: transform 0.18s ease, color 0.18s ease, opacity 0.18s ease; }
+  .custom-dropdown[data-state='open'] .custom-dropdown__trigger {
+    border-color: #93c5fd;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08), 0 6px 18px rgba(15, 23, 42, 0.06);
+    background: #ffffff; }
+  .custom-dropdown[data-state='open'] .custom-dropdown__triggerIcon {
+    transform: rotate(-90deg);
+    color: #2563eb; }
+  .custom-dropdown__panel {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    z-index: 30;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #dbe3ee;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
+    box-sizing: border-box;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.18s ease, transform 0.18s ease; }
+  .custom-dropdown[data-state='open'] .custom-dropdown__panel {
+    opacity: 1;
+    transform: translateY(0); }
+  .custom-dropdown[data-direction='up'] .custom-dropdown__panel {
+    top: auto;
+    bottom: calc(100% + 8px); }
+  .custom-dropdown__list {
+    margin: 0;
+    padding: 4px 0;
+    list-style: none;
+    max-height: 280px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 10px; }
+  .custom-dropdown__list::-webkit-scrollbar {
+    width: 10px; }
+  .custom-dropdown__list::-webkit-scrollbar-track {
+    background: transparent; }
+  .custom-dropdown__list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+    border: 2px solid #ffffff; }
+  .custom-dropdown__list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; }
+  .custom-dropdown__option {
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.55;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 40px;
+    padding: 0 12px;
+    margin: 2px 0;
+    border: none;
+    background: transparent;
+    color: #111827;
+    font-weight: 400;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: background-color 0.14s ease, color 0.14s ease, transform 0.08s ease; }
+  .custom-dropdown__option:hover {
+    background: #eff6ff; }
+  .custom-dropdown__option:focus, .custom-dropdown__option:focus-visible {
+    outline: none;
+    background: #eff6ff;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.18); }
+  .custom-dropdown__option:active {
+    transform: scale(0.995); }
+  .custom-dropdown__option.is-selected {
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12); }
+  .custom-dropdown__option.is-hidden {
+    display: none; }
+  .custom-dropdown__empty {
+    font-size: 0.78rem;
+    font-weight: 400;
+    line-height: 1.55;
+    letter-spacing: 0.02em;
+    padding: 10px 12px;
+    color: #64748b; }
+  .custom-dropdown[data-state='open'] .custom-dropdown__triggerIconImage {
+    opacity: 1;
+    transform: rotate(90deg); }
+
+@media (max-width: 480px) {
+  .custom-dropdown__trigger {
+    min-height: 44px;
+    padding: 0 12px; }
+  .custom-dropdown__panel {
+    padding: 8px;
+    border-radius: 12px; }
+  .custom-dropdown__list {
+    max-height: 240px; }
+  .custom-dropdown__option {
+    min-height: 40px;
+    padding: 0 10px; } }
+
+/* ==========================================================================
+   Card Work Page
+   ========================================================================== */
+/* Page
+   ========================================================================== */
+.card-work-page {
+  min-height: calc(100svh - 4rem);
+  padding: 1rem;
+  background: radial-gradient(circle at top left, rgba(13, 75, 141, 0.09), transparent 28rem), linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
+  color: #0f172a; }
+
+.card-work-shell {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  max-width: 64rem;
+  margin: 0 auto; }
+
+/* App container
+   ========================================================================== */
+.card-work-app {
+  display: grid;
+  gap: 0.9rem; }
+
+.card-work-empty,
+.card-work-loading {
+  display: grid;
+  place-items: center;
+  min-height: 16rem;
+  padding: 1.25rem;
+  border-radius: 1.15rem;
+  background: #ffffff;
+  box-shadow: 0 1rem 2.5rem rgba(15, 23, 42, 0.08), 0 0.25rem 0.8rem rgba(15, 23, 42, 0.04);
+  color: #64748b;
+  text-align: center; }
+
+.card-work-empty h2,
+.card-work-empty p,
+.card-work-loading p {
+  margin: 0; }
+
+.card-work-empty h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  color: #0f172a; }
+
+.card-work-empty p {
+  font-size: 0.96rem;
+  font-weight: 400;
+  line-height: 1.55;
+  margin-top: 0.45rem; }
+
+/* Summary
+   ========================================================================== */
+.card-work-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem 0.85rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 1.15rem;
+  background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.08), transparent 8rem), rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0.85rem 1.8rem rgba(15, 23, 42, 0.07), 0 0.2rem 0.55rem rgba(15, 23, 42, 0.045); }
+
+.card-work-summary__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  margin: 0;
+  color: #0f172a; }
+
+.card-work-summary__description {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.9rem;
+  margin: 0;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #0d4b8d;
+  white-space: nowrap; }
+
+.card-work-plan-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0; }
+
+.card-work-summary__actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  min-width: 0; }
+
+.card-work-filter-button {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.9rem;
+  padding: 0.35rem 0.72rem;
+  border: 1px solid rgba(13, 75, 141, 0.22);
+  border-radius: 999px;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.86);
+  color: #0d4b8d;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease, transform 0.08s ease; }
+
+.card-work-filter-button:hover {
+  border-color: rgba(13, 75, 141, 0.38);
+  background: #eff6ff;
+  box-shadow: 0 0.35rem 0.8rem rgba(15, 23, 42, 0.08); }
+
+.card-work-filter-button:active {
+  transform: translateY(1px); }
+
+.card-work-filter-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(13, 75, 141, 0.16); }
+
+/* Active card area
+   ========================================================================== */
+.card-work-active {
+  position: relative; }
+
+.card-work-side-pager {
+  pointer-events: none; }
+
+.card-work-side-pager__button {
+  pointer-events: auto;
+  position: absolute;
+  top: 50%;
+  z-index: 8;
+  display: inline-grid;
+  place-items: center;
+  width: 4.2rem;
+  height: 4.2rem;
+  border: 2px solid rgba(18, 84, 148, 0.34);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.9));
+  color: #15599a;
+  box-shadow: 0 1rem 2.2rem rgba(15, 23, 42, 0.14), 0 0.2rem 0.6rem rgba(15, 23, 42, 0.08);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease, transform 0.16s ease; }
+
+.card-work-side-pager__button::before {
+  content: '';
+  display: block;
+  width: 2.15rem;
+  height: 2.15rem;
+  background-color: currentColor;
+  mask: url("/static/img/arrow.svg") center/contain no-repeat;
+  -webkit-mask: url("/static/img/arrow.svg") center/contain no-repeat; }
+
+.card-work-side-pager__button--previous::before {
+  transform: rotate(180deg); }
+
+.card-work-side-pager__button--next::before {
+  transform: none; }
+
+.card-work-side-pager__button--previous {
+  left: -5.8rem; }
+
+.card-work-side-pager__button--next {
+  right: -5.8rem; }
+
+.card-work-side-pager__button:hover:not(:disabled) {
+  border-color: rgba(18, 84, 148, 0.56);
+  color: #0d4b8d;
+  box-shadow: 0 1.2rem 2.6rem rgba(15, 23, 42, 0.17), 0 0.25rem 0.7rem rgba(15, 23, 42, 0.1);
+  transform: translateY(-50%) scale(1.04); }
+
+.card-work-side-pager__button:disabled {
+  opacity: 0.24;
+  cursor: not-allowed; }
+
+/* Plan card
+   ========================================================================== */
+.card-work-plan-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: calc(100svh - 13.5rem);
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 1.15rem;
+  background: #ffffff;
+  box-shadow: 0 1rem 2.5rem rgba(15, 23, 42, 0.08), 0 0.25rem 0.8rem rgba(15, 23, 42, 0.04); }
+
+.card-work-plan-card__header {
+  --card-work-header-text-color: #ffffff;
+  --card-work-header-muted-color: rgba(255, 255, 255, 0.68);
+  --card-work-header-chip-bg: rgba(255, 255, 255, 0.14);
+  --card-work-header-chip-border: rgba(255, 255, 255, 0.18);
+  --card-work-header-status-bg: rgba(255, 255, 255, 0.18);
+  --card-work-header-status-border: rgba(255, 255, 255, 0.26);
+  --card-work-header-number-color: #ffffff;
+  display: grid;
+  gap: 0.63rem;
+  padding: 0.72rem 1rem;
+  background: linear-gradient(135deg, rgba(13, 75, 141, 0.96), rgba(8, 55, 99, 0.96));
+  color: var(--card-work-header-text-color); }
+
+.card-work-plan-card__equipment,
+.card-work-plan-card__title,
+.card-work-plan-card__number,
+.card-work-plan-card__meta,
+.card-work-plan-card__meta-item,
+.card-work-plan-card__meta-item dt,
+.card-work-plan-card__meta-item dd {
+  color: var(--card-work-header-text-color); }
+
+.card-work-plan-card__meta-item dt {
+  color: var(--card-work-header-muted-color); }
+
+.card-work-plan-card__meta-item dd {
+  color: var(--card-work-header-text-color); }
+
+.card-work-plan-card__header--daily {
+  --card-work-header-text-color: #422006;
+  --card-work-header-muted-color: rgba(92, 55, 0, 0.68);
+  --card-work-header-chip-bg: rgba(255, 251, 235, 0.58);
+  --card-work-header-chip-border: rgba(180, 83, 9, 0.18);
+  --card-work-header-status-bg: rgba(254, 243, 199, 0.78);
+  --card-work-header-status-border: rgba(180, 83, 9, 0.24);
+  --card-work-header-number-color: #78350f;
+  border-color: rgba(245, 158, 11, 0.72);
+  background: linear-gradient(135deg, #fff4c2 0%, #f8d77a 48%, #f3c452 100%);
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.22), 0 0.5rem 1.25rem rgba(146, 64, 14, 0.1); }
+
+.card-work-plan-card__header--stopped {
+  --card-work-header-text-color: #052e1b;
+  --card-work-header-muted-color: rgba(5, 46, 27, 0.72);
+  --card-work-header-chip-bg: rgba(240, 253, 244, 0.72);
+  --card-work-header-chip-border: rgba(22, 101, 52, 0.22);
+  --card-work-header-status-bg: rgba(220, 252, 231, 0.9);
+  --card-work-header-status-border: rgba(22, 101, 52, 0.32);
+  --card-work-header-number-color: #064e3b;
+  border-color: rgba(34, 197, 94, 0.72);
+  background: linear-gradient(135deg, #dcfce7 0%, #86efac 52%, #4ade80 100%);
+  box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.22), 0 0.5rem 1.25rem rgba(22, 101, 52, 0.1); }
+
+.card-work-plan-card__header-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0; }
+
+.card-work-plan-card__meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  justify-self: start;
+  gap: 0.35rem;
+  min-width: 0;
+  margin: 0; }
+
+.card-work-plan-card__meta-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.28rem;
+  min-width: 0;
+  padding: 0.18rem 0.48rem;
+  border: 1px solid var(--card-work-header-chip-border);
+  border-radius: 999px;
+  background: var(--card-work-header-chip-bg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18); }
+
+.card-work-plan-card__meta dt,
+.card-work-plan-card__meta dd {
+  margin: 0; }
+
+.card-work-plan-card__meta dt {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  color: var(--card-work-header-muted-color);
+  font-weight: 800;
+  white-space: nowrap; }
+
+.card-work-plan-card__meta dd {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.55;
+  margin: 0;
+  color: var(--card-work-header-text-color);
+  font-weight: 900;
+  white-space: nowrap; }
+
+.card-work-plan-card__number {
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.55;
+  justify-self: end;
+  color: var(--card-work-header-number-color);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap; }
+
+.card-work-plan-card__meta-item--status dd {
+  font-weight: 900; }
+
+.card-work-plan-card__equipment {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  flex: 0 0 auto;
+  max-width: 10rem;
+  margin: 0;
+  padding: 0.22rem 0.55rem;
+  border: 1px solid var(--card-work-header-chip-border);
+  border-radius: 999px;
+  background: var(--card-work-header-chip-bg);
+  color: var(--card-work-header-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; }
+
+.card-work-plan-card__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  min-width: 0;
+  margin: 0;
+  color: var(--card-work-header-text-color);
+  font-weight: 900;
+  line-height: 1.35;
+  overflow-wrap: anywhere; }
+
+/* Detail list
+   ========================================================================== */
+.card-work-plan-card__details {
+  display: grid;
+  align-content: start;
+  gap: 0.7rem;
+  min-height: 0;
+  padding: 0.85rem 1rem 1rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  scrollbar-gutter: stable; }
+  .card-work-plan-card__details::-webkit-scrollbar {
+    width: 0.55rem;
+    height: 0.55rem; }
+  .card-work-plan-card__details::-webkit-scrollbar-track {
+    background: transparent; }
+  .card-work-plan-card__details::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-color: transparent;
+    background-clip: content-box; }
+
+.card-work-safe-point {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1.35rem minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: center;
+  min-height: 2.65rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  border-radius: 0.65rem;
+  background: linear-gradient(180deg, rgba(240, 253, 244, 0.98), rgba(220, 252, 231, 0.92));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 0.25rem 0.65rem rgba(22, 101, 52, 0.08); }
+
+.card-work-safe-point__icon {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: #16a34a;
+  mask: url("/static/img/緑十字.svg") center/contain no-repeat;
+  -webkit-mask: url("/static/img/緑十字.svg") center/contain no-repeat; }
+
+.card-work-safe-point__value {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  min-width: 0;
+  margin: 0;
+  color: #0f172a;
+  font-weight: 800;
+  line-height: 1.45;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere; }
+
+.card-work-plan-card:hover .card-work-plan-card__details,
+.card-work-plan-card__details:hover,
+.card-work-plan-card__details:focus-within {
+  scrollbar-color: rgba(51, 65, 85, 0.68) transparent; }
+  .card-work-plan-card:hover .card-work-plan-card__details::-webkit-scrollbar-thumb,
+  .card-work-plan-card__details:hover::-webkit-scrollbar-thumb,
+  .card-work-plan-card__details:focus-within::-webkit-scrollbar-thumb {
+    background-color: rgba(51, 65, 85, 0.68); }
+  .card-work-plan-card:hover .card-work-plan-card__details::-webkit-scrollbar-thumb:hover,
+  .card-work-plan-card__details:hover::-webkit-scrollbar-thumb:hover,
+  .card-work-plan-card__details:focus-within::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(30, 41, 59, 0.78); }
+
+.card-work-plan-card__details-empty {
+  font-size: 0.96rem;
+  font-weight: 400;
+  line-height: 1.55;
+  margin: 0;
+  color: #64748b; }
+
+.card-work-plan-card__details .detail-card__emptyMessage {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  margin: 0;
+  color: #64748b; }
+
+.card-work-plan-card__details .detail-card__detailItems {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0; }
+
+.card-work-plan-card__details .detail-card__detailItem {
+  display: grid;
+  gap: 4px;
+  min-width: 0; }
+
+.card-work-plan-card__details .detail-card__detailItem:not(:last-child) {
+  padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(15, 23, 42, 0.1); }
+
+.card-work-plan-card__details .detail-card__detailItemDevice {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  padding: 4px 10px;
+  border: 1px solid #dbe7f5;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
+  color: #1e3a5f;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis; }
+
+.card-work-plan-card__details .detail-card__detailItemInfo {
+  display: grid;
+  gap: 0.38rem;
+  margin: 0.2rem 0 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 0.65rem;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.78), rgba(241, 245, 249, 0.64)); }
+
+.card-work-plan-card__details .detail-card__detailItemInfoRow {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: start;
+  min-width: 0; }
+
+.card-work-plan-card__details .detail-card__detailItemInfoLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.45rem;
+  margin: 0;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(13, 75, 141, 0.08);
+  color: #0d4b8d;
+  font-weight: 700;
+  white-space: nowrap; }
+
+.card-work-plan-card__details .detail-card__detailItemInfoValue {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  margin: 0;
+  color: #64748b;
+  line-height: 1.55;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere; }
+
+/* Navigation
+   ========================================================================== */
+.card-work-navigation {
+  position: sticky;
+  bottom: 0.6rem;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.55rem;
+  padding: 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 1.15rem;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1rem 2.5rem rgba(15, 23, 42, 0.08), 0 0.25rem 0.8rem rgba(15, 23, 42, 0.04);
+  backdrop-filter: blur(10px); }
+
+.card-work-navigation__button--input {
+  min-height: 3.35rem;
+  font-weight: 800; }
+
+.card-work-navigation__button {
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.55;
+  min-height: 3rem;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 0.9rem;
+  appearance: none;
+  background: #ffffff;
+  color: #0f172a;
+  cursor: pointer;
+  transition: background-color 0.14s ease, box-shadow 0.14s ease, transform 0.08s ease, opacity 0.14s ease; }
+
+.card-work-navigation__button:not(:disabled):hover {
+  background: #f8fafc;
+  box-shadow: 0 0.45rem 1rem rgba(15, 23, 42, 0.08); }
+
+.card-work-navigation__button:not(:disabled):active {
+  transform: translateY(1px); }
+
+.card-work-navigation__button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(13, 75, 141, 0.18); }
+
+.card-work-navigation__button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed; }
+
+.card-work-navigation__button--primary {
+  border-color: transparent;
+  background: linear-gradient(180deg, #0d4b8d, #083763);
+  color: #ffffff; }
+
+.card-work-navigation__button--primary:not(:disabled):hover {
+  background: linear-gradient(180deg, #1483cd, #0d4b8d); }
+
+/* Input panel
+   ========================================================================== */
+.card-work-active--input-open {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24rem;
+  align-items: start;
+  gap: 1rem; }
+
+.card-work-active--input-open .card-work-plan-card {
+  height: calc(100svh - 13.5rem); }
+
+.card-work-navigation--input-open {
+  position: sticky;
+  top: 1rem;
+  bottom: auto;
+  align-self: start;
+  height: calc(100svh - 13.5rem);
+  max-height: none;
+  overflow: hidden; }
+
+.card-work-input-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  height: 100%;
+  min-height: 0;
+  min-width: 0; }
+
+.card-work-input-panel__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin: -0.65rem -0.65rem 0;
+  padding: 0.85rem 0.9rem 0.85rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 1.15rem 1.15rem 0 0;
+  background: linear-gradient(135deg, rgba(13, 75, 141, 0.96), rgba(8, 55, 99, 0.96));
+  color: #ffffff; }
+
+.card-work-input-panel__close-button {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 0;
+  line-height: 0;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background-color 0.14s ease, border-color 0.14s ease, transform 0.08s ease, opacity 0.14s ease; }
+
+.card-work-input-panel__close-button::before,
+.card-work-input-panel__close-button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1rem;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform-origin: center; }
+
+.card-work-input-panel__close-button::before {
+  transform: translate(-50%, -50%) rotate(45deg); }
+
+.card-work-input-panel__close-button::after {
+  transform: translate(-50%, -50%) rotate(-45deg); }
+
+.card-work-input-panel__close-button:hover {
+  border-color: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.22); }
+
+.card-work-input-panel__close-button:active {
+  transform: translateY(1px); }
+
+.card-work-input-panel__close-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.22); }
+
+.card-work-input-panel__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  margin: 0;
+  color: #ffffff;
+  line-height: 1.25; }
+
+.card-work-input-panel__body {
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 0.05rem; }
+
+.card-work-input-panel__form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.25rem;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  scrollbar-gutter: stable; }
+  .card-work-input-panel__form::-webkit-scrollbar {
+    width: 0.55rem;
+    height: 0.55rem; }
+  .card-work-input-panel__form::-webkit-scrollbar-track {
+    background: transparent; }
+  .card-work-input-panel__form::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-color: transparent;
+    background-clip: content-box; }
+
+.card-work-input-panel:hover .card-work-input-panel__form,
+.card-work-input-panel__form:hover,
+.card-work-input-panel__form:focus-within {
+  scrollbar-color: rgba(51, 65, 85, 0.68) transparent; }
+  .card-work-input-panel:hover .card-work-input-panel__form::-webkit-scrollbar-thumb,
+  .card-work-input-panel__form:hover::-webkit-scrollbar-thumb,
+  .card-work-input-panel__form:focus-within::-webkit-scrollbar-thumb {
+    background-color: rgba(51, 65, 85, 0.68); }
+  .card-work-input-panel:hover .card-work-input-panel__form::-webkit-scrollbar-thumb:hover,
+  .card-work-input-panel__form:hover::-webkit-scrollbar-thumb:hover,
+  .card-work-input-panel__form:focus-within::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(30, 41, 59, 0.78); }
+
+.card-work-input-panel__field {
+  display: grid;
+  gap: 0.32rem;
+  min-width: 0; }
+
+.card-work-input-panel__label {
+  color: #64748b;
+  font-weight: 800; }
+
+.card-work-input-panel .ui-field {
+  display: grid;
+  gap: 0.32rem;
+  width: 100%;
+  min-width: 0; }
+
+.card-work-input-panel .ui-input,
+.card-work-input-panel .custom-dropdown,
+.card-work-input-panel .custom-dropdown__trigger {
+  width: 100%;
+  min-width: 0; }
+
+.card-work-input-panel__textarea {
+  display: block;
+  width: 100%;
+  min-height: 5rem;
+  height: auto;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+  line-height: 1.55;
+  resize: vertical; }
+
+.card-work-input-panel__field--comment .card-work-input-panel__textarea {
+  min-height: 3.75rem; }
+
+.card-work-result-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  width: 100%; }
+
+.card-work-result-options__button {
+  min-height: 2.85rem;
+  width: 100%;
+  border-radius: 0.9rem;
+  font-weight: 800; }
+
+.card-work-result-options__button[data-option-value='OK'] {
+  border-color: rgba(21, 128, 61, 0.26);
+  color: #166534; }
+
+.card-work-result-options__button[data-option-value='OK']:hover:not(:disabled):not(.is-disabled) {
+  border-color: rgba(34, 197, 94, 0.48);
+  background: #ecfdf3; }
+
+.card-work-result-options__button[data-option-value='OK'].is-selected,
+.card-work-result-options__button[data-option-value='OK'][aria-checked='true'] {
+  border-color: #22c55e;
+  background: linear-gradient(180deg, rgba(236, 253, 243, 0.98), rgba(220, 252, 231, 0.94));
+  color: #166534;
+  box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.16), 0 0.55rem 1.15rem rgba(21, 128, 61, 0.12); }
+
+.card-work-result-options__button[data-option-value='NG'] {
+  border-color: rgba(220, 38, 38, 0.24);
+  color: #991b1b; }
+
+.card-work-result-options__button[data-option-value='NG']:hover:not(:disabled):not(.is-disabled) {
+  border-color: rgba(239, 68, 68, 0.48);
+  background: #fef2f2; }
+
+.card-work-result-options__button[data-option-value='NG'].is-selected,
+.card-work-result-options__button[data-option-value='NG'][aria-checked='true'] {
+  border-color: #ef4444;
+  background: linear-gradient(180deg, rgba(254, 242, 242, 0.98), rgba(254, 226, 226, 0.94));
+  color: #991b1b;
+  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.16), 0 0.55rem 1.15rem rgba(220, 38, 38, 0.12); }
+
+.card-work-input-panel__man-hours-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  column-gap: 0.45rem; }
+
+.card-work-input-panel__man-hours-field .ui-field__label {
+  grid-column: 1 / -1; }
+
+.card-work-input-panel__number {
+  min-width: 0;
+  font-variant-numeric: tabular-nums; }
+
+.card-work-input-panel__unit {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.55;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.6rem;
+  color: #64748b;
+  font-weight: 800;
+  white-space: nowrap; }
+
+.card-work-input-panel__actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(255, 255, 255, 0.96); }
+
+.card-work-input-panel__submit {
+  min-height: 3rem;
+  border-radius: 0.9rem;
+  font-weight: 900; }
+
+.card-work-active--input-open .card-work-side-pager {
+  display: none; }
+
+.card-work-navigation--input-open {
+  overflow: hidden;
+  isolation: isolate; }
+
+.card-work-navigation--input-open .card-work-input-panel__practitioner-dropdown {
+  position: static; }
+
+.card-work-navigation--input-open .card-work-input-panel__practitioner-dropdown .custom-dropdown__panel:not([hidden]) {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  width: auto;
+  max-width: none;
+  max-height: none;
+  min-height: 0;
+  padding: 0;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 1.15rem;
+  background: #ffffff;
+  box-shadow: 0 1rem 2.5rem rgba(15, 23, 42, 0.08), 0 0.25rem 0.8rem rgba(15, 23, 42, 0.04);
+  overflow: hidden; }
+
+.card-work-navigation--input-open .card-work-input-panel__practitioner-dropdown .custom-dropdown__list {
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.55rem;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  scrollbar-gutter: stable; }
+  .card-work-navigation--input-open .card-work-input-panel__practitioner-dropdown .custom-dropdown__list::-webkit-scrollbar {
+    width: 0.55rem;
+    height: 0.55rem; }
+  .card-work-navigation--input-open .card-work-input-panel__practitioner-dropdown .custom-dropdown__list::-webkit-scrollbar-track {
+    background: transparent; }
+  .card-work-navigation--input-open .card-work-input-panel__practitioner-dropdown .custom-dropdown__list::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-color: transparent;
+    background-clip: content-box; }
+
+.card-work-navigation--input-open
+.card-work-input-panel__practitioner-dropdown
+.custom-dropdown__panel:hover
+.custom-dropdown__list,
+.card-work-navigation--input-open
+.card-work-input-panel__practitioner-dropdown
+.custom-dropdown__list:hover,
+.card-work-navigation--input-open
+.card-work-input-panel__practitioner-dropdown
+.custom-dropdown__list:focus-within {
+  scrollbar-color: rgba(51, 65, 85, 0.68) transparent; }
+  .card-work-navigation--input-open
+.card-work-input-panel__practitioner-dropdown
+.custom-dropdown__panel:hover
+.custom-dropdown__list::-webkit-scrollbar-thumb,
+  .card-work-navigation--input-open
+.card-work-input-panel__practitioner-dropdown
+.custom-dropdown__list:hover::-webkit-scrollbar-thumb,
+  .card-work-navigation--input-open
+.card-work-input-panel__practitioner-dropdown
+.custom-dropdown__list:focus-within::-webkit-scrollbar-thumb {
+    background-color: rgba(51, 65, 85, 0.68); }
+  .card-work-navigation--input-open
+.card-work-input-panel__practitioner-dropdown
+.custom-dropdown__panel:hover
+.custom-dropdown__list::-webkit-scrollbar-thumb:hover,
+  .card-work-navigation--input-open
+.card-work-input-panel__practitioner-dropdown
+.custom-dropdown__list:hover::-webkit-scrollbar-thumb:hover,
+  .card-work-navigation--input-open
+.card-work-input-panel__practitioner-dropdown
+.custom-dropdown__list:focus-within::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(30, 41, 59, 0.78); }
+
+.card-work-practitioner-dropdown__footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0.55rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  background: #ffffff; }
+
+.card-work-practitioner-dropdown__confirm {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.55;
+  min-height: 2.65rem;
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+  appearance: none;
+  background: linear-gradient(180deg, #0d4b8d, #083763);
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+  transition: box-shadow 0.14s ease, transform 0.08s ease; }
+
+.card-work-practitioner-dropdown__confirm:hover {
+  box-shadow: 0 0.45rem 1rem rgba(15, 23, 42, 0.1); }
+
+.card-work-practitioner-dropdown__confirm:active {
+  transform: translateY(1px); }
+
+.card-work-practitioner-dropdown__confirm:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(13, 75, 141, 0.18); }
+
+.card-work-input-panel__field--implementation-datetime {
+  min-width: 0; }
+
+.card-work-input-panel__field--implementation-datetime .ui-fieldGroup {
+  width: 100%;
+  min-width: 0; }
+
+.card-work-input-panel__field--implementation-datetime .ui-fieldGroup__label {
+  color: #64748b;
+  font-weight: 800; }
+
+.card-work-input-panel__datetime {
+  width: 100%; }
+
+.card-work-input-panel__field.is-invalid .ui-input,
+.card-work-input-panel__field.is-invalid .custom-dropdown__trigger {
+  border-color: rgba(220, 38, 38, 0.58);
+  background: #fffafa;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1); }
+
+.card-work-input-panel__field.is-invalid .card-work-result-options__button {
+  border-color: rgba(220, 38, 38, 0.34); }
+
+.card-work-input-panel__error {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  margin: 0.1rem 0 0;
+  color: #991b1b;
+  font-weight: 800;
+  line-height: 1.45; }
+
+.card-work-input-panel .ui-input::placeholder,
+.card-work-input-panel textarea::placeholder {
+  color: rgba(100, 116, 139, 0.48);
+  font-weight: 500;
+  opacity: 1; }
+
+.card-work-input-panel .ui-input:focus::placeholder,
+.card-work-input-panel textarea:focus::placeholder {
+  color: rgba(100, 116, 139, 0.62); }
+
+.card-work-input-panel .custom-dropdown__triggerText.is-placeholder {
+  color: rgba(100, 116, 139, 0.48);
+  font-weight: 500; }
+
+.card-work-input-panel .custom-dropdown__trigger:focus-visible .custom-dropdown__triggerText.is-placeholder {
+  color: rgba(100, 116, 139, 0.62); }
+
+.card-work-input-panel .custom-dropdown__triggerIcon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1.05rem;
+  height: 1.05rem;
+  color: currentColor;
+  font-size: 0;
+  line-height: 0; }
+
+.card-work-input-panel .custom-dropdown__triggerIcon::before {
+  content: '';
+  display: block;
+  width: 0.82rem;
+  height: 0.82rem;
+  background-color: currentColor;
+  mask: url("/static/img/arrow.svg") center/contain no-repeat;
+  -webkit-mask: url("/static/img/arrow.svg") center/contain no-repeat;
+  transform: rotate(90deg);
+  transition: transform 0.16s ease; }
+
+.card-work-input-panel .custom-dropdown[data-state='open'] .custom-dropdown__triggerIcon::before {
+  transform: rotate(-90deg); }
+
+.card-work-empty--filtered {
+  align-content: center;
+  gap: 0.65rem; }
+
+.card-work-empty__actions {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.35rem; }
+
+.card-work-empty__button {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.55;
+  min-height: 2.75rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 0.9rem;
+  appearance: none;
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.14s ease, box-shadow 0.14s ease, transform 0.08s ease; }
+
+.card-work-empty__button:hover {
+  background: #f8fafc;
+  box-shadow: 0 0.45rem 1rem rgba(15, 23, 42, 0.08); }
+
+.card-work-empty__button:active {
+  transform: translateY(1px); }
+
+.card-work-empty__button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(13, 75, 141, 0.18); }
+
+.card-work-empty__button--primary {
+  border-color: transparent;
+  background: linear-gradient(180deg, #0d4b8d, #083763);
+  color: #ffffff; }
+
+.card-work-empty__button--primary:hover {
+  background: linear-gradient(180deg, #1483cd, #0d4b8d); }
+
+/* Filter panel
+   ========================================================================== */
+.card-work-filter-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.34);
+  backdrop-filter: blur(4px); }
+
+.card-work-filter-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: 100%;
+  max-width: 28rem;
+  max-height: calc(100svh - 2rem);
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 1.15rem;
+  background: #ffffff;
+  box-shadow: 0 1.5rem 3.5rem rgba(15, 23, 42, 0.24), 0 0.35rem 1rem rgba(15, 23, 42, 0.1); }
+
+.card-work-filter-panel__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.95rem 1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  background: linear-gradient(135deg, rgba(13, 75, 141, 0.96), rgba(8, 55, 99, 0.96));
+  color: #ffffff; }
+
+.card-work-filter-panel__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  margin: 0;
+  color: #ffffff; }
+
+.card-work-filter-panel__close {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 0;
+  line-height: 0;
+  cursor: pointer; }
+
+.card-work-filter-panel__close::before,
+.card-work-filter-panel__close::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1rem;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform-origin: center; }
+
+.card-work-filter-panel__close::before {
+  transform: translate(-50%, -50%) rotate(45deg); }
+
+.card-work-filter-panel__close::after {
+  transform: translate(-50%, -50%) rotate(-45deg); }
+
+.card-work-filter-panel__body {
+  display: grid;
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: 1.2rem;
+  min-height: 0;
+  padding: 1.15rem 1rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  scrollbar-gutter: stable; }
+  .card-work-filter-panel__body::-webkit-scrollbar {
+    width: 0.55rem;
+    height: 0.55rem; }
+  .card-work-filter-panel__body::-webkit-scrollbar-track {
+    background: transparent; }
+  .card-work-filter-panel__body::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-color: transparent;
+    background-clip: content-box; }
+
+.card-work-filter-panel:hover .card-work-filter-panel__body,
+.card-work-filter-panel__body:hover,
+.card-work-filter-panel__body:focus-within {
+  scrollbar-color: rgba(51, 65, 85, 0.68) transparent; }
+  .card-work-filter-panel:hover .card-work-filter-panel__body::-webkit-scrollbar-thumb,
+  .card-work-filter-panel__body:hover::-webkit-scrollbar-thumb,
+  .card-work-filter-panel__body:focus-within::-webkit-scrollbar-thumb {
+    background-color: rgba(51, 65, 85, 0.68); }
+  .card-work-filter-panel:hover .card-work-filter-panel__body::-webkit-scrollbar-thumb:hover,
+  .card-work-filter-panel__body:hover::-webkit-scrollbar-thumb:hover,
+  .card-work-filter-panel__body:focus-within::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(30, 41, 59, 0.78); }
+
+.card-work-filter-panel__field {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+  min-width: 0; }
+
+.card-work-filter-panel__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  color: #64748b;
+  font-weight: 800; }
+
+.card-work-filter-panel__select {
+  width: 100%;
+  min-width: 0; }
+
+.card-work-filter-panel__actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.55rem;
+  padding: 0.85rem 1rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(248, 250, 252, 0.92); }
+
+.card-work-filter-panel__button {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.55;
+  min-height: 2.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 0.9rem;
+  appearance: none;
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 800;
+  cursor: pointer; }
+
+.card-work-filter-panel__button--primary {
+  border-color: transparent;
+  background: linear-gradient(180deg, #0d4b8d, #083763);
+  color: #ffffff; }
+
+.card-work-filter-panel__button--secondary:hover {
+  background: #f8fafc; }
+
+.card-work-filter-panel__button--primary:hover {
+  background: linear-gradient(180deg, #1483cd, #0d4b8d); }
+
+.card-work-filter-dropdown,
+.card-work-filter-dropdown .custom-dropdown__trigger {
+  width: 100%;
+  min-width: 0; }
+
+.card-work-filter-dropdown .custom-dropdown__trigger {
+  min-height: 2.75rem; }
+
+.card-work-filter-dropdown .custom-dropdown__panel {
+  z-index: 95; }
+
+/* Mobile
+   ========================================================================== */
+@media (max-width: 640px) {
+  .card-work-page {
+    min-height: 100svh;
+    padding: 0.5rem; }
+  .card-work-shell {
+    gap: 0.55rem; }
+  .card-work-app {
+    gap: 0.55rem; }
+  .card-work-summary {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.45rem;
+    padding: 0.72rem 0.78rem;
+    border-radius: 0.95rem;
+    box-shadow: 0 0.45rem 1rem rgba(15, 23, 42, 0.045); }
+  .card-work-summary__title {
+    line-height: 1.35; }
+  .card-work-summary__description {
+    min-height: 1.7rem;
+    padding: 0.25rem 0.55rem; }
+  .card-work-active {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 0.55rem;
+    height: calc(100svh - 8.3rem);
+    min-height: 0;
+    touch-action: pan-y; }
+  .card-work-side-pager {
+    display: none; }
+  .card-work-plan-card {
+    height: auto;
+    min-height: 0;
+    border-radius: 1rem;
+    box-shadow: 0 0.65rem 1.4rem rgba(15, 23, 42, 0.07), 0 0.15rem 0.45rem rgba(15, 23, 42, 0.04); }
+  .card-work-plan-card,
+  .card-work-plan-card__details {
+    touch-action: pan-y; }
+  .card-work-safe-point {
+    top: 0;
+    grid-template-columns: 1.25rem minmax(0, 1fr);
+    gap: 0.5rem;
+    min-height: 2.55rem;
+    padding: 0.5rem 0.62rem; }
+  .card-work-safe-point__icon {
+    width: 1.18rem;
+    height: 1.18rem; }
+  .card-work-plan-card__header-top {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.55rem; }
+  .card-work-plan-card__title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    overflow: hidden; }
+  .card-work-plan-card__number {
+    justify-self: end;
+    text-align: right;
+    white-space: nowrap; }
+  .card-work-plan-card__meta {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.05rem 0 0.18rem;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none; }
+  .card-work-plan-card__meta::-webkit-scrollbar {
+    display: none; }
+  .card-work-plan-card__meta-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.28rem;
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 0.18rem 0.48rem;
+    border: 1px solid var(--card-work-header-chip-border);
+    border-radius: 999px;
+    background: var(--card-work-header-chip-bg);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    scroll-snap-align: start;
+    white-space: nowrap; }
+  .card-work-plan-card__meta dt,
+  .card-work-plan-card__meta dd {
+    white-space: nowrap; }
+  .card-work-plan-card__meta dt {
+    font-size: 0.68rem; }
+  .card-work-plan-card__meta dd {
+    font-size: 0.78rem; }
+  .card-work-plan-card__equipment {
+    flex: 0 1 auto;
+    max-width: 34%;
+    padding: 0.18rem 0.46rem; }
+  .card-work-plan-card__title {
+    flex: 1 1 auto;
+    min-width: 0;
+    line-height: 1.32;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    overflow-wrap: normal;
+    word-break: keep-all; }
+  .card-work-plan-card__details {
+    padding: 0.72rem 0.78rem 1.25rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; }
+  .card-work-plan-card__details .detail-card__detailItems {
+    gap: 0.65rem; }
+  .card-work-plan-card__details .detail-card__detailItem {
+    gap: 0.35rem; }
+  .card-work-plan-card__details .detail-card__detailItem:not(:last-child) {
+    padding-bottom: 0.65rem; }
+  .card-work-plan-card__details .detail-card__detailItemDevice {
+    max-width: 100%;
+    padding: 0.22rem 0.55rem;
+    border-radius: 0.65rem; }
+  .card-work-plan-card__details .detail-card__detailItemInfo {
+    gap: 0.32rem;
+    margin-top: 0.15rem;
+    padding: 0.55rem;
+    border-radius: 0.65rem; }
+  .card-work-plan-card__details .detail-card__detailItemInfoRow {
+    grid-template-columns: 2.7rem minmax(0, 1fr);
+    gap: 0.45rem; }
+  .card-work-plan-card__details .detail-card__detailItemInfoLabel {
+    min-height: 1.35rem;
+    padding: 0.12rem 0.38rem; }
+  .card-work-plan-card__details .detail-card__detailItemInfoValue {
+    line-height: 1.5; }
+  .card-work-navigation {
+    bottom: 0.4rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.45rem;
+    padding: 0.45rem;
+    border-radius: 0.95rem;
+    box-shadow: 0 0.65rem 1.4rem rgba(15, 23, 42, 0.12), 0 0.15rem 0.45rem rgba(15, 23, 42, 0.06); }
+  .card-work-navigation__button--input {
+    min-height: 3.1rem; }
+  .card-work-navigation__button {
+    min-height: 2.75rem;
+    border-radius: 0.78rem; }
+  .card-work-input-panel {
+    gap: 0.6rem; }
+  .card-work-input-panel__form {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.6rem; }
+  .card-work-input-panel__field,
+  .card-work-input-panel__field--content,
+  .card-work-input-panel__field--comment,
+  .card-work-input-panel__field--practitioner,
+  .card-work-input-panel__field--man-hours {
+    grid-column: 1 / -1; }
+  .card-work-input-panel__textarea {
+    min-height: 4.75rem; }
+  .card-work-input-panel__field--comment .card-work-input-panel__textarea {
+    min-height: 3.75rem; }
+  .card-work-input-panel__submit {
+    min-height: 3rem; }
+  .card-work-active--input-open {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    height: calc(100svh - 8.3rem);
+    min-height: 0; }
+  .card-work-active--input-open .card-work-plan-card {
+    height: 100%;
+    min-height: 0; }
+  .card-work-navigation--input-open {
+    position: fixed;
+    top: calc(4rem + 0.5rem);
+    right: 0.5rem;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    z-index: 40;
+    display: grid;
+    height: auto;
+    max-height: none;
+    min-height: 0;
+    margin: 0;
+    padding: 0.45rem;
+    border-radius: 1rem;
+    overflow: hidden; }
+  .card-work-navigation--input-open .card-work-input-panel {
+    height: 100%;
+    max-height: none;
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr) auto; }
+  .card-work-navigation--input-open .card-work-input-panel__header {
+    margin: -0.45rem -0.45rem 0;
+    border-radius: 1rem 1rem 0 0; }
+  .card-work-navigation--input-open .card-work-input-panel__body {
+    min-height: 0;
+    overflow: hidden; }
+  .card-work-navigation--input-open .card-work-input-panel__form {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto; }
+  .card-work-input-panel__form {
+    gap: 0.6rem; }
+  .card-work-input-panel__textarea {
+    min-height: 4.25rem; }
+  .card-work-input-panel__field--comment .card-work-input-panel__textarea {
+    min-height: 3.5rem; }
+  .card-work-input-panel__submit {
+    min-height: 3rem; }
+  .card-work-navigation--input-open .card-work-input-panel__practitioner-dropdown .custom-dropdown__panel:not([hidden]) {
+    border-radius: 1rem; }
+  .card-work-navigation--input-open .card-work-input-panel__practitioner-dropdown .custom-dropdown__list {
+    padding: 0.45rem; }
+  .card-work-summary__actions {
+    gap: 0.38rem; }
+  .card-work-filter-button {
+    min-height: 1.7rem;
+    padding: 0.25rem 0.55rem; }
+  .card-work-filter-backdrop {
+    inset: auto;
+    top: calc(4rem + 0.5rem);
+    right: 0.5rem;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    display: grid;
+    align-items: stretch;
+    padding: 0; }
+  .card-work-filter-panel {
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    height: 100%;
+    border-radius: 1rem; }
+  .card-work-filter-panel__header {
+    padding: 0.85rem 0.9rem; }
+  .card-work-filter-panel__body {
+    padding: 0.85rem; }
+  .card-work-filter-panel__actions {
+    padding: 0.75rem 0.85rem; }
+  .card-work-filter-panel__body {
+    grid-auto-rows: max-content;
+    align-content: start;
+    gap: 1.05rem;
+    padding: 1rem 0.85rem; }
+  .card-work-filter-panel__field {
+    gap: 0.48rem; }
+  .card-work-empty__actions {
+    padding: 0 0.25rem; }
+  .card-work-empty__button {
+    width: 100%;
+    min-height: 3rem; } }
+
+/*# sourceMappingURL=card_work.css.map */

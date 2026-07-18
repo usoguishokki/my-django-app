@@ -16,6 +16,28 @@ from myapp.presenters.inspection_standard_history import (
     present_inspection_standard_history_detail,
 )
 
+
+from myapp.domain.inspection_standard_history_approval_policy import (
+    is_inspection_standard_history_approved,
+)
+
+
+from myapp.selectors.inspection_standard_history import (
+    select_inspection_standard_history_for_update_by_id,
+)
+
+
+from myapp.domain.inspection_standard_history_actor_policy import (
+    get_inspection_standard_history_actor_member_id,
+    get_inspection_standard_history_actor_name,
+)
+
+
+from myapp.domain.inspection_standard_history_cancellation_policy import (
+    is_inspection_standard_history_cancelled,
+)
+
+
 @dataclass(frozen=True)
 class ApprovalRoleConfig:
     role: str
@@ -108,23 +130,12 @@ def get_approval_role_config(approval_role: str) -> ApprovalRoleConfig:
     return role_config
 
 
-"""
-def get_history_for_approval(*, history_id: int) -> InspectionStandardHistory:
-    history = (
-        InspectionStandardHistory.objects
-        .select_for_update()
-        .select_related(
-            'inspection_check',
-            'control',
-            'operated_by',
-            'leader_approved_by',
-            'foreman_approved_by',
-        )
-        .prefetch_related(
-            'targets__field_changes',
-        )
-        .filter(id=history_id)
-        .first()
+def get_history_for_approval(
+    *,
+    history_id: int,
+) -> InspectionStandardHistory:
+    history = select_inspection_standard_history_for_update_by_id(
+        history_id=history_id,
     )
 
     if history is None:
@@ -133,20 +144,6 @@ def get_history_for_approval(*, history_id: int) -> InspectionStandardHistory:
         )
 
     return history
-"""
-
-def get_history_for_approval(*, history_id: int) -> InspectionStandardHistory:
-    try:
-        return (
-            InspectionStandardHistory.objects
-            .select_for_update()
-            .get(id=history_id)
-        )
-
-    except InspectionStandardHistory.DoesNotExist:
-        raise InspectionStandardNotFound(
-            detail='承認対象の履歴が見つかりません。'
-        )
 
 def validate_approver_job_title(
     *,
@@ -159,6 +156,35 @@ def validate_approver_job_title(
         raise InspectionStandardError(
             f'{role_config.label}は{role_config.required_job_title}のみ実行できます。'
         )
+        
+        
+def validate_approval_state(
+    *,
+    history: InspectionStandardHistory,
+    role_config: ApprovalRoleConfig,
+) -> None:
+    if is_inspection_standard_history_cancelled(history):
+        raise InspectionStandardError(
+            '取り消し済みの変更履歴は承認できません。'
+        )
+
+    if is_inspection_standard_history_approved(
+        history,
+        field_prefix=role_config.field_prefix,
+    ):
+        raise InspectionStandardError(
+            f'{role_config.label}はすでに完了しています。'
+        )
+
+    if role_config.prerequisite_field_prefix:
+        if not is_inspection_standard_history_approved(
+            history,
+            field_prefix=role_config.prerequisite_field_prefix,
+        ):
+            raise InspectionStandardError(
+                f'{role_config.prerequisite_label}が完了していないため、'
+                f'{role_config.label}はできません。'
+            )
 
 
 def validate_approval_state(
@@ -166,13 +192,16 @@ def validate_approval_state(
     history: InspectionStandardHistory,
     role_config: ApprovalRoleConfig,
 ) -> None:
-    if is_approved(history, field_prefix=role_config.field_prefix):
+    if is_inspection_standard_history_approved(
+        history,
+        field_prefix=role_config.field_prefix,
+    ):
         raise InspectionStandardError(
             f'{role_config.label}はすでに完了しています。'
         )
 
     if role_config.prerequisite_field_prefix:
-        if not is_approved(
+        if not is_inspection_standard_history_approved(
             history,
             field_prefix=role_config.prerequisite_field_prefix,
         ):
@@ -190,8 +219,12 @@ def apply_approval(
 ) -> None:
     field_prefix = role_config.field_prefix
     approved_at = timezone.now()
-    approved_by_member_id = get_user_member_id(approved_by)
-    approved_by_name = get_user_name(approved_by)
+    approved_by_member_id = (
+        get_inspection_standard_history_actor_member_id(approved_by)
+    )
+    approved_by_name = (
+        get_inspection_standard_history_actor_name(approved_by)
+    )
 
     setattr(history, f'{field_prefix}_approved_by', approved_by)
     setattr(
@@ -216,22 +249,6 @@ def apply_approval(
     )
 
 
-def is_approved(
-    history: InspectionStandardHistory,
-    *,
-    field_prefix: str,
-) -> bool:
-    approved_at = getattr(history, f'{field_prefix}_approved_at', None)
-    approved_by_id = getattr(history, f'{field_prefix}_approved_by_id', None)
-    approved_by_name = getattr(
-        history,
-        f'{field_prefix}_approved_by_name_snapshot',
-        '',
-    )
-
-    return bool(approved_at or approved_by_id or approved_by_name)
-
-
 def get_user_job_title(user) -> str:
     try:
         profile = getattr(user, 'profile', None)
@@ -239,24 +256,3 @@ def get_user_job_title(user) -> str:
         return ''
 
     return str(getattr(profile, 'job_title', '') or '').strip()
-
-
-def get_user_member_id(user) -> str:
-    return str(getattr(user, 'member_id', '') or '').strip()
-
-
-def get_user_name(user) -> str:
-    full_name = ''
-
-    if hasattr(user, 'get_full_name'):
-        full_name = str(user.get_full_name() or '').strip()
-
-    if full_name:
-        return full_name
-
-    name = str(getattr(user, 'name', '') or '').strip()
-
-    if name:
-        return name
-
-    return str(user or '').strip()

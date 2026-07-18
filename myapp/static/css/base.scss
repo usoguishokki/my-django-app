@@ -361,7 +361,7 @@ html {
     width: 100%;
     display: grid;
     visibility: hidden;
-    grid-template-columns: 0.5fr 80fr 0.5fr;
+    grid-template-columns: 0fr 100fr 0fr;
     grid-template-rows: 8vh 92vh;
     grid-template-areas:
     "header header header"
@@ -376,7 +376,6 @@ html {
     height: 100%;
     overflow: hidden;
     position: relative;
-    padding: 10px 0px 10px 0px;
 }
 
 

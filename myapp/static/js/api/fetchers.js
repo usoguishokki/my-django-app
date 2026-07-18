@@ -317,6 +317,42 @@ export function executeInspectionStandardHistoryApproval(p = {}) {
 }
 
 
+export function executeInspectionStandardHistoryNoteUpdate(p = {}) {
+    const historyId = p.historyId;
+    const note = String(p.note ?? '').trim();
+
+    if (!historyId) {
+        throw new Error('historyId is required');
+    }
+
+    if (!note) {
+        throw new Error('note is required');
+    }
+
+    return asynchronousCommunication({
+        url: `/api/inspection-standards/history/${encodeURIComponent(String(historyId))}/note/update/`,
+        method: 'POST',
+        data: {
+            note,
+        },
+    });
+}
+
+export function executeInspectionStandardHistoryCancellation(p = {}) {
+    const historyId = p.historyId;
+
+    if (!historyId) {
+        throw new Error('historyId is required');
+    }
+
+    return asynchronousCommunication({
+        url: `/api/inspection-standards/history/${encodeURIComponent(String(historyId))}/cancel/`,
+        method: 'POST',
+        data: {},
+    });
+}
+
+
 export function fetchInspectionStandardCommonItemsPlanPreview(p = {}) {
     const {
       checkId,
@@ -803,5 +839,59 @@ export function executeBulkRegistration(p = {}) {
             member,
             mode,
         },
+    });
+}
+
+
+export function fetchHomeOverallProgress() {
+    return asynchronousCommunication({
+        url: '/api/home-dashboard/overall/',
+        method: 'GET',
+    });
+}
+
+export function fetchHomeMyTeamProgress() {
+    return asynchronousCommunication({
+        url: '/api/home-dashboard/my-team/',
+        method: 'GET',
+    });
+}
+
+export function fetchHomeMyTasks() {
+    return asynchronousCommunication({
+        url: '/api/home-dashboard/my-tasks/',
+        method: 'GET',
+    });
+}
+
+export function fetchHomeMyTeamDayDetail(p = {}) {
+    const params = new URLSearchParams();
+
+    if (p.date) {
+        params.set('date', p.date);
+    }
+
+    if (p.statusKey) {
+        params.set('statusKey', p.statusKey);
+    }
+
+    return asynchronousCommunication({
+        url: `/api/home-dashboard/my-team/day-detail/?${params.toString()}`,
+        method: 'GET',
+    });
+}
+
+export function fetchHomeAssignMemberOptions() {
+    return asynchronousCommunication({
+        url: '/api/home/assign-member-options/',
+        method: 'GET',
+    });
+}
+
+export function executeCardWorkResultRegister(payload = {}) {
+    return asynchronousCommunication({
+        url: '/api/card-work/results/register/',
+        method: 'POST',
+        data: payload,
     });
 }

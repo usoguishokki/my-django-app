@@ -10,6 +10,7 @@ import {
   canSpecifyWeekOfMonth,
   getAnchorMonthValuesByRule,
   isDailyScheduleRule,
+  isOneYearScheduleRule,
   isYearlyScheduleRule,
   resolveFixedBiweeklyWeekOfMonthValue,
   shouldExcludeHolidayShiftPatternByRule,
@@ -47,6 +48,12 @@ const WEEK_OF_MONTH_FIELD_KEY = 'weekOfMonth';
 
 const ANCHOR_YEAR_ENABLED_PLACEHOLDER = '例: 2026';
 
+
+export const INSPECTION_STANDARD_COMMON_ITEM_FORM_MODE = Object.freeze({
+  EDIT: 'edit',
+  CREATE: 'create',
+});
+
 const DISABLED_DAY_OF_WEEK_ITEMS = Object.freeze([
   {
     value: '',
@@ -75,20 +82,38 @@ const DISABLED_ANCHOR_MONTH_ITEMS = Object.freeze([
   },
 ]);
 
+
 export function initializeInspectionStandardCommonItemDropdowns({
   rootEl,
   vm,
+  mode = INSPECTION_STANDARD_COMMON_ITEM_FORM_MODE.EDIT,
 } = {}) {
   if (!rootEl) return;
 
   const optionsByFieldKey = buildOptionsByFieldKey(vm?.options ?? {});
   const dropdownsByFieldKey = {};
 
+  const originalAnchorYear = String(
+    vm?.values?.anchorYear ?? ''
+  ).trim();
+
+  const syncDependentFields = () => {
+    syncRuleDependentDropdowns({
+      rootEl,
+      dropdownsByFieldKey,
+      optionsByFieldKey,
+      mode,
+      originalAnchorYear,
+    });
+  };
+
   rootEl
     .querySelectorAll(`[data-role="${DROPDOWN_ROLE}"]`)
     .forEach((dropdownRoot) => {
       const fieldKey = dropdownRoot.dataset.dropdownField ?? '';
-      const hiddenInput = dropdownRoot.querySelector('[data-role="dropdown-input"]');
+      const hiddenInput = dropdownRoot.querySelector(
+        '[data-role="dropdown-input"]'
+      );
 
       const dropdown = new CustomDropdown(dropdownRoot, {
         items: optionsByFieldKey[fieldKey] ?? [],
@@ -97,12 +122,8 @@ export function initializeInspectionStandardCommonItemDropdowns({
         emptyText: '候補がありません',
         onChange: () => {
           if (!DEPENDENCY_TRIGGER_FIELD_KEYS.has(fieldKey)) return;
-        
-          syncRuleDependentDropdowns({
-            rootEl,
-            dropdownsByFieldKey,
-            optionsByFieldKey,
-          });
+
+          syncDependentFields();
         },
       });
 
@@ -110,12 +131,9 @@ export function initializeInspectionStandardCommonItemDropdowns({
       dropdownsByFieldKey[fieldKey] = dropdown;
     });
 
-    syncRuleDependentDropdowns({
-      rootEl,
-      dropdownsByFieldKey,
-      optionsByFieldKey,
-    });
+  syncDependentFields();
 }
+
 
 export function destroyInspectionStandardCommonItemDropdowns({
   rootEl,
@@ -145,6 +163,7 @@ function buildOptionsByFieldKey(options = {}) {
     }, {});
 }
 
+
 function normalizeDropdownItems(options = []) {
   if (!Array.isArray(options)) return [];
 
@@ -166,10 +185,13 @@ function removeEmptyDayOfWeekItems(items = []) {
   });
 }
 
+
 function syncRuleDependentDropdowns({
   rootEl,
   dropdownsByFieldKey,
   optionsByFieldKey,
+  mode,
+  originalAnchorYear,
 } = {}) {
   const ruleDropdown = dropdownsByFieldKey?.[RULE_FIELD_KEY];
 
@@ -204,6 +226,8 @@ function syncRuleDependentDropdowns({
   syncAnchorYearInput({
     rootEl,
     selectedRule,
+    mode,
+    originalAnchorYear,
   });
 
   syncAnchorMonthDropdown({
@@ -219,9 +243,12 @@ function syncRuleDependentDropdowns({
   });
 }
 
+
 function syncAnchorYearInput({
   rootEl,
   selectedRule,
+  mode,
+  originalAnchorYear = '',
 } = {}) {
   const inputEl = getCommonEditFieldInput({
     rootEl,
@@ -232,32 +259,117 @@ function syncAnchorYearInput({
 
   const fieldEl = getCommonEditFieldContainer(inputEl);
 
-  if (isYearlyScheduleRule(selectedRule)) {
-    const currentValue = String(inputEl.value ?? '').trim();
+  if (isOneYearScheduleRule(selectedRule)) {
+    preserveCurrentEditableAnchorYear(inputEl);
 
-    inputEl.type = 'number';
-    inputEl.disabled = false;
-    inputEl.readOnly = false;
-    inputEl.placeholder = ANCHOR_YEAR_ENABLED_PLACEHOLDER;
+    const submittedValue =
+      mode === INSPECTION_STANDARD_COMMON_ITEM_FORM_MODE.EDIT
+        ? originalAnchorYear
+        : '';
 
-    if (!currentValue || currentValue === INSPECTION_STANDARD_DISABLED_DISPLAY_VALUE) {
-      inputEl.value = String(new Date().getFullYear());
-    }
+    setAnchorYearInputDisabled({
+      inputEl,
+      fieldEl,
+      submittedValue,
+    });
 
-    inputEl.dataset.disabledDisplayValue = '';
-    fieldEl?.classList.remove('is-disabled');
     return;
   }
+
+  if (isYearlyScheduleRule(selectedRule)) {
+    setAnchorYearInputEnabled({
+      inputEl,
+      fieldEl,
+    });
+
+    return;
+  }
+
+  preserveCurrentEditableAnchorYear(inputEl);
+
+  setAnchorYearInputDisabled({
+    inputEl,
+    fieldEl,
+    submittedValue: '',
+  });
+}
+
+
+function setAnchorYearInputEnabled({
+  inputEl,
+  fieldEl,
+} = {}) {
+  if (!inputEl) return;
+
+  const currentValue = String(inputEl.value ?? '').trim();
+
+  const lastEditableValue = String(
+    inputEl.dataset.lastEditableValue ?? ''
+  ).trim();
+
+  const submittedValue = String(
+    inputEl.dataset.submittedValue ?? ''
+  ).trim();
+
+  const restoredValue =
+    currentValue === INSPECTION_STANDARD_DISABLED_DISPLAY_VALUE
+      ? lastEditableValue || submittedValue
+      : currentValue;
+
+  inputEl.type = 'number';
+  inputEl.disabled = false;
+  inputEl.readOnly = false;
+  inputEl.placeholder = ANCHOR_YEAR_ENABLED_PLACEHOLDER;
+
+  inputEl.value =
+    restoredValue ||
+    String(new Date().getFullYear());
+
+  inputEl.dataset.disabledDisplayValue = '';
+  delete inputEl.dataset.submittedValue;
+
+  fieldEl?.classList.remove('is-disabled');
+}
+
+
+function setAnchorYearInputDisabled({
+  inputEl,
+  fieldEl,
+  submittedValue = '',
+} = {}) {
+  if (!inputEl) return;
 
   inputEl.type = 'text';
   inputEl.value = INSPECTION_STANDARD_DISABLED_DISPLAY_VALUE;
   inputEl.disabled = true;
   inputEl.readOnly = true;
   inputEl.placeholder = '';
-  inputEl.dataset.disabledDisplayValue = INSPECTION_STANDARD_DISABLED_DISPLAY_VALUE;
+
+  inputEl.dataset.disabledDisplayValue =
+    INSPECTION_STANDARD_DISABLED_DISPLAY_VALUE;
+
+  inputEl.dataset.submittedValue =
+    String(submittedValue ?? '').trim();
 
   fieldEl?.classList.add('is-disabled');
 }
+
+
+function preserveCurrentEditableAnchorYear(inputEl) {
+  if (!inputEl || inputEl.disabled) return;
+
+  const currentValue = String(inputEl.value ?? '').trim();
+
+  if (
+    !currentValue ||
+    currentValue === INSPECTION_STANDARD_DISABLED_DISPLAY_VALUE
+  ) {
+    return;
+  }
+
+  inputEl.dataset.lastEditableValue = currentValue;
+}
+
 
 function syncAnchorMonthDropdown({
   selectedRule,
@@ -305,6 +417,7 @@ function syncAnchorMonthDropdown({
   });
 }
 
+
 function getAnchorMonthSelectableItems({
   selectedRule,
   optionsByFieldKey,
@@ -331,6 +444,7 @@ function getAnchorMonthSelectableItems({
     };
   });
 }
+
 
 function ensureDropdownValueInItems({
   dropdown,
@@ -369,6 +483,7 @@ const FALLBACK_WEEK_OF_MONTH_ITEMS = Object.freeze(
     meta: {},
   }))
 );
+
 
 function syncWeekOfMonthDropdown({
   selectedRule,
@@ -447,6 +562,7 @@ function syncWeekOfMonthDropdown({
   fieldEl?.classList.remove('is-locked');
 }
 
+
 function getWeekOfMonthSelectableItems(optionsByFieldKey = {}) {
   const items = optionsByFieldKey?.[WEEK_OF_MONTH_FIELD_KEY] ?? [];
 
@@ -472,6 +588,7 @@ function setFixedDropdownStyle({
   fieldEl?.classList.add('is-locked');
 }
 
+
 function getCommonEditFieldInput({
   rootEl,
   fieldKey,
@@ -481,6 +598,7 @@ function getCommonEditFieldInput({
   ) ?? null;
 }
 
+
 function getCommonEditFieldContainer(inputEl) {
   return (
     inputEl?.closest('.inspection-standard-edit-form__subField') ??
@@ -488,6 +606,7 @@ function getCommonEditFieldContainer(inputEl) {
     null
   );
 }
+
 
 function syncShiftPatternAndDayOfWeekDropdowns({
   isDailyRule,
@@ -561,6 +680,7 @@ function syncShiftPatternAndDayOfWeekDropdowns({
   }
 }
 
+
 function setDayOfWeekDropdownDisabledState({
   dropdown,
 } = {}) {
@@ -615,6 +735,7 @@ function syncTimeZoneDropdown({
     timeZoneItems,
   });
 }
+
 
 function setTimeZoneDropdownLockedState({
   dropdown,
@@ -672,6 +793,7 @@ function setTimeZoneDropdownLockedState({
   });
 }
 
+
 function syncStatusDropdown({
   isDailyRule,
   dropdownsByFieldKey,
@@ -688,6 +810,7 @@ function syncStatusDropdown({
   });
 }
 
+
 function findSelectedDropdownItem({
   items = [],
   value = '',
@@ -699,6 +822,7 @@ function findSelectedDropdownItem({
     : null;
 }
 
+
 function isDailyInspectionRule(ruleItem = {}) {
   return (
     isDailyInspectionRuleId(ruleItem?.value) ||
@@ -706,9 +830,11 @@ function isDailyInspectionRule(ruleItem = {}) {
   );
 }
 
+
 function isDailyInspectionRuleId(ruleId) {
   return String(ruleId ?? '') === DAILY_INSPECTION_RULE_ID;
 }
+
 
 function setStatusDropdownLockedState({
   dropdown,
@@ -767,6 +893,7 @@ function setStatusDropdownLockedState({
   });
 }
 
+
 function unlockDropdown({
   dropdown,
   items,
@@ -784,6 +911,7 @@ function unlockDropdown({
   fieldEl?.classList.remove('is-disabled');
 }
 
+
 function setLockedStyle({
   dropdownRoot,
   fieldEl,
@@ -795,6 +923,7 @@ function setLockedStyle({
 
   fieldEl?.classList.add('is-disabled');
 }
+
 
 function getFieldElement(dropdownRoot) {
   return (

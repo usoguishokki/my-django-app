@@ -14,6 +14,7 @@ import {
 import {
   initializeInspectionStandardCommonItemDropdowns,
   destroyInspectionStandardCommonItemDropdowns,
+  INSPECTION_STANDARD_COMMON_ITEM_FORM_MODE,
 } from './InspectionStandardCommonItemDropdownService.js';
 import {
   initializeInspectionStandardDetailEditDropdowns,
@@ -260,6 +261,7 @@ export class InspectionStandardEditPanelService {
     initializeInspectionStandardCommonItemDropdowns({
       rootEl: plan.bodyEl,
       vm,
+      mode: INSPECTION_STANDARD_COMMON_ITEM_FORM_MODE.EDIT,
     });
   }
 }

@@ -57,12 +57,13 @@ def apply_test_card_common_filters(qs):
 
     return qs.prefetch_related(
         Prefetch(
-            'inspection_no__db_details',
+            "inspection_no__db_details",
             queryset=Db_details_tb.objects.only(
-                'id',
-                'inspection_no_id',
-                'contents',
-            ).order_by('id'),
+                "id",
+                "inspection_no_id",
+                "applicable_device",
+                "contents",
+            ).order_by("id"),
         )
     )
     

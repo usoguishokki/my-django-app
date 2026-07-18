@@ -6,6 +6,8 @@ from myapp.domain.schedule_time_window import (
     get_duration_minutes,
 )
 
+from myapp.presenters.inspection_detail_items import build_inspection_detail_items
+
 def _format_time_hhmm(value):
     return value.strftime('%H:%M') if value else ''
 
@@ -255,14 +257,7 @@ def present_schedule_test_cards_week_items(plans_qs):
                 'assignedAffiliationId': get_assigned_affiliation_id(plan),
                 'interval': rule.interval if rule else None,
                 'unit': rule.unit if rule else '',
-                'detailItems': [
-                    {
-                        'applicableDevice': detail.applicable_device or '',
-                        'contents': detail.contents or '',
-                    }
-                    for detail in inspection.db_details.all()
-                    if detail.applicable_device or detail.contents
-                ] if inspection else [],
+                "detailItems": build_inspection_detail_items(inspection),
             }
         )
 

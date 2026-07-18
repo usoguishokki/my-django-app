@@ -105,7 +105,10 @@ def schedule_event_move_api(request):
         )
 
     try:
-        response = move_schedule_event(payload)
+        response = move_schedule_event(
+            payload=payload,
+            requested_user=request.user,
+        )
 
     except InvalidScheduleEventMoveParams as exc:
         return JsonResponse(
@@ -323,6 +326,16 @@ def schedule_bulk_registration_api(request):
                 'message': str(exc),
             },
             status=404,
+            json_dumps_params={'ensure_ascii': False},
+        )
+    
+    except ScheduleApproverNotFound as exc:
+        return JsonResponse(
+            {
+                'status': 'error',
+                'message': str(exc),
+            },
+            status=400,
             json_dumps_params={'ensure_ascii': False},
         )
 

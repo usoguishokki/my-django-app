@@ -5,6 +5,10 @@ from django.db import transaction
 
 from myapp.models import PlanStatus, Plan_tb
 
+from myapp.services.schedule_approver import (
+    get_required_schedule_approver,
+)
+
 from myapp.domain.errors import (
     InvalidScheduleBulkRegistrationParams,
     ScheduleBulkRegistrationMemberNotFound,
@@ -30,7 +34,6 @@ from myapp.domain.schedule_bulk_registration import (
 
 from myapp.selectors.members import (
     select_member_by_member_id,
-    select_team_leader_by_affiliation_id,
 )
 
 from myapp.selectors.shifts import (
@@ -73,20 +76,6 @@ def get_required_bulk_registration_affiliation_id(member):
         )
 
     return affiliation_id
-
-
-def get_required_bulk_registration_approver(affiliation_id):
-    approver = select_team_leader_by_affiliation_id(
-        affiliation_id
-    )
-
-    if approver is None:
-        raise ScheduleBulkRegistrationMemberNotFound(
-            f'team leader not found: affiliation_id={affiliation_id}'
-        )
-
-    return approver
-
 
 def get_required_bulk_registration_shift_calendar(*, target_date, affiliation_id):
     shift_calendar = select_shift_for_team_date(
@@ -403,8 +392,8 @@ def bulk_register_schedule_events(*, payload, requested_user):
         busy_blocks=busy_blocks,
     ).allocate(tasks)
 
-    approver = get_required_bulk_registration_approver(
-        affiliation_id
+    approver = get_required_schedule_approver(
+        requested_user
     )
 
     updated_plans = apply_bulk_registration_assignments(

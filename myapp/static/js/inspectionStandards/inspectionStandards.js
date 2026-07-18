@@ -78,13 +78,12 @@ class inspectionStandards {
       },
     });
 
-    this.historyDetailDrawerService = new InspectionStandardHistoryDetailDrawerService({
-      getDrawers: () => this.drawers,
-      onApproved: async () => {
-        await this.historyPageService?.reload({
-          filters: this.historyPageService?.currentFilters ?? {},
-        });
-      },
+    this.historyDetailDrawerService =
+      new InspectionStandardHistoryDetailDrawerService({
+        getDrawers: () => this.drawers,
+        onApproved: () => this._reloadHistoryPage(),
+        onNoteUpdated: () => this._reloadHistoryPage(),
+        onCancelled: () => this._reloadHistoryPage(),
     });
     
     this.drawerHeaderService = new InspectionStandardDrawerHeaderService({
@@ -271,6 +270,38 @@ class inspectionStandards {
       [INSPECTION_STANDARD_DRAWER_ACTIONS.SHOW_HISTORY_DETAIL]: async ({ payload }) => {
         await this.historyDetailDrawerService.open({
           historyId: payload?.historyId,
+        });
+      },
+
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.START_HISTORY_NOTE_EDIT]: ({ element }) => {
+        this.historyDetailDrawerService.startNoteEdit({
+          element,
+        });
+      },
+      
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.CANCEL_HISTORY_NOTE_EDIT]: ({ element }) => {
+        this.historyDetailDrawerService.cancelNoteEdit({
+          element,
+        });
+      },
+      
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.SAVE_HISTORY_NOTE]: async ({
+        element,
+        payload,
+      }) => {
+        await this.historyDetailDrawerService.saveNote({
+          element,
+          payload,
+        });
+      },
+
+      [INSPECTION_STANDARD_DRAWER_ACTIONS.CANCEL_HISTORY]: async ({
+        element,
+        payload,
+      }) => {
+        await this.historyDetailDrawerService.cancelHistory({
+          element,
+          payload,
         });
       },
 
@@ -495,6 +526,12 @@ class inspectionStandards {
   
     this.historyPageService?.reload({
       filters,
+    });
+  }
+
+  async _reloadHistoryPage() {
+    await this.historyPageService?.reload({
+      filters: this.historyPageService?.currentFilters ?? {},
     });
   }
 

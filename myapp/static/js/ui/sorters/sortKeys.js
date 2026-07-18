@@ -32,3 +32,21 @@ export const periodSortKey = (v) => {
   const idx = PERIOD_ORDER.indexOf(s);
   return idx >= 0 ? idx : 999; // 想定外は最後
 };
+
+export const ISO_DATE_EMPTY_SORT_KEY = '9999-12-31';
+
+export const isoDateSortKey = (value) => {
+  const s = String(value ?? '').trim();
+
+  if (!s) {
+    return ISO_DATE_EMPTY_SORT_KEY;
+  }
+
+  // backendからの "YYYY-MM-DD" を想定。
+  // ISO日付は文字列比較で時系列順になる。
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return s;
+  }
+
+  return ISO_DATE_EMPTY_SORT_KEY;
+};

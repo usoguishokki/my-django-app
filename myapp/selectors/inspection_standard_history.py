@@ -130,3 +130,28 @@ def select_inspection_standard_history_detail_by_id(
         .filter(id=history_id)
         .first()
     )
+
+
+def select_inspection_standard_history_for_update_by_id(
+    *,
+    history_id: int,
+) -> InspectionStandardHistory | None:
+    """
+    変更理由更新対象の履歴を排他ロック付きで取得する。
+
+    transaction.atomic()内から使用し、
+    承認処理や別の変更理由更新との競合を防ぐ。
+    """
+
+    if not history_id:
+        return None
+
+    try:
+        return (
+            InspectionStandardHistory.objects
+            .select_for_update()
+            .get(id=history_id)
+        )
+
+    except InspectionStandardHistory.DoesNotExist:
+        return None

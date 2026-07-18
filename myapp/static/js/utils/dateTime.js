@@ -530,3 +530,82 @@ export function isNextDayTimeRange(startTime, endTime) {
 
   return endMinutes <= startMinutes;
 }
+
+/**
+ * 日付を「M月D日」表記に変換する
+ *
+ * examples:
+ * - "2026-07-01" -> "7月1日"
+ * - "2026/7/1" -> "7月1日"
+ * - Date -> "7月1日"
+ *
+ * @param {string|Date|number|null|undefined} value
+ * @returns {string}
+ */
+export function formatJapaneseMonthDayLabel(value) {
+  const dateValue = normalizeDateInputValue(value);
+
+  if (!dateValue) {
+    return '';
+  }
+
+  const [, month, day] = dateValue.split('-').map(Number);
+
+  return `${month}月${day}日`;
+}
+
+
+/**
+ * 日付を「M月D日 曜」表記に変換する
+ *
+ * examples:
+ * - "2026-07-01" -> "7月1日 水"
+ * - "2026/7/1" -> "7月1日 水"
+ * - Date -> "7月1日 水"
+ *
+ * @param {string|Date|number|null|undefined} value
+ * @returns {string}
+ */
+export function formatJapaneseMonthDayWeekdayLabel(value) {
+  const dateLabel = formatJapaneseMonthDayLabel(value);
+  const weekdayLabel = formatJapaneseWeekdayLabel(value);
+
+  return [
+    dateLabel,
+    weekdayLabel,
+  ].filter(Boolean).join(' ');
+}
+
+
+/**
+ * datetime-local / ISO風文字列 / time文字列を「HH:mm」表記に変換する
+ *
+ * examples:
+ * - "2026-07-06T05:35:00" -> "05:35"
+ * - "2026-07-06T05:35" -> "05:35"
+ * - "05:35:00" -> "05:35"
+ * - "5:35" -> "05:35"
+ *
+ * @param {string|Date|number|null|undefined} value
+ * @returns {string}
+ */
+export function formatHourMinuteLabel(value) {
+  if (value == null || value === '') {
+    return '';
+  }
+
+  if (value instanceof Date || typeof value === 'number') {
+    return formatDate(value, 'HH:mm');
+  }
+
+  const text = String(value).trim();
+
+  if (!text) {
+    return '';
+  }
+
+  const { time } = splitDateTimeLocal(text);
+  const timeSource = time || text;
+
+  return normalizeTimeInputValue(timeSource);
+}

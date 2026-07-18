@@ -14,6 +14,7 @@ import {
 import {
   initializeInspectionStandardCommonItemDropdowns,
   destroyInspectionStandardCommonItemDropdowns,
+  INSPECTION_STANDARD_COMMON_ITEM_FORM_MODE,
 } from '../edit/InspectionStandardCommonItemDropdownService.js';
 
 export class InspectionStandardCardAddDrawerService {
@@ -72,8 +73,9 @@ export class InspectionStandardCardAddDrawerService {
       );
 
       initializeInspectionStandardCommonItemDropdowns({
-        rootEl: cell.bodyEl,
-        vm: commonItemVM,
+        rootEl: plan.bodyEl,
+        vm,
+        mode: INSPECTION_STANDARD_COMMON_ITEM_FORM_MODE.EDIT,
       });
     } catch (error) {
       console.error('[InspectionStandardCardAddDrawerService] open failed:', error);

@@ -64,6 +64,8 @@ from myapp.services.inspection_standards import (
     build_inspection_standard_details_payload,
 )
 
+from myapp.services.card_work.card_work_page import build_card_work_page_context
+
 logger = logging.getLogger('myapp')
 
 def hozen_common_data():
@@ -1030,6 +1032,21 @@ def card_view(request):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
         
 @login_required
+def card_work(request):
+    cache_manager_if = request.cache_manager_if
+    _affiliation_pattern_times_dict, team_profiles = set_profiles_dict(
+        request,
+        cache_manager_if,
+    )
+
+    context = build_card_work_page_context(
+        request=request,
+        team_profiles=team_profiles,
+    )
+
+    return render(request, "card/card_work.html", context)
+        
+@login_required
 def workContents_view(request):
     cache_manager_if = request.cache_manager_if
     affiliation_pattern_times_dict, team_profiles = set_profiles_dict(request, cache_manager_if)
@@ -1475,3 +1492,19 @@ def get_employee(request):
         "user": str(request.user),
         "authenticated": request.user.is_authenticated
     })
+
+
+@login_required
+def home_dashboard_view(request):
+    """
+    新home画面。
+
+    左   : 全体進捗
+    中央 : ログインユーザー所属班の進捗
+    右   : 個別進捗
+    """
+    return render(
+        request,
+        "home/home_dashboard.html",
+        {},
+    )

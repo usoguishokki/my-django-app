@@ -36,11 +36,19 @@ export function buildScheduleEditActionHandlers({
       await handleFilterPaneToggle();
     },
 
-    'schedule:submit-edit': async () => {
+    'schedule:submit-edit': async ({ element }) => {
+      if (element?.disabled) {
+        return;
+      }
+    
       await handleEditSubmit();
     },
 
-    'schedule:retract-edit': async () => {
+    'schedule:retract-edit': async ({ element }) => {
+      if (element?.disabled) {
+        return;
+      }
+    
       await handleEditRetract();
     },
   };

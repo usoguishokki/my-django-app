@@ -19,6 +19,9 @@ import {
   renderCheckboxHTML,
 } from '../../ui/componets/checkbox/index.js';
 
+
+const INSPECTION_STANDARD_HISTORY_NOTE_MAX_LENGTH = 300;
+
 export function renderInspectionStandardHistoryDetailHTML({
   history = {},
   currentUserJobTitle = '',
@@ -33,6 +36,7 @@ export function renderInspectionStandardHistoryDetailHTML({
       ${renderSummaryHTML(vm)}
       ${renderTargetsHTML(vm.targets)}
       ${renderApprovalHTML(vm)}
+      ${renderCancellationHTML(vm)}
     </div>
   `;
 }
@@ -59,6 +63,26 @@ function buildInspectionStandardHistoryDetailVM({
     history.foreman_approved_by_name
   );
 
+  const isFullyApproved = Boolean(
+    teamLeaderApproval.approved &&
+    leaderApproval.approved &&
+    foremanApproval.approved
+  );
+
+  const cancelled = Boolean(
+    history.cancelled ??
+    history.isCancelled ??
+    history.is_cancelled ??
+    history.cancelledAt ??
+    history.cancelled_at
+  );
+  
+  const cancellationEnabled = Boolean(
+    history.cancellationEnabled ??
+    history.cancellation_enabled ??
+    (!cancelled && !isFullyApproved)
+  );
+
   return {
     id: pickText(history.id, history.historyId, history.history_id),
     eventId: pickText(history.eventId, history.event_id),
@@ -72,10 +96,21 @@ function buildInspectionStandardHistoryDetailVM({
     ),
     summary: pickText(
       history.summary,
-      history.note,
       history.description,
       history.message
     ),
+    
+    note: pickText(
+      history.note,
+      history.changeReason,
+      history.change_reason
+    ),
+    noteEditEnabled: Boolean(
+      pickText(history.id, history.historyId, history.history_id) &&
+      !isFullyApproved &&
+      !cancelled
+    ),
+    isFullyApproved,
     inspectionNo: pickText(
       history.inspectionNo,
       history.inspection_no,
@@ -112,6 +147,21 @@ function buildInspectionStandardHistoryDetailVM({
     targets: Array.isArray(history.targets)
       ? history.targets.map((target) => buildTargetVM(target))
       : [],
+
+    cancelled,
+    cancellationEnabled,
+    
+    cancelledByName: pickText(
+      history.cancelledByName,
+      history.cancelled_by_name
+    ),
+    
+    cancelledAtText: pickText(
+      history.cancelledAtText,
+      history.cancelled_at_text,
+      history.cancelledAt,
+      history.cancelled_at
+    ),
   };
 }
 
@@ -276,15 +326,122 @@ function renderSummaryHTML(vm) {
         ${renderMetaRowHTML('実施者', vm.operatedByName)}
       </dl>
 
-      <div class="inspection-standard-history-detail__reason">
+      ${renderHistoryNoteHTML(vm)}
+    </section>
+  `;
+}
+
+function renderHistoryNoteHTML(vm) {
+  const historyId = String(vm.id ?? '').trim();
+
+  const savePayload = {
+    historyId,
+  };
+
+  const editDisabledMessage = vm.isFullyApproved
+    ? '班長・組長・工長の承認が完了しているため、変更理由は編集できません。'
+    : '';
+
+  return `
+    <div
+      class="inspection-standard-history-detail__reason"
+      data-role="inspection-standard-history-note"
+      data-history-id="${escapeHtml(historyId)}"
+      data-note-edit-enabled="${vm.noteEditEnabled ? 'true' : 'false'}"
+      data-original-note="${escapeHtml(encodeURIComponent(vm.note))}"
+      data-editing="false"
+    >
+      <div class="inspection-standard-history-detail__reasonHeader">
         <div class="inspection-standard-history-detail__reasonLabel">
           変更理由
         </div>
-        <div class="inspection-standard-history-detail__reasonText">
-          ${escapeHtml(vm.summary || '-')}
-        </div>
+
+        ${vm.noteEditEnabled
+          ? `
+            <button
+              type="button"
+              class="inspection-standard-history-detail__reasonEditButton"
+              data-role="inspection-standard-history-note-action"
+              data-ui-action="${escapeHtml(
+                INSPECTION_STANDARD_DRAWER_ACTIONS.START_HISTORY_NOTE_EDIT
+              )}"
+            >
+              編集
+            </button>
+          `
+          : ''
+        }
       </div>
-    </section>
+
+      <div
+        class="inspection-standard-history-detail__reasonDisplay"
+        data-role="inspection-standard-history-note-display"
+      >
+        <div class="inspection-standard-history-detail__reasonText">
+          ${escapeHtml(vm.note || '-')}
+        </div>
+
+        ${editDisabledMessage
+          ? `
+            <p class="inspection-standard-history-detail__reasonLockedMessage">
+              ${escapeHtml(editDisabledMessage)}
+            </p>
+          `
+          : ''
+        }
+      </div>
+
+      <div
+        class="inspection-standard-history-detail__reasonEditor"
+        data-role="inspection-standard-history-note-editor"
+        hidden
+      >
+        <textarea
+          class="inspection-standard-history-detail__reasonInput"
+          data-role="inspection-standard-history-note-input"
+          rows="4"
+          maxlength="${INSPECTION_STANDARD_HISTORY_NOTE_MAX_LENGTH}"
+          aria-label="変更理由"
+          required
+        >${escapeHtml(vm.note)}</textarea>
+
+        <div class="inspection-standard-history-detail__reasonInputMeta">
+          ${INSPECTION_STANDARD_HISTORY_NOTE_MAX_LENGTH}文字以内
+        </div>
+
+        <div class="inspection-standard-history-detail__reasonActions">
+          <button
+            type="button"
+            class="inspection-standard-history-detail__reasonSaveButton"
+            data-role="inspection-standard-history-note-action"
+            data-ui-action="${escapeHtml(
+              INSPECTION_STANDARD_DRAWER_ACTIONS.SAVE_HISTORY_NOTE
+            )}"
+            data-ui-payload="${escapeHtml(JSON.stringify(savePayload))}"
+          >
+            保存
+          </button>
+
+          <button
+            type="button"
+            class="inspection-standard-history-detail__reasonCancelButton"
+            data-role="inspection-standard-history-note-action"
+            data-ui-action="${escapeHtml(
+              INSPECTION_STANDARD_DRAWER_ACTIONS.CANCEL_HISTORY_NOTE_EDIT
+            )}"
+          >
+            キャンセル
+          </button>
+        </div>
+
+        <p
+          class="inspection-standard-history-detail__reasonMessage"
+          data-role="inspection-standard-history-note-message"
+          data-type="info"
+          aria-live="polite"
+        ></p>
+      </div>
+    </div>
   `;
 }
 
@@ -366,7 +523,7 @@ function renderApprovalHTML(vm) {
         label: '変更内容を最後まで確認しました。',
         action: INSPECTION_STANDARD_DRAWER_ACTIONS.CHANGE_HISTORY_APPROVAL_CONFIRM,
         role: 'inspection-standard-history-approval-confirm',
-        disabled: !hasApproverRole,
+        disabled: !hasApproverRole || vm.cancelled,
         className: 'inspection-standard-history-detail__approvalConfirm',
         inputClassName: 'inspection-standard-history-detail__approvalConfirmInput',
         labelClassName: 'inspection-standard-history-detail__approvalConfirmLabel',
@@ -402,6 +559,105 @@ function renderApprovalHTML(vm) {
     </section>
   `;
 }
+
+
+function renderCancellationHTML(vm) {
+  if (vm.cancelled) {
+    const cancelledMeta = [
+      vm.cancelledByName
+        ? `取消者: ${vm.cancelledByName}`
+        : '',
+      vm.cancelledAtText
+        ? `取消日時: ${vm.cancelledAtText}`
+        : '',
+    ]
+      .filter(Boolean)
+      .join(' / ');
+
+    return `
+      <section
+        class="inspection-standard-history-detail__cancellation is-cancelled"
+        data-role="inspection-standard-history-cancellation"
+      >
+        <div class="inspection-standard-history-detail__cancellationStatus">
+          取消済み
+        </div>
+
+        ${cancelledMeta
+          ? `
+            <p class="inspection-standard-history-detail__cancellationMeta">
+              ${escapeHtml(cancelledMeta)}
+            </p>
+          `
+          : ''
+        }
+      </section>
+    `;
+  }
+
+  const payload = {
+    historyId: vm.id,
+  };
+
+  const disabledReason = vm.isFullyApproved
+    ? '班長・組長・工長の承認が完了しているため、取り消しできません。'
+    : !vm.cancellationEnabled
+      ? 'この変更履歴は取り消しできません。'
+      : '';
+
+  return `
+    <section
+      class="inspection-standard-history-detail__cancellation"
+      data-role="inspection-standard-history-cancellation"
+    >
+      <div class="inspection-standard-history-detail__cancellationHeader">
+        <div>
+          <h3 class="inspection-standard-history-detail__sectionTitle">
+            変更履歴の取り消し
+          </h3>
+
+          <p class="inspection-standard-history-detail__cancellationGuide">
+            変更内容そのものは元に戻さず、この履歴だけを取消済みにします。
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="inspection-standard-history-detail__cancellationButton"
+          data-history-id="${escapeHtml(vm.id)}"
+          data-ui-action="${escapeHtml(
+            INSPECTION_STANDARD_DRAWER_ACTIONS.CANCEL_HISTORY
+          )}"
+          data-ui-payload="${escapeHtml(JSON.stringify(payload))}"
+          ${vm.cancellationEnabled
+            ? ''
+            : 'disabled aria-disabled="true"'
+          }
+          title="${escapeHtml(disabledReason)}"
+        >
+          取り消し
+        </button>
+      </div>
+
+      ${disabledReason
+        ? `
+          <p class="inspection-standard-history-detail__cancellationDisabledReason">
+            ${escapeHtml(disabledReason)}
+          </p>
+        `
+        : ''
+      }
+
+      <p
+        class="inspection-standard-history-detail__cancellationMessage"
+        data-role="inspection-standard-history-cancellation-message"
+        data-type="info"
+        aria-live="polite"
+      ></p>
+    </section>
+  `;
+}
+
 
 function renderApprovalStatusHTML({
   label,
@@ -441,10 +697,13 @@ function buildApprovalButtonVM({
 
   const blockedByLeader =
     approvalRole === 'foreman' && !vm.leaderApproval?.approved;
+  
+  const cancelled = Boolean(vm.cancelled);
 
   const approvalEnabled = Boolean(
     vm.id &&
     userHasRole &&
+    !cancelled &&
     !alreadyApproved &&
     !blockedByTeamLeader &&
     !blockedByLeader
@@ -459,6 +718,7 @@ function buildApprovalButtonVM({
       label,
       requiredJobTitle,
       userHasRole,
+      cancelled,
       alreadyApproved,
       blockedByTeamLeader,
       blockedByLeader,
@@ -470,10 +730,15 @@ function buildApprovalDisabledReason({
   label,
   requiredJobTitle,
   userHasRole,
+  cancelled,
   alreadyApproved,
   blockedByTeamLeader,
   blockedByLeader,
 } = {}) {
+  if (cancelled) {
+    return '取り消し済みの変更履歴は承認できません。';
+  }
+
   if (alreadyApproved) {
     return '承認済みです。';
   }
@@ -523,6 +788,10 @@ function buildApprovalGuideMessage({
   vm,
   hasApproverRole,
 } = {}) {
+  if (vm.cancelled) {
+    return 'この変更履歴は取り消されています。承認操作はできません。';
+  }
+
   if (!hasApproverRole) {
     return '承認権限がありません。班長・組長・工長のみ承認できます。';
   }
