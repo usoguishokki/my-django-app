@@ -23,6 +23,33 @@ def select_members_by_affiliation_id(affiliation_id: int) -> QuerySet:
     return member_base_qs().filter(profile__belongs_id=affiliation_id)
 
 
+def select_members_by_affiliation_ids(affiliation_ids) -> QuerySet:
+    """
+    複数の所属IDに紐づくメンバー一覧を取得する。
+    """
+    ids = [
+        affiliation_id
+        for affiliation_id in affiliation_ids
+        if affiliation_id
+    ]
+
+    if not ids:
+        return member_base_qs().none()
+
+    return (
+        member_base_qs()
+        .filter(profile__belongs_id__in=ids)
+        .order_by('profile__belongs_id', 'member_id')
+    )
+
+
+def select_all_members() -> QuerySet:
+    """
+    実績入力の実施者候補として、全メンバーを取得する。
+    """
+    return member_base_qs().order_by("member_id")
+
+
 def select_member_by_user_id(user_id: str):
     """
     ユーザーIDに紐づく Member_tb を1件取得する用途。

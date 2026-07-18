@@ -1,10 +1,12 @@
-from django.core.exceptions import ObjectDoesNotExist
-
 from django.db import transaction
 
 from datetime import timedelta
 
 from myapp.models import PlanStatus
+
+from myapp.services.schedule_approver import (
+    get_required_schedule_approver,
+)
 
 from myapp.domain.sort_keys.member_sort import sort_members
 from myapp.domain.schedule import (
@@ -31,7 +33,6 @@ from myapp.selectors.shifts import (
 from myapp.selectors.members import (
     select_members_by_affiliation_id,
     select_member_by_member_id,
-    select_team_leader_by_affiliation_id,
 )
 
 
@@ -67,12 +68,8 @@ from myapp.presenters.schedule import (
 
 from myapp.domain.errors import (
     ScheduleEventMoveNotFound,
-    ScheduleApproverNotFound,
     ScheduleEventRetractNotFound,
-    ScheduleEventRetractNotAllowed,
 )
-
-DELAYED_PLAN_STATUS = '遅れ'
 
 def get_plan_end_time(plan):
     """
@@ -191,61 +188,37 @@ def build_schedule_member_week_result(*, member_id, target_date):
         days=days,
         items=items,
     )
+
+def should_assign_approver_on_registration(*, current_status, was_unscheduled):
+    """
+    未登録カードをスケジュールへ登録するタイミングで approver を入れるか判定する。
+
+    対象:
+      - 配布待ち
+      - 遅れ
+
+    既に登録済みのカード移動では approver を上書きしない。
+    """
+    if not was_unscheduled:
+        return False
+
+    normalized_status = str(current_status or '').strip()
+
+    return normalized_status in {
+        PlanStatus.WAITING.value,
+        PlanStatus.DELAYED.value,
+    }
     
-def get_member_affiliation_id(member):
-    """
-    Member_tb から所属IDを安全に取得する。
-    """
-    try:
-        return member.profile.belongs_id
-    except ObjectDoesNotExist:
-        return None
-    
-def resolve_move_approver_affiliation_id(*, assigned_affiliation_id, holder):
-    """
-    スケジュール登録時に approver を決めるための所属IDを解決する。
+def resolve_retracted_plan_status(current_status):
+    normalized_status = str(current_status or '').strip()
 
-    優先順位:
-      1. テストカードに持たせた assigned_affiliation_id
-      2. assigned_affiliation_id が空なら、ドロップ先担当者 holder の所属
-    """
-    if assigned_affiliation_id is not None:
-        return assigned_affiliation_id
+    if normalized_status == PlanStatus.DELAYED.value:
+        return PlanStatus.DELAYED.value
 
-    return get_member_affiliation_id(holder)
-
-
-def get_required_team_leader_by_affiliation_id(affiliation_id):
-    """
-    所属IDから班長を取得する。
-    見つからない場合は ScheduleApproverNotFound を投げる。
-    """
-    if affiliation_id is None:
-        raise ScheduleApproverNotFound('assigned affiliation not found')
-
-    approver = select_team_leader_by_affiliation_id(affiliation_id)
-
-    if approver is None:
-        raise ScheduleApproverNotFound(
-            f'team leader not found: affiliation_id={affiliation_id}'
-        )
-
-    return approver
-
-def resolve_move_approver(*, assigned_affiliation_id, holder):
-    """
-    スケジュール登録時の承認者を解決する。
-    """
-    affiliation_id = resolve_move_approver_affiliation_id(
-        assigned_affiliation_id=assigned_affiliation_id,
-        holder=holder,
-    )
-
-    return get_required_team_leader_by_affiliation_id(affiliation_id)
-
+    return PlanStatus.WAITING.value
 
 @transaction.atomic
-def move_schedule_event(payload):
+def move_schedule_event(*, payload, requested_user):
     params = build_schedule_event_move_params(payload)
 
     plan = select_plan_by_id(params.plan_id)
@@ -256,6 +229,9 @@ def move_schedule_event(payload):
     if holder is None:
         raise ScheduleEventMoveNotFound('holder not found')
 
+    current_status = plan.status
+    was_unscheduled = plan.plan_time is None
+
     plan.holder = holder
     plan.plan_time = params.plan_time
 
@@ -264,19 +240,26 @@ def move_schedule_event(payload):
         'plan_time',
     ]
 
-    if plan.status == PlanStatus.WAITING.value:
-        approver = resolve_move_approver(
-            assigned_affiliation_id=params.assigned_affiliation_id,
-            holder=holder,
+    if should_assign_approver_on_registration(
+        current_status=current_status,
+        was_unscheduled=was_unscheduled,
+    ):
+        approver = get_required_schedule_approver(
+            requested_user
         )
 
-        plan.status = PlanStatus.IN_PROGRESS.value
         plan.approver = approver
 
-        update_fields.extend([
-            'status',
-            'approver',
-        ])
+        update_fields.append(
+            'approver'
+        )
+
+    if current_status == PlanStatus.WAITING.value:
+        plan.status = PlanStatus.IN_PROGRESS.value
+
+        update_fields.append(
+            'status'
+        )
 
     plan.save(update_fields=update_fields)
 
@@ -321,14 +304,6 @@ def build_schedule_test_cards_week_result(
         active_date_alias=active_date_alias,
     )
 
-def resolve_retracted_plan_status(current_status):
-    normalized_status = str(current_status or '').strip()
-
-    if normalized_status == DELAYED_PLAN_STATUS:
-        return DELAYED_PLAN_STATUS
-
-    return PlanStatus.WAITING.value
-
 @transaction.atomic
 def retract_schedule_event(payload):
     params = build_schedule_event_retract_params(payload)
@@ -340,9 +315,6 @@ def retract_schedule_event(payload):
     plan.plan_time = None
     plan.status = resolve_retracted_plan_status(plan.status)
     plan.approver = None
-
-    # 引き戻しなら holder も初期化するのが自然です。
-    # holder が残ると「配布待ちなのに担当者が入っている」状態になります。
     plan.holder = None
 
     plan.save(

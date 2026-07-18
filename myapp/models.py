@@ -287,7 +287,7 @@ class PlanScheduleRule(models.Model):
 
     def __str__(self) -> str:
         return f"{self.id}:{self.name} ({self.unit}{self.interval})"
-    
+
 
 class PlanRuleCondition(models.Model):
     """
@@ -755,6 +755,35 @@ class InspectionStandardHistory(models.Model):
         null=True,
         blank=True,
         db_column='foreman_appr_at',
+    )
+
+    cancelled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cancelled_inspection_standard_histories',
+        db_column='cancelled_by_id',
+    )
+
+    cancelled_by_member_id_snapshot = models.CharField(
+        max_length=10,
+        blank=True,
+        default='',
+        db_column='cancelled_member_id',
+    )
+
+    cancelled_by_name_snapshot = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        db_column='cancelled_name',
+    )
+
+    cancelled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_column='cancelled_at',
     )
 
     class Meta:

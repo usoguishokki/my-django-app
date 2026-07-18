@@ -1,7 +1,5 @@
 export class UIManger {
     constructor() {}
-
-
     /**
     * 現在がモバイルかを判定（引数 mode があればそれを、なければ CSS を参照）
     * @param {string} [mode] 'mobile' | 'tablet' | 'desktop'
@@ -136,34 +134,6 @@ export class UIManger {
     };
 
     /**
-    * 指定された親要素に、指定されたタグ、クラス、およびテキストを持つ新しい要素を追加します。
-    * @param {string} parentSelector - 新しい要素を追加する親要素のセレクタ
-    * @param {string} tag - 新しい要素のタグ名
-    * @param {string|null} className - 新しい要素に適用するクラス名。クラスが不要な場合はnullを使用
-    * @param {string|null} text - 新しい要素に設定するテキスト。テキストが不要な場合はnullを使用
-    * @param {Function} eventListener -要素に追加するイベントリスナ(クリックイベント)
-    */
-    static addActionElement = (parentSelector, tag, className, idName, text, eventListener = null) => {
-        const element = UIManger.createElement(tag, { 'class': className, 'id': idName}, text);
-        if (eventListener) {
-            element.addEventListener('click', eventListener);
-        }
-        UIManger.appendToParent(parentSelector, element);
-        return element
-    };
-
-    /**
-     * 指定されたセレクタに一致する要素をドキュメントから削除します
-     * @param {string} selector -削除する要素のセレクタ
-     */
-    static removeElement = (selector) => {
-        const element = document.querySelector(selector);
-        if (element && element.parentNode) {
-            element.parentNode.removeChild(element);
-        }
-    }
-
-    /**
      * 無効な値をチェックする関数
      * 
      * @param {any} value -チェックする値
@@ -174,33 +144,6 @@ export class UIManger {
         return !invalidValues.includes(value) && !Number.isNaN(value);
     }
 
-    
-
-    /**
-     * デバウンス関数
-     * スロットリングされた関数を返します。
-     * 指定された時間間隔内に複数回呼び出された場合でも、
-     * 最初の呼び出しのみを実行します。
-     * 
-     * @param {Function} func -実行する関数
-     * @param {number} limit -間隔時間(ミリ秒)
-     * @returns {Function} スロットリングされた関数
-     * 
-     * @example
-     * window.addEventLisener('scroll', UIManger.throttle(() => {
-     *      console.log('スクロールイベント');
-     * }, 100))
-     */
-    static throttle(func, limit) {
-        let inThrottle;
-        return  (...args) => {
-            if (!inThrottle) {
-                func(...args);
-                inThrottle = true;
-                setTimeout(() => inThrottle = false, limit);
-            }
-        };
-    }
 
     // 軽量エスケープ（XSS/崩れ防止） 
     static esc(s) {
@@ -254,60 +197,6 @@ export class UIManger {
         return url;
     }
 
-
-    static _overlayClickHandler = null;
-    static _prevBodyOverflow = '';
-    /**
-    * 共通オーバレイを表示
-    * @param {Object} opts
-    * @param {number} [opts.zIndex=900]  モーダルより1段低く
-    * @param {number} [opts.opacity=0.35]  フェード濃さ
-    * @param {boolean} [opts.closeOnClick=true]  背景クリックで閉じるか
-    * @param {function} [opts.onClick=null]  クリック時の追加処理
-    * @param {boolean} [opts.lockScroll=true]  bodyスクロールをロック
-    */
-    static showOverlay({
-        zIndex = 900,
-        opacity = 0.35,
-        closeOnClick = true,
-        onClick = null,
-        lockScroll = true,
-    } = {}) {
-        const el = document.getElementById('screenDim');
-        // 動的スタイル
-        el.style.zIndex = String(zIndex);
-        el.style.opacity = String(opacity);
-        el.classList.add('is-active'); // CSSで pointer-events/visibility を制御
-
-        if (lockScroll) {
-            this._prevBodyOverflow = document.body.style.overflow;
-            document.body.style.overflow = 'hidden';
-        }
-
-        // 既存ハンドラを外してから登録（多重発火防止）
-        if (this._overlayClickHandler) el.removeEventListener('pointerdown', this._overlayClickHandler);
-
-        this._overlayClickHandler = (e) => {
-            if (typeof onClick === 'function') onClick(e);
-            if (closeOnClick) this.hideOverlay();
-        };
-        el.addEventListener('pointerdown', this._overlayClickHandler);
-    }
-
-    /** 共通オーバレイを非表示 */
-    static hideOverlay() {
-        const el = document.getElementById('screenDim');
-        el.classList.remove('is-active');
-        el.style.zIndex = '-1';
-        el.style.opacity = '';
-
-        if (this._overlayClickHandler) {
-            el.removeEventListener('pointerdown', this._overlayClickHandler);
-            this._overlayClickHandler = null;
-        }
-
-        document.body.style.overflow = this._prevBodyOverflow || '';
-    }
 
     static showSpinner({
         container,
@@ -387,6 +276,65 @@ export class UIManger {
       
         overlay.remove();
     }
+
+    /**
+     * 人名表示用に空白を除去する。
+     *
+     * DB上の氏名に含まれる半角スペース・全角スペースを取り除き、
+     * タイトルや短いラベルで使いやすい表示名に整形する。
+     *
+     * @static
+     * @param {string | number | null | undefined} value
+     *   整形対象の値
+     *
+     * @returns {string}
+     *   半角・全角スペースを除去した文字列
+     *
+     * @example
+     * UIManger.normalizePersonName('宮本　英信');
+     * // => '宮本英信'
+     */
+    static normalizePersonName(value) {
+        return String(value ?? '')
+            .replace(/[ 　]+/g, '')
+            .trim();
+    }
+    
+    /**
+     * 空の値を除外して文字列を結合する。
+     *
+     * タイトル・ラベル・サブテキストなど、
+     * 複数の表示文字列を安全に連結したい場合に使用する。
+     *
+     * @static
+     * @param {Array<string | number | null | undefined>} values
+     *   結合対象の値
+     * @param {Object} [options]
+     * @param {string} [options.separator=' ']
+     *   結合文字
+     *
+     * @returns {string}
+     *   空値を除外して結合した文字列
+     *
+     * @example
+     * UIManger.joinText(['6月4週目', 'A係の進捗']);
+     * // => '6月4週目 A係の進捗'
+     *
+     * @example
+     * UIManger.joinText(['07:30', '10分'], { separator: '_' });
+     * // => '07:30_10分'
+     */
+    static joinText(values = [], { separator = ' ' } = {}) {
+        if (!Array.isArray(values)) {
+            return '';
+        }
+
+        return values
+            .map((value) => String(value ?? '').trim())
+            .filter(Boolean)
+            .join(separator);
+    }
+    
 
     /**
      * HTMLエスケープ処理

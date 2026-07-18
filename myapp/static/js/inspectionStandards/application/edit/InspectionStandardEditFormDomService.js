@@ -46,7 +46,9 @@ export function setInspectionStandardEditSaveButtonState({
   button.textContent = isSaving ? '保存中...' : button.dataset.defaultLabel;
 }
 
-export function collectInspectionStandardCommonItemFormValues({ formEl } = {}) {
+export function collectInspectionStandardCommonItemFormValues({
+  formEl,
+} = {}) {
   const values = {};
 
   formEl
@@ -55,6 +57,13 @@ export function collectInspectionStandardCommonItemFormValues({ formEl } = {}) {
       const key = fieldEl.dataset.commonEditField;
 
       if (!key) return;
+
+      const submittedValue = fieldEl.dataset.submittedValue;
+
+      if (submittedValue !== undefined) {
+        values[key] = String(submittedValue ?? '').trim();
+        return;
+      }
 
       const disabledDisplayValue = String(
         fieldEl.dataset.disabledDisplayValue ?? ''

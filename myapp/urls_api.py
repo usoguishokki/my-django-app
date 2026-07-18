@@ -38,10 +38,22 @@ from myapp.api.inspection_standards import (
     inspection_standard_card_abolish_api,
     inspection_standard_history_list_api,
     inspection_standard_history_detail_api,
+    inspection_standard_history_note_update_api,
+    inspection_standard_history_cancel_api,
     inspection_standard_history_approve_api,
 )
 
-from myapp.api.home.dashboard import home_overall_progress_api
+from myapp.api.home.dashboard import (
+    home_assign_member_options_api,
+    home_my_tasks_api,
+    home_my_team_day_detail_api,
+    home_my_team_progress_api,
+    home_overall_progress_api,
+)
+
+from myapp.api.card_work.card_work import (
+    card_work_result_register_api,
+)
 
 
 urlpatterns = [
@@ -119,6 +131,16 @@ urlpatterns = [
         name='inspection_standard_history_detail_api',
     ),
     path(
+        'inspection-standards/history/<int:history_id>/note/update/',
+        inspection_standard_history_note_update_api,
+        name='inspection_standard_history_note_update_api',
+    ),
+    path(
+        'inspection-standards/history/<int:history_id>/cancel/',
+        inspection_standard_history_cancel_api,
+        name='inspection_standard_history_cancel_api',
+    ),
+    path(
         'inspection-standards/history/<int:history_id>/approve/',
         inspection_standard_history_approve_api,
         name='inspection_standard_history_approve_api',
@@ -152,5 +174,30 @@ urlpatterns = [
         "home-dashboard/overall/",
         home_overall_progress_api,
         name="home_dashboard_overall_api",
+    ),
+    path(
+        "home-dashboard/my-team/",
+        home_my_team_progress_api,
+        name="home_dashboard_my_team_api",
+    ),
+    path(
+        "home-dashboard/my-team/day-detail/",
+        home_my_team_day_detail_api,
+        name="home_dashboard_my_team_day_detail_api",
+    ),
+    path(
+        "home-dashboard/my-tasks/",
+        home_my_tasks_api,
+        name="home_dashboard_my_tasks_api",
+    ),
+    path(
+        "home/assign-member-options/",
+        home_assign_member_options_api,
+        name="home_assign_member_options_api",
+    ),
+    path(
+        "card-work/results/register/",
+        card_work_result_register_api,
+        name="card_work_result_register_api",
     ),
 ]

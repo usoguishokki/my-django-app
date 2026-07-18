@@ -10,6 +10,8 @@ export class CustomDropdown {
       this.options = {
         items: [],
         value: null,
+        values: [],
+        multiple: false,
         searchable: false,
         placeholder: '選択してください',
         emptyText: '候補がありません',
@@ -21,7 +23,11 @@ export class CustomDropdown {
   
       this.items = Array.isArray(this.options.items) ? [...this.options.items] : [];
       this.filteredItems = [...this.items];
+      this.isMultiple = Boolean(this.options.multiple);
       this.selectedValue = this.normalizeValue(this.options.value);
+      this.selectedValues = new Set(
+        this.normalizeValues(this.options.values ?? this.options.value)
+      );
       this.isOpen = false;
       this.focusedIndex = -1;
       this.instanceId = `dropdown-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -35,6 +41,20 @@ export class CustomDropdown {
   
     normalizeValue(value) {
       return value == null ? '' : String(value);
+    }
+
+    normalizeValues(values) {
+      if (values instanceof Set) {
+        return [...values].map((value) => this.normalizeValue(value)).filter(Boolean);
+      }
+    
+      if (Array.isArray(values)) {
+        return values.map((value) => this.normalizeValue(value)).filter(Boolean);
+      }
+    
+      const normalizedValue = this.normalizeValue(values);
+    
+      return normalizedValue ? [normalizedValue] : [];
     }
   
     cacheElements() {
@@ -78,6 +98,9 @@ export class CustomDropdown {
       
         this.panel.hidden = true;
         this.list.setAttribute('role', 'listbox');
+        if (this.isMultiple) {
+          this.list.setAttribute('aria-multiselectable', 'true');
+        }
       
         if (this.searchInput) {
           this.searchInput.setAttribute('autocomplete', 'off');
@@ -200,6 +223,11 @@ export class CustomDropdown {
     }
   
     renderTrigger() {
+      if (this.isMultiple) {
+        this.renderMultipleTrigger();
+        return;
+      }
+    
       const selectedItem = this.items.find(
         (item) => this.normalizeValue(item.value) === this.selectedValue
       );
@@ -215,6 +243,39 @@ export class CustomDropdown {
         this.hiddenInput.value = this.selectedValue;
       }
     }
+
+
+    renderMultipleTrigger() {
+      const selectedItems = this.getSelectedItems();
+      const hasSelectedItems = selectedItems.length > 0;
+    
+      this.triggerText.textContent = hasSelectedItems
+        ? this.formatMultipleTriggerText(selectedItems)
+        : this.options.placeholder || '選択してください';
+    
+      this.triggerText.classList.toggle('is-placeholder', !hasSelectedItems);
+    
+      if (this.hiddenInput) {
+        this.hiddenInput.value = JSON.stringify([...this.selectedValues]);
+      }
+    }
+
+
+    formatMultipleTriggerText(selectedItems) {
+      if (selectedItems.length <= 2) {
+        return selectedItems.map((item) => item.label).join('、');
+      }
+    
+      return `${selectedItems[0].label} 他${selectedItems.length - 1}名`;
+    }
+
+
+    getSelectedItems() {
+      return this.items.filter((item) =>
+        this.selectedValues.has(this.normalizeValue(item.value))
+      );
+    }
+
   
     renderList() {
         const items = this.filteredItems.length > 0 ? this.filteredItems : [];
@@ -231,7 +292,9 @@ export class CustomDropdown {
         this.list.innerHTML = items
           .map((item, index) => {
             const value = this.normalizeValue(item.value);
-            const isSelected = value === this.selectedValue;
+            const isSelected = this.isMultiple
+              ? this.selectedValues.has(value)
+              : value === this.selectedValue;
       
             return `
               <button
@@ -250,7 +313,10 @@ export class CustomDropdown {
           .join('');
       
         this.list.querySelectorAll('[data-role="dropdown-item"]').forEach((button) => {
-          button.addEventListener('click', () => {
+          button.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+        
             this.selectItem(button.dataset.value);
           });
         });
@@ -280,7 +346,6 @@ export class CustomDropdown {
       
         requestAnimationFrame(() => {
           this.updateDirection();
-          this.focusSelectedItemOrFirst();
         });
     }
       
@@ -323,53 +388,102 @@ export class CustomDropdown {
     }
   
     selectItem(value) {
-        const normalizedValue = this.normalizeValue(value);
-        const selectedItem = this.items.find(
-          (item) => this.normalizeValue(item.value) === normalizedValue
-        );
-      
-        if (!selectedItem) {
-          return;
-        }
-      
-        const changed = normalizedValue !== this.selectedValue;
-      
-        if (!changed) {
-          this.close();
-          return;
-        }
-      
-        this.selectedValue = normalizedValue;
-      
-        this.renderTrigger();
-        this.renderList();
+      const normalizedValue = this.normalizeValue(value);
+      const selectedItem = this.items.find(
+        (item) => this.normalizeValue(item.value) === normalizedValue
+      );
+    
+      if (!selectedItem) {
+        return;
+      }
+    
+      if (this.isMultiple) {
+        this.toggleMultipleItem(normalizedValue, selectedItem);
+        return;
+      }
+    
+      const changed = normalizedValue !== this.selectedValue;
+    
+      if (!changed) {
         this.close();
-      
-        const detail = {
-          value: selectedItem.value,
-          item: selectedItem,
-          changed: true,
-        };
-      
-        this.root.dispatchEvent(
-          new CustomEvent('ui:dropdown-change', {
-            bubbles: true,
-            detail,
-          })
-        );
-      
-        if (typeof this.options.onChange === 'function') {
-          this.options.onChange(detail);
-        }
+        return;
+      }
+    
+      this.selectedValue = normalizedValue;
+    
+      this.renderTrigger();
+      this.renderList();
+      this.close();
+    
+      const detail = {
+        value: selectedItem.value,
+        item: selectedItem,
+        changed: true,
+      };
+    
+      this.root.dispatchEvent(
+        new CustomEvent('ui:dropdown-change', {
+          bubbles: true,
+          detail,
+        })
+      );
+    
+      if (typeof this.options.onChange === 'function') {
+        this.options.onChange(detail);
+      }
+    }
+
+    toggleMultipleItem(normalizedValue, selectedItem) {
+      const wasSelected = this.selectedValues.has(normalizedValue);
+    
+      if (wasSelected) {
+        this.selectedValues.delete(normalizedValue);
+      } else {
+        this.selectedValues.add(normalizedValue);
+      }
+    
+      this.renderTrigger();
+      this.renderList();
+    
+      const detail = {
+        value: selectedItem.value,
+        values: [...this.selectedValues],
+        item: selectedItem,
+        selectedItems: this.getSelectedItems(),
+        selected: !wasSelected,
+        changed: true,
+      };
+    
+      this.root.dispatchEvent(
+        new CustomEvent('ui:dropdown-change', {
+          bubbles: true,
+          detail,
+        })
+      );
+    
+      if (typeof this.options.onChange === 'function') {
+        this.options.onChange(detail);
+      }
     }
   
     setItems(items = [], { preserveSelection = true } = {}) {
       const nextItems = Array.isArray(items) ? [...items] : [];
-      const previousValue = this.selectedValue;
-  
+    
       this.items = nextItems;
       this.filteredItems = [...nextItems];
-  
+    
+      if (this.isMultiple) {
+        if (!preserveSelection) {
+          this.selectedValues = new Set();
+        }
+    
+        this.syncSelectionFromValue();
+        this.render();
+        return;
+      }
+    
+      const previousValue = this.selectedValue;
+    
       if (preserveSelection) {
         const hasSelected = this.items.some(
           (item) => this.normalizeValue(item.value) === previousValue
@@ -378,13 +492,18 @@ export class CustomDropdown {
       } else {
         this.selectedValue = '';
       }
-  
+    
       this.syncSelectionFromValue();
       this.render();
     }
   
     setValue(value) {
-      this.selectedValue = this.normalizeValue(value);
+      if (this.isMultiple) {
+        this.selectedValues = new Set(this.normalizeValues(value));
+      } else {
+        this.selectedValue = this.normalizeValue(value);
+      }
+    
       this.syncSelectionFromValue();
       this.renderTrigger();
       this.renderList();
@@ -403,6 +522,18 @@ export class CustomDropdown {
     }
   
     syncSelectionFromValue() {
+      if (this.isMultiple) {
+        const validValues = new Set(
+          this.items.map((item) => this.normalizeValue(item.value))
+        );
+    
+        this.selectedValues = new Set(
+          [...this.selectedValues].filter((value) => validValues.has(value))
+        );
+    
+        return;
+      }
+    
       const hasSelected = this.items.some(
         (item) => this.normalizeValue(item.value) === this.selectedValue
       );
@@ -423,20 +554,24 @@ export class CustomDropdown {
   
     focusSelectedItemOrFirst() {
       const buttons = this.getVisibleButtons();
-  
+    
       if (buttons.length === 0) {
         return;
       }
-  
-      const selectedIndex = buttons.findIndex(
-        (button) => this.normalizeValue(button.dataset.value) === this.selectedValue
-      );
-  
+    
+      const selectedIndex = this.isMultiple
+        ? buttons.findIndex((button) =>
+            this.selectedValues.has(this.normalizeValue(button.dataset.value))
+          )
+        : buttons.findIndex(
+            (button) => this.normalizeValue(button.dataset.value) === this.selectedValue
+          );
+    
       if (selectedIndex >= 0) {
         this.focusItemByIndex(selectedIndex);
         return;
       }
-  
+    
       this.focusItemByIndex(0);
     }
   

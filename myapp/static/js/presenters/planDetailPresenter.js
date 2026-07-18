@@ -69,9 +69,9 @@ function buildPlanCommonItemsVM(check = {}) {
     ruleName: fmtText(rule?.name),
     period: fmtText(rule?.label),
 
-    anchorYear: fmtText(check?.anchor_year),
-    anchorMonth: fmtText(check?.anchor_month),
-    weekOfMonth: fmtText(check?.week_of_month),
+    anchorYear: check?.anchor_year ?? '',
+    anchorMonth: check?.anchor_month ?? '',
+    weekOfMonth: check?.week_of_month ?? '',
 
     practitionerPatternId:
       practitionerPattern?.id ??

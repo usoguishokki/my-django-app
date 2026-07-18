@@ -39,7 +39,13 @@ from myapp.services.inspection_standard_history_approval import (
     approve_inspection_standard_history,
 )
 
-import traceback
+from myapp.services.inspection_standard_history_note import (
+    update_inspection_standard_history_note,
+)
+
+from myapp.services.inspection_standard_history_cancellation import (
+    cancel_inspection_standard_history,
+)
 
 @login_required
 def inspection_card_detail_api(request, inspection_no: str):
@@ -504,6 +510,82 @@ def inspection_standard_history_list_api(request):
         )
 
 
+@require_POST
+@login_required
+def inspection_standard_history_note_update_api(
+    request,
+    history_id: int,
+):
+    """
+    点検基準書 変更履歴の変更理由更新API。
+
+    POST /api/inspection-standards/history/<history_id>/note/update/
+
+    request body:
+      {
+        "note": "変更理由"
+      }
+    """
+
+    try:
+        payload = _parse_json_body(request)
+
+        result = update_inspection_standard_history_note(
+            history_id=history_id,
+            note=payload.get('note'),
+        )
+
+        return _success_response({
+            'history': result,
+        })
+
+    except InspectionStandardError as error:
+        return _domain_error_response(error)
+
+    except ValueError as error:
+        return _bad_request_response(error)
+
+    except Exception:
+        return _server_error_response(
+            message='変更理由の更新に失敗しました。'
+        )
+
+
+@require_POST
+@login_required
+def inspection_standard_history_cancel_api(
+    request,
+    history_id: int,
+):
+    """
+    点検基準書の変更履歴取消API。
+
+    実際の点検基準書の内容は元に戻さず、
+    対象の変更履歴だけを取消済みにする。
+    """
+
+    try:
+        result = cancel_inspection_standard_history(
+            history_id=history_id,
+            cancelled_by=request.user,
+        )
+
+        return _success_response({
+            'history': result,
+        })
+
+    except InspectionStandardError as error:
+        return _domain_error_response(error)
+
+    except ValueError as error:
+        return _bad_request_response(error)
+
+    except Exception:
+        return _server_error_response(
+            message='変更履歴の取り消しに失敗しました。'
+        )
+
+
 @require_GET
 @login_required
 def inspection_standard_history_detail_api(request, history_id: int):
@@ -577,15 +659,3 @@ def inspection_standard_history_approve_api(request, history_id: int):
 
     except ValueError as error:
         return _bad_request_response(error)
-    except Exception as error:
-        traceback.print_exc()
-
-        return _server_error_response(
-            message=f'点検基準書の履歴承認に失敗しました。: {error}'
-        )
-    """
-    except Exception:
-        return _server_error_response(
-            message='点検基準書の履歴承認に失敗しました。'
-        )
-    """

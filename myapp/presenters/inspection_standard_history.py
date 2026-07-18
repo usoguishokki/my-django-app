@@ -4,6 +4,12 @@ from __future__ import annotations
 from typing import Any
 
 
+from myapp.domain.inspection_standard_history_cancellation_policy import (
+    can_cancel_inspection_standard_history,
+    is_inspection_standard_history_cancelled,
+)
+
+
 def present_inspection_standard_history_list(histories) -> list[dict[str, Any]]:
     return [
         present_inspection_standard_history_summary(history)
@@ -11,20 +17,36 @@ def present_inspection_standard_history_list(histories) -> list[dict[str, Any]]:
     ]
 
 
-def present_inspection_standard_history_summary(history) -> dict[str, Any]:
+def present_inspection_standard_history_summary(
+    history,
+) -> dict[str, Any]:
     targets = list(getattr(history, 'targets', []).all())
 
-    team_leader_approval = present_inspection_standard_history_approval(
-        history,
-        role='team_leader',
+    team_leader_approval = (
+        present_inspection_standard_history_approval(
+            history,
+            role='team_leader',
+        )
     )
-    leader_approval = present_inspection_standard_history_approval(
-        history,
-        role='leader',
+
+    leader_approval = (
+        present_inspection_standard_history_approval(
+            history,
+            role='leader',
+        )
     )
-    foreman_approval = present_inspection_standard_history_approval(
-        history,
-        role='foreman',
+
+    foreman_approval = (
+        present_inspection_standard_history_approval(
+            history,
+            role='foreman',
+        )
+    )
+
+    cancellation = (
+        present_inspection_standard_history_cancellation(
+            history
+        )
     )
 
     return {
@@ -46,7 +68,10 @@ def present_inspection_standard_history_summary(history) -> dict[str, Any]:
         'leaderApproval': leader_approval,
         'leaderApprovedByName': leader_approval['approvedByName'],
         'foremanApproval': foreman_approval,
-        'foremanApprovedByName': foreman_approval['approvedByName'],
+        'foremanApprovedByName':
+            foreman_approval['approvedByName'],
+
+        **cancellation,
 
         'targetCount': len(targets),
         'targetTypes': build_target_type_labels(targets),
@@ -67,6 +92,11 @@ def present_inspection_standard_history_detail(history) -> dict[str, Any]:
     foreman_approval = present_inspection_standard_history_approval(
         history,
         role='foreman',
+    )
+    cancellation = (
+        present_inspection_standard_history_cancellation(
+            history
+        )
     )
 
     return {
@@ -90,13 +120,60 @@ def present_inspection_standard_history_detail(history) -> dict[str, Any]:
         'leaderApproval': leader_approval,
         'leaderApprovedByName': leader_approval['approvedByName'],
         'foremanApproval': foreman_approval,
-        'foremanApprovedByName': foreman_approval['approvedByName'],
+        'foremanApprovedByName':
+            foreman_approval['approvedByName'],
+
+        **cancellation,
 
         'targets': [
             present_inspection_standard_history_target(target)
             for target in targets
         ],
     }
+
+
+def present_inspection_standard_history_cancellation(
+    history,
+) -> dict[str, Any]:
+    """
+    変更履歴の取消状態を表示用データへ変換する。
+    """
+
+    cancelled = is_inspection_standard_history_cancelled(history)
+
+    cancelled_by_member_id = str(
+        getattr(
+            history,
+            'cancelled_by_member_id_snapshot',
+            '',
+        ) or ''
+    ).strip()
+
+    cancelled_by_name = str(
+        getattr(
+            history,
+            'cancelled_by_name_snapshot',
+            '',
+        ) or ''
+    ).strip()
+
+    cancelled_at = getattr(
+        history,
+        'cancelled_at',
+        None,
+    )
+
+    return {
+        'cancelled': cancelled,
+        'cancellationEnabled': (
+            can_cancel_inspection_standard_history(history)
+        ),
+        'cancelledByMemberId': cancelled_by_member_id,
+        'cancelledByName': cancelled_by_name,
+        'cancelledAt': format_datetime_iso(cancelled_at),
+        'cancelledAtText': format_datetime_text(cancelled_at),
+    }
+
 
 def present_inspection_standard_history_approval(
     history,

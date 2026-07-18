@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}点検カード{% endblock %}
+
+{% block extra_css %}
+<link href="{% sass_src 'css/pages/card_work.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block header %}
+{% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+<main class="card-work-page">
+    <section class="card-work-shell">
+        <div id="cardWorkApp" class="card-work-app" data-card-work-root>
+            <div class="card-work-loading">
+                <p>点検カードを準備しています。</p>
+            </div>
+        </div>
+    </section>
+</main>
+
+{{ card_work_initial_state|json_script:"cardWorkInitialState" }}
+{% endblock %}
+
+{% block script %}
+<script type="module" src="{% static 'js/card/work/CardWorkPage.js' %}"></script>
+{% endblock %}

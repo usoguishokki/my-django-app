@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}ホーム{% endblock %}
+
+{% block extra_css %}
+    <link href="{% sass_src 'css/pages/home_dashboard.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block header %}
+    {% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+
+<main class="home-dashboard-page">
+    <nav class="home-mobile-tabs" aria-label="ホーム表示切替">
+        <button
+            type="button"
+            class="home-mobile-tabs__button"
+            data-home-mobile-tab="overall"
+            aria-selected="false"
+        >
+            全体
+        </button>
+    
+        <button
+            type="button"
+            class="home-mobile-tabs__button"
+            data-home-mobile-tab="team"
+            aria-selected="false"
+        >
+            今週
+        </button>
+    
+        <button
+            type="button"
+            class="home-mobile-tabs__button"
+            data-home-mobile-tab="tasks"
+            aria-selected="true"
+        >
+            個人
+        </button>
+    </nav>
+
+    <section class="home-dashboard" id="homeDashboard">
+        <!-- 左：全体進捗 -->
+        <section
+            class="home-dashboard__column home-dashboard__column--overall"
+            data-home-mobile-panel="overall"
+        >
+            <article class="home-panel home-panel--overall" id="homeOverallPanel">
+                <header class="home-panel__header">
+                    <div>
+                        <h2 class="home-panel__title" id="overallTitle">全体進捗</h2>
+                    </div>
+                
+                    <button
+                        type="button"
+                        class="home-overall-detail__back home-panel-back-button is-hidden"
+                        id="overallBackButton"
+                    >
+                        ← 戻る
+                    </button>
+                </header>
+                
+                <div class="home-overall-view" id="overallSummaryView">
+                    <div class="home-alert-summary">
+                        <button
+                            type="button"
+                            class="home-alert-summary__item"
+                            data-overall-status-key="in_progress"
+                            data-overall-status-label="実施待ち"
+                        >
+                            <span class="home-alert-summary__label">実施待ち</span>
+                            <strong class="home-alert-summary__value" id="overallInProgressCount">--</strong>
+                            <span class="home-alert-summary__unit">件</span>
+                        </button>
+                        
+                        <button
+                            type="button"
+                            class="home-alert-summary__item home-alert-summary__item--warning"
+                            data-overall-status-key="approval_waiting"
+                            data-overall-status-label="承認待ち"
+                        >
+                            <span class="home-alert-summary__label">承認待ち</span>
+                            <strong class="home-alert-summary__value" id="overallApprovalWaitingCount">--</strong>
+                            <span class="home-alert-summary__unit">件</span>
+                        </button>
+                        
+                        <button
+                            type="button"
+                            class="home-alert-summary__item home-alert-summary__item--warning"
+                            data-overall-status-key="sent_back"
+                            data-overall-status-label="差戻し"
+                        >
+                            <span class="home-alert-summary__label">差戻し</span>
+                            <strong class="home-alert-summary__value" id="overallSentBackCount">--</strong>
+                            <span class="home-alert-summary__unit">件</span>
+                        </button>
+                        
+                        <button
+                            type="button"
+                            class="home-alert-summary__item home-alert-summary__item--danger"
+                            data-overall-status-key="delayed"
+                            data-overall-status-label="遅れ"
+                        >
+                            <span class="home-alert-summary__label">遅れ</span>
+                            <strong class="home-alert-summary__value" id="overallDelayedCount">--</strong>
+                            <span class="home-alert-summary__unit">件</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="home-overall-view is-hidden" id="overallDetailView">
+                
+                    <div class="home-overall-detail__groups" id="overallDetailGroups">
+                        <div class="home-empty-state">
+                            <p>対象の仕事はありません。</p>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </section>
+ 
+        <!-- 中央：所属班進捗 -->
+        <section
+            class="home-dashboard__column home-dashboard__column--team"
+            data-home-mobile-panel="team"
+        >
+            <article class="home-panel home-panel--team" id="homeMyTeamPanel">
+                <header class="home-panel__header">
+                    <div>
+                        <div class="home-panel__title-row">
+                            <h2 class="home-panel__title" id="myTeamTitle">所属班の進捗</h2>
+                        </div>
+                    </div>
+                
+                    <div class="home-rate">
+                        <strong id="myTeamCompletedRate">--</strong>
+                        <span>%</span>
+                    </div>
+                </header>
+            
+                <!-- 週の流れ：月〜日 -->
+                <section class="home-week-strip" aria-label="週の進捗">
+                    <div class="home-week-strip__list" id="myTeamWeekDays">
+                        <div class="home-week-day is-loading">
+                            <span class="home-week-day__label">月</span>
+                            <strong class="home-week-day__state">--</strong>
+                            <span class="home-week-day__meta">--</span>
+                        </div>
+                    
+                        <div class="home-week-day is-loading">
+                            <span class="home-week-day__label">火</span>
+                            <strong class="home-week-day__state">--</strong>
+                            <span class="home-week-day__meta">--</span>
+                        </div>
+                    
+                        <div class="home-week-day is-loading">
+                            <span class="home-week-day__label">水</span>
+                            <strong class="home-week-day__state">--</strong>
+                            <span class="home-week-day__meta">--</span>
+                        </div>
+                    
+                        <div class="home-week-day is-loading">
+                            <span class="home-week-day__label">木</span>
+                            <strong class="home-week-day__state">--</strong>
+                            <span class="home-week-day__meta">--</span>
+                        </div>
+                    
+                        <div class="home-week-day is-loading">
+                            <span class="home-week-day__label">金</span>
+                            <strong class="home-week-day__state">--</strong>
+                            <span class="home-week-day__meta">--</span>
+                        </div>
+                    
+                        <div class="home-week-day is-loading">
+                            <span class="home-week-day__label">土</span>
+                            <strong class="home-week-day__state">--</strong>
+                            <span class="home-week-day__meta">--</span>
+                        </div>
+                    
+                        <div class="home-week-day is-loading">
+                            <span class="home-week-day__label">日</span>
+                            <strong class="home-week-day__state">--</strong>
+                            <span class="home-week-day__meta">--</span>
+                        </div>
+                    </div>
+                </section>
+            
+                <!-- 今日の進捗 -->
+                <section class="home-today-focus">
+                    <div class="home-today-focus__main">
+                        <p class="home-today-focus__label" id="myTeamTodayLabel">今日の進捗</p>
+                    
+                        <div class="home-today-focus__rate">
+                            <strong id="myTeamTodayCompletedRate">--</strong>
+                            <span>%</span>
+                        </div>
+                    
+                        <div class="home-progress-bar">
+                            <div class="home-progress-bar__fill" id="myTeamProgressBar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                
+                    <div class="home-today-focus__metrics">
+                        <div class="home-focus-metric">
+                            <span class="home-focus-metric__label">配布待ち</span>
+                            <strong class="home-focus-metric__value" id="myTeamTodayWaitingCount">--</strong>
+                            <span class="home-focus-metric__unit">件</span>
+                        </div>
+                    
+                        <div class="home-focus-metric">
+                            <span class="home-focus-metric__label">実施待ち</span>
+                            <strong class="home-focus-metric__value" id="myTeamTodayInProgressCount">--</strong>
+                            <span class="home-focus-metric__unit">件</span>
+                        </div>
+                    
+                        <div class="home-focus-metric home-focus-metric--warning">
+                            <span class="home-focus-metric__label">承認待ち</span>
+                            <strong class="home-focus-metric__value" id="myTeamTodayApprovalWaitingCount">--</strong>
+                            <span class="home-focus-metric__unit">件</span>
+                        </div>
+                    
+                        <div class="home-focus-metric home-focus-metric--danger">
+                            <span class="home-focus-metric__label">遅れ</span>
+                            <strong class="home-focus-metric__value" id="myTeamTodayDelayedCount">--</strong>
+                            <span class="home-focus-metric__unit">件</span>
+                        </div>
+                    </div>
+                </section>
+            
+                <!-- 週全体の小さなサマリー -->
+                <div class="home-panel__footer">
+                    <span>週全体</span>
+                    <strong id="myTeamWeekSummary">全 -- 件 / 残り -- 件</strong>
+                </div>
+            </article>
+        </section>
+  
+
+        <!-- 右：自分の未完了タスク -->
+        <section
+            class="home-dashboard__column home-dashboard__column--member"
+            data-home-mobile-panel="tasks"
+        >
+            <article class="home-panel home-panel--member" id="homeMyTasksPanel">
+                <header class="home-panel__header">
+                    <div>
+                        <div class="home-panel__title-row">
+                            <h2 class="home-panel__title" id="myTasksTitle">自分の未完了</h2>
+                        </div>
+                    </div>
+                </header>
+            
+                <div class="home-task-groups" id="myTaskGroups">
+                    <div class="home-empty-state">
+                        <p>読み込み中</p>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </section>
+</main>
+
+{% endblock %}
+
+{% block script %}
+
+<script type="module" src="{% static 'js/home/homeDashboardPage.js' %}"></script>
+
+{% endblock %}

@@ -297,25 +297,81 @@ export class InspectionStandardHistoryPageService {
 
   _renderRow(history = {}) {
     const row = this._buildRow(history);
+  
     const payload = {
       historyId: row.historyId,
     };
   
+    const rowClassName = [
+      'inspection-standard-history-table__row',
+      row.cancelled
+        ? 'inspection-standard-history-table__row--cancelled'
+        : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+  
+    const cancellationMeta = [
+      row.cancelledByName
+        ? `取消者: ${row.cancelledByName}`
+        : '',
+      row.cancelledAtText
+        ? `取消日時: ${row.cancelledAtText}`
+        : '',
+    ]
+      .filter(Boolean)
+      .join(' / ');
+  
+    const cancellationLabel = cancellationMeta
+      ? `取消済み（${cancellationMeta}）`
+      : '取消済みの変更履歴です。';
+  
+    const interactionAttributes = row.cancelled
+      ? `
+          data-cancelled="true"
+          aria-disabled="true"
+          aria-label="${this._escape(cancellationLabel)}"
+          title="${this._escape(cancellationLabel)}"
+        `
+      : `
+          data-cancelled="false"
+          data-ui-action="${this._escape(
+            INSPECTION_STANDARD_DRAWER_ACTIONS.SHOW_HISTORY_DETAIL
+          )}"
+          data-ui-payload="${this._escape(JSON.stringify(payload))}"
+          tabindex="0"
+          role="button"
+          aria-label="変更履歴の詳細を表示"
+        `;
+  
     return `
       <tr
-        class="inspection-standard-history-table__row"
+        class="${this._escape(rowClassName)}"
         data-history-id="${this._escape(row.historyId)}"
-        data-ui-action="${this._escape(INSPECTION_STANDARD_DRAWER_ACTIONS.SHOW_HISTORY_DETAIL)}"
-        data-ui-payload="${this._escape(JSON.stringify(payload))}"
-        tabindex="0"
-        role="button"
-        aria-label="変更履歴の詳細を表示"
+        ${interactionAttributes}
       >
         <td>${this._escape(row.historyId)}</td>
         <td>${this._escape(row.operatedAtText)}</td>
         <td>${this._escape(row.machine)}</td>
         <td>${this._escape(row.inspectionNo)}</td>
-        <td>${this._escape(row.summary)}</td>
+  
+        <td>
+          <div class="inspection-standard-history-table__summaryCell">
+            ${row.cancelled
+              ? `
+                <span class="inspection-standard-history-table__cancelledBadge">
+                  取消済み
+                </span>
+              `
+              : ''
+            }
+          
+            <span class="inspection-standard-history-table__summaryText">
+              ${this._escape(row.summary)}
+            </span>
+          </div>
+        </td>
+  
         <td>${this._escape(row.operatedByName)}</td>
         <td>${this._escape(row.teamLeaderApprovalName)}</td>
         <td>${this._escape(row.leaderApprovalName)}</td>
@@ -387,6 +443,21 @@ export class InspectionStandardHistoryPageService {
         history.foremanApproval ?? history.foreman_approval,
         history.foremanApprovedByName,
         history.foreman_approved_by_name
+      ),
+      cancelled: this._isCancelledHistory(history),
+
+      cancelledByName: this._pickText(
+        history.cancelledByName,
+        history.cancelled_by_name
+      ),
+      
+      cancelledAtText: this._formatOperatedAtText(
+        this._pickText(
+          history.cancelledAtText,
+          history.cancelled_at_text,
+          history.cancelledAt,
+          history.cancelled_at
+        )
       ),
     };
   }
@@ -481,6 +552,38 @@ export class InspectionStandardHistoryPageService {
     }
   
     return String(value ?? '').trim();
+  }
+
+  _isCancelledHistory(history = {}) {
+    const explicitValue =
+      history.cancelled ??
+      history.isCancelled ??
+      history.is_cancelled;
+  
+    if (typeof explicitValue === 'boolean') {
+      return explicitValue;
+    }
+  
+    const normalizedValue = String(
+      explicitValue ?? ''
+    ).trim().toLowerCase();
+  
+    if (normalizedValue === 'true' || normalizedValue === '1') {
+      return true;
+    }
+  
+    if (normalizedValue === 'false' || normalizedValue === '0') {
+      return false;
+    }
+  
+    return Boolean(
+      this._pickText(
+        history.cancelledAt,
+        history.cancelled_at,
+        history.cancelledAtText,
+        history.cancelled_at_text
+      )
+    );
   }
 
   _formatApprovalName(approval, ...fallbackNames) {

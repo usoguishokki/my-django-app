@@ -701,7 +701,7 @@ html {
   width: 100%;
   display: grid;
   visibility: hidden;
-  grid-template-columns: 0.5fr 80fr 0.5fr;
+  grid-template-columns: 0fr 100fr 0fr;
   grid-template-rows: 8vh 92vh;
   grid-template-areas: "header header header" ". main .";
   background-color: white; }
@@ -711,8 +711,7 @@ html {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  position: relative;
-  padding: 10px 0px 10px 0px; }
+  position: relative; }
 
 /* ローディング画面 */
 .loading-screen {

@@ -84,6 +84,10 @@ export function isYearlyScheduleRule(ruleItem = {}) {
   return getRulePeriodKey(ruleItem).endsWith('Y');
 }
 
+export function isOneYearScheduleRule(ruleItem = {}) {
+  return getRulePeriodKey(ruleItem) === '1Y';
+}
+
 export function getAnchorMonthValuesByRule(ruleItem = {}) {
   const periodKey = getRulePeriodKey(ruleItem);
 

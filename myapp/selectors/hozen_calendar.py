@@ -74,7 +74,36 @@ def get_date_alias_by_date(target_date: date) -> Optional[str]:
         .values_list("date_alias", flat=True)
         .first()
     )
-    
+
+
+def select_date_alias_map_by_dates(*, target_dates) -> dict[date, str]:
+    """
+    複数日の date_alias をまとめて取得する。
+
+    Planごとに get_date_alias_by_date() を呼ぶとN+1になるため、
+    home画面のグルーピング用途ではこの関数で一括取得する。
+    """
+    dates = {
+        target_date
+        for target_date in target_dates or []
+        if target_date
+    }
+
+    if not dates:
+        return {}
+
+    rows = (
+        Hozen_calendar_tb.objects
+        .filter(h_date__in=dates)
+        .values("h_date", "date_alias")
+    )
+
+    return {
+        row["h_date"]: row.get("date_alias") or ""
+        for row in rows
+    }
+
+
 def get_first_date_by_date_alias(*, date_alias: str, base_date: date):
     """
     date_alias に紐づく代表日を1件返す。

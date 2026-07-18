@@ -50,7 +50,12 @@ urlpatterns = [
     path("api/", include("myapp.urls_api")),
     path('csv-download/', views.csv_download_page, name='csvDownloadPage'),
     path('timeTable/', views.schedule_page, name='timeTable'),
-    
+    path(
+        "home-dashboard/",
+        views.home_dashboard_view,
+        name="home_dashboard",
+    ),
+    path("card-work/", views.card_work, name="card_work"),
     
 #API
     path('api/get-chart-data/', views.get_chart_data_view, name='get_chart_data'),

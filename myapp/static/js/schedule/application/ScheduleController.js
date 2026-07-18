@@ -1410,6 +1410,11 @@ export class ScheduleController {
       return;
     }
   
+    if (!this.hasPendingEditChanges()) {
+      this.syncEditSubmitButton();
+      return;
+    }
+  
     const payload = this.buildEditSubmitPayload();
   
     await this.editCommitService.commitMove({
@@ -1426,6 +1431,11 @@ export class ScheduleController {
     source = 'submit-button',
   } = {}) {
     this.updateRangeMoveEditDraftFromInputs();
+  
+    if (!this.hasRangeMovePendingChanges()) {
+      this.syncEditSubmitButton();
+      return;
+    }
   
     const payloads = this.buildRangeMoveSubmitPayloads();
   
@@ -1449,9 +1459,7 @@ export class ScheduleController {
       return;
     }
   
-    this.resetEditState();
-    this.resetEditInteractionUI();
-    this.syncEditSubmitButton();
+    this.clearRangeSelection();
   }
   
   buildRangeMoveSubmitPayloads() {
@@ -1805,7 +1813,8 @@ export class ScheduleController {
         ScheduleEditPayloadService.hasChanges(selectedEditEvent, pendingEditEvent)
     );
   }
-  
+
+
   hasRangeMovePendingChanges() {
     const session = this.selectedRangeMoveSession;
   
