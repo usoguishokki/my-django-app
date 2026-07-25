@@ -12,6 +12,8 @@ import {
   buildInspectionStandardDetailUpdateValues,
   buildInspectionStandardDetailCreateValues,
   applyInspectionStandardEditedSectionToDetailVM,
+  appendInspectionStandardSectionToDetailVM,
+  removeInspectionStandardSectionFromDetailVM,
   hasInspectionStandardDetailEditChanges,
   buildInspectionStandardCommonItemUpdateValues,
   hasInspectionStandardCommonItemChanges,
@@ -61,11 +63,11 @@ export class InspectionStandardEditSubmitService {
 
   async saveSelectedEditSection({ element } = {}) {
     const formEl = element?.closest('[data-role="inspection-standard-edit-form"]');
-  
+
     if (!formEl) return;
-  
+
     const selectedSection = this.sectionEditSession?.getSelectedSection();
-  
+
     if (!selectedSection) {
       this._showMessageModal({
         type: 'error',
@@ -74,10 +76,10 @@ export class InspectionStandardEditSubmitService {
       });
       return;
     }
-  
+
     const inspectionNo = this._resolveInspectionNo();
     const detailId = selectedSection.id;
-  
+
     if (!inspectionNo || !detailId) {
       this._showMessageModal({
         type: 'error',
@@ -86,7 +88,7 @@ export class InspectionStandardEditSubmitService {
       });
       return;
     }
-  
+
     const values = collectInspectionStandardEditFormValues({ formEl });
 
     const validation = validateInspectionStandardDetailItemFields({
@@ -108,12 +110,12 @@ export class InspectionStandardEditSubmitService {
       validation.firstInvalidControlEl?.focus?.();
       return;
     }
-  
+
     const hasChanges = hasInspectionStandardDetailEditChanges({
       before: selectedSection,
       after: values,
     });
-  
+
     if (!hasChanges) {
       this._showMessageModal({
         type: 'info',
@@ -122,20 +124,20 @@ export class InspectionStandardEditSubmitService {
       });
       return;
     }
-    
+
     const changeReason = this._collectValidChangeReasonOrShow({
       formEl,
     });
-    
+
     if (changeReason === null) return;
-  
+
     setInspectionStandardEditSaveButtonState({
       button: element,
       isSaving: true,
     });
-  
+
     this._showSavingModal();
-  
+
     try {
       const response = await executeInspectionStandardDetailUpdate({
         inspectionNo,
@@ -143,16 +145,16 @@ export class InspectionStandardEditSubmitService {
         values: buildInspectionStandardDetailUpdateValues(values),
         changeReason,
       });
-  
+
       if (response?.success === false) {
         throw new Error(response?.message || '保存に失敗しました。');
       }
-  
+
       const savedDetail = response?.detail ?? {};
-  
+
       const nextApplicableDevice =
         savedDetail?.applicable_device ?? values.applicableDevice;
-  
+
       const nextSection = this.sectionEditSession.updateSelectedSection({
         applicableDevice: nextApplicableDevice,
         contents: savedDetail?.contents ?? values.contents,
@@ -163,24 +165,24 @@ export class InspectionStandardEditSubmitService {
         status: savedDetail?.status ?? values.status ?? '',
         title: nextApplicableDevice || selectedSection.title,
       });
-  
+
       if (nextSection) {
         const nextVM = applyInspectionStandardEditedSectionToDetailVM({
           vm: this.getActiveDetailVM?.(),
           section: nextSection,
         });
-  
+
         this.setActiveDetailVM?.(nextVM);
-  
+
         this.editPanelService?.renderEditSelectableDetailCards();
         this.editPanelService?.renderSelectedEditSectionForm({
           title: '項目変更',
           section: nextSection,
         });
       }
-  
+
       ModalManger.closeModal();
-  
+
       this._showMessageModal({
         type: 'success',
         title: '保存しました',
@@ -191,9 +193,9 @@ export class InspectionStandardEditSubmitService {
       });
     } catch (error) {
       console.error('[InspectionStandardEditSubmitService] update failed:', error);
-  
+
       ModalManger.closeModal();
-  
+
       this._showMessageModal({
         type: 'error',
         title: '保存に失敗しました',
@@ -213,11 +215,11 @@ export class InspectionStandardEditSubmitService {
 
   async saveAddItem({ element } = {}) {
     const formEl = element?.closest('[data-role="inspection-standard-edit-form"]');
-  
+
     if (!formEl) return;
-  
+
     const inspectionNo = this._resolveInspectionNo();
-  
+
     if (!inspectionNo) {
       this._showMessageModal({
         type: 'error',
@@ -226,7 +228,7 @@ export class InspectionStandardEditSubmitService {
       });
       return;
     }
-  
+
     const values = collectInspectionStandardEditFormValues({ formEl });
 
     const validation = validateInspectionStandardAddItemRequiredFields({
@@ -239,56 +241,56 @@ export class InspectionStandardEditSubmitService {
         title: '入力内容を確認してください',
         message: String(validation.message ?? '').replaceAll('\n', '<br>'),
       });
-    
+
       validation.firstInvalidControlEl?.scrollIntoView?.({
         behavior: 'smooth',
         block: 'center',
       });
-    
+
       validation.firstInvalidControlEl?.focus?.();
       return;
     }
-    
+
     const changeReason = this._collectValidChangeReasonOrShow({
       formEl,
     });
-    
+
     if (changeReason === null) return;
-    
+
     setInspectionStandardEditSaveButtonState({
       button: element,
       isSaving: true,
     });
-  
+
     this._showSavingModal();
-  
+
     try {
       const response = await executeInspectionStandardDetailCreate({
         inspectionNo,
         values: buildInspectionStandardDetailCreateValues(values),
         changeReason,
       });
-  
+
       if (response?.success === false) {
         throw new Error(response?.message || '追加に失敗しました。');
       }
-  
+
       const savedDetail = response?.detail ?? {};
-  
+
       const createdSection = this._buildSectionFromSavedDetail({
         savedDetail,
         fallbackValues: values,
       });
-  
-      const nextVM = this._appendInspectionStandardDetailSectionToVM({
+
+      const nextVM = appendInspectionStandardSectionToDetailVM({
         vm: this.getActiveDetailVM?.(),
         section: createdSection,
       });
-  
+
       this.setActiveDetailVM?.(nextVM);
-  
+
       ModalManger.closeModal();
-  
+
       this._showMessageModal({
         type: 'success',
         title: '追加しました',
@@ -299,9 +301,9 @@ export class InspectionStandardEditSubmitService {
       });
     } catch (error) {
       console.error('[InspectionStandardEditSubmitService] create failed:', error);
-  
+
       ModalManger.closeModal();
-  
+
       this._showMessageModal({
         type: 'error',
         title: '追加に失敗しました',
@@ -321,13 +323,13 @@ export class InspectionStandardEditSubmitService {
 
   async saveDeleteItem({ element } = {}) {
     const formEl = element?.closest('[data-role="inspection-standard-delete-form"]');
-  
+
     if (!formEl) return;
-  
+
     const selectedSection = this.sectionEditSession?.getSelectedSection();
     const inspectionNo = this._resolveInspectionNo();
     const detailId = formEl.dataset.sectionId || selectedSection?.id || '';
-  
+
     if (!inspectionNo || !detailId) {
       this._showMessageModal({
         type: 'error',
@@ -336,48 +338,50 @@ export class InspectionStandardEditSubmitService {
       });
       return;
     }
-    
+
     const changeReason = this._collectValidChangeReasonOrShow({
       formEl,
     });
-    
+
     if (changeReason === null) return;
-    
+
     const confirmed = await this._confirmDeleteItem({
       section: selectedSection,
     });
-  
+
+    if (!confirmed) return;
+
     setInspectionStandardEditSaveButtonState({
       button: element,
       isSaving: true,
     });
-  
+
     this._showSavingModal();
-  
+
     try {
       const response = await executeInspectionStandardDetailDelete({
         inspectionNo,
         detailId,
         changeReason,
       });
-  
+
       if (response?.success === false) {
         throw new Error(response?.message || '削除に失敗しました。');
       }
-  
+
       const deletedDetail = response?.detail ?? {};
       const deletedSectionId = String(deletedDetail?.id ?? detailId);
-  
-      const nextVM = this._removeInspectionStandardDetailSectionFromVM({
+
+      const nextVM = removeInspectionStandardSectionFromDetailVM({
         vm: this.getActiveDetailVM?.(),
         sectionId: deletedSectionId,
       });
-  
+
       this.setActiveDetailVM?.(nextVM);
       this.sectionEditSession?.reset?.();
-  
+
       ModalManger.closeModal();
-  
+
       this._showMessageModal({
         type: 'success',
         title: '削除しました',
@@ -388,9 +392,9 @@ export class InspectionStandardEditSubmitService {
       });
     } catch (error) {
       console.error('[InspectionStandardEditSubmitService] delete failed:', error);
-  
+
       ModalManger.closeModal();
-  
+
       this._showMessageModal({
         type: 'error',
         title: '削除に失敗しました',
@@ -408,7 +412,7 @@ export class InspectionStandardEditSubmitService {
     const formEl = element?.closest(
       '[data-role="inspection-standard-card-abolish-form"]'
     );
-  
+
     if (!formEl) {
       this._showMessageModal({
         type: 'error',
@@ -417,10 +421,10 @@ export class InspectionStandardEditSubmitService {
       });
       return;
     }
-  
+
     const checkId = formEl.dataset.checkId;
     const inspectionNo = formEl.dataset.inspectionNo;
-  
+
     if (!checkId || !inspectionNo) {
       this._showMessageModal({
         type: 'error',
@@ -429,36 +433,36 @@ export class InspectionStandardEditSubmitService {
       });
       return;
     }
-    
+
     const changeReason = this._collectValidChangeReasonOrShow({
       formEl,
     });
-    
+
     if (changeReason === null) return;
-    
+
     const confirmed = await this._confirmAbolishCard({
       inspectionNo,
     });
-  
+
     if (!confirmed) return;
-  
+
     this._setSubmitButtonSaving({
       button: element,
       isSaving: true,
       savingLabel: '削除中...',
     });
-  
+
     try {
       const response = await executeInspectionStandardCardAbolish({
         checkId,
         inspectionNo,
         changeReason,
       });
-  
+
       if (response?.success === false) {
         throw new Error(response?.message || '点検カードの削除に失敗しました。');
       }
-  
+
       this._showMessageModal({
         type: 'success',
         title: '削除が完了しました',
@@ -468,7 +472,7 @@ export class InspectionStandardEditSubmitService {
       });
     } catch (error) {
       console.error('[InspectionStandardEditSubmitService] abolish card failed:', error);
-  
+
       this._showMessageModal({
         type: 'error',
         title: '削除に失敗しました',
@@ -485,17 +489,17 @@ export class InspectionStandardEditSubmitService {
     }
   }
 
-  
+
   async saveCommonItems({ element } = {}) {
     const formEl = element?.closest(
       '[data-role="inspection-standard-common-item-edit-form"]'
     );
-  
+
     if (!formEl) return;
-  
+
     const checkId = String(formEl.dataset.checkId ?? '').trim();
     const inspectionNo = String(formEl.dataset.inspectionNo ?? '').trim();
-  
+
     if (!checkId || !inspectionNo) {
       this._showMessageModal({
         type: 'error',
@@ -504,11 +508,11 @@ export class InspectionStandardEditSubmitService {
       });
       return;
     }
-  
+
     const values = collectInspectionStandardCommonItemFormValues({ formEl });
-  
+
     const beforeCommonItems = this.getActiveDetailVM?.()?.commonItems ?? {};
-  
+
     const hasChanges = hasInspectionStandardCommonItemChanges({
       before: beforeCommonItems,
       after: values,
@@ -522,11 +526,11 @@ export class InspectionStandardEditSubmitService {
       });
       return;
     }
-    
+
     const validation = validateInspectionStandardCommonItemForm({
       formEl,
     });
-    
+
     if (!validation.isValid) {
       this._showMessageModal({
         type: 'error',
@@ -535,21 +539,21 @@ export class InspectionStandardEditSubmitService {
       });
       return;
     }
-    
+
     const changeReason = this._collectValidChangeReasonOrShow({
       formEl,
     });
-    
+
     if (changeReason === null) return;
-    
+
     const changeEntries = buildInspectionStandardCommonItemChangeEntries({
       before: beforeCommonItems,
       after: values,
     });
-    
+
     const hasPlanScheduleChanges =
       hasInspectionStandardPlanScheduleChangeEntries(changeEntries);
-    
+
     const planPreview = hasPlanScheduleChanges
       ? await this._fetchCommonItemPlanPreview({
           checkId,
@@ -558,11 +562,11 @@ export class InspectionStandardEditSubmitService {
           changeReason,
         })
       : null;
-    
+
     if (hasPlanScheduleChanges && !planPreview) {
       return;
     }
-    
+
     const confirmed = await this._confirmCommonItemChanges({
       formEl,
       beforeCommonItems,
@@ -570,16 +574,16 @@ export class InspectionStandardEditSubmitService {
       changeEntries,
       planPreview,
     });
-    
+
     if (!confirmed) {
       return;
     }
-    
+
     setInspectionStandardEditSaveButtonState({
       button: element,
       isSaving: true,
     });
-  
+
     this._showSavingModal();
     try {
       const response = await executeInspectionStandardCommonItemsUpdate({
@@ -588,22 +592,22 @@ export class InspectionStandardEditSubmitService {
         values: buildInspectionStandardCommonItemUpdateValues(values),
         changeReason,
       });
-    
+
       if (response?.success === false) {
         throw new Error(response?.message || '保存に失敗しました。');
       }
-    
+
       const savedCommonItems = response?.commonItems ?? values;
-    
+
       const nextVM = applyInspectionStandardEditedCommonItemsToDetailVM({
         vm: this.getActiveDetailVM?.(),
         commonItems: savedCommonItems,
       });
-    
+
       this.setActiveDetailVM?.(nextVM);
-    
+
       ModalManger.closeModal();
-    
+
       this._showMessageModal({
         type: 'success',
         title: '保存しました',
@@ -614,9 +618,9 @@ export class InspectionStandardEditSubmitService {
       });
     } catch (error) {
       console.error('[InspectionStandardEditSubmitService] common items update failed:', error);
-    
+
       ModalManger.closeModal();
-    
+
       this._showMessageModal({
         type: 'error',
         title: '保存に失敗しました',
@@ -640,17 +644,17 @@ export class InspectionStandardEditSubmitService {
         type: 'danger',
       });
     }
-  
+
     return window.confirm(
       `点検番号「${inspectionNo}」のカードを削除します。よろしいですか？`
     );
   }
-  
+
   _buildAbolishCardSuccessMessage({ card } = {}) {
     const inspectionNo = card?.inspectionNo ?? '';
     const abolishedDetailCount = card?.abolishedDetailCount ?? 0;
     const deletedPlanCount = card?.deletedPlanCount ?? 0;
-  
+
     return [
       inspectionNo ? `点検番号: ${inspectionNo}` : '',
       `廃止した点検項目: ${abolishedDetailCount}件`,
@@ -660,18 +664,18 @@ export class InspectionStandardEditSubmitService {
       .filter(Boolean)
       .join('<br>');
   }
-  
+
   _setSubmitButtonSaving({
     button,
     isSaving,
     savingLabel = '処理中...',
   } = {}) {
     if (!button) return;
-  
+
     if (!button.dataset.defaultLabel) {
       button.dataset.defaultLabel = button.textContent?.trim() || '確定';
     }
-  
+
     button.disabled = Boolean(isSaving);
     button.classList.toggle('is-saving', Boolean(isSaving));
     button.textContent = isSaving
@@ -689,7 +693,7 @@ export class InspectionStandardEditSubmitService {
     if (!Array.isArray(changeEntries) || changeEntries.length === 0) {
       return false;
     }
-  
+
     const message = renderInspectionStandardCommonItemConfirmHTML({
       formEl,
       beforeCommonItems,
@@ -697,7 +701,7 @@ export class InspectionStandardEditSubmitService {
       changeEntries,
       planPreview,
     });
-  
+
     return ModalManger.showConfirmModal({
       message,
       color: 'default',
@@ -720,24 +724,24 @@ export class InspectionStandardEditSubmitService {
         values: buildInspectionStandardCommonItemUpdateValues(values),
         changeReason,
       });
-  
+
       if (response?.success === false) {
         throw new Error(response?.message || '計画日の取得に失敗しました。');
       }
-  
+
       return response?.planPreview ?? null;
     } catch (error) {
       console.error(
         '[InspectionStandardEditSubmitService] plan preview failed:',
         error
       );
-  
+
       this._showMessageModal({
         type: 'error',
         title: '計画日の取得に失敗しました',
         message: '周期変更後の計画日を確認できないため、保存を中止しました。',
       });
-  
+
       return null;
     }
   }
@@ -749,7 +753,7 @@ export class InspectionStandardEditSubmitService {
   } = {}) {
     const applicableDevice =
       savedDetail?.applicable_device ?? fallbackValues.applicableDevice ?? '';
-  
+
     return {
       id: String(savedDetail?.id ?? ''),
       title: applicableDevice || '新規項目',
@@ -768,7 +772,7 @@ export class InspectionStandardEditSubmitService {
     section,
   } = {}) {
     const title = section?.applicableDevice || section?.title || '選択した項目';
-  
+
     return ModalManger.showConfirmModal({
       message: `
         <div class="inspection-standard-message-modal inspection-standard-message-modal--warning">
@@ -787,46 +791,7 @@ export class InspectionStandardEditSubmitService {
       cancelText: 'キャンセル',
     });
   }
-  
-  _removeInspectionStandardDetailSectionFromVM({
-    vm,
-    sectionId,
-  } = {}) {
-    if (!vm || !sectionId) return vm;
-  
-    const targetId = String(sectionId);
-  
-    const currentSections = Array.isArray(vm.sections)
-      ? vm.sections
-      : [];
-  
-    return {
-      ...vm,
-      sections: currentSections.filter((section) => (
-        String(section?.id ?? '') !== targetId
-      )),
-    };
-  }
-  
-  
-  _appendInspectionStandardDetailSectionToVM({
-    vm,
-    section,
-  } = {}) {
-    if (!vm || !section?.id) return vm;
-  
-    const currentSections = Array.isArray(vm.sections)
-      ? vm.sections
-      : [];
-  
-    return {
-      ...vm,
-      sections: [
-        ...currentSections,
-        section,
-      ],
-    };
-  }
+
 
   _resolveInspectionNo() {
     const context = this.sectionEditSession?.getContext?.() ?? {};
@@ -841,24 +806,24 @@ export class InspectionStandardEditSubmitService {
     const validation = validateInspectionStandardChangeReason({
       rootEl: formEl,
     });
-  
+
     if (!validation.isValid) {
       this._showMessageModal({
         type: 'error',
         title: '変更理由を入力してください',
         message: String(validation.message ?? '').replaceAll('\n', '<br>'),
       });
-  
+
       validation.firstInvalidControlEl?.scrollIntoView?.({
         behavior: 'smooth',
         block: 'center',
       });
-  
+
       validation.firstInvalidControlEl?.focus?.();
-  
+
       return null;
     }
-  
+
     return collectInspectionStandardChangeReason({
       rootEl: formEl,
     });
@@ -884,7 +849,7 @@ export class InspectionStandardEditSubmitService {
       `
         <div class="inspection-standard-message-modal inspection-standard-message-modal--loading">
           <div class="inspection-standard-message-modal__spinner" aria-hidden="true"></div>
-  
+
           <div class="inspection-standard-message-modal__content">
             <div class="inspection-standard-message-modal__title">
               変更内容を保存しています
@@ -904,7 +869,7 @@ export class InspectionStandardEditSubmitService {
     this.editPanelService?.renderDetailCardsEditStandbyMode?.();
     this.editPanelService?.renderEditOperationMenuPanel?.();
   }
-  
+
   _showMessageModal({
     type = 'info',
     title = '',
@@ -915,7 +880,7 @@ export class InspectionStandardEditSubmitService {
       `
         <div class="inspection-standard-message-modal inspection-standard-message-modal--${type}">
           <div class="inspection-standard-message-modal__icon" aria-hidden="true"></div>
-  
+
           <div class="inspection-standard-message-modal__content">
             <div class="inspection-standard-message-modal__title">
               ${title}

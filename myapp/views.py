@@ -1508,3 +1508,17 @@ def home_dashboard_view(request):
         "home/home_dashboard.html",
         {},
     )
+
+
+@login_required
+def parts_search_view(request):
+    """
+    部品検索画面を表示する。
+
+    実際の検索処理はJavaScriptから
+    /api/parts-search/ を呼び出して行う。
+    """
+    return render(
+        request,
+        "parts_search/parts_search.html",
+    )

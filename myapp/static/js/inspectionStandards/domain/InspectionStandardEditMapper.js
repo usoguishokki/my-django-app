@@ -122,6 +122,83 @@ export function applyInspectionStandardEditedSectionToDetailVM({
   };
 }
 
+export function appendInspectionStandardSectionToDetailVM({
+  vm,
+  section,
+} = {}) {
+  if (!vm || !section?.id) return vm;
+
+  const cards = Array.isArray(vm.cards)
+    ? vm.cards
+    : [];
+
+  const targetSectionId = String(section.id);
+
+  const alreadyExists = cards.some((card) => (
+    String(card?.sectionId ?? '') === targetSectionId
+  ));
+
+  if (alreadyExists) {
+    return applyInspectionStandardEditedSectionToDetailVM({
+      vm,
+      section,
+    });
+  }
+
+  return {
+    ...vm,
+    cards: [
+      ...cards,
+      buildDetailCardFromSection({
+        section,
+      }),
+    ],
+  };
+}
+
+
+export function removeInspectionStandardSectionFromDetailVM({
+  vm,
+  sectionId,
+} = {}) {
+  if (!vm || !sectionId) return vm;
+
+  const cards = Array.isArray(vm.cards)
+    ? vm.cards
+    : [];
+
+  const targetSectionId = String(sectionId);
+
+  return {
+    ...vm,
+    cards: cards.filter((card) => (
+      String(card?.sectionId ?? '') !== targetSectionId
+    )),
+  };
+}
+
+
+function buildDetailCardFromSection({
+  section,
+} = {}) {
+  return {
+    sectionId: String(section?.id ?? ''),
+    device: section?.applicableDevice || section?.title || '新規項目',
+    editData: {
+      sectionId: String(section?.id ?? ''),
+      applicableDevice: section?.applicableDevice ?? '',
+      contents: section?.contents ?? '',
+      method: section?.method ?? '',
+      standard: section?.standard ?? '',
+      inspectionManHours: section?.inspectionManHours ?? '',
+      status: section?.status ?? '',
+    },
+    items: buildDetailCardItemsFromSection({
+      section,
+    }),
+  };
+}
+
 function buildDetailCardItemsFromSection({ section }) {
   return [
     { label: '内容', value: section.contents ?? '' },

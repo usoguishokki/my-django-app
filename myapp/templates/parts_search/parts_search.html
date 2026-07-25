@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}部品検索{% endblock %}
+
+{% block extra_css %}
+<link
+    href="{% sass_src 'css/pages/parts_search.scss' %}"
+    rel="stylesheet"
+    type="text/css"
+>
+{% endblock %}
+
+{% block header %}
+{% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+<section
+    id="partsSearchApp"
+    class="parts-search-page"
+    data-parts-search-root
+    aria-label="部品検索"
+>
+    <div class="parts-search-shell">
+        <section
+            class="parts-search-panel parts-search-panel--search"
+            aria-labelledby="partsSearchFormTitle"
+        >
+            <header
+                class="
+                    parts-search-panel__header
+                    parts-search-panel__header--search
+                "
+            >
+                <h2
+                    id="partsSearchFormTitle"
+                    class="parts-search-panel__title"
+                >
+                    検索条件
+                </h2>
+
+                <p
+                    id="partsSearchHelp"
+                    class="parts-search-form__help"
+                >
+                    いずれか1項目以上を入力してください。複数項目を入力すると、条件を組み合わせて検索します。
+                </p>
+            </header>
+
+            <form
+                id="partsSearchForm"
+                class="parts-search-form"
+                method="get"
+                action="{% url 'parts_search' %}"
+                data-ui-submit-action="search-parts"
+            >
+                <div class="parts-search-form__fields">
+                    <div
+                        class="
+                            parts-search-form__field
+                            parts-search-form__field--section
+                        "
+                    >
+                        <label
+                            id="partsSearchSectionLabel"
+                            class="parts-search-form__label"
+                            for="partsSearchSectionTrigger"
+                        >
+                            係
+                        </label>
+
+                        <div
+                            class="
+                                custom-dropdown
+                                parts-search-form__dropdown
+                            "
+                            data-role="parts-search-section-dropdown"
+                            data-state="closed"
+                        >
+                            <input
+                                id="partsSearchSection"
+                                type="hidden"
+                                name="section"
+                                value=""
+                                data-role="dropdown-input"
+                            >
+
+                            <button
+                                id="partsSearchSectionTrigger"
+                                class="custom-dropdown__trigger"
+                                type="button"
+                                data-role="dropdown-trigger"
+                                aria-describedby="
+                                    partsSearchHelp
+                                    partsSearchValidationMessage
+                                "
+                            >
+                                <span
+                                    class="custom-dropdown__triggerText"
+                                    data-role="dropdown-trigger-text"
+                                >
+                                    すべて
+                                </span>
+
+                                <span
+                                    class="custom-dropdown__triggerIcon"
+                                    aria-hidden="true"
+                                ></span>
+                            </button>
+
+                            <div
+                                id="partsSearchSectionPanel"
+                                class="custom-dropdown__panel"
+                                data-role="dropdown-panel"
+                                hidden
+                            >
+                                <div
+                                    id="partsSearchSectionList"
+                                    class="custom-dropdown__list"
+                                    data-role="dropdown-list"
+                                    aria-labelledby="partsSearchSectionLabel"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div
+                        class="
+                            parts-search-form__field
+                            parts-search-form__field--barcode
+                        "
+                    >
+                        <label
+                            class="parts-search-form__label"
+                            for="partsSearchBarcode"
+                        >
+                            バーコード
+                        </label>
+
+                        <input
+                            id="partsSearchBarcode"
+                            class="ui-input ui-input--md parts-search-form__input"
+                            type="search"
+                            name="barcode"
+                            maxlength="100"
+                            autocomplete="off"
+                            enterkeyhint="search"
+                            placeholder="例：RE00517"
+                            aria-describedby="partsSearchHelp partsSearchValidationMessage"
+                        >
+                    </div>
+
+                    <div
+                        class="
+                            parts-search-form__field
+                            parts-search-form__field--rack
+                        "
+                    >
+                        <label
+                            class="parts-search-form__label"
+                            for="partsSearchRackLevel1"
+                        >
+                            棚番
+                        </label>
+
+                        <input
+                            id="partsSearchRackLevel1"
+                            class="ui-input ui-input--md parts-search-form__input"
+                            type="search"
+                            name="rack_level1"
+                            maxlength="100"
+                            autocomplete="off"
+                            enterkeyhint="search"
+                            placeholder="例：1R3104"
+                            aria-describedby="partsSearchHelp partsSearchValidationMessage"
+                        >
+                    </div>
+
+                    <div
+                        class="
+                            parts-search-form__field
+                            parts-search-form__field--name
+                        "
+                    >
+                        <label
+                            class="parts-search-form__label"
+                            for="partsSearchPartsName"
+                        >
+                            品名
+                        </label>
+
+                        <input
+                            id="partsSearchPartsName"
+                            class="ui-input ui-input--md parts-search-form__input"
+                            type="search"
+                            name="parts_name"
+                            maxlength="100"
+                            autocomplete="off"
+                            enterkeyhint="search"
+                            placeholder="例：バンドヒーター"
+                            aria-describedby="partsSearchHelp partsSearchValidationMessage"
+                        >
+                    </div>
+
+                    <div
+                        class="
+                            parts-search-form__field
+                            parts-search-form__field--model
+                        "
+                    >
+                        <label
+                            class="parts-search-form__label"
+                            for="partsSearchPartsModel"
+                        >
+                            型式
+                        </label>
+
+                        <input
+                            id="partsSearchPartsModel"
+                            class="ui-input ui-input--md parts-search-form__input"
+                            type="search"
+                            name="parts_model"
+                            maxlength="100"
+                            autocomplete="off"
+                            enterkeyhint="search"
+                            placeholder="型式を入力"
+                            aria-describedby="partsSearchHelp partsSearchValidationMessage"
+                        >
+                    </div>
+
+                    <div class="parts-search-form__actions">
+                        <button
+                            id="partsSearchSubmitButton"
+                            class="
+                                ui-btn
+                                ui-btn--primary
+                                ui-btn--md
+                                parts-search-form__submit
+                            "
+                            type="submit"
+                        >
+                            検索
+                        </button>
+                    </div>
+                </div>
+
+                <p
+                    id="partsSearchValidationMessage"
+                    class="
+                        parts-search-form__message
+                        parts-search-form__message--error
+                    "
+                    role="alert"
+                    hidden
+                ></p>
+            </form>
+        </section>
+
+        <section
+            class="parts-search-panel parts-search-panel--results"
+            aria-labelledby="partsSearchResultTitle"
+        >
+            <header class="parts-search-panel__header parts-search-results-header">
+                <div class="parts-search-results-header__heading">
+                    <h2
+                        id="partsSearchResultTitle"
+                        class="parts-search-panel__title"
+                    >
+                        検索結果
+                    </h2>
+
+                    <p
+                        id="partsSearchSummary"
+                        class="parts-search-results-header__summary"
+                        aria-live="polite"
+                    >
+                        係、バーコード、棚番、品名、型式のいずれかを指定して検索してください。
+                    </p>
+                </div>
+
+                <p
+                    id="partsSearchCount"
+                    class="parts-search-results-header__count"
+                    hidden
+                >
+                    <strong data-parts-search-count>0</strong>
+                    件
+                </p>
+            </header>
+
+            <div
+                id="partsSearchResultPanel"
+                class="parts-search-results"
+            >
+                <div
+                    id="partsSearchInitialState"
+                    class="parts-search-state"
+                >
+                    <p class="parts-search-state__title">
+                        部品を検索してください
+                    </p>
+                </div>
+
+                <div
+                    id="partsSearchEmptyState"
+                    class="parts-search-state"
+                    hidden
+                >
+                    <p class="parts-search-state__title">
+                        該当する部品がありません
+                    </p>
+                </div>
+
+                <div
+                    id="partsSearchErrorState"
+                    class="parts-search-state parts-search-state--error"
+                    role="alert"
+                    hidden
+                >
+                    <p class="parts-search-state__title">
+                        部品情報を取得できませんでした
+                    </p>
+                </div>
+
+                <div
+                    id="partsSearchTableContainer"
+                    class="table-container is-standard parts-search-table-container"
+                    hidden
+                >
+                    <table
+                        id="partsSearchTable"
+                        class="ui-table parts-search-table"
+                        aria-label="部品検索結果"
+                    >
+                        <colgroup>
+                            <col class="parts-search-table__col--section">
+                            <col class="parts-search-table__col--barcode">
+                            <col class="parts-search-table__col--rack">
+                            <col class="parts-search-table__col--name">
+                            <col class="parts-search-table__col--model">
+                            <col class="parts-search-table__col--new-stock">
+                            <col class="parts-search-table__col--used-stock">
+                            <col class="parts-search-table__col--note">
+                        </colgroup>
+
+                        <thead>
+                            <tr>
+                                <th scope="col">係</th>
+                                <th scope="col">バーコード</th>
+                                <th scope="col">棚番</th>
+                                <th scope="col">品名</th>
+                                <th scope="col">型式</th>
+                                <th scope="col" class="is-right">新品</th>
+                                <th scope="col" class="is-right">中古</th>
+                                <th scope="col">備考</th>
+                            </tr>
+                        </thead>
+
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</section>
+{% endblock %}
+
+{% block script %}
+<script
+    type="module"
+    src="{% static 'js/parts/search/PartsSearchPage.js' %}"
+></script>
+{% endblock %}

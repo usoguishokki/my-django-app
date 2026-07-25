@@ -54,6 +54,7 @@ token_cache.bin
 debug_*.py
 
 # Local one-off scripts
+/enrich_parts_csv.py
 MTBF算出コード.py
 予備品.py
 保全システム.py

@@ -56,6 +56,11 @@ from myapp.api.card_work.card_work import (
 )
 
 
+from myapp.api.parts_search.parts_search import (
+    parts_search_api,
+)
+
+
 urlpatterns = [
     path("kpi-matrix/", kpi_matrix_api, name="kpi_matrix_api"),
     path("kpi-matrix/cell-detail/", kpi_matrix_cell_detail_api, name="kpi_matrix_cell_detail_api"),
@@ -199,5 +204,10 @@ urlpatterns = [
         "card-work/results/register/",
         card_work_result_register_api,
         name="card_work_result_register_api",
+    ),
+    path(
+        "parts-search/",
+        parts_search_api,
+        name="parts_search_api",
     ),
 ]

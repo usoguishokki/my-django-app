@@ -149,6 +149,15 @@ DATABASES = {
     },
 }
 
+MARP_DATABASE = {
+    "DRIVER": os.environ["MARP_DB_DRIVER"],
+    "SERVER": os.environ["MARP_DB_SERVER"],
+    "PORT": os.getenv("MARP_DB_PORT", "1433").strip(),
+    "NAME": os.environ["MARP_DB_NAME"],
+    "USER": os.environ["MARP_DB_USERNAME"],
+    "PASSWORD": os.environ["MARP_DB_PASSWORD"],
+}
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
