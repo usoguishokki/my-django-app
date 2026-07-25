@@ -56,6 +56,11 @@ urlpatterns = [
         name="home_dashboard",
     ),
     path("card-work/", views.card_work, name="card_work"),
+    path(
+        "parts-search/",
+        views.parts_search_view,
+        name="parts_search",
+    ),
     
 #API
     path('api/get-chart-data/', views.get_chart_data_view, name='get_chart_data'),

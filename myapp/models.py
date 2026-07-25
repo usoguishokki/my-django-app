@@ -1099,8 +1099,76 @@ class Shift_pattern_worker_view(models.Model):
         managed = False
         db_table = 'shiftpattern_worker_view'
 
-    
-    
-    
-    
-    
+
+class PartsRackLocation_tb(models.Model):
+    """
+    部品棚Noと保管場所の対応マスタ。
+
+    MARPから取得した棚番に対し、
+    RACK_NOの最長前方一致で保管場所を判定する。
+    """
+
+    id = models.BigAutoField(
+        primary_key=True,
+        db_column="ID",
+    )
+
+    rack_no = models.CharField(
+        verbose_name="棚No",
+        max_length=20,
+        unique=True,
+        db_column="RACK_NO",
+    )
+
+    location_name = models.CharField(
+        verbose_name="保管場所",
+        max_length=200,
+        db_column="LOCATION_NAME",
+    )
+
+    location_note = models.CharField(
+        verbose_name="補足",
+        max_length=300,
+        blank=True,
+        default="",
+        db_column="LOCATION_NOTE",
+    )
+
+    is_active = models.BooleanField(
+        verbose_name="使用中",
+        default=True,
+        db_column="IS_ACTIVE",
+    )
+
+    display_order = models.PositiveIntegerField(
+        verbose_name="表示順",
+        default=0,
+        db_column="DISPLAY_ORDER",
+    )
+
+    created_at = models.DateTimeField(
+        verbose_name="登録日時",
+        auto_now_add=True,
+        db_column="CREATED_AT",
+    )
+
+    updated_at = models.DateTimeField(
+        verbose_name="更新日時",
+        auto_now=True,
+        db_column="UPDATED_AT",
+    )
+
+    class Meta:
+        db_table = "PARTS_RACK_LOCATION"
+        verbose_name = "部品棚保管場所"
+        verbose_name_plural = "部品棚保管場所"
+        ordering = (
+            "display_order",
+            "rack_no",
+        )
+
+    def __str__(self) -> str:
+        return (
+            f"{self.rack_no}："
+            f"{self.location_name}"
+        )

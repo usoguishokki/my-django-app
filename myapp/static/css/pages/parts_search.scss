@@ -1,0 +1,597 @@
+// myapp/static/css/pages/parts_search.scss
+
+@import '../foundation/typography';
+@import '../components/input/input';
+@import '../components/button/button';
+@import '../components/table/table';
+@import '../components/customDropdown/customDropdown';
+
+
+/* ==========================================================================
+   Parts Search
+   ========================================================================== */
+
+
+/* 1. Design Tokens
+   ========================================================================== */
+
+$parts-search-primary-dark: #083b70;
+
+$parts-search-text: #0f172a;
+$parts-search-text-muted: #64748b;
+$parts-search-text-subtle: #475569;
+
+$parts-search-border: #e2e8f0;
+
+$parts-search-surface: #ffffff;
+$parts-search-surface-soft: #f8fafc;
+
+$parts-search-danger: #b91c1c;
+$parts-search-danger-soft: #fff1f2;
+$parts-search-danger-border: #fecdd3;
+
+$parts-search-radius-md: 1rem;
+$parts-search-radius-lg: 1.25rem;
+
+$parts-search-shadow:
+  0 1.25rem 3rem rgba(15, 23, 42, 0.07),
+  0 0.25rem 0.75rem rgba(15, 23, 42, 0.04);
+
+$parts-search-control-height: 48px;
+
+
+/* 2. Page
+   ========================================================================== */
+
+.parts-search-page {
+  min-height: 100%;
+  padding-block: 0.75rem 1rem;
+  padding-inline: clamp(0.5rem, 1vw, 0.75rem);
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(13, 75, 141, 0.09),
+      transparent 28rem
+    ),
+    linear-gradient(
+      180deg,
+      #f8fafc 0%,
+      #eef3f8 100%
+    );
+  color: $parts-search-text;
+}
+
+.parts-search-page [hidden] {
+  display: none !important;
+}
+
+.parts-search-shell {
+  display: grid;
+  isolation: isolate;
+  gap: 1rem;
+  width: 100%;
+  max-width: 92rem;
+  margin-inline: auto;
+}
+
+
+/* 4. Panel
+   ========================================================================== */
+
+.parts-search-panel {
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: $parts-search-radius-lg;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: $parts-search-shadow;
+}
+
+.parts-search-panel--search {
+  position: relative;
+  z-index: 100;
+  overflow: visible;
+}
+
+.parts-search-panel--results {
+  position: relative;
+  z-index: 1;
+}
+
+.parts-search-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.15rem 1.25rem;
+  border-bottom: 1px solid $parts-search-border;
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #fbfdff 100%
+    );
+}
+
+.parts-search-panel__header--search {
+  justify-content: flex-start;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.parts-search-panel__title {
+  @include type-title;
+
+  margin: 0;
+  color: $parts-search-text;
+}
+
+.parts-search-form__help,
+.parts-search-results-header__summary {
+  @include type-small;
+
+  min-width: 0;
+  margin: 0;
+  color: $parts-search-text-muted;
+  line-height: 1.5;
+}
+
+
+/* 5. Search Form
+   ========================================================================== */
+
+.parts-search-form {
+  padding: 1rem 1.25rem;
+}
+
+.parts-search-form__fields {
+  display: grid;
+  grid-template-columns:
+    minmax(8rem, 0.75fr)
+    minmax(9rem, 0.75fr)
+    minmax(9rem, 0.75fr)
+    minmax(18rem, 2fr)
+    minmax(18rem, 2fr)
+    7.5rem;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.parts-search-form__field {
+  min-width: 0;
+}
+
+.parts-search-form__label {
+  @include type-label;
+
+  display: inline-block;
+  margin-bottom: 0.4rem;
+  color: $parts-search-text-subtle;
+}
+
+.parts-search-form__input {
+  width: 100%;
+  height: $parts-search-control-height;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.parts-search-form__input::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+.parts-search-form__dropdown {
+  width: 100%;
+  min-width: 0;
+}
+
+.parts-search-form__dropdown .custom-dropdown__trigger {
+  height: $parts-search-control-height;
+  min-height: $parts-search-control-height;
+  box-sizing: border-box;
+}
+
+.parts-search-form__actions {
+  display: flex;
+  align-items: flex-end;
+}
+
+.parts-search-form__submit {
+  width: 100%;
+  min-width: 0;
+  height: $parts-search-control-height;
+  white-space: nowrap;
+}
+
+.parts-search-form__message {
+  @include type-small;
+
+  margin: 0.55rem 0 0;
+}
+
+.parts-search-form__message--error {
+  color: $parts-search-danger;
+}
+
+
+.parts-search-form__dropdown {
+  width: 100%;
+  min-width: 0;
+}
+
+.parts-search-form__dropdown[data-state='open'] {
+  z-index: 110;
+}
+
+.parts-search-form__dropdown .custom-dropdown__panel {
+  z-index: 120;
+}
+
+/* 5. Results Header
+   ========================================================================== */
+
+.parts-search-results-header {
+  align-items: center;
+}
+
+.parts-search-results-header__heading {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  gap: 1rem;
+}
+
+.parts-search-results-header__count {
+  @include type-small;
+
+  flex: 0 0 auto;
+  margin: 0;
+  white-space: nowrap;
+  color: $parts-search-text-subtle;
+}
+
+.parts-search-results-header__count strong {
+  @include type-kpi;
+}
+
+/* 7. Result Area
+   ========================================================================== */
+
+.parts-search-panel--results,
+.parts-search-results {
+  min-width: 0;
+}
+
+.parts-search-results {
+  position: relative;
+  min-height: 20rem;
+  background: $parts-search-surface;
+}
+
+.parts-search-results {
+  position: relative;
+  min-height: 20rem;
+  background: $parts-search-surface;
+}
+
+.parts-search-state {
+  display: grid;
+  place-content: center;
+  min-height: 20rem;
+  padding: 2rem 1.25rem;
+  background:
+    linear-gradient(
+      180deg,
+      $parts-search-surface 0%,
+      $parts-search-surface-soft 100%
+    );
+  text-align: center;
+}
+
+.parts-search-state__title {
+  @include type-title;
+
+  margin: 0;
+  color: $parts-search-text;
+}
+
+.parts-search-state--error {
+  margin: 1rem;
+  min-height: 18rem;
+  border: 1px solid $parts-search-danger-border;
+  border-radius: $parts-search-radius-md;
+  background: $parts-search-danger-soft;
+}
+
+.parts-search-state--error .parts-search-state__title {
+  color: $parts-search-danger;
+}
+
+
+/* 8. Result Table
+   ========================================================================== */
+
+.parts-search-table-container {
+  --parts-search-table-height:
+    clamp(22rem, 54vh, 40rem);
+
+  --parts-search-table-min-height:
+    22rem;
+}
+
+.table-container.is-standard.parts-search-table-container {
+  width: 100%;
+  min-width: 0;
+  height: var(--parts-search-table-height);
+  min-height: var(--parts-search-table-min-height);
+  overflow-x: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  border-radius: 0;
+  background: #ffffff;
+  box-sizing: border-box;
+
+  /*
+   * Firefox
+   */
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.parts-search-table {
+  width: 100%;
+  min-width: 98rem;
+  table-layout: fixed;
+}
+
+
+/* Column Widths
+   ========================================================================== */
+
+.parts-search-table__col--section {
+  width: 5.5rem;
+}
+
+.parts-search-table__col--barcode {
+  width: 8.5rem;
+}
+
+.parts-search-table__col--rack {
+  width: 7rem;
+}
+
+.parts-search-table__col--storage-location {
+  width: 12rem;
+}
+
+.parts-search-table__col--name {
+  width: 22rem;
+}
+
+.parts-search-table__col--model {
+  width: 20rem;
+}
+
+.parts-search-table__col--new-stock {
+  width: 4.5rem;
+}
+
+.parts-search-table__col--used-stock {
+  width: 4.5rem;
+}
+
+.parts-search-table__col--note {
+  width: 14rem;
+}
+
+
+/* Table Rows
+   ========================================================================== */
+
+.parts-search-table tbody tr {
+  cursor: default;
+}
+
+.table-container.is-standard.parts-search-table-container
+.ui-table.parts-search-table
+tbody
+tr
+td {
+  height: auto;
+  vertical-align: top;
+}
+
+.parts-search-table tbody tr:nth-child(even) td {
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.parts-search-table tbody tr:hover td {
+  background: rgba(219, 234, 254, 0.55);
+}
+
+
+/* Barcode
+   ========================================================================== */
+
+.parts-search-table td:nth-child(2) {
+  font-weight: 650;
+  color: $parts-search-primary-dark;
+}
+
+
+/* Quantities
+   ========================================================================== */
+
+.parts-search-table th:nth-child(7),
+.parts-search-table th:nth-child(8),
+.parts-search-table td:nth-child(7),
+.parts-search-table td:nth-child(8) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.parts-search-table td:nth-child(7),
+.parts-search-table td:nth-child(8) {
+  font-weight: $fw-strong;
+}
+
+
+/* Wrapping Columns
+   ========================================================================== */
+
+.table-container.is-standard.parts-search-table-container
+.ui-table.parts-search-table
+tbody
+tr
+td:nth-child(4),
+.table-container.is-standard.parts-search-table-container
+.ui-table.parts-search-table
+tbody
+tr
+td:nth-child(5),
+.table-container.is-standard.parts-search-table-container
+.ui-table.parts-search-table
+tbody
+tr
+td:nth-child(6),
+.table-container.is-standard.parts-search-table-container
+.ui-table.parts-search-table
+tbody
+tr
+td:nth-child(9) {
+  height: auto;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.55;
+  vertical-align: top;
+}
+
+
+/* Scrollbar: Edge / Chrome
+   ========================================================================== */
+
+.table-container.is-standard.parts-search-table-container::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.table-container.is-standard.parts-search-table-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-container.is-standard.parts-search-table-container::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  background-clip: padding-box;
+}
+
+.table-container.is-standard.parts-search-table-container::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+
+/*
+ * カーソルがテーブル領域にある場合だけ表示する。
+ * キーボード操作中も表示する。
+ */
+
+.table-container.is-standard.parts-search-table-container:hover,
+.table-container.is-standard.parts-search-table-container:focus-within {
+  scrollbar-color:
+    rgba(100, 116, 139, 0.65)
+    transparent;
+}
+
+.table-container.is-standard.parts-search-table-container:hover::-webkit-scrollbar-thumb,
+.table-container.is-standard.parts-search-table-container:focus-within::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.65);
+}
+
+.table-container.is-standard.parts-search-table-container:hover::-webkit-scrollbar-thumb:hover,
+.table-container.is-standard.parts-search-table-container:focus-within::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(71, 85, 105, 0.85);
+}
+
+/* 9. Loading
+   ========================================================================== */
+
+
+/* 10. Responsive
+   ========================================================================== */
+
+@media (max-width: 1100px) {
+  .parts-search-form__fields {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .parts-search-form__actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 900px) {
+
+  .parts-search-panel {
+    border-radius: $parts-search-radius-md;
+  }
+
+  .parts-search-table-container {
+    height: 55vh;
+  }
+}
+
+@media (max-width: 640px) {
+  .parts-search-results-header {
+      align-items: flex-start;
+  }
+  .parts-search-results-header__heading {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .parts-search-form__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .parts-search-form__actions {
+    grid-column: auto;
+  }
+
+  .parts-search-shell {
+    gap: 0.75rem;
+  }
+
+  .parts-search-panel__header {
+    padding: 1rem;
+  }
+
+  .parts-search-form {
+    padding: 1rem;
+  }
+
+  .parts-search-form__submit {
+    width: 100%;
+  }
+
+  .parts-search-results-header__count strong {
+    font-size: 1.1rem;
+  }
+
+  .parts-search-state {
+    min-height: 17rem;
+  }
+
+  .parts-search-table-container {
+    height: 58vh;
+    min-height: 20rem;
+  }
+}

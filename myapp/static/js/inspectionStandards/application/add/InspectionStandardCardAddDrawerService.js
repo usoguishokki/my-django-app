@@ -73,9 +73,9 @@ export class InspectionStandardCardAddDrawerService {
       );
 
       initializeInspectionStandardCommonItemDropdowns({
-        rootEl: plan.bodyEl,
-        vm,
-        mode: INSPECTION_STANDARD_COMMON_ITEM_FORM_MODE.EDIT,
+        rootEl: cell.bodyEl,
+        vm: commonItemVM,
+        mode: INSPECTION_STANDARD_COMMON_ITEM_FORM_MODE.CREATE,
       });
     } catch (error) {
       console.error('[InspectionStandardCardAddDrawerService] open failed:', error);

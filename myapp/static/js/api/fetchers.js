@@ -895,3 +895,82 @@ export function executeCardWorkResultRegister(payload = {}) {
         data: payload,
     });
 }
+
+/**
+ * 指定された条件で部品を検索する。
+ *
+ * 検索対象:
+ * ・係
+ * ・バーコード
+ * ・棚番
+ * ・品名
+ * ・型式
+ *
+ * 複数項目が指定された場合はAND検索となる。
+ *
+ * @param {Object} [options={}]
+ * @param {string} [options.section]
+ * @param {string} [options.barcode]
+ * @param {string} [options.rackLevel1]
+ * @param {string} [options.partsName]
+ * @param {string} [options.partsModel]
+ * @returns {Promise<Object>}
+ */
+export function fetchPartsSearch({
+    section = '',
+    barcode = '',
+    rackLevel1 = '',
+    partsName = '',
+    partsModel = '',
+} = {}) {
+    const searchConditions = {
+        section: String(
+            section ?? ''
+        ).trim(),
+
+        barcode: String(
+            barcode ?? ''
+        ).trim(),
+
+        rack_level1: String(
+            rackLevel1 ?? ''
+        ).trim(),
+
+        parts_name: String(
+            partsName ?? ''
+        ).trim(),
+
+        parts_model: String(
+            partsModel ?? ''
+        ).trim(),
+    };
+
+    const hasSearchCondition = Object
+        .values(searchConditions)
+        .some(Boolean);
+
+    if (!hasSearchCondition) {
+        throw new Error(
+            'parts search condition is required'
+        );
+    }
+
+    const params = new URLSearchParams();
+
+    Object.entries(searchConditions)
+        .forEach(([parameterName, value]) => {
+            if (!value) {
+                return;
+            }
+
+            params.set(
+                parameterName,
+                value
+            );
+        });
+
+    return asynchronousCommunication({
+        url: `/api/parts-search/?${params.toString()}`,
+        method: 'GET',
+    });
+}
