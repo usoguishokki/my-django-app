@@ -2391,34 +2391,52 @@
     min-height: 0; }
   .card-work-navigation--input-open {
     position: fixed;
-    top: calc(4rem + 0.5rem);
+    top: calc(8vh + 0.5rem);
     right: 0.5rem;
-    bottom: 0.5rem;
+    bottom: auto;
     left: 0.5rem;
     z-index: 40;
     display: grid;
-    height: auto;
-    max-height: none;
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
+    height: calc(92vh - 1rem);
+    max-height: calc(92vh - 1rem);
     min-height: 0;
     margin: 0;
     padding: 0.45rem;
     border-radius: 1rem;
     overflow: hidden; }
-  .card-work-navigation--input-open .card-work-input-panel {
+  .card-work-navigation--input-open > .card-work-input-panel {
+    align-self: stretch;
     height: 100%;
-    max-height: none;
+    max-height: 100%;
     min-height: 0;
     grid-template-rows: auto minmax(0, 1fr) auto; }
-  .card-work-navigation--input-open .card-work-input-panel__header {
+  .card-work-navigation--input-open
+.card-work-input-panel__header {
     margin: -0.45rem -0.45rem 0;
     border-radius: 1rem 1rem 0 0; }
-  .card-work-navigation--input-open .card-work-input-panel__body {
+  .card-work-navigation--input-open
+.card-work-input-panel__body {
     min-height: 0;
-    overflow: hidden; }
-  .card-work-navigation--input-open .card-work-input-panel__form {
-    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y; }
+  .card-work-navigation--input-open
+.card-work-input-panel__form {
+    height: auto;
     min-height: 0;
-    overflow-y: auto; }
+    overflow: visible;
+    align-content: start;
+    grid-auto-rows: max-content;
+    padding-right: 0.25rem;
+    padding-bottom: 0.5rem; }
+  .card-work-navigation--input-open
+.card-work-input-panel__actions {
+    position: relative;
+    z-index: 2; }
   .card-work-input-panel__form {
     gap: 0.6rem; }
   .card-work-input-panel__textarea {
@@ -2470,36 +2488,4 @@
     width: 100%;
     min-height: 3rem; } }
 
-/* ==========================================================================
-   iPhone viewport temporary check
-   ========================================================================== */
-@media (max-width: 640px) {
-  .card-work-page {
-    min-height: calc(100vh - 4rem); }
-  .card-work-active {
-    height: calc(100vh - 8.3rem);
-    min-height: 0; }
-  .card-work-plan-card {
-    height: 100%;
-    min-height: 0; } }
-
 /*# sourceMappingURL=card_work.css.map */
-/* ==========================================================================
-   iPhone viewport temporary check
-   ========================================================================== */
-
-@media (max-width: 640px) {
-  .card-work-page {
-    min-height: calc(100vh - 4rem);
-  }
-
-  .card-work-active {
-    height: calc(100vh - 8.3rem);
-    min-height: 0;
-  }
-
-  .card-work-plan-card {
-    height: 100%;
-    min-height: 0;
-  }
-}
