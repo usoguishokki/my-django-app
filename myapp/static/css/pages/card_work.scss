@@ -1662,10 +1662,21 @@ $card-work-mobile-page-padding: 0.5rem;
 
   .card-work-active--input-open {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr);
+    gap: 0;
+    width: 100%;
     height: calc(100svh - 8.3rem);
+    min-width: 0;
     min-height: 0;
   }
+  
+  .card-work-active--input-open > .card-work-plan-card,
+  .card-work-active--input-open > .card-work-navigation {
+    width: 100%;
+    min-width: 0;
+  }
+  
 
   .card-work-active--input-open .card-work-plan-card {
     height: 100%;
@@ -1798,3 +1809,23 @@ $card-work-mobile-page-padding: 0.5rem;
     min-height: 3rem;
   }
 }
+
+/* ==========================================================================
+   iPhone viewport temporary check
+   ========================================================================== */
+
+   @media (max-width: 640px) {
+    .card-work-page {
+      min-height: calc(100vh - 4rem);
+    }
+  
+    .card-work-active {
+      height: calc(100vh - 8.3rem);
+      min-height: 0;
+    }
+  
+    .card-work-plan-card {
+      height: 100%;
+      min-height: 0;
+    }
+  }
