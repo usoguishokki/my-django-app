@@ -1671,12 +1671,14 @@ $card-work-mobile-page-padding: 0.5rem;
     min-height: 0;
   }
   
-  .card-work-active--input-open > .card-work-plan-card,
-  .card-work-active--input-open > .card-work-navigation {
+  .card-work-active--input-open > .card-work-plan-card {
     width: 100%;
     min-width: 0;
   }
   
+  .card-work-active--input-open > .card-work-navigation {
+    min-width: 0;
+  }
 
   .card-work-active--input-open .card-work-plan-card {
     height: 100%;
@@ -1690,6 +1692,8 @@ $card-work-mobile-page-padding: 0.5rem;
     bottom: auto;
     left: $card-work-mobile-page-padding;
     z-index: 40;
+
+    width: auto;
   
     display: grid;
     grid-template-rows: minmax(0, 1fr);
