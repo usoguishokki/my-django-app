@@ -809,7 +809,7 @@ def api_update_plan_time(request, plan_id: int):
     return JsonResponse(resp, status=200)
         
 @login_required
-def home_view(request):
+def home_legacy_view(request):
     cache_manager = request.cache_manager
     cache_manager_if = request.cache_manager_if
     organization_code = request.organization_code
@@ -1495,9 +1495,9 @@ def get_employee(request):
 
 
 @login_required
-def home_dashboard_view(request):
+def home_view(request):
     """
-    新home画面。
+    正式なhome画面。
 
     左   : 全体進捗
     中央 : ログインユーザー所属班の進捗
@@ -1508,7 +1508,6 @@ def home_dashboard_view(request):
         "home/home_dashboard.html",
         {},
     )
-
 
 @login_required
 def parts_search_view(request):

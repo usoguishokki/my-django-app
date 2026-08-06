@@ -10,6 +10,8 @@ from django.conf import settings
 from django.shortcuts import redirect
 from django.conf.urls.static import static
 
+from django.views.generic import RedirectView
+
 import logging
 logger = logging.getLogger('myapp')
 
@@ -19,9 +21,9 @@ def dev_redirect_view(request):
     frontend_url = settings.FRONTEND_URL.rstrip("/")
     path = request.path
     redirect_url = urljoin(frontend_url, path)
-    
+
     response = redirect(redirect_url)
-    
+
     # 🔍 `Set-Cookie` の情報をログに出力
     logger.debug(f"🔍 dev_redirect_view: Redirecting to {redirect_url}")
     logger.debug(f"🔍 request.COOKIES in dev_redirect_view: {request.COOKIES}")
@@ -33,7 +35,26 @@ def dev_redirect_view(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('login/', views.login_view, name='login'),
-    path('home/', views.home_view, name='home'),
+    path(
+        "home/",
+        views.home_view,
+        name="home",
+    ),
+
+    path(
+        "home-legacy/",
+        views.home_legacy_view,
+        name="home_legacy",
+    ),
+
+    path(
+        "home-dashboard/",
+        RedirectView.as_view(
+            pattern_name="home",
+            permanent=False,
+        ),
+        name="home_dashboard",
+    ),
     path('card/', views.card_view, name='card'),
     path('workContents/', views.workContents_view, name='workContets'),
     path('card/<str:control_no>/', views.card_by_control_view, name='card_by_control'),
@@ -50,25 +71,20 @@ urlpatterns = [
     path("api/", include("myapp.urls_api")),
     path('csv-download/', views.csv_download_page, name='csvDownloadPage'),
     path('timeTable/', views.schedule_page, name='timeTable'),
-    path(
-        "home-dashboard/",
-        views.home_dashboard_view,
-        name="home_dashboard",
-    ),
     path("card-work/", views.card_work, name="card_work"),
     path(
         "parts-search/",
         views.parts_search_view,
         name="parts_search",
     ),
-    
+
 #API
     path('api/get-chart-data/', views.get_chart_data_view, name='get_chart_data'),
     path('api/employee/', views.get_employee, name='get_employee'),
 #React用
     #re_path(r'^nika/.*$', nika_app_view, name='nika_app_view') 本番用
     #re_path(r'^nika/.*$', nika_app_view, name='nika_app_view'), #開発用
-    
+
 #React_SPA用
 ]
 

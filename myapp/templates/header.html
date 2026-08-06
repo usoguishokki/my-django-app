@@ -47,6 +47,17 @@
                 <img src="{% static 'img/outputCsv.png' %}" alt="CSVダウンロードアイコン" class="icon">
                 <span class="menu-label">CSV_DL</span>
             </a>
+            <a
+                class="menu-item parts-search loading-link"
+                href="{% url 'parts_search' %}"
+            >
+                <img
+                    src="{% static 'img/parts_search_icon.svg' %}"
+                    alt="予備品検索アイコン"
+                    class="icon"
+                >
+                <span class="menu-label">予備品検索</span>
+            </a>
             <a class="menu-item logout" href="{% url 'logout' %}">
                 <img src="{% static 'img/logout.png' %}" alt="ログアウトアイコン" class="icon">
                 <span class="menu-label">logout</span>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="50"
+     height="50"
+     viewBox="0 0 50 50"
+     fill="none"
+     role="img"
+     aria-labelledby="title desc">
+  <title id="title">部品検索アイコン</title>
+  <desc id="desc">歯車と虫眼鏡を組み合わせた部品検索用アイコン</desc>
+
+  <!-- gear -->
+  <g stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22.2 8.8h5.6l1.5 5 4.5 1.9 4.4-2.8 4 4-2.8 4.4 1.9 4.5 5 1.5v5.6l-5 1.5-1.9 4.5 2.8 4.4-4 4-4.4-2.8-4.5 1.9-1.5 5h-5.6l-1.5-5-4.5-1.9-4.4 2.8-4-4 2.8-4.4-1.9-4.5-5-1.5v-5.6l5-1.5 1.9-4.5-2.8-4.4 4-4 4.4 2.8 4.5-1.9 1.5-5z"/>
+    <circle cx="25" cy="25" r="7"/>
+  </g>
+
+  <!-- magnifying glass -->
+  <g stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="31.5" cy="31.5" r="10.5"/>
+    <path d="M39 39l7 7"/>
+    <path d="M27.8 27.8a5.8 5.8 0 0 1 4.4-1.9"/>
+  </g>
+</svg>

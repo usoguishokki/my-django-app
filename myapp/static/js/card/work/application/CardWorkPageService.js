@@ -51,7 +51,7 @@ import {
     CardWorkSwipeController,
 } from './CardWorkSwipeController.js';
 
-const CARD_WORK_HOME_DASHBOARD_URL = '/home-dashboard/';
+const CARD_WORK_HOME_URL = '/home/';
 
 const CARD_WORK_PAGE_ACTION_HANDLERS = Object.freeze({
     previous: (service) => service.showPreviousCard(),
@@ -543,7 +543,7 @@ export class CardWorkPageService {
     }
 
     goToHomeDashboard() {
-        window.location.replace(CARD_WORK_HOME_DASHBOARD_URL);
+        window.location.replace(CARD_WORK_HOME_URL);
     }
     
     resetFilter() {
