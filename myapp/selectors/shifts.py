@@ -61,3 +61,42 @@ def select_shift_for_team_date(*, target_date, affiliation_id):
         )
         .first()
     )
+
+def build_shift_context(
+    *,
+    range_start,
+    range_end,
+) -> dict:
+    """
+    指定期間のシフト日判定に必要な情報をまとめて取得する。
+
+    range_start:
+        取得開始日。範囲に含む。
+
+    range_end:
+        取得終了日。範囲に含まない。
+
+    戻り値:
+        shift_pattern_map:
+            (日付, 班キー) -> シフトパターンID
+
+        pattern_time_map:
+            シフトパターンID -> (開始時刻, 終了時刻)
+    """
+    if (
+        range_start is None
+        or range_end is None
+        or range_start >= range_end
+    ):
+        return {
+            "shift_pattern_map": {},
+            "pattern_time_map": {},
+        }
+
+    return {
+        "shift_pattern_map": build_shift_pattern_map(
+            range_start,
+            range_end,
+        ),
+        "pattern_time_map": build_pattern_time_map(),
+    }

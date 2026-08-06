@@ -51,7 +51,7 @@ class WeekSlot(models.IntegerChoices):
     W3 = 3, "3週目"
     W4 = 4, "4週目"
     RESERVE = 6, "予備週"
-    
+
 class DayOfWeek(models.IntegerChoices):
     MON = 0, "月"
     TUE = 1, "火"
@@ -60,7 +60,7 @@ class DayOfWeek(models.IntegerChoices):
     FRI = 4, "金"
     SAT = 5, "土"
     SUN = 6, "日"
-    
+
 class CheckStatus(models.TextChoices):
     DAILY = "日常点検", "日常点検"
     PERIODIC = "定期点検", "定期点検"
@@ -68,7 +68,7 @@ class CheckStatus(models.TextChoices):
     AUTOMATE = "自動化", "自動化"
     MAKER = "メーカ", "メーカ"
     ABOLISHED = "廃止", "廃止"
-    
+
 class DbDetailStatus(models.TextChoices):
     NORMAL = '通常', '通常'
     MAKER = 'メーカ', 'メーカ'
@@ -78,7 +78,7 @@ class DbDetailStatus(models.TextChoices):
 class TimeZoneStatus(models.TextChoices):
     RUNNING = "稼働中", "稼働中"
     STOPPED = "停止中", "停止中"
-    
+
 class PlanStatus(models.TextChoices):
     WAITING = "配布待ち", "配布待ち"
     IN_PROGRESS = "実施待ち", "実施待ち"
@@ -109,7 +109,7 @@ class InspectionStandardHistoryTargetType(models.TextChoices):
     CHECK = "CHECK", "点検カード"
     DETAIL = "DETAIL", "点検項目"
     PLAN = "PLAN", "計画"
-    
+
 
 class DateTag(models.TextChoices):
     LONG_HOLIDAY = "LONG_HOLIDAY", "連休"
@@ -118,14 +118,14 @@ class DateFilterManger(models.Manager):
     def filter_by_date(self, queryset, dates):
         filter_key = queryset.model.date_filter_field + '__in'
         return queryset.filter(**{filter_key: dates})
-    
+
 class DateFilterable(models.Model):
     #各モデルでオーバライドするべきフィールド名
     date_filter_field=None
     plan_time_field = None
     result_field = None
     status_field = None
-    
+
     #汎用的なフィールド名を取得
     @classmethod
     def get_field_name(cls, field):
@@ -133,9 +133,9 @@ class DateFilterable(models.Model):
         if value is None:
             raise NotImplementedError(f"{field}_field is not defined in {cls.__name__}.")
         return value
-    
+
     objects = DateFilterManger()
-    
+
     class Meta:
         abstract = True #DateFilerableは抽象化ベースクラスとして定義
 
@@ -147,39 +147,913 @@ class Organization(models.Model):
     id = models.AutoField('affilation_id', primary_key=True)
     organization = models.CharField('oraganization', unique=True, max_length=10)
     organization_name = models.CharField('oraganization_name', max_length=10)
-    
+
 class Linename_tb(models.Model):
     id = models.AutoField(primary_key=True)
     organization = models.ForeignKey(
-        to=Organization, 
-        on_delete=models.CASCADE, 
-        blank=True, null=True, 
+        to=Organization,
+        on_delete=models.CASCADE,
+        blank=True, null=True,
         related_name="linenames"
     )
     line_name = models.CharField('line_name', max_length=50, unique=True)
-    
+
     def __str__(self):
         return self.line_name
-    
+
 class Control_tb(models.Model):
     id = models.AutoField(primary_key=True)
     control_no = models.CharField('control_no', unique=True, blank=True, null=False, max_length=20)#管理番号
     line_name = models.ForeignKey(
-        to=Linename_tb, 
-        on_delete=models.CASCADE, 
-        blank=True, null=False, 
+        to=Linename_tb,
+        on_delete=models.CASCADE,
+        blank=True, null=False,
         related_name='linenames'
     )
     machine = models.CharField('machine', blank=True, null=True,max_length=40)#設備名
     criterion_link = models.URLField('criterion_link', blank=True, null=True)#運転基準書リンク
-    
+
     def __str__(self):
         return f"[{self.control_no}] {self.machine} ({self.line_name})"
+
+
+class EquipmentGroup(models.Model):
+    """
+    複数の個別設備をまとめる設備グループ。
+
+    CSV:
+        equipment_group.csv
+
+    例:
+        GRP-R08-069      成形3号機設備群
+        GRP-PG-ALL       汎用穴明機群
+        GRP-UTILITY      工場ユーティリティ設備群
+    """
+
+    class GroupType(models.TextChoices):
+        SINGLE_EQUIPMENT = (
+            "SINGLE_EQUIPMENT",
+            "単独設備",
+        )
+        MACHINE_SYSTEM = (
+            "MACHINE_SYSTEM",
+            "主設備・付帯設備群",
+        )
+        PROCESS_SYSTEM = (
+            "PROCESS_SYSTEM",
+            "工程設備群",
+        )
+        FUNCTION_GROUP = (
+            "FUNCTION_GROUP",
+            "機能別設備群",
+        )
+        SAFETY_SYSTEM = (
+            "SAFETY_SYSTEM",
+            "安全・防災設備群",
+        )
+
+    id = models.BigAutoField(
+        primary_key=True,
+    )
+
+    group_code = models.CharField(
+        verbose_name="設備グループコード",
+        max_length=32,
+        unique=True,
+    )
+
+    group_name = models.CharField(
+        verbose_name="設備グループ名",
+        max_length=100,
+    )
+
+    group_type = models.CharField(
+        verbose_name="設備グループ種別",
+        max_length=32,
+        choices=GroupType.choices,
+    )
+
+    description = models.CharField(
+        verbose_name="説明",
+        max_length=500,
+        blank=True,
+        default="",
+    )
+
+    is_active = models.BooleanField(
+        verbose_name="使用中",
+        default=True,
+    )
+
+    created_at = models.DateTimeField(
+        verbose_name="登録日時",
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        verbose_name="更新日時",
+        auto_now=True,
+    )
+
+    class Meta:
+        db_table = "equipment_group"
+        verbose_name = "設備グループ"
+        verbose_name_plural = "設備グループ"
+        ordering = (
+            "group_code",
+        )
+        indexes = [
+            models.Index(
+                fields=["group_type", "is_active"],
+                name="eqgrp_type_active_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"[{self.group_code}] {self.group_name}"
+
+
+class EquipmentGroupMember(models.Model):
+    """
+    設備グループとControl_tbの所属関係。
+
+    CSV:
+        equipment_group_member.csv
+
+    現在の運用ルール:
+        1つのControl_tbは、1つの設備グループだけに所属する。
+    """
+
+    class MemberRole(models.TextChoices):
+        MAIN_MACHINE = (
+            "MAIN_MACHINE",
+            "主設備",
+        )
+        CONTROL_PANEL = (
+            "CONTROL_PANEL",
+            "制御盤",
+        )
+        ROBOT = (
+            "ROBOT",
+            "ロボット",
+        )
+        CONVEYOR = (
+            "CONVEYOR",
+            "搬送設備",
+        )
+        TEMPERATURE_UNIT = (
+            "TEMPERATURE_UNIT",
+            "温調設備",
+        )
+        AIR_CONDITIONING = (
+            "AIR_CONDITIONING",
+            "給排気・空調設備",
+        )
+        DRYING_OVEN = (
+            "DRYING_OVEN",
+            "乾燥炉",
+        )
+        AGV = (
+            "AGV",
+            "AGV",
+        )
+        SAFETY_DEVICE = (
+            "SAFETY_DEVICE",
+            "安全・防災設備",
+        )
+        UTILITY = (
+            "UTILITY",
+            "付帯設備",
+        )
+        OTHER = (
+            "OTHER",
+            "その他設備",
+        )
+
+    id = models.BigAutoField(
+        primary_key=True,
+    )
+
+    equipment_group = models.ForeignKey(
+        EquipmentGroup,
+        verbose_name="設備グループ",
+        on_delete=models.PROTECT,
+        related_name="members",
+        db_column="equipment_group_id",
+    )
+
+    control = models.ForeignKey(
+        Control_tb,
+        verbose_name="個別設備",
+        on_delete=models.PROTECT,
+        related_name="equipment_group_members",
+        db_column="control_id",
+    )
+
+    member_role = models.CharField(
+        verbose_name="設備役割",
+        max_length=32,
+        choices=MemberRole.choices,
+    )
+
+    is_primary = models.BooleanField(
+        verbose_name="代表設備",
+        default=False,
+    )
+
+    is_active = models.BooleanField(
+        verbose_name="使用中",
+        default=True,
+    )
+
+    created_at = models.DateTimeField(
+        verbose_name="登録日時",
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        verbose_name="更新日時",
+        auto_now=True,
+    )
+
+    class Meta:
+        db_table = "equipment_group_member"
+        verbose_name = "設備グループ所属設備"
+        verbose_name_plural = "設備グループ所属設備"
+        ordering = (
+            "equipment_group__group_code",
+            "-is_primary",
+            "control__control_no",
+        )
+        indexes = [
+            models.Index(
+                fields=["equipment_group", "is_active"],
+                name="eqgrp_mem_group_act_idx",
+            ),
+            models.Index(
+                fields=["control", "is_active"],
+                name="eqgrp_mem_ctrl_act_idx",
+            ),
+            models.Index(
+                fields=["member_role"],
+                name="eqgrp_mem_role_idx",
+            ),
+        ]
+        constraints = [
+            # 現在の運用では、1設備は1グループだけに所属する。
+            models.UniqueConstraint(
+                fields=["control"],
+                name="eqgrp_mem_control_uq",
+            ),
+
+            # 無効な設備を代表設備にはできない。
+            models.CheckConstraint(
+                check=Q(is_primary=False) | Q(is_active=True),
+                name="eqgrp_mem_primary_act_ck",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+
+        if self.is_primary and not self.is_active:
+            raise ValidationError({
+                "is_primary":
+                    "無効な所属設備を代表設備には設定できません。"
+            })
+
+        if (
+            self.is_primary
+            and self.is_active
+            and self.equipment_group_id
+        ):
+            duplicate_primary = (
+                EquipmentGroupMember.objects
+                .filter(
+                    equipment_group_id=self.equipment_group_id,
+                    is_primary=True,
+                    is_active=True,
+                )
+                .exclude(pk=self.pk)
+                .exists()
+            )
+
+            if duplicate_primary:
+                raise ValidationError({
+                    "is_primary":
+                        "この設備グループには、すでに代表設備が存在します。"
+                })
+
+    def __str__(self):
+        primary_label = " / 代表" if self.is_primary else ""
+
+        return (
+            f"{self.equipment_group.group_code} - "
+            f"{self.control.control_no} "
+            f"({self.get_member_role_display()}{primary_label})"
+        )
+
+
+class InstructionCardEquipmentMap(models.Model):
+    """
+    指示カードCSVに記録された設備名と、
+    EquipmentGroupの対応マスター。
+
+    CSV:
+        instruction_card_equipment_map.csv
+
+    group_codeが未設定の設備名も登録するため、
+    equipment_groupはNULLを許可する。
+    """
+
+    id = models.BigAutoField(
+        primary_key=True,
+    )
+
+    equipment_name = models.CharField(
+        verbose_name="指示カード設備名",
+        max_length=100,
+        unique=True,
+    )
+
+    equipment_group = models.ForeignKey(
+        EquipmentGroup,
+        verbose_name="設備グループ",
+        on_delete=models.SET_NULL,
+        related_name="instruction_card_equipment_maps",
+        db_column="equipment_group_id",
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        verbose_name="登録日時",
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        verbose_name="更新日時",
+        auto_now=True,
+    )
+
+    class Meta:
+        db_table = "instruction_card_equipment_map"
+        verbose_name = "指示カード設備名マップ"
+        verbose_name_plural = "指示カード設備名マップ"
+        ordering = (
+            "equipment_name",
+        )
+
+    def __str__(self):
+        if self.equipment_group:
+            return (
+                f"{self.equipment_name} → "
+                f"{self.equipment_group.group_code}"
+            )
+
+        return f"{self.equipment_name} → 未設定"
+
+class InstructionCard(models.Model):
+    """
+    指示カードアプリから出力された指示カード本体。
+
+    元CSV:
+        PLUS ULTRA_Ver8.csv
+
+    CSVのidには空白・重複が存在するため、
+    DB内部では独自のBigAutoFieldを主キーとして使用する。
+
+    設備名は元の文字列をequipment_nameへ保存し、
+    完全一致する設備名マップがある場合だけequipment_mapへ紐づける。
+    """
+
+    class MaintenanceType(models.TextChoices):
+        PREVENTIVE = "予防", "予防"
+        BREAKDOWN = "事後", "事後"
+        OTHER = "その他", "その他"
+        IMPROVEMENT = "改良", "改良"
+        SHOP_REQUEST = "現場依頼", "現場依頼"
+        INVESTIGATION = "調査", "調査"
+        ENGINEERING_REQUEST = "生技依頼", "生技依頼"
+        SAFETY = "安全", "安全"
+        TRAINING = "人材育成", "人材育成"
+
+    class CompletionStatus(models.TextChoices):
+        COMPLETED = "完了", "完了"
+        WAITING = "実施待ち", "実施待ち"
+        ON_HOLD = "保留", "保留"
+
+    id = models.BigAutoField(
+        primary_key=True,
+    )
+
+    # ----------------------------
+    # 取込元の識別情報
+    # ----------------------------
+
+    source_file_name = models.CharField(
+        verbose_name="取込元ファイル名",
+        max_length=150,
+        default="PLUS ULTRA_Ver8.csv",
+    )
+
+    source_row_number = models.PositiveIntegerField(
+        verbose_name="取込元行番号",
+    )
+
+    legacy_id = models.CharField(
+        verbose_name="旧指示カードID",
+        max_length=20,
+        blank=True,
+        default="",
+        db_index=True,
+    )
+
+    # ----------------------------
+    # 指示カード基本情報
+    # ----------------------------
+
+    issued_date = models.DateField(
+        verbose_name="発行日",
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    requested_by_name = models.CharField(
+        verbose_name="From",
+        max_length=50,
+        blank=True,
+        default="",
+    )
+
+    process_name = models.CharField(
+        verbose_name="工程名",
+        max_length=100,
+        blank=True,
+        default="",
+        db_index=True,
+    )
+
+    equipment_name = models.CharField(
+        verbose_name="設備名",
+        max_length=100,
+        blank=True,
+        default="",
+        db_index=True,
+    )
+
+    equipment_map = models.ForeignKey(
+        InstructionCardEquipmentMap,
+        verbose_name="指示カード設備名マップ",
+        on_delete=models.SET_NULL,
+        related_name="instruction_cards",
+        null=True,
+        blank=True,
+    )
+
+    maintenance_type = models.CharField(
+        verbose_name="保全区分",
+        max_length=16,
+        choices=MaintenanceType.choices,
+        blank=True,
+        default="",
+        db_index=True,
+    )
+
+    work_name = models.CharField(
+        verbose_name="作業名",
+        max_length=150,
+        blank=True,
+        default="",
+    )
+
+    planned_person_count = models.PositiveSmallIntegerField(
+        verbose_name="予定人数",
+        null=True,
+        blank=True,
+    )
+
+    planned_work_minutes = models.PositiveIntegerField(
+        verbose_name="予定工数・分",
+        null=True,
+        blank=True,
+    )
+
+    request_text = models.TextField(
+        verbose_name="依頼内容",
+        blank=True,
+        default="",
+    )
+
+    due_date = models.DateField(
+        verbose_name="期日",
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    assigned_to_name = models.CharField(
+        verbose_name="To",
+        max_length=50,
+        blank=True,
+        default="",
+    )
+
+    related_document_before = models.TextField(
+        verbose_name="関連資料1",
+        blank=True,
+        default="",
+    )
+
+    card_reference = models.TextField(
+        verbose_name="カードNo・参照先",
+        blank=True,
+        default="",
+    )
+
+    completion_status = models.CharField(
+        verbose_name="完了フラグ",
+        max_length=16,
+        choices=CompletionStatus.choices,
+        blank=True,
+        default="",
+        db_index=True,
+    )
+
+    # ----------------------------
+    # 実施結果
+    # ----------------------------
+
+    action_text = models.TextField(
+        verbose_name="実施内容",
+        blank=True,
+        default="",
+    )
+
+    actual_work_minutes = models.PositiveIntegerField(
+        verbose_name="実施工数・分",
+        null=True,
+        blank=True,
+    )
+
+    work_reflection = models.TextField(
+        verbose_name="作業の振り返り",
+        blank=True,
+        default="",
+    )
+
+    # ----------------------------
+    # 安全情報
+    # ----------------------------
+
+    injury_state = models.TextField(
+        verbose_name="ケガの状態",
+        blank=True,
+        default="",
+    )
+
+    injury_cause = models.TextField(
+        verbose_name="ケガの要因",
+        blank=True,
+        default="",
+    )
+
+    unsafe_condition = models.TextField(
+        verbose_name="不安全状態",
+        blank=True,
+        default="",
+    )
+
+    unsafe_action = models.TextField(
+        verbose_name="不安全行動",
+        blank=True,
+        default="",
+    )
+
+    ky_risk_identification = models.TextField(
+        verbose_name="洗い出しKY",
+        blank=True,
+        default="",
+    )
+
+    safety_measure_1 = models.TextField(
+        verbose_name="安全対策1",
+        blank=True,
+        default="",
+    )
+
+    safety_measure_2 = models.TextField(
+        verbose_name="安全対策2",
+        blank=True,
+        default="",
+    )
+
+    safety_measure_3 = models.TextField(
+        verbose_name="安全対策3",
+        blank=True,
+        default="",
+    )
+
+    pointing_call = models.TextField(
+        verbose_name="指差呼称",
+        blank=True,
+        default="",
+    )
+
+    priority_risk_point = models.PositiveSmallIntegerField(
+        verbose_name="重点危険ポイント",
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(4),
+        ],
+    )
+
+    nine_word_flags = models.JSONField(
+        verbose_name="9ワード",
+        default=list,
+        blank=True,
+    )
+
+    # ----------------------------
+    # 関連資料・交換部品
+    # ----------------------------
+
+    related_document_after = models.TextField(
+        verbose_name="実施後関連資料",
+        blank=True,
+        default="",
+    )
+
+    replacement_part_1 = models.CharField(
+        verbose_name="交換部品1",
+        max_length=150,
+        blank=True,
+        default="",
+    )
+
+    replacement_part_2 = models.CharField(
+        verbose_name="交換部品2",
+        max_length=150,
+        blank=True,
+        default="",
+    )
+
+    # ----------------------------
+    # 動作・品質確認
+    # CSVに空白が存在するためNULLを許可
+    # ----------------------------
+
+    standalone_operation_ok = models.BooleanField(
+        verbose_name="単体動作",
+        null=True,
+        blank=True,
+    )
+
+    interlocked_operation_ok = models.BooleanField(
+        verbose_name="連動動作",
+        null=True,
+        blank=True,
+    )
+
+    quality_ok = models.BooleanField(
+        verbose_name="品質",
+        null=True,
+        blank=True,
+    )
+
+    # ----------------------------
+    # 完了情報
+    # ----------------------------
+
+    completed_date = models.DateField(
+        verbose_name="完了日",
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    completed_hour = models.PositiveSmallIntegerField(
+        verbose_name="完了時",
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(23),
+        ],
+    )
+
+    completed_minute = models.PositiveSmallIntegerField(
+        verbose_name="完了分",
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(59),
+        ],
+    )
+
+    actual_person_count = models.PositiveSmallIntegerField(
+        verbose_name="実施人数",
+        null=True,
+        blank=True,
+    )
+
+    # ----------------------------
+    # 承認者・責任者スナップショット
+    # ----------------------------
+
+    issuing_team_leader_name = models.CharField(
+        verbose_name="発行班長",
+        max_length=50,
+        blank=True,
+        default="",
+    )
+
+    a_team_leader_name = models.CharField(
+        verbose_name="A班長",
+        max_length=50,
+        blank=True,
+        default="",
+    )
+
+    b_team_leader_name = models.CharField(
+        verbose_name="B班長",
+        max_length=50,
+        blank=True,
+        default="",
+    )
+
+    c_team_leader_name = models.CharField(
+        verbose_name="C班長",
+        max_length=50,
+        blank=True,
+        default="",
+    )
+
+    group_leader_name = models.CharField(
+        verbose_name="組長",
+        max_length=50,
+        blank=True,
+        default="",
+    )
+
+    # ----------------------------
+    # DB管理情報
+    # ----------------------------
+
+    imported_at = models.DateTimeField(
+        verbose_name="取込日時",
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        verbose_name="更新日時",
+        auto_now=True,
+    )
+
+    class Meta:
+        db_table = "instruction_card"
+        verbose_name = "指示カード"
+        verbose_name_plural = "指示カード"
+        ordering = (
+            "-issued_date",
+            "-id",
+        )
+        indexes = [
+            models.Index(
+                fields=[
+                    "equipment_map",
+                    "issued_date",
+                ],
+                name="inst_card_eqmap_date_idx",
+            ),
+            models.Index(
+                fields=[
+                    "maintenance_type",
+                    "completion_status",
+                ],
+                name="inst_card_type_stat_idx",
+            ),
+            models.Index(
+                fields=[
+                    "process_name",
+                    "equipment_name",
+                ],
+                name="inst_card_proc_eq_idx",
+            ),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "source_file_name",
+                    "source_row_number",
+                ],
+                name="inst_card_source_row_uq",
+            ),
+            models.CheckConstraint(
+                check=(
+                    Q(completed_hour__isnull=True)
+                    | (
+                        Q(completed_hour__gte=0)
+                        & Q(completed_hour__lte=23)
+                    )
+                ),
+                name="inst_card_hour_ck",
+            ),
+            models.CheckConstraint(
+                check=(
+                    Q(completed_minute__isnull=True)
+                    | (
+                        Q(completed_minute__gte=0)
+                        & Q(completed_minute__lte=59)
+                    )
+                ),
+                name="inst_card_minute_ck",
+            ),
+            models.CheckConstraint(
+                check=(
+                    Q(priority_risk_point__isnull=True)
+                    | (
+                        Q(priority_risk_point__gte=1)
+                        & Q(priority_risk_point__lte=4)
+                    )
+                ),
+                name="inst_card_risk_point_ck",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+
+        if self.nine_word_flags:
+            if (
+                not isinstance(self.nine_word_flags, list)
+                or len(self.nine_word_flags) != 9
+                or not all(
+                    isinstance(value, bool)
+                    for value in self.nine_word_flags
+                )
+            ):
+                raise ValidationError({
+                    "nine_word_flags":
+                        "9ワードはTrue/Falseを9個持つ配列で登録してください。"
+                })
+
+        if (
+            self.equipment_map_id
+            and self.equipment_name
+            and self.equipment_map.equipment_name
+            != self.equipment_name
+        ):
+            raise ValidationError({
+                "equipment_map":
+                    "設備名と設備名マップの設備名が一致していません。"
+            })
+
+    @property
+    def equipment_group(self):
+        """
+        設備名マップに紐づく設備グループを返す。
+        未紐づけの場合はNone。
+        """
+        if not self.equipment_map:
+            return None
+
+        return self.equipment_map.equipment_group
+
+    @property
+    def completed_time_display(self):
+        """
+        完了時刻をHH:MM形式で返す。
+        時または分が未設定の場合は空文字を返す。
+        """
+        if (
+            self.completed_hour is None
+            or self.completed_minute is None
+        ):
+            return ""
+
+        return (
+            f"{self.completed_hour:02d}:"
+            f"{self.completed_minute:02d}"
+        )
+
+    def __str__(self):
+        card_label = self.legacy_id or f"DB-{self.id}"
+
+        return (
+            f"[{card_label}] "
+            f"{self.equipment_name} - "
+            f"{self.work_name}"
+        )
 
 class Affilation_tb(models.Model):
     affilation_id = models.AutoField('affilation_id', primary_key=True)
     affilation = models.CharField('affilation', max_length=20, unique=True)
-    
+
     def __str__(self):
         return self.affilation
 
@@ -187,56 +1061,56 @@ class CustomUserManager(BaseUserManager):
     def create_user(self, member_id, password=None, **extra_fields):
         if not member_id:
             raise ValueError('The Member ID must be set')
-        
+
         user = self.model(member_id=member_id, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
-    
+
     def create_superuser(self, member_id, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        
+
         return self.create_user(member_id, password, **extra_fields)
 
 class Member_tb(AbstractBaseUser, PermissionsMixin):
     member_id = models.CharField('member_id', primary_key=True, max_length=10)
     name = models.CharField('name', max_length=20)
     is_staff = models.BooleanField(default=False)
-    
+
     USERNAME_FIELD = 'member_id'
     REQUIRED_FIELDS = ['name']
-    
+
     objects = CustomUserManager()
-    
+
     def __str__(self):
         return self.member_id
-    
+
     def get_full_name(self):
         return self.name
-    
+
     def get_short_name(self):
         return self.name
-   
+
 class UserProfile(models.Model):
     id = models.AutoField('affilation_id', primary_key=True)
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         related_name="profile"
     )
     qualification = models.CharField('qualification', max_length=5)
     job_title = models.CharField('job_title', max_length=5)
     belongs = models.ForeignKey(
-        to=Affilation_tb, 
-        on_delete=models.CASCADE, 
+        to=Affilation_tb,
+        on_delete=models.CASCADE,
         related_name='user_profiles'
     )
     organization = models.ForeignKey(to=Organization, on_delete=models.CASCADE)
-    
+
     def __str__(self):
         return f"{self.user.name} ({self.qualification} - {self.job_title})"
-    
+
 class ShiftPattan_tb(models.Model):
     pattern_id = models.AutoField('pattern_id', primary_key=True)
     pattern_name = models.CharField('pattern_name', max_length=20)
@@ -244,7 +1118,7 @@ class ShiftPattan_tb(models.Model):
     end_time = models.TimeField('end_time', null=True)
     lunch_time_start =  models.TimeField('lunch_time_start', null=True)
     lunch_time_end = models.TimeField('lunch_time_end', null=True)
-    
+
     def __str__(self):
         return self.pattern_name
 
@@ -262,15 +1136,15 @@ class PlanScheduleRule(models.Model):
         WEEK = "W", "Week"
         MONTH = "M", "Month"
         YEAR = "Y", "Year"
-    
+
     name = models.CharField(max_length=64, unique=True)
     unit = models.CharField(max_length=1, choices=Unit.choices)
     interval = models.PositiveBigIntegerField()
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
-    
+
+
     class Meta:
         db_table = "plan_schedule_rule"
         verbose_name = "Plan Schedule Rule"
@@ -367,18 +1241,18 @@ class Check_tb(models.Model):
         validators=[MinValueValidator(1)],
     )
     control_no = models.ForeignKey(
-        to=Control_tb, 
-        on_delete=models.CASCADE, 
-        blank=True, null=True, 
+        to=Control_tb,
+        on_delete=models.CASCADE,
+        blank=True, null=True,
         related_name="checks"
     )
-    
+
     rule = models.ForeignKey(
         PlanScheduleRule,
         on_delete=models.PROTECT,   # マスタなので通常はPROTECT推奨（誤削除防止）
         related_name="checks",
     )
-    
+
     anchor_year = models.IntegerField('anchor_year', blank=True, null=True)
     anchor_month = models.PositiveSmallIntegerField(
         'anchor_month',
@@ -389,21 +1263,21 @@ class Check_tb(models.Model):
         null=True,
         choices=WeekSlot.choices,
     )
-    
+
     day_of_week = models.PositiveSmallIntegerField(
         blank=True,
         null=True,
         choices=DayOfWeek.choices,
     )
-    
+
     practitioner = models.ForeignKey(
-        to=ShiftPattan_tb, 
+        to=ShiftPattan_tb,
         on_delete=models.CASCADE,
-        blank=True, 
-        null=True, 
+        blank=True,
+        null=True,
         related_name="practitioners"
     )
-    
+
     time_zone = models.CharField(
         max_length=10,
         choices=TimeZoneStatus.choices,
@@ -411,23 +1285,23 @@ class Check_tb(models.Model):
         null=False,
         default=TimeZoneStatus.RUNNING
     )
-    
+
     status = models.CharField(
         max_length=16,
         choices=CheckStatus.choices,
-        default=CheckStatus.PERIODIC,  # 運用に合わせて 
+        default=CheckStatus.PERIODIC,  # 運用に合わせて
     )
-    
+
     safe_point = models.CharField(
         max_length = 32,
-        default='', 
+        default='',
         blank=True
     )
-    
+
     registration = models.DateField('registration', null=True)#登録日
     last_updated = models.DateField('last_updated', null=True)#登録日
-    
-    
+
+
     class Meta:
         constraints = [
             models.CheckConstraint(
@@ -451,17 +1325,17 @@ class Check_tb(models.Model):
                 name="check_tb_required_person_count_gte_1",
             ),
         ]
-    
+
     def __str__(self):
         return f"{self.inspection_no} - {self.wark_name}"
-    
+
 class Db_details_tb(models.Model):
     id = models.AutoField('id', primary_key=True)
     inspection_no = models.ForeignKey(
-        to=Check_tb, 
-        on_delete=models.CASCADE, 
+        to=Check_tb,
+        on_delete=models.CASCADE,
         blank=True,
-        null=True, 
+        null=True,
         related_name="db_details"
     )
     applicable_device = models.CharField('applicable_device', blank=True, null=True, max_length=100)
@@ -475,10 +1349,10 @@ class Db_details_tb(models.Model):
         choices=DbDetailStatus.choices,
         default=DbDetailStatus.NORMAL,
     )
-    
+
     def __str__(self):
         return f"{self.applicable_device} - {self.contents}"
-    
+
 class Hozen_calendar_tb(models.Model):
     h_id = models.AutoField('h_id', primary_key=True)
     h_date = models.DateField('h_date', null=True, unique=True)
@@ -486,20 +1360,20 @@ class Hozen_calendar_tb(models.Model):
         null=True, blank=True,
         choices=DayOfWeek.choices,
     )
-    
+
     h_month = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(12)]
     )
-    
-    
+
+
     h_week =  models.PositiveSmallIntegerField(
         blank=True,
         null=True,
         choices=WeekSlot.choices,
     )
-    
+
     date_alias = models.CharField(blank=True, null=True, max_length=20)
-    
+
     date_tag = models.CharField(
         max_length=32,
         blank=True,
@@ -518,28 +1392,28 @@ class Hozen_calendar_tb(models.Model):
     def __str__(self):
         return f"{self.h_date} ({self.date_alias})"
 
-    
+
     def __str__(self):
         return f"{self.h_date} ({self.date_alias})"
-    
+
 class Plan_tb(DateFilterable): #DateFilterableが'models.Modelを継承しているのでmodels.Modelに出なくて大丈夫
     date_filter_field = 'p_date'
     plan_time_field = 'plan_time'
     result_field = 'result'
     status_field = 'status'
-    
+
     plan_id = models.AutoField('plan_id', primary_key=True)#plan_id
     inspection_no = models.ForeignKey(
-        to=Check_tb, 
-        on_delete=models.CASCADE, 
-        blank=False, 
-        null=True, 
+        to=Check_tb,
+        on_delete=models.CASCADE,
+        blank=False,
+        null=True,
         related_name="plans"
     )#点検カードNo
     p_date = models.ForeignKey(
         to=Hozen_calendar_tb,
-        on_delete=models.CASCADE, 
-        blank=False, null=True, 
+        on_delete=models.CASCADE,
+        blank=False, null=True,
         related_name="plans_by_date"
     )#計画日(点検カードを実施する日)
     planned_affilation = models.ForeignKey(
@@ -556,25 +1430,25 @@ class Plan_tb(DateFilterable): #DateFilterableが'models.Modelを継承してい
     points_to_note = models.CharField('points_to_pointed_out', null=True, blank=True, max_length=500)#指摘事項
     status = models.CharField('status', max_length=20, choices=PlanStatus.choices, default=PlanStatus.WAITING)#ステータス
     comment = models.CharField('comment', max_length=300, null=True, blank=True)#コメント
-    
+
     approver = models.ForeignKey(
-        Member_tb, 
-        null=True, 
-        blank=True, 
+        Member_tb,
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
         related_name='approved_plans'
     )#承認者
     holder = models.ForeignKey(
         Member_tb,
-        null=True, 
-        blank=True, 
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
         related_name='holder_plans'
     )#保持者
     applicant = models.ForeignKey(
-        Member_tb, 
-        null=True, 
-        blank=True, 
+        Member_tb,
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
         related_name='applied_plans'
     )#申請者
@@ -669,7 +1543,7 @@ class InspectionStandardHistory(models.Model):
         blank=True,
         default='',
     )
-    
+
     team_leader_approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -698,7 +1572,7 @@ class InspectionStandardHistory(models.Model):
         blank=True,
         db_column='team_leader_appr_at',
     )
-    
+
     leader_approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -985,24 +1859,24 @@ class InspectionStandardHistoryFieldChange(models.Model):
         return f'{self.field_name}: {self.before_display} -> {self.after_display}'
 
 
-   
+
 class WeeklyDuty(DateFilterable): #DateFilterableが'models.Modelを継承しているのでmodels.Modelに出なくて大丈夫
     date_filter_field = 'plan__p_date'
     plan_time_field = 'plan__plan_time'
     result_field = 'plan__result'
     status_field = 'plan__status'
     plan = models.OneToOneField(
-        Plan_tb, 
-        null=True, 
-        blank=True, 
-        on_delete=models.CASCADE, 
+        Plan_tb,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
         related_name='weekly_duties'
     )
     affilation = models.ForeignKey(
-        Affilation_tb,  
-        null=True, 
-        blank=True, 
-        on_delete=models.CASCADE, 
+        Affilation_tb,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
         related_name='weekly_duties'
     )
     status = models.CharField(
@@ -1012,20 +1886,20 @@ class WeeklyDuty(DateFilterable): #DateFilterableが'models.Modelを継承して
         default=PlanStatus.WAITING,
     )
     this_week = models.BooleanField('this_week' ,default=False)
-    
+
     def __str__(self):
         return f"Weekly Duty - {self.plan} ({self.status})"
-    
+
 
 class PlanApproval(models.Model):
     plan = models.ForeignKey(
-        Plan_tb, 
-        on_delete=models.CASCADE, 
+        Plan_tb,
+        on_delete=models.CASCADE,
         related_name='approvals'
     )
     member = models.ForeignKey(
-        Member_tb, 
-        on_delete=models.CASCADE, 
+        Member_tb,
+        on_delete=models.CASCADE,
         related_name="plan_approvals"
     )
     role = models.CharField(max_length=20, choices=[
@@ -1033,23 +1907,23 @@ class PlanApproval(models.Model):
         ('applicant', 'Applicant'),
         ('approver', 'Approver'),
     ])
-    
+
     def __str__(self):
         return f"{self.get_role_display()} - {self.member.name}"
 
 class Calendar_tb(models.Model):
     c_id = models.AutoField('c_id', primary_key=True)
     c_date = models.ForeignKey(
-        to=Hozen_calendar_tb, 
-        on_delete=models.CASCADE, 
+        to=Hozen_calendar_tb,
+        on_delete=models.CASCADE,
         blank=False, null=True, related_name='calendars'
     )
     affilation = models.ForeignKey(to=Affilation_tb, to_field='affilation_id', on_delete=models.CASCADE, related_name='calendars')
     pattern = models.ForeignKey(to=ShiftPattan_tb, on_delete=models.CASCADE, related_name='calendars')
-    
+
     def __str__(self):
         return f"Calendar ({self.affilation} - {self.pattern})"
-    
+
 class Field_worker_tb(models.Model):
     pattern_id = models.AutoField('pattern_id', primary_key=True)
     pattern_name = models.CharField('pattern_name', max_length=20)
@@ -1063,7 +1937,7 @@ class Field_worker_tb(models.Model):
     lunch_break_end = models.TimeField('lunch_break_end', null=True)
     hot_time_last_start = models.TimeField('hot_time_last_start', null=True)
     hot_time_last_end = models.TimeField('hot_time_last_end', null=True)
-    
+
     def __str__(self):
         return self.pattern_name
 
@@ -1071,7 +1945,7 @@ class Practitioner_tb(models.Model):
     id = models.AutoField('id', primary_key=True)
     plan_id = models.ForeignKey(to=Plan_tb, on_delete=models.CASCADE, blank=True, null=True, related_name='practitioners')
     member_id = models.ForeignKey(to=Member_tb, on_delete=models.CASCADE, blank=True, null=True, related_name='practitioners')
-    
+
     def __str__(self):
         return f"Practitioner for Plan {self.plan_id} - {self.member_id}"
 
@@ -1091,10 +1965,10 @@ class Shift_pattern_worker_view(models.Model):
     field_worker_lunch_time_end = models.TimeField('field_worker_lunch_time_end', null=True)
     shift_change_time_start = models.TimeField('shift_change_time_start', null=True)
     shift_change_time_end = models.TimeField('shift_change_time_end', null=True)
-    
+
     def __str__(self):
         return self.shift_pattern_name
-    
+
     class Meta:
         managed = False
         db_table = 'shiftpattern_worker_view'

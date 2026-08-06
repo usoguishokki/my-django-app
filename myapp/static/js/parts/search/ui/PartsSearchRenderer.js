@@ -13,6 +13,13 @@ const QUANTITY_FORMATTER = new Intl.NumberFormat(
 );
 
 
+export const PARTS_SEARCH_RESULT_LAYOUTS =
+    Object.freeze({
+        TABLE: 'table',
+        CARDS: 'cards',
+    });
+
+
 const PARTS_SEARCH_COLUMNS = Object.freeze([
     Object.freeze({
         key: 'sectionLabel',
@@ -294,6 +301,473 @@ function normalizePartsSearchItems(
 }
 
 
+function resolveDisplayText(
+    value,
+    fallback = '—',
+) {
+    const normalizedValue = normalizeText(
+        value
+    );
+
+    return normalizedValue || fallback;
+}
+
+
+function createElement(
+    tagName,
+    {
+        className = '',
+        textContent = null,
+        attributes = {},
+    } = {},
+) {
+    const element = document.createElement(
+        tagName
+    );
+
+    if (className) {
+        element.className = className;
+    }
+
+    if (
+        textContent !== null
+        && textContent !== undefined
+    ) {
+        element.textContent = String(
+            textContent
+        );
+    }
+
+    Object.entries(
+        attributes
+    ).forEach(([
+        attributeName,
+        attributeValue,
+    ]) => {
+        if (
+            attributeValue === null
+            || attributeValue === undefined
+        ) {
+            return;
+        }
+
+        element.setAttribute(
+            attributeName,
+            String(attributeValue)
+        );
+    });
+
+    return element;
+}
+
+
+function createCardDetailItem({
+    label,
+    value,
+    modifier = '',
+}) {
+    const modifierClass = modifier
+        ? ` parts-search-card__detail--${modifier}`
+        : '';
+
+    const item = createElement(
+        'div',
+        {
+            className:
+                'parts-search-card__detail'
+                + modifierClass,
+        }
+    );
+
+    const term = createElement(
+        'dt',
+        {
+            className:
+                'parts-search-card__detail-label',
+            textContent: label,
+        }
+    );
+
+    const description = createElement(
+        'dd',
+        {
+            className:
+                'parts-search-card__detail-value',
+            textContent: resolveDisplayText(
+                value
+            ),
+        }
+    );
+
+    item.append(
+        term,
+        description
+    );
+
+    return item;
+}
+
+
+function createStockItem({
+    label,
+    value,
+}) {
+    const item = createElement(
+        'div',
+        {
+            className:
+                'parts-search-card__stock-item',
+        }
+    );
+
+    const labelElement = createElement(
+        'span',
+        {
+            className:
+                'parts-search-card__stock-label',
+            textContent: label,
+        }
+    );
+
+    const valueElement = createElement(
+        'strong',
+        {
+            className:
+                'parts-search-card__stock-value',
+            textContent: formatQuantity(
+                value
+            ),
+        }
+    );
+
+    item.append(
+        labelElement,
+        valueElement
+    );
+
+    return item;
+}
+
+
+function createPartsSearchCard(
+    row,
+) {
+    const card = createElement(
+        'article',
+        {
+            className: 'parts-search-card',
+            attributes: {
+                role: 'listitem',
+            },
+        }
+    );
+
+    card.dataset.rowId = row.rowId;
+    card.dataset.barcode = row.barcode;
+    card.dataset.rackLevel1 =
+        row.rackLevel1;
+    card.dataset.section = row.section;
+
+    const header = createElement(
+        'header',
+        {
+            className:
+                'parts-search-card__header',
+        }
+    );
+
+    const sectionLabel = createElement(
+        'span',
+        {
+            className:
+                'parts-search-card__section',
+            textContent: resolveDisplayText(
+                row.sectionLabel,
+                '未分類'
+            ),
+        }
+    );
+
+    const rack = createElement(
+        'div',
+        {
+            className:
+                'parts-search-card__rack',
+        }
+    );
+
+    const rackLabel = createElement(
+        'span',
+        {
+            className:
+                'parts-search-card__rack-label',
+            textContent: '棚番',
+        }
+    );
+
+    const rackValue = createElement(
+        'strong',
+        {
+            className:
+                'parts-search-card__rack-value',
+            textContent: resolveDisplayText(
+                row.rackLevel1
+            ),
+        }
+    );
+
+    rack.append(
+        rackLabel,
+        rackValue
+    );
+
+    header.append(
+        sectionLabel,
+        rack
+    );
+
+    const main = createElement(
+        'div',
+        {
+            className:
+                'parts-search-card__main',
+        }
+    );
+
+    const partsName = createElement(
+        'h3',
+        {
+            className:
+                'parts-search-card__name',
+            textContent: resolveDisplayText(
+                row.partsName,
+                '品名未登録'
+            ),
+        }
+    );
+
+    const model = createElement(
+        'p',
+        {
+            className:
+                'parts-search-card__model',
+        }
+    );
+
+    const modelLabel = createElement(
+        'span',
+        {
+            className:
+                'parts-search-card__model-label',
+            textContent: '型式',
+        }
+    );
+
+    const modelValue = createElement(
+        'span',
+        {
+            className:
+                'parts-search-card__model-value',
+            textContent: resolveDisplayText(
+                row.partsModel
+            ),
+        }
+    );
+
+    model.append(
+        modelLabel,
+        modelValue
+    );
+
+    main.append(
+        partsName,
+        model
+    );
+
+    const details = createElement(
+        'dl',
+        {
+            className:
+                'parts-search-card__details',
+        }
+    );
+
+    details.append(
+        createCardDetailItem({
+            label: '保管場所',
+            value: row.storageLocationName,
+            modifier: 'location',
+        }),
+        createCardDetailItem({
+            label: 'バーコード',
+            value: row.barcode,
+            modifier: 'barcode',
+        })
+    );
+
+    const stock = createElement(
+        'div',
+        {
+            className:
+                'parts-search-card__stock',
+            attributes: {
+                'aria-label': '在庫数',
+            },
+        }
+    );
+
+    stock.append(
+        createStockItem({
+            label: '新品',
+            value: row.newStockQty,
+        }),
+        createStockItem({
+            label: '中古',
+            value: row.usedStockQty,
+        })
+    );
+
+    card.append(
+        header,
+        main,
+        details,
+        stock
+    );
+
+    if (row.partsNote) {
+        const note = createElement(
+            'div',
+            {
+                className:
+                    'parts-search-card__note',
+            }
+        );
+
+        const noteLabel = createElement(
+            'span',
+            {
+                className:
+                    'parts-search-card__note-label',
+                textContent: '備考',
+            }
+        );
+
+        const noteValue = createElement(
+            'p',
+            {
+                className:
+                    'parts-search-card__note-value',
+                textContent: row.partsNote,
+            }
+        );
+
+        note.append(
+            noteLabel,
+            noteValue
+        );
+
+        card.append(
+            note
+        );
+    }
+
+    return card;
+}
+
+
+function renderPartsSearchCards(
+    cardList,
+    rows,
+) {
+    if (!cardList) {
+        return;
+    }
+
+    const fragment =
+        document.createDocumentFragment();
+
+    rows.forEach((row) => {
+        fragment.append(
+            createPartsSearchCard(
+                row
+            )
+        );
+    });
+
+    cardList.replaceChildren(
+        fragment
+    );
+}
+
+
+function resolvePartsSearchResultLayout(
+    value,
+) {
+    return (
+        value
+        === PARTS_SEARCH_RESULT_LAYOUTS.CARDS
+    )
+        ? PARTS_SEARCH_RESULT_LAYOUTS.CARDS
+        : PARTS_SEARCH_RESULT_LAYOUTS.TABLE;
+}
+
+
+function clearRenderedPartsSearchResults(
+    elements,
+) {
+    elements.table?.replaceChildren();
+    elements.cardList?.replaceChildren();
+}
+
+
+function renderPartsSearchTable(
+    elements,
+    rows,
+) {
+    if (
+        !elements.table
+        || !elements.tableContainer
+    ) {
+        return false;
+    }
+
+    elements.table.innerHTML =
+        renderGenericTableHTML({
+            columns: PARTS_SEARCH_COLUMNS,
+            rows,
+        });
+
+    setHidden(
+        elements.tableContainer,
+        false
+    );
+
+    return true;
+}
+
+
+function renderPartsSearchCardList(
+    elements,
+    rows,
+) {
+    if (!elements.cardList) {
+        return false;
+    }
+
+    renderPartsSearchCards(
+        elements.cardList,
+        rows
+    );
+
+    setHidden(
+        elements.cardList,
+        false
+    );
+
+    return true;
+}
+
+
 function getElement(
     root,
     selector,
@@ -359,6 +833,11 @@ function resolveElements(root) {
             '#partsSearchTable'
         ),
 
+        cardList: getElement(
+            root,
+            '#partsSearchCardList'
+        ),
+
         summary: getElement(
             root,
             '#partsSearchSummary'
@@ -402,6 +881,11 @@ function hideAllResultStates(
 
     setHidden(
         elements.tableContainer,
+        true
+    );
+
+    setHidden(
+        elements.cardList,
         true
     );
 }
@@ -473,6 +957,10 @@ export function renderPartsSearchInitial(
         elements
     );
 
+    clearRenderedPartsSearchResults(
+        elements
+    );
+
     setHidden(
         elements.initialState,
         false
@@ -504,6 +992,10 @@ export function renderPartsSearchEmpty(
     );
 
     hideAllResultStates(
+        elements
+    );
+
+    clearRenderedPartsSearchResults(
         elements
     );
 
@@ -542,6 +1034,10 @@ export function renderPartsSearchError(
         elements
     );
 
+    clearRenderedPartsSearchResults(
+        elements
+    );
+
     setHidden(
         elements.errorState,
         false
@@ -565,6 +1061,8 @@ export function renderPartsSearchResults(
         criteria = {},
         items = [],
         summary = {},
+        resultLayout =
+            PARTS_SEARCH_RESULT_LAYOUTS.TABLE,
     } = {},
 ) {
     const rows = normalizePartsSearchItems(
@@ -590,26 +1088,35 @@ export function renderPartsSearchResults(
         elements
     );
 
-    if (!elements.table) {
+    clearRenderedPartsSearchResults(
+        elements
+    );
+
+    const resolvedLayout =
+        resolvePartsSearchResultLayout(
+            resultLayout
+        );
+
+    const rendered = (
+        resolvedLayout
+        === PARTS_SEARCH_RESULT_LAYOUTS.CARDS
+    )
+        ? renderPartsSearchCardList(
+            elements,
+            rows
+        )
+        : renderPartsSearchTable(
+            elements,
+            rows
+        );
+
+    if (!rendered) {
         renderPartsSearchError(
             root
         );
 
         return;
     }
-
-    elements.table.innerHTML =
-        renderGenericTableHTML(
-            {
-                columns: PARTS_SEARCH_COLUMNS,
-                rows,
-            }
-        );
-
-    setHidden(
-        elements.tableContainer,
-        false
-    );
 
     setHidden(
         elements.countContainer,

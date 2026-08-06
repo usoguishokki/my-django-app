@@ -4,33 +4,35 @@ from django.db.models import Prefetch
 
 from myapp.domain.checks.constants import NON_ACTIVE_CHECK_STATUSES
 from myapp.models import Db_details_tb, Plan_tb, Practitioner_tb
-from myapp.selectors.home.dashboard import select_my_incomplete_task_rows
+
+from myapp.selectors.plan import (
+    select_holder_incomplete_plan_rows,
+)
 
 
-def select_card_work_my_task_rows(
+def select_card_work_my_task_candidate_rows(
     *,
     holder_id,
     status_value: str,
-    target_date,
 ):
     """
-    home 個人の仕事から card-work に遷移した場合の対象Planを取得する。
+    Homeの「自分の仕事」からcard-workを開く際の候補Planを取得する。
+
+    シフト日判定にはシフトコンテキストが必要なため、
+    selectorでは実日付による絞り込みを行わない。
+
+    最終的な対象日の判定はservice層で行う。
     """
-    if not holder_id or not status_value or not target_date:
+    if not holder_id or not status_value:
         return Plan_tb.objects.none()
 
     return (
-        select_my_incomplete_task_rows(
+        select_holder_incomplete_plan_rows(
             holder_id=holder_id,
         )
         .filter(
             status=status_value,
             plan_time__isnull=False,
-            plan_time__date=target_date,
-        )
-        .order_by(
-            "plan_time",
-            "plan_id",
         )
     )
 

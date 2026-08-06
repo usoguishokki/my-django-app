@@ -1214,29 +1214,24 @@
 .card-work-plan-card__meta-item dd {
   color: var(--card-work-header-text-color); }
 
+.card-work-plan-card__header--daily,
+.card-work-plan-card__header--stopped {
+  --card-work-header-text-color: #ffffff;
+  --card-work-header-muted-color: #ffffff;
+  --card-work-header-chip-bg: rgba(255, 255, 255, 0.14);
+  --card-work-header-chip-border: rgba(255, 255, 255, 0.28);
+  --card-work-header-status-bg: rgba(255, 255, 255, 0.18);
+  --card-work-header-status-border: rgba(255, 255, 255, 0.32);
+  --card-work-header-number-color: #ffffff;
+  color: #ffffff; }
+
 .card-work-plan-card__header--daily {
-  --card-work-header-text-color: #422006;
-  --card-work-header-muted-color: rgba(92, 55, 0, 0.68);
-  --card-work-header-chip-bg: rgba(255, 251, 235, 0.58);
-  --card-work-header-chip-border: rgba(180, 83, 9, 0.18);
-  --card-work-header-status-bg: rgba(254, 243, 199, 0.78);
-  --card-work-header-status-border: rgba(180, 83, 9, 0.24);
-  --card-work-header-number-color: #78350f;
-  border-color: rgba(245, 158, 11, 0.72);
-  background: linear-gradient(135deg, #fff4c2 0%, #f8d77a 48%, #f3c452 100%);
-  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.22), 0 0.5rem 1.25rem rgba(146, 64, 14, 0.1); }
+  background: #ec9e0d;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12), 0 0.5rem 1.25rem rgba(120, 53, 15, 0.14); }
 
 .card-work-plan-card__header--stopped {
-  --card-work-header-text-color: #052e1b;
-  --card-work-header-muted-color: rgba(5, 46, 27, 0.72);
-  --card-work-header-chip-bg: rgba(240, 253, 244, 0.72);
-  --card-work-header-chip-border: rgba(22, 101, 52, 0.22);
-  --card-work-header-status-bg: rgba(220, 252, 231, 0.9);
-  --card-work-header-status-border: rgba(22, 101, 52, 0.32);
-  --card-work-header-number-color: #064e3b;
-  border-color: rgba(34, 197, 94, 0.72);
-  background: linear-gradient(135deg, #dcfce7 0%, #86efac 52%, #4ade80 100%);
-  box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.22), 0 0.5rem 1.25rem rgba(22, 101, 52, 0.1); }
+  background: #15803d;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12), 0 0.5rem 1.25rem rgba(20, 83, 45, 0.14); }
 
 .card-work-plan-card__header-top {
   display: grid;

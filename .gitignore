@@ -62,3 +62,6 @@ MTBF算出コード.py
 
 # Node.js
 /node_modules/
+
+# Local development tools - excluded from production
+/local_tools/

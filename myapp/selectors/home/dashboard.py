@@ -3,7 +3,12 @@
 from typing import Iterable
 
 from django.db.models import Count, F, Prefetch, Q, QuerySet
-from myapp.models import Affilation_tb, Db_details_tb, Hozen_calendar_tb, PlanStatus, Plan_tb
+from myapp.models import (
+    Affilation_tb,
+    Db_details_tb,
+    Hozen_calendar_tb,
+    Plan_tb,
+)
 
 from myapp.domain.home.progress import get_status_value_map
 from myapp.domain.periods import get_fiscal_year_range
@@ -11,6 +16,7 @@ from myapp.domain.org_constants import TEAM_NAMES
 from myapp.selectors.plan import (
     filter_plans_by_date_alias,
     plan_base_qs,
+    select_holder_incomplete_plan_rows,
 )
 
 
@@ -385,23 +391,12 @@ def select_my_incomplete_task_rows(*, holder_id) -> QuerySet:
     """
     右側「自分の未完了タスク」用。
 
-    ログインユーザーが現在保持している未完了Planを取得する。
-    表示順は plan_time → plan_id。
+    担当者・未完了条件はPlan共通selectorへ委譲し、
+    Homeカード表示に必要な点検詳細だけ追加する。
     """
-    if not holder_id:
-        return Plan_tb.objects.none()
-
-    return (
-        with_home_task_card_related(plan_base_qs())
-        .filter(
+    return with_home_task_card_related(
+        select_holder_incomplete_plan_rows(
             holder_id=holder_id,
-        )
-        .exclude(
-            status=PlanStatus.COMPLETED,
-        )
-        .order_by(
-            F("plan_time").asc(nulls_last=True),
-            "plan_id",
         )
     )
 

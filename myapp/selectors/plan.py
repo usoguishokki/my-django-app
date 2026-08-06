@@ -66,7 +66,7 @@ def apply_test_card_common_filters(qs):
             ).order_by("id"),
         )
     )
-    
+
 def select_test_card_week_plans(*, base_date: date | None = None):
     qs = plan_base_qs()
     qs = filter_week_plans(qs=qs, base_date=base_date)
@@ -106,6 +106,56 @@ def plan_base_qs():
             "approver__profile__belongs"
         )
         .exclude(inspection_no__status__in=EXCLUDED_INSPECTION_STATUSES)
+    )
+
+
+def with_plan_shift_date_related(qs):
+    """
+    Planのシフト日判定に必要な関連データをまとめて取得する。
+
+    resolve_plan_display_date()が参照する所属情報を
+    select_relatedし、Planごとの追加SQLを防止する。
+    """
+    return qs.select_related(
+        "p_date",
+        "planned_affilation",
+        "holder",
+        "holder__profile",
+        "holder__profile__belongs",
+        "approver",
+        "approver__profile",
+        "approver__profile__belongs",
+        "applicant",
+        "applicant__profile",
+        "applicant__profile__belongs",
+    )
+
+
+def select_holder_incomplete_plan_rows(*, holder_id):
+    """
+    指定担当者が現在保持している未完了Planを取得する。
+
+    HomeとCard Workで共通利用するPlanスコープ。
+    画面固有のprefetchやステータス絞り込みは、
+    各画面側のselectorで追加する。
+    """
+    if not holder_id:
+        return Plan_tb.objects.none()
+
+    return (
+        with_plan_shift_date_related(
+            plan_base_qs()
+        )
+        .filter(
+            holder_id=holder_id,
+        )
+        .exclude(
+            status=PlanStatus.COMPLETED.value,
+        )
+        .order_by(
+            F("plan_time").asc(nulls_last=True),
+            "plan_id",
+        )
     )
 
 def filter_plans_by_date_alias(
@@ -186,15 +236,15 @@ def select_plan_detail_rows(*, qs, matched_ids):
         .values(*DETAIL_ROW_FIELDS)
         .order_by("p_date__h_date", "plan_id")
     )
-    
+
 
 def filter_week_plans(qs=None, *, base_date: date | None = None):
     if qs is None:
         qs = plan_base_qs()
 
     start_of_week, end_of_week = get_week_range(base_date)
-    
-    
+
+
     return qs.filter(p_date__h_date__range=(start_of_week, end_of_week))
 
 def filter_this_week_plans(qs=None):
@@ -263,8 +313,8 @@ def select_schedule_day_plans(*, affiliation_id: int, target_date: date):
         )
         .order_by('plan_time', 'plan_id')
     )
-    
-    
+
+
 def select_schedule_member_week_plans(*, member_id: int, target_date: date):
     """
     メンバー週表示用:
@@ -286,7 +336,7 @@ def select_schedule_member_week_plans(*, member_id: int, target_date: date):
         )
         .order_by('plan_time', 'plan_id')
     )
-    
+
 def select_plan_by_id(plan_id: int):
     return plan_base_qs().filter(plan_id=plan_id).first()
 
@@ -313,7 +363,7 @@ def filter_test_card_plans_by_shift_pattern(
         Q(inspection_no__practitioner_id=shift_pattern_id)
         | Q(inspection_no__practitioner_id=HOLIDAY_PRACTITIONER_ID)
     )
-    
+
 def select_bulk_registration_target_plans(*, plan_ids):
     """
     一括登録対象のPlanを取得する。

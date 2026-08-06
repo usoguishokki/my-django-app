@@ -34,19 +34,41 @@
                     parts-search-panel__header--search
                 "
             >
-                <h2
-                    id="partsSearchFormTitle"
-                    class="parts-search-panel__title"
-                >
-                    検索条件
-                </h2>
+                <div class="parts-search-panel__heading">
+                    <h2
+                        id="partsSearchFormTitle"
+                        class="parts-search-panel__title"
+                    >
+                        検索条件
+                    </h2>
 
-                <p
-                    id="partsSearchHelp"
-                    class="parts-search-form__help"
+                    <p
+                        id="partsSearchHelp"
+                        class="parts-search-form__help"
+                    >
+                        いずれか1項目以上を入力してください。複数項目を入力すると、条件を組み合わせて検索します。
+                    </p>
+                </div>
+
+                <button
+                    id="partsSearchFormToggle"
+                    class="parts-search-form-toggle"
+                    type="button"
+                    aria-controls="partsSearchForm"
+                    aria-expanded="true"
                 >
-                    いずれか1項目以上を入力してください。複数項目を入力すると、条件を組み合わせて検索します。
-                </p>
+                    <span
+                        class="parts-search-form-toggle__label"
+                        data-parts-search-form-toggle-label
+                    >
+                        検索条件を閉じる
+                    </span>
+
+                    <span
+                        class="parts-search-form-toggle__icon"
+                        aria-hidden="true"
+                    ></span>
+                </button>
             </header>
 
             <form
@@ -334,34 +356,16 @@
                         id="partsSearchTable"
                         class="ui-table parts-search-table"
                         aria-label="部品検索結果"
-                    >
-                        <colgroup>
-                            <col class="parts-search-table__col--section">
-                            <col class="parts-search-table__col--barcode">
-                            <col class="parts-search-table__col--rack">
-                            <col class="parts-search-table__col--name">
-                            <col class="parts-search-table__col--model">
-                            <col class="parts-search-table__col--new-stock">
-                            <col class="parts-search-table__col--used-stock">
-                            <col class="parts-search-table__col--note">
-                        </colgroup>
-
-                        <thead>
-                            <tr>
-                                <th scope="col">係</th>
-                                <th scope="col">バーコード</th>
-                                <th scope="col">棚番</th>
-                                <th scope="col">品名</th>
-                                <th scope="col">型式</th>
-                                <th scope="col" class="is-right">新品</th>
-                                <th scope="col" class="is-right">中古</th>
-                                <th scope="col">備考</th>
-                            </tr>
-                        </thead>
-
-                        <tbody></tbody>
-                    </table>
+                    ></table>
                 </div>
+
+                <div
+                    id="partsSearchCardList"
+                    class="parts-search-card-list"
+                    role="list"
+                    aria-label="部品検索結果"
+                    hidden
+                ></div>
             </div>
         </section>
     </div>

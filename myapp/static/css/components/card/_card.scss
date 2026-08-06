@@ -12,3 +12,47 @@
   border: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
+
+@mixin ui-card(
+  $radius: 12px,
+  $padding: 12px 14px,
+  $max-width: 320px
+) {
+  position: fixed;
+  z-index: 9999;
+  max-width: $max-width;
+  padding: $padding;
+  border-radius: $radius;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+
+/*
+ * 一覧表示用カード
+ *
+ * 通知・フローティングカードとは異なり、
+ * 通常のドキュメントフロー内に配置する。
+ */
+@mixin ui-list-card(
+  $radius: 14px,
+  $padding: 14px,
+  $gap: 12px
+) {
+  position: relative;
+  display: grid;
+  gap: $gap;
+
+  width: 100%;
+  min-width: 0;
+  padding: $padding;
+
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: $radius;
+  background: #ffffff;
+  box-shadow:
+    0 0.25rem 0.875rem rgba(15, 23, 42, 0.06);
+
+  box-sizing: border-box;
+}

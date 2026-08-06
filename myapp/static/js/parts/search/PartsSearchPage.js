@@ -19,12 +19,17 @@ import {
 } from '../../ui/componets/actions/UIActionDispatcher.js';
 
 import {
+    PARTS_SEARCH_RESULT_LAYOUTS,
     clearPartsSearchValidationMessage,
     renderPartsSearchError,
     renderPartsSearchInitial,
     renderPartsSearchResults,
     setPartsSearchValidationMessage,
 } from './ui/PartsSearchRenderer.js';
+
+
+const MOBILE_RESULT_LAYOUT_MEDIA_QUERY =
+    '(max-width: 640px)';
 
 
 const MAX_SEARCH_VALUE_LENGTH = 100;
@@ -174,6 +179,21 @@ export class PartsSearchPage {
             '#partsSearchForm'
         ) ?? null;
 
+        this.searchPanel = root?.querySelector(
+            '.parts-search-panel--search'
+        ) ?? null;
+
+        this.searchFormToggle = root?.querySelector(
+            '#partsSearchFormToggle'
+        ) ?? null;
+
+        this.searchFormToggleLabel =
+            root?.querySelector(
+                '[data-parts-search-form-toggle-label]'
+            ) ?? null;
+
+        this.isSearchFormExpanded = true;
+
         this.inputs = Object.fromEntries(
             TEXT_SEARCH_FIELD_DEFINITIONS.map(
                 ({
@@ -198,9 +218,21 @@ export class PartsSearchPage {
 
         this.isSearching = false;
         this.disposeUIActions = null;
+        this.latestSearchResult = null;
+
+        this.resultLayoutMediaQuery =
+            window.matchMedia(
+                MOBILE_RESULT_LAYOUT_MEDIA_QUERY
+            );
 
         this.handleSearchInput =
             this.handleSearchInput.bind(this);
+
+        this.handleSearchFormToggle =
+            this.handleSearchFormToggle.bind(this);
+
+        this.handleResultLayoutChange =
+            this.handleResultLayoutChange.bind(this);
 
         this.sectionDropdownRoot =
             root?.querySelector(
@@ -232,6 +264,10 @@ export class PartsSearchPage {
         this.initializeSectionDropdown();
         this.bindEvents();
 
+        this.syncSearchFormDisclosureForViewport({
+            collapseOnMobile: true,
+        });
+
         renderPartsSearchInitial(
             this.root
         );
@@ -248,7 +284,10 @@ export class PartsSearchPage {
                 initialCriteria
             )
         ) {
-            this.focusFirstInput();
+            if (!this.isMobileResultLayout()) {
+                this.focusFirstInput();
+            }
+
             return;
         }
 
@@ -272,6 +311,9 @@ export class PartsSearchPage {
         return Boolean(
             this.root
             && this.form
+            && this.searchPanel
+            && this.searchFormToggle
+            && this.searchFormToggleLabel
             && this.sectionDropdownRoot
             && this.sectionInput
             && this.sectionTrigger
@@ -337,6 +379,16 @@ export class PartsSearchPage {
                 );
             }
         );
+
+        this.resultLayoutMediaQuery.addEventListener(
+            'change',
+            this.handleResultLayoutChange
+        );
+
+        this.searchFormToggle.addEventListener(
+            'click',
+            this.handleSearchFormToggle
+        );
     }
 
 
@@ -352,6 +404,18 @@ export class PartsSearchPage {
                 );
             }
         );
+
+        this.resultLayoutMediaQuery.removeEventListener(
+            'change',
+            this.handleResultLayoutChange
+        );
+
+        this.searchFormToggle.removeEventListener(
+            'click',
+            this.handleSearchFormToggle
+        );
+
+        this.latestSearchResult = null;
 
         this.destroySectionDropdown();
     }
@@ -381,6 +445,189 @@ export class PartsSearchPage {
 
     handleSearchInput() {
         this.clearValidationError();
+    }
+
+
+    isMobileResultLayout() {
+        return this.resultLayoutMediaQuery.matches;
+    }
+
+
+    setSearchFormExpanded(
+        expanded,
+    ) {
+        /*
+         * PCでは常に検索フォームを表示する。
+         * モバイル時だけ引数の状態を反映する。
+         */
+        const resolvedExpanded =
+            !this.isMobileResultLayout()
+            || Boolean(expanded);
+
+        /*
+         * 検索実行後など、フォーム内にフォーカスが
+         * ある状態で閉じる場合は、開閉ボタンへ戻す。
+         */
+        const shouldRestoreFocus =
+            !resolvedExpanded
+            && this.form.contains(
+                document.activeElement
+            );
+
+        this.isSearchFormExpanded =
+            resolvedExpanded;
+
+        this.form.hidden =
+            !resolvedExpanded;
+
+        this.searchFormToggle.setAttribute(
+            'aria-expanded',
+            resolvedExpanded
+                ? 'true'
+                : 'false'
+        );
+
+        this.searchFormToggleLabel.textContent =
+            resolvedExpanded
+                ? '検索条件を閉じる'
+                : '検索条件を表示';
+
+        this.searchPanel.dataset.formState =
+            resolvedExpanded
+                ? 'expanded'
+                : 'collapsed';
+
+                const shouldMaskResults =
+                this.isMobileResultLayout()
+                && resolvedExpanded;
+
+            this.resultPanel.inert =
+                shouldMaskResults;
+
+            if (shouldMaskResults) {
+                this.resultPanel.setAttribute(
+                    'aria-hidden',
+                    'true'
+                );
+            } else {
+                this.resultPanel.removeAttribute(
+                    'aria-hidden'
+                );
+            }
+
+        if (shouldRestoreFocus) {
+            this.searchFormToggle.focus({
+                preventScroll: true,
+            });
+        }
+    }
+
+
+    syncSearchFormDisclosureForViewport({
+        collapseOnMobile = false,
+    } = {}) {
+        if (!this.isMobileResultLayout()) {
+            this.setSearchFormExpanded(
+                true
+            );
+
+            return;
+        }
+
+        if (collapseOnMobile) {
+            this.setSearchFormExpanded(
+                false
+            );
+
+            return;
+        }
+
+        this.setSearchFormExpanded(
+            this.isSearchFormExpanded
+        );
+    }
+
+
+    handleSearchFormToggle() {
+        if (!this.isMobileResultLayout()) {
+            return;
+        }
+
+        this.setSearchFormExpanded(
+            !this.isSearchFormExpanded
+        );
+    }
+
+
+    ensureSearchFormExpanded() {
+        if (this.isSearchFormExpanded) {
+            return;
+        }
+
+        this.setSearchFormExpanded(
+            true
+        );
+    }
+
+
+    collapseSearchFormOnMobile() {
+        if (!this.isMobileResultLayout()) {
+            return;
+        }
+
+        this.setSearchFormExpanded(
+            false
+        );
+    }
+
+
+    resolveResultLayout() {
+        return this.isMobileResultLayout()
+            ? PARTS_SEARCH_RESULT_LAYOUTS.CARDS
+            : PARTS_SEARCH_RESULT_LAYOUTS.TABLE;
+    }
+
+
+    renderLatestSearchResult() {
+        if (!this.latestSearchResult) {
+            return;
+        }
+
+        renderPartsSearchResults(
+            this.root,
+            {
+                ...this.latestSearchResult,
+                resultLayout:
+                    this.resolveResultLayout(),
+            }
+        );
+    }
+
+
+    handleResultLayoutChange({
+        matches = false,
+    } = {}) {
+        /*
+         * PCへ切り替わった場合は常時表示する。
+         * モバイルへ切り替わった場合は閉じる。
+         */
+        this.syncSearchFormDisclosureForViewport({
+            collapseOnMobile:
+                Boolean(matches),
+        });
+
+        /*
+         * 検索中の場合は、取得完了後の画面幅で
+         * 検索結果が描画される。
+         */
+        if (
+            this.isSearching
+            || !this.latestSearchResult
+        ) {
+            return;
+        }
+
+        this.renderLatestSearchResult();
     }
 
 
@@ -580,19 +827,20 @@ export class PartsSearchPage {
                     normalizedCriteria
                 );
 
-            renderPartsSearchResults(
-                this.root,
-                {
-                    criteria:
-                        responseCriteria,
+            this.latestSearchResult = {
+                criteria:
+                    responseCriteria,
 
-                    items:
-                        payload?.items ?? [],
+                items:
+                    payload?.items ?? [],
 
-                    summary:
-                        payload?.summary ?? {},
-                }
-            );
+                summary:
+                    payload?.summary ?? {},
+            };
+
+            this.renderLatestSearchResult();
+
+            this.collapseSearchFormOnMobile();
 
             if (updateUrl) {
                 this.updateUrlCriteria(
@@ -605,6 +853,8 @@ export class PartsSearchPage {
                 '[parts search failed]',
                 error
             );
+
+            this.latestSearchResult = null;
 
             renderPartsSearchError(
                 this.root
@@ -645,6 +895,9 @@ export class PartsSearchPage {
             fieldName = '',
         } = {},
     ) {
+
+        this.ensureSearchFormExpanded();
+
         setPartsSearchValidationMessage(
             this.root,
             message

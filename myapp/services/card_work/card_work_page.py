@@ -5,11 +5,19 @@ from myapp.domain.card_work.card_work import (
     resolve_card_work_status_value,
 )
 
+from myapp.domain.plan_dates import (
+    resolve_plan_display_date,
+)
+
+from myapp.services.plan_shift_context import (
+    build_plan_shift_context,
+)
+
 from myapp.selectors.card_work.card_work import (
     apply_card_work_filters,
     select_card_work_filter_options,
     select_card_work_filter_rows,
-    select_card_work_my_task_rows,
+    select_card_work_my_task_candidate_rows,
     with_card_work_detail_related,
 )
 
@@ -71,9 +79,13 @@ def build_card_work_initial_state_from_request(*, request, team_profiles):
     login_user = team_profiles["user_profile"].user
     active_filters = parse_card_work_filters(request)
 
-    base_plans_qs = select_card_work_my_task_rows(
+    candidate_plans_qs = select_card_work_my_task_candidate_rows(
         holder_id=login_user.member_id,
         status_value=status_value,
+    )
+
+    base_plans_qs = filter_card_work_plans_by_display_date(
+        candidate_plans_qs=candidate_plans_qs,
         target_date=target_date,
     )
 
@@ -116,3 +128,46 @@ def parse_card_work_filters(request):
         "equipment": (request.GET.get("equipment") or "").strip(),
         "checkStatus": (request.GET.get("checkStatus") or "").strip(),
     }
+
+
+def filter_card_work_plans_by_display_date(
+    *,
+    candidate_plans_qs,
+    target_date,
+):
+    """
+    候補PlanをHomeと同じシフト表示日で絞り込む。
+
+    plan_timeの実日付ではなく、
+    resolve_plan_display_date()が返すシフト日を使用する。
+
+    戻り値は後続のcount・filter・values_listを使用できるよう、
+    QuerySetのまま返す。
+    """
+    if not target_date:
+        return candidate_plans_qs.none()
+
+    candidate_plans = list(candidate_plans_qs)
+
+    if not candidate_plans:
+        return candidate_plans_qs.none()
+
+    shift_context = build_plan_shift_context(
+        plan_rows=candidate_plans,
+    )
+
+    target_plan_ids = [
+        plan.plan_id
+        for plan in candidate_plans
+        if resolve_plan_display_date(
+            plan,
+            **shift_context,
+        ) == target_date
+    ]
+
+    if not target_plan_ids:
+        return candidate_plans_qs.none()
+
+    return candidate_plans_qs.filter(
+        plan_id__in=target_plan_ids,
+    )

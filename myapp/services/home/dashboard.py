@@ -1,6 +1,6 @@
 # myapp/services/home/dashboard.py
 
-from datetime import date, timedelta
+from datetime import date
 
 from typing import Optional
 
@@ -42,9 +42,8 @@ from myapp.selectors.home.dashboard import (
 )
 
 
-from myapp.selectors.shifts import (
-    build_pattern_time_map,
-    build_shift_pattern_map,
+from myapp.services.plan_shift_context import (
+    build_plan_shift_context,
 )
 
 
@@ -92,7 +91,7 @@ def build_home_overall_progress_response(*, user_profile) -> dict:
 
     overall_attention_rows = list(overall_attention_rows)
 
-    shift_context = build_home_shift_context(
+    shift_context = build_plan_shift_context(
         plan_rows=overall_attention_rows,
     )
 
@@ -140,34 +139,6 @@ def build_plan_schedule_date_alias_map(
     return select_date_alias_map_by_dates(
         target_dates=schedule_dates,
     )
-
-
-def build_home_shift_context(*, plan_rows) -> dict:
-    """
-    home表示日付の丸めに必要なシフト情報をまとめて作る。
-
-    shift_pattern_map:
-      (date, team_key) -> pattern_id
-
-    pattern_time_map:
-      pattern_id -> (start_time, end_time)
-    """
-    schedule_dates = collect_plan_schedule_dates(plan_rows)
-
-    if not schedule_dates:
-        return {
-            "shift_pattern_map": {},
-            "pattern_time_map": {},
-        }
-
-    # 深夜帯が前日シフトに属する可能性があるため、前後に余裕を持たせる
-    range_start = min(schedule_dates) - timedelta(days=1)
-    range_end = max(schedule_dates) + timedelta(days=2)
-
-    return {
-        "shift_pattern_map": build_shift_pattern_map(range_start, range_end),
-        "pattern_time_map": build_pattern_time_map(),
-    }
 
 
 def build_overall_scope(
@@ -541,7 +512,7 @@ def build_home_my_tasks_response(*, user_profile) -> dict:
         holder_id=holder.member_id,
     ))
 
-    shift_context = build_home_shift_context(
+    shift_context = build_plan_shift_context(
         plan_rows=task_rows,
     )
 
