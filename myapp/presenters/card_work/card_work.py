@@ -51,6 +51,7 @@ def build_card_work_plan_item(plan):
         "planId": plan.plan_id,
         "status": plan.status,
         "planTime": plan.plan_time.isoformat() if plan.plan_time else "",
+        "existingResult": build_card_work_existing_result(plan),
         "inspectionNo": inspection.inspection_no if inspection else "",
         "workName": inspection.wark_name if inspection else "",
         "equipmentName": control.machine if control else "",
@@ -66,6 +67,36 @@ def build_card_work_plan_item(plan):
             build_card_work_detail_item(detail)
             for detail in getattr(inspection, "prefetched_card_work_details", [])
         ] if inspection else [],
+    }
+
+def build_card_work_existing_result(plan):
+    practitioners = getattr(
+        plan,
+        "prefetched_card_work_practitioners",
+        [],
+    )
+
+    practitioner_ids = [
+        str(getattr(practitioner.member_id, "member_id", "") or "")
+        for practitioner in practitioners
+        if getattr(practitioner, "member_id", None)
+    ]
+
+    return {
+        "implementationDatetime": (
+            plan.implementation_date.isoformat()
+            if plan.implementation_date
+            else ""
+        ),
+        "result": plan.result or "",
+        "implementationContent": plan.points_to_note or "",
+        "practitionerIds": practitioner_ids,
+        "actualManHours": (
+            plan.result_man_hours
+            if plan.result_man_hours is not None
+            else None
+        ),
+        "comment": plan.comment or "",
     }
 
 

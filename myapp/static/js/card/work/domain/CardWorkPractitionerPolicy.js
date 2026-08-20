@@ -33,6 +33,32 @@ export function resolveDefaultPractitionerIds({
         : [];
 }
 
+export function resolvePractitionerNamesByIds({
+    practitionerIds = [],
+    practitionerOptions = [],
+} = {}) {
+    const targetIds = Array.isArray(practitionerIds)
+        ? practitionerIds
+            .map((value) => String(value ?? ''))
+            .filter(Boolean)
+        : [];
+
+    if (targetIds.length === 0) {
+        return [];
+    }
+
+    const labelById = new Map(
+        practitionerOptions.map((option) => [
+            String(option?.value ?? ''),
+            String(option?.label ?? ''),
+        ])
+    );
+
+    return targetIds
+        .map((memberId) => labelById.get(memberId) || '')
+        .filter(Boolean);
+}
+
 export function readPractitionerSelectionFromDropdownDetail(detail = {}) {
     const selectedItems = Array.isArray(detail.selectedItems)
         ? detail.selectedItems

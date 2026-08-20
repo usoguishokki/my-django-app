@@ -20,6 +20,10 @@ import {
     CARD_WORK_FILTER_DEFINITIONS,
 } from '../domain/CardWorkFilterPolicy.js';
 
+import {
+    isCardWorkResultReadOnly,
+} from '../domain/CardWorkEditPolicy.js';
+
 export function renderCardWorkPage({
     root,
     state,
@@ -268,6 +272,10 @@ function createCardWorkNavigation({
     const nav = document.createElement('div');
     nav.className = 'card-work-navigation';
     
+    const isReadOnly = isCardWorkResultReadOnly(
+        plan?.status
+    );
+
     if (inputState.isOpen) {
         nav.classList.add('card-work-navigation--input-open');
     }
@@ -277,6 +285,7 @@ function createCardWorkNavigation({
             plan,
             inputState,
             validationErrors,
+            readOnly: isReadOnly,
         }));
         return nav;
     }
@@ -285,7 +294,17 @@ function createCardWorkNavigation({
     inputButton.type = 'button';
     inputButton.className = 'card-work-navigation__button card-work-navigation__button--primary card-work-navigation__button--input';
     inputButton.dataset.uiAction = 'open-input';
-    inputButton.textContent = '実績入力';
+
+    inputButton.textContent = isReadOnly
+        ? '実績確認'
+        : '実績入力';
+
+    inputButton.setAttribute(
+        'aria-label',
+        isReadOnly
+            ? '完了済みの実績を確認'
+            : '実績を入力'
+    );
 
     nav.append(inputButton);
 

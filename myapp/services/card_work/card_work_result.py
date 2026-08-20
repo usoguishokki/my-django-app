@@ -42,15 +42,29 @@ class CardWorkResultMemberNotFound(CardWorkResultError):
 
 VALID_RESULTS = {"OK", "NG"}
 
-SUBMITTABLE_STATUSES = {
-    PlanStatus.IN_PROGRESS,
-    PlanStatus.DELAYED,
-    PlanStatus.SENT_BACK,
+VALID_SOURCES = {
+    "home",
+    "work_contents",
+}
+
+SUBMITTABLE_STATUSES_BY_SOURCE = {
+    "home": frozenset({
+        PlanStatus.IN_PROGRESS,
+        PlanStatus.DELAYED,
+        PlanStatus.SENT_BACK,
+    }),
+    "work_contents": frozenset({
+        PlanStatus.IN_PROGRESS,
+        PlanStatus.APPROVAL_WAITING,
+        PlanStatus.DELAYED,
+        PlanStatus.SENT_BACK,
+    }),
 }
 
 
 @dataclass(frozen=True)
 class CardWorkResultParams:
+    source: str
     plan_id: int
     implementation_datetime: datetime
     result: str
@@ -61,14 +75,24 @@ class CardWorkResultParams:
 
 
 @transaction.atomic
-def register_card_work_result(*, payload, requested_user):
+def register_card_work_result(
+    *,
+    payload,
+    requested_user,
+    organization_code,
+):
     params = parse_card_work_result_payload(payload)
 
     try:
         plan = (
             Plan_tb.objects
             .select_for_update()
-            .select_related("holder", "applicant", "approver")
+            .select_related(
+                "holder",
+                "applicant",
+                "approver",
+                "inspection_no__control_no__line_name__organization",
+            )
             .get(plan_id=params.plan_id)
         )
     except Plan_tb.DoesNotExist:
@@ -77,6 +101,8 @@ def register_card_work_result(*, payload, requested_user):
     validate_submit_permission(
         plan=plan,
         requested_user=requested_user,
+        source=params.source,
+        organization_code=organization_code,
     )
 
     members_by_id = select_members_by_ids(params.practitioner_ids)
@@ -127,9 +153,23 @@ def register_card_work_result(*, payload, requested_user):
 
 def parse_card_work_result_payload(payload):
     if not isinstance(payload, dict):
-        raise InvalidCardWorkResultPayload("リクエスト形式が正しくありません。")
+        raise InvalidCardWorkResultPayload(
+            "リクエスト形式が正しくありません。"
+        )
 
-    plan_id = parse_required_int(payload.get("planId"), "計画ID")
+    source = normalize_text(
+        payload.get("source")
+    )
+
+    if source not in VALID_SOURCES:
+        raise InvalidCardWorkResultPayload(
+            f"Card Workの登録元が正しくありません: {source}"
+        )
+
+    plan_id = parse_required_int(
+        payload.get("planId"),
+        "計画ID",
+    )
     implementation_datetime = parse_required_datetime(
         payload.get("implementationDatetime")
     )
@@ -164,6 +204,7 @@ def parse_card_work_result_payload(payload):
     )
 
     return CardWorkResultParams(
+        source=source,
         plan_id=plan_id,
         implementation_datetime=implementation_datetime,
         result=result,
@@ -174,17 +215,109 @@ def parse_card_work_result_payload(payload):
     )
 
 
-def validate_submit_permission(*, plan, requested_user):
-    if plan.holder_id and plan.holder_id != requested_user.member_id:
+def validate_submit_permission(
+    *,
+    plan,
+    requested_user,
+    source,
+    organization_code,
+):
+    if source == "home":
+        validate_home_submit_permission(
+            plan=plan,
+            requested_user=requested_user,
+        )
+
+    elif source == "work_contents":
+        validate_work_contents_submit_permission(
+            plan=plan,
+            organization_code=organization_code,
+        )
+
+    validate_submit_status(
+        plan=plan,
+        source=source,
+    )
+
+
+def validate_home_submit_permission(
+    *,
+    plan,
+    requested_user,
+):
+    if (
+        plan.holder_id
+        and plan.holder_id != requested_user.member_id
+    ):
         raise CardWorkResultPermissionDenied(
             "このカードの実績を登録する権限がありません。"
         )
 
-    if plan.status not in SUBMITTABLE_STATUSES:
+
+def validate_work_contents_submit_permission(
+    *,
+    plan,
+    organization_code,
+):
+    plan_organization_code = get_plan_organization_code(
+        plan
+    )
+
+    if (
+        not organization_code
+        or plan_organization_code != organization_code
+    ):
+        raise CardWorkResultPermissionDenied(
+            "このカードを編集する権限がありません。"
+        )
+
+
+def validate_submit_status(
+    *,
+    plan,
+    source,
+):
+    allowed_statuses = SUBMITTABLE_STATUSES_BY_SOURCE.get(
+        source,
+        frozenset(),
+    )
+
+    if plan.status not in allowed_statuses:
         raise CardWorkResultStatusNotAllowed(
             f"現在の状態では実績登録できません。状態: {plan.status}"
         )
 
+
+def get_plan_organization_code(plan):
+    inspection = getattr(
+        plan,
+        "inspection_no",
+        None,
+    )
+    control = getattr(
+        inspection,
+        "control_no",
+        None,
+    )
+    line = getattr(
+        control,
+        "line_name",
+        None,
+    )
+    organization = getattr(
+        line,
+        "organization",
+        None,
+    )
+
+    return str(
+        getattr(
+            organization,
+            "organization",
+            "",
+        )
+        or ""
+    )
 
 def replace_practitioners(*, plan, practitioner_ids, members_by_id):
     Practitioner_tb.objects.filter(plan_id=plan).delete()

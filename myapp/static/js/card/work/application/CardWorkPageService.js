@@ -29,7 +29,12 @@ import {
     normalizePractitionerOptions,
     readPractitionerSelectionFromDropdownDetail,
     resolveDefaultPractitionerIds,
+    resolvePractitionerNamesByIds,
 } from '../domain/CardWorkPractitionerPolicy.js';
+
+import {
+    shouldRestoreExistingCardWorkResult,
+} from '../domain/CardWorkExistingResultPolicy.js';
 
 
 import {
@@ -52,6 +57,7 @@ import {
 } from './CardWorkSwipeController.js';
 
 const CARD_WORK_HOME_URL = '/home/';
+const CARD_WORK_WORK_CONTENTS_URL = '/workContents/';
 
 const CARD_WORK_PAGE_ACTION_HANDLERS = Object.freeze({
     previous: (service) => service.showPreviousCard(),
@@ -382,6 +388,7 @@ export class CardWorkPageService {
         const payload = buildCardWorkResultPayload({
             plan: this.getCurrentPlan(),
             inputState: this.inputState,
+            source: this.initialState?.source || '',
         });
     
         const validation = validateCardWorkResultPayload(payload);
@@ -430,6 +437,11 @@ export class CardWorkPageService {
             this.draftsByPlanId.delete(registeredPlanId);
         }
     
+        if (this.initialState?.source === 'work_contents') {
+            this.goToWorkContents();
+            return;
+        }
+
         this.plans = this.plans.filter(
             (plan) => String(plan?.planId ?? '') !== registeredPlanId
         );
@@ -546,6 +558,12 @@ export class CardWorkPageService {
         window.location.replace(CARD_WORK_HOME_URL);
     }
     
+    goToWorkContents() {
+        window.location.replace(
+            CARD_WORK_WORK_CONTENTS_URL
+        );
+    }
+
     resetFilter() {
         this.updateUrlWithFilters(createDefaultFilterDraft());
     }
@@ -794,15 +812,67 @@ export class CardWorkPageService {
     createInputStateForCurrentPlan({
         isOpen = false,
     } = {}) {
+        const plan = this.getCurrentPlan();
         const planId = this.getCurrentPlanId();
+
         const draft = planId
             ? this.draftsByPlanId.get(planId)
             : null;
     
+        const defaultState = createDefaultCardWorkInputState({
+            practitionerIds: this.defaultPractitionerIds,
+        });
+
+        const existingResult = plan?.existingResult || {};
+
+        const shouldRestoreExistingResult =
+            shouldRestoreExistingCardWorkResult(
+                plan?.status
+            );
+
+        let initialState = defaultState;
+
+        if (shouldRestoreExistingResult) {
+            const {
+                date,
+                time,
+            } = splitImplementationDateTimeValue(
+                existingResult.implementationDatetime || ''
+            );
+
+            const practitionerIds = Array.isArray(
+                existingResult.practitionerIds
+            )
+                ? existingResult.practitionerIds
+                    .map((value) => String(value ?? ''))
+                    .filter(Boolean)
+                : [];
+
+            initialState = {
+                ...defaultState,
+                implementationDate: date,
+                implementationTime: time,
+                result: String(
+                    existingResult.result ?? ''
+                ),
+                implementationContent: String(
+                    existingResult.implementationContent ?? ''
+                ),
+                practitionerIds,
+                practitionerNames: resolvePractitionerNamesByIds({
+                    practitionerIds,
+                    practitionerOptions: this.practitionerOptions,
+                }),
+                actualManHours:
+                    existingResult.actualManHours ?? null,
+                comment: String(
+                    existingResult.comment ?? ''
+                ),
+            };
+        }
+
         return {
-            ...createDefaultCardWorkInputState({
-                practitionerIds: this.defaultPractitionerIds,
-            }),
+            ...initialState,
             ...(draft || {}),
             isOpen,
         };

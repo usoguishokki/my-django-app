@@ -26,17 +26,24 @@ export function createCardWorkInputPanel({
     plan = {},
     inputState = {},
     validationErrors = [],
+    readOnly = false,
 } = {}) {
     const panel = document.createElement('section');
     panel.className = 'card-work-input-panel';
 
-    const header = createInputPanelHeader();
+    const header = createInputPanelHeader({
+        readOnly,
+    });
     const body = createInputPanelBody({
         plan,
         inputState,
         validationErrors,
+        readOnly,
     });
-    const actions = createInputPanelActions();
+
+    const actions = createInputPanelActions({
+        readOnly,
+    });
 
     panel.append(header, body, actions);
 
@@ -44,19 +51,28 @@ export function createCardWorkInputPanel({
 }
 
 
-function createInputPanelHeader() {
+function createInputPanelHeader({
+    readOnly = false,
+} = {}) {
     const header = document.createElement('header');
     header.className = 'card-work-input-panel__header';
 
     const title = document.createElement('h3');
     title.className = 'card-work-input-panel__title';
-    title.textContent = '実績入力';
+    title.textContent = readOnly
+        ? '実績確認'
+        : '実績入力';
 
     const closeButton = document.createElement('button');
     closeButton.type = 'button';
     closeButton.className = 'card-work-input-panel__close-button';
     closeButton.dataset.uiAction = 'close-input';
-    closeButton.setAttribute('aria-label', '実績入力を閉じる');
+    closeButton.setAttribute(
+        'aria-label',
+        readOnly
+            ? '実績確認を閉じる'
+            : '実績入力を閉じる'
+    );
     closeButton.textContent = '×';
 
     header.append(title, closeButton);
@@ -69,6 +85,7 @@ function createInputPanelBody({
     plan = {},
     inputState = {},
     validationErrors = [],
+    readOnly = false,
 } = {}) {
     const body = document.createElement('div');
     body.className = 'card-work-input-panel__body';
@@ -80,22 +97,32 @@ function createInputPanelBody({
         createImplementationDateTimeField({
             inputState,
             validationErrors,
+            readOnly,
         }),
         createResultField({
             inputState,
             validationErrors,
+            readOnly,
         }),
-        createImplementationContentField(inputState),
+        createImplementationContentField({
+            inputState,
+            readOnly,
+        }),
         createPractitionerField({
             inputState,
             validationErrors,
+            readOnly,
         }),
         createManHoursField({
             plan,
             inputState,
             validationErrors,
+            readOnly,
         }),
-        createCommentField(inputState)
+        createCommentField({
+            inputState,
+            readOnly,
+        })
     );
 
     body.appendChild(form);
@@ -104,9 +131,15 @@ function createInputPanelBody({
 }
 
 
-function createInputPanelActions() {
+function createInputPanelActions({
+    readOnly = false,
+} = {}) {
     const actions = document.createElement('div');
     actions.className = 'card-work-input-panel__actions';
+
+    if (readOnly) {
+        return actions;
+    }
 
     const submitButton = document.createElement('button');
     submitButton.type = 'button';
@@ -123,6 +156,7 @@ function createInputPanelActions() {
 function createImplementationDateTimeField({
     inputState = {},
     validationErrors = [],
+    readOnly = false,
 } = {}) {
     const fieldName = 'implementationDatetime';
 
@@ -136,7 +170,11 @@ function createImplementationDateTimeField({
         role: 'implementation-datetime',
         value: buildImplementationDateTimeValue(inputState),
         className: 'card-work-input-panel__datetime',
-        attrs: {
+        attrs: readOnly
+        ? {
+            readonly: true,
+        }
+        : {
             required: true,
         },
     });
@@ -155,6 +193,7 @@ function createImplementationDateTimeField({
 function createResultField({
     inputState = {},
     validationErrors = [],
+    readOnly = false,
 } = {}) {
     const fieldName = 'result';
 
@@ -176,6 +215,7 @@ function createResultField({
         className: 'card-work-result-options',
         buttonClassName: 'card-work-result-options__button',
         options: CARD_WORK_RESULT_OPTIONS,
+        disabled: readOnly,
     });
 
     wrapper.append(label, fieldBody);
@@ -190,7 +230,10 @@ function createResultField({
 }
 
 
-function createImplementationContentField(inputState = {}) {
+function createImplementationContentField({
+    inputState = {},
+    readOnly = false,
+} = {}) {
     const wrapper = document.createElement('div');
     wrapper.className = 'card-work-input-panel__field card-work-input-panel__field--content';
 
@@ -208,6 +251,7 @@ function createImplementationContentField(inputState = {}) {
     textarea.rows = 3;
     textarea.maxLength = 500;
     textarea.placeholder = '実施した内容を入力してください';
+    textarea.readOnly = readOnly;
 
     label.append(labelText, textarea);
     wrapper.appendChild(label);
@@ -219,6 +263,7 @@ function createImplementationContentField(inputState = {}) {
 function createPractitionerField({
     inputState = {},
     validationErrors = [],
+    readOnly = false,
 } = {}) {
     const fieldName = 'practitionerIds';
 
@@ -244,6 +289,7 @@ function createPractitionerField({
     trigger.type = 'button';
     trigger.className = 'custom-dropdown__trigger';
     trigger.dataset.role = 'dropdown-trigger';
+    trigger.disabled = readOnly;
 
     const triggerText = document.createElement('span');
     triggerText.className = 'custom-dropdown__triggerText';
@@ -295,6 +341,7 @@ function createManHoursField({
     plan = {},
     inputState = {},
     validationErrors = [],
+    readOnly = false,
 } = {}) {
     const fieldName = 'actualManHours';
 
@@ -317,6 +364,7 @@ function createManHoursField({
     input.inputMode = 'numeric';
     input.placeholder = formatBaselineManHoursPlaceholder(plan);
     input.autocomplete = 'off';
+    input.readOnly = readOnly;
 
     const unit = document.createElement('span');
     unit.className = 'card-work-input-panel__unit';
@@ -336,7 +384,10 @@ function createManHoursField({
 }
 
 
-function createCommentField(inputState = {}) {
+function createCommentField({
+    inputState = {},
+    readOnly = false,
+} = {}) {
     const wrapper = document.createElement('div');
     wrapper.className = 'card-work-input-panel__field card-work-input-panel__field--comment';
 
@@ -354,6 +405,7 @@ function createCommentField(inputState = {}) {
     textarea.rows = 2;
     textarea.maxLength = 500;
     textarea.placeholder = 'コメントを入力してください';
+    textarea.readOnly = readOnly;
 
     label.append(labelText, textarea);
     wrapper.appendChild(label);

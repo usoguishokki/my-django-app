@@ -18,6 +18,7 @@ from myapp.selectors.card_work.card_work import (
     select_card_work_filter_options,
     select_card_work_filter_rows,
     select_card_work_my_task_candidate_rows,
+    select_card_work_plan_by_id,
     with_card_work_detail_related,
 )
 
@@ -45,6 +46,13 @@ def build_card_work_initial_state_from_request(*, request, team_profiles):
     scope = request.GET.get("scope", "")
     status_key = request.GET.get("status", "")
     date_text = request.GET.get("date", "")
+    plan_id_text = (request.GET.get("plan_id") or "").strip()
+
+    if source == "work_contents" and scope == "plan":
+        return build_card_work_initial_state_from_work_contents(
+            plan_id_text=plan_id_text,
+            team_profiles=team_profiles,
+        )
 
     if source != "home" or scope != "my_tasks":
         return build_card_work_error_state(
@@ -119,6 +127,64 @@ def build_card_work_initial_state_from_request(*, request, team_profiles):
         filter_options=filter_options,
         filter_rows=filter_rows,
         summary_count=summary_count,
+    )
+
+
+def build_card_work_initial_state_from_work_contents(
+    *,
+    plan_id_text,
+    team_profiles,
+):
+    try:
+        plan_id = int(plan_id_text)
+    except (TypeError, ValueError):
+        return build_card_work_error_state(
+            message="plan_id が正しくありません。",
+            source="work_contents",
+            scope="plan",
+        )
+
+    base_plans_qs = select_card_work_plan_by_id(
+        plan_id=plan_id,
+    )
+
+    plans_qs = with_card_work_detail_related(
+        base_plans_qs,
+    )
+
+    plans = list(plans_qs[:1])
+
+    if not plans:
+        return build_card_work_error_state(
+            message="対象カードが見つかりません。",
+            source="work_contents",
+            scope="plan",
+        )
+
+    login_user = team_profiles["user_profile"].user
+    members = list(select_all_members())
+
+    filter_options = select_card_work_filter_options(
+        base_plans_qs,
+    )
+
+    filter_rows = select_card_work_filter_rows(
+        base_plans_qs,
+    )
+
+    return build_card_work_initial_state(
+        source="work_contents",
+        scope="plan",
+        status_key="",
+        status_label=plans[0].status or "",
+        date_text="",
+        plans=plans,
+        members=members,
+        login_user=login_user,
+        active_filters={},
+        filter_options=filter_options,
+        filter_rows=filter_rows,
+        summary_count=len(plans),
     )
 
 

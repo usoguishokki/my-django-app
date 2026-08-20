@@ -36,6 +36,17 @@ def select_card_work_my_task_candidate_rows(
         )
     )
 
+def select_card_work_plan_by_id(*, plan_id):
+    """
+    指定された plan_id のPlanをCard Work表示用に取得する。
+    """
+    if not plan_id:
+        return Plan_tb.objects.none()
+
+    return Plan_tb.objects.filter(
+        plan_id=plan_id,
+    )
+
 
 def apply_card_work_filters(
     qs,
