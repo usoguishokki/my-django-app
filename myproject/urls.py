@@ -48,7 +48,6 @@ urlpatterns = [
         ),
         name="home_dashboard",
     ),
-    path('card/', views.card_view, name='card'),
     path('workContents/', views.workContents_view, name='workContets'),
     path('card/<str:control_no>/', views.card_by_control_view, name='card_by_control'),
     path('inspectionStadards/', views.inspectionStadards_view, name='inspectionStadards'),

@@ -4,16 +4,15 @@ from django.core import serializers
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Sum, Prefetch, Min, Max, OuterRef, Subquery, Value
+from django.db.models import Q, Sum, Min, Max, OuterRef, Subquery, Value
 from django.db.models.functions import Coalesce, TruncDate
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
 from django.db import transaction
 from datetime import datetime, timedelta, time as dt_time, date
 from .backends import MemberAuthenticationBackend
 from .models import (
     Control_tb, Member_tb, Plan_tb, Db_details_tb, Calendar_tb, Check_tb,
-    ShiftPattan_tb, Practitioner_tb, UserProfile, WeeklyDuty, Hozen_calendar_tb,
+    ShiftPattan_tb, UserProfile, WeeklyDuty, Hozen_calendar_tb,
     DayOfWeek, PlanStatus
 )
 from django.views.decorators.cache import never_cache
@@ -25,7 +24,7 @@ from rest_framework.decorators import api_view, permission_classes
 #from .models import SHIFTPATTERN_WORKER_VIEW
 from .workScheduleEntry import WorkScheduleEntry
 from .decorators import ajax_login_required
-from .forms import LoginForm , CardForm
+from .forms import LoginForm
 from dateutil import parser as dparser
 from zoneinfo import ZoneInfo
 import json
@@ -47,7 +46,6 @@ from myapp.selectors.calendar import (
 
 
 from myapp.domain.sort_keys.inspection_no import inspection_no_sort_key
-from myapp.domain.checks.constants import NON_ACTIVE_CHECK_STATUSES
 from myapp.domain.schedule_initial_filters import build_schedule_initial_filters
 from myapp.domain.errors import InvalidMachineSelection
 
@@ -453,162 +451,6 @@ def api_update_plan_time(request, plan_id: int):
     return JsonResponse(resp, status=200)
 
 
-@login_required
-def card_view(request):
-    cache_manager_if = request.cache_manager_if
-    affiliation_pattern_times_dict, team_profiles = set_profiles_dict(request, cache_manager_if)
-    login_number = team_profiles['login_number']
-    user_dict = profile(cache_manager_if, login_number)
-    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        data, action, parse_error = extract_request_data(request)
-        if parse_error:
-            return handle_view_error(parse_error, status_code=400, message='Invalid JSON data')
-        if action == "fetch_post_form":
-            try:
-                form_data = data.get('form_data', {})
-                plan_id = form_data.get('plan_id')
-                if not plan_id:
-                    return JsonResponse({'status': 'error', 'message': 'plan_id がありません'}, status=400)
-                plan_instance = Plan_tb.objects.get(plan_id=plan_id)
-                practitioner_members_str = form_data.get('checkedCheckboxes', '[]')
-                practitioner_members = json.loads(practitioner_members_str)
-                form = CardForm(form_data)
-                if form.is_valid():
-                    with transaction.atomic():
-                        Practitioner_tb.objects.filter(plan_id=plan_instance).delete()
-                        plan_instance.applicant = user_dict['user_profile'].user
-                        practitioners_to_add = []
-                        for member in practitioner_members:
-                            user_obj = team_profiles['profiles'].get(user__name=member)
-                            if user_obj:
-                                practitioners_to_add.append(
-                                    Practitioner_tb(plan_id=plan_instance, member_id=user_obj.user)
-                                )
-                        if practitioners_to_add:
-                            Practitioner_tb.objects.bulk_create(practitioners_to_add)  
-                                  
-                        plan_instance.result = form.cleaned_data.get('options')                      
-                        plan_instance.points_to_note = form.cleaned_data.get('issueDetails')
-                        plan_instance.result_man_hours = form.cleaned_data.get('manhours')
-                        plan_instance.status = '承認待ち'
-                        plan_instance.comment = form.cleaned_data.get('comment')
-                        dt_str = form_data.get("datetime")
-                        dt = parse_datetime(dt_str)
-                        if dt is None:
-                            form.add_error(None, "日時の形式が正しくありません。")
-                            return JsonResponse({'status': 'error', 'message': '日時の形式が正しくありません。'}, status=400)
-                        
-                        plan_instance.implementation_date = dt
-                        
-                        plan_instance.save()
-                    
-                    return JsonResponse({'status': 'success', 'message': 'Plan updated successfully'})
-                else:
-                    return JsonResponse({
-                        'status': 'error',
-                        'message': 'Form validation failed',
-                        'errors': form.errors,   # フロントで使いたいなら
-                    }, status=400)
-        
-            except Plan_tb.DoesNotExist as e:
-                return handle_view_error(e, plan_id=plan_id, message="指定されたPlanが見つかりません")
-            except ValueError as e:
-                return handle_view_error({'status': 'error', 'message': f'ValueError: {str(e)}'}, status=400)
-            except Exception as e:
-                return handle_view_error(e)            
-    else:     
-        try:
-            form = CardForm()
-            filterLabel = request.GET.get('filterLabel')
-            plan_base = plan_base_qs()
-            if filterLabel == 'getOne':
-                _plan_id = request.GET.getlist('planId')
-                plan_filtered = plan_base.filter(plan_id__in=_plan_id)
-            elif filterLabel == 'userOnly':
-                _holder_id = request.GET.get('holderId')
-                _this_week = request.GET.get('thisWeek')
-                _status = request.GET.get('status')
-                plan_filtered = plan_base.filter(
-                    holder_id=_holder_id,
-                    status=_status
-                )
-            
-            plans_qs = (
-                plan_filtered
-                .prefetch_related(
-                    Prefetch(
-                        'inspection_no__db_details',
-                        queryset=Db_details_tb.objects.exclude(
-                            status__in=NON_ACTIVE_CHECK_STATUSES
-                        ).only(
-                            'id',
-                            'inspection_no_id',
-                            'applicable_device',
-                            'contents',
-                            'standard',
-                            'method',
-                        ).order_by('id'),
-                        to_attr='prefetched_details',
-                    ),
-                    Prefetch(
-                        'practitioners',
-                        queryset=Practitioner_tb.objects.select_related('member_id').only(
-                            'id',
-                            'plan_id_id',
-                            'member_id__member_id',
-                            'member_id__name'
-                        ),
-                        to_attr='prefetched_practitioners',
-                    ),
-                )
-            )
-
-            plans_qs = plans_qs[:300]
-            
-            member_check_list = []
-            team_profile = team_profiles['profiles']
-            login_user = team_profiles['user_profile']
-            for u in team_profile:
-                member_check_list.append({
-                    'user_id': u.user_id,
-                    'checked': login_user.user_id == u.user_id,
-                })
-
-                
-            for plan in plans_qs:                
-                practiced_ids = set()
-
-                if plan.result:
-                    practitioners = getattr(plan, 'prefetched_practitioners', [])
-                    practiced_ids = {p.member_id_id for p in practitioners}
-
-                    updated_member_check_list = [
-                        {'user_id': m['user_id'], 'checked': (m['user_id'] in practiced_ids)}
-                        for m in member_check_list
-                    ]
-                
-
-                else:
-                    updated_member_check_list = member_check_list
-                
-                unique_devices = {}
-                for d in getattr(plan.inspection_no, 'prefetched_details', []):
-                    unique_devices = get_details(d, unique_devices)
-
-                plan.details_unique_devices = unique_devices
-                plan.member_check_list = json.dumps(updated_member_check_list)
-
-                
-            context = {
-                'plans': plans_qs,
-                'members': list(team_profile),
-                'form': form
-            }
-            
-            return render(request, 'card/card.html', context)
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-        
 @login_required
 def card_work(request):
     cache_manager_if = request.cache_manager_if
