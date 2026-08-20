@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse, HttpRequest, HttpResponseBadRequest, QueryDict, HttpResponse
+from django.http import JsonResponse, HttpRequest, HttpResponseBadRequest, HttpResponse
 from django.core import serializers
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Sum, Prefetch, Count, F, QuerySet, Min, Max, OuterRef, Subquery, Value
+from django.db.models import Q, Sum, Prefetch, Min, Max, OuterRef, Subquery, Value
 from django.db.models.functions import Coalesce, TruncDate
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -35,26 +35,19 @@ import logging
 import calendar
 import logging
 import csv
-from typing import Optional, Dict, List, Sequence, Iterable, Union, Callable, Any, Tuple
+from typing import Optional, List, Sequence, Iterable, Union, Tuple
 
 from myapp.selectors.plan import (
-    plan_base_qs, 
-    filter_this_week_plans, 
-    filter_status_plans, 
-    filter_this_week_plan_time_plans
+    plan_base_qs,
 )
 
 from myapp.selectors.calendar import (
     annotate_plan_affiliation_from_calendar
 )
 
-from myapp.selectors.members import (
-    select_members_by_affiliation_id,
-)
 
 from myapp.domain.sort_keys.inspection_no import inspection_no_sort_key
 from myapp.domain.checks.constants import NON_ACTIVE_CHECK_STATUSES
-from myapp.domain.sort_keys.member_sort import build_member_dict
 from myapp.domain.schedule_initial_filters import build_schedule_initial_filters
 from myapp.domain.errors import InvalidMachineSelection
 
@@ -263,72 +256,6 @@ STATUS_DONE      = '完了'
 STATUS_REJECTED  = '差戻し'
 STATUS_DELAYED   = '遅れ'
 
-REMAINING_STATUSES = [STATUS_WAITING, STATUS_PENDING, STATUS_APPROVAL, STATUS_DELAYED]
-
-# =========================
-# 共通ヘルパー
-# =========================
-STATUS_MAP = {
-    "waiting":  STATUS_WAITING,
-    "pending":  STATUS_PENDING,
-    "approval": STATUS_APPROVAL,
-    "delayed":  STATUS_DELAYED,
-    "done":     STATUS_DONE,
-    "rejected": STATUS_REJECTED,
-}
-
-def status_annotations(
-    status_field: str = "status",
-    id_field: str = "id",
-    include_remaining: bool = True,
-    include_total: bool = True,
-):
-    """
-    ステータス別の Count 式を dict で返す。
-    aggregate()/annotate() のどちらにも **展開して** 渡せる。
-    """
-    expr = {
-        key: Count(id_field, filter=Q(**{status_field: value}))
-        for key, value in STATUS_MAP.items()
-    }
-    if include_remaining:
-        expr["remaining"] = Count(id_field, filter=Q(**{f"{status_field}__in": REMAINING_STATUSES}))
-    if include_total:
-        expr["total"] = Count(id_field)
-    return expr
-
-def _aggregate_status_counts(qs):
-    """単一の QuerySet をステータス別に集計して dict で返す"""
-    return qs.aggregate(**status_annotations(status_field="status", id_field="plan_id"))
-
-def _holders_breakdown(qs):
-    """
-    qsをplan.holder単位で集計してリスト返却。
-    (NULL holder も1バケット/ラベルは「未割当」)
-    """
-    agg = (
-        qs.values("holder_id", "holder__name")
-          .annotate(**status_annotations(status_field="status", id_field="plan_id"))
-          .order_by(
-              F("remaining").desc(),
-              F("holder__name").asc(nulls_last=True),
-          )
-    )
-    return [
-        {
-            "holder_id":   row["holder_id"],
-            "holder_name": row["holder__name"] or "未割当",
-            "waiting":     row["waiting"],
-            "pending":     row["pending"],
-            "approval":    row["approval"],
-            "delayed":     row["delayed"],
-            "done":        row["done"],
-            "rejected":    row["rejected"],
-            "remaining":   row["remaining"],
-            "total":       row["total"],
-        }
-        for row in agg
-    ]
 
 def _serialize_plan_rows(qs):
     """
@@ -370,184 +297,6 @@ def _serialize_plan_rows(qs):
             "plan__points_to_note": plan.points_to_note or "",
         })
     return rows
-    
-
-@login_required
-def api_user_change(request):    
-    try:
-        cache_manager_if = request.cache_manager_if
-        qs = request.GET
-        holder_id = _get_param(qs, "holder_id", str, default=None)
-        affilation_id = _get_param(qs, "affilation_id", str, default=None)
-        status_key = _get_param(qs, "status", str, default=None)
-        
-
-    except Exception:
-        return JsonResponse({"status": "error", "message": "Invalid query parameters."}, status=400)
-        
-    affiliation_pattern_times_dict, team_profiles = set_profiles_dict(request, cache_manager_if)
-    
-    plan_base = plan_base_qs()
-            
-    member_map = extract_team_member_map(team_profiles, affilation_id)
-    team_holder_scope = _team_holder_scope(plan_base, affilation_id, member_map)
-    
-    # --- 外側ドーナツ集計 ---
-    summary = team_holder_scope.aggregate(
-        **status_annotations(status_field="status", id_field="plan_id")
-    )
-    #-----
-    
-    # --- 内側ドーナツ集計 ---
-    holders_summary = _holders_breakdown(team_holder_scope)
-    #-----
-            
-        
-    plan_base_team = team_holder_scope
-    
-    
-    # --- 今週の進捗 ---
-    plan_week = filter_this_week_plan_time_plans(plan_base_team)
-
-    group_all = _aggregate_status_counts(plan_base_team)
-    group_week = _aggregate_status_counts(plan_week)
-    
-    if holder_id:
-        me_qs   = plan_base.filter(holder=holder_id)
-        me_all = _aggregate_status_counts(me_qs)
-        me_all["waiting"] = group_week["waiting"]
-        me_week = plan_week.filter(holder=holder_id)
-        me_week = _aggregate_status_counts(me_week)
-    else:
-        me_qs = None
-        me_week = None
-        me_all = None
-        
-    personal_progress = {
-        "group_this_week": group_week, 
-        "group_this_all": group_all,
-        "me_this_all": me_all
-    }
-    #-----
-    
-    
-    return JsonResponse({
-        "status": "success",
-        "summary": summary,
-        "holders_summary": holders_summary,
-        "progress": personal_progress,
-        "team_member_map": member_map,
-        "meta": {"affilation_id": affilation_id},
-    })
-
-    
-def _get_param(
-    qs: QueryDict,
-    name: str,
-    cast: Optional[Callable[[str], Any]] = None,
-    default: Any = None,
-    allow_blank: bool = False
-) -> Any:
-    """
-    QueryDict から name を取得し、必要なら型変換。
-    空文字は None or default へ落とす（allow_blank=True の場合は空文字を許容）
-    """
-    raw = qs.get(name, None)
-    if raw is None:
-        return default
-    raw = raw.strip()
-    if raw == "" and not allow_blank:
-        return default
-    if cast:
-        try:
-            return cast(raw)
-        except Exception:
-            # キャスト失敗時は例外化して上位で 400 を返却
-            raise ValueError(f"Invalid value for '{name}': {raw}")
-    return raw
-
-def apply_plan_filters(
-    qs: QuerySet,
-    *,
-    holder_id: Optional[str] = None,
-    affilation_id: Optional[str] = None,
-    this_week_flag: Optional[str] = None,
-) -> QuerySet:
-    cond = Q()
-
-    if holder_id:
-        cond &= Q(holder_id=holder_id)
-
-    if affilation_id:
-        cond &= Q(approver__profile__belongs_id=affilation_id)
-
-    qs = qs.filter(cond)
-
-    if this_week_flag == "1":
-        qs = filter_this_week_plans(qs)
-    elif this_week_flag == "0":
-        this_week_qs = filter_this_week_plans(qs)
-        qs = qs.exclude(plan_id__in=this_week_qs.values("plan_id"))
-
-    return qs
-
-
-@login_required
-def api_wd_rows(request):
-    """
-    WeeklyDuty の行データを返す API（テーブル用）
-    クエリ:
-      - status:        英語キー（waiting/approval/delayed/rejected/...）
-      - holder_id:     個人絞り込み（Member_tb.member_id）※未指定なら班や全体での取得が可能
-      - affilation_id: 班（Affilation_tb.affilation_id）での絞り込み
-      - this_week:     "1" or "0"（今週フラグ）
-      - limit/offset:  ページング（任意）
-    戻り:
-      { status:"success", rows:[...], count:<int> }
-    """
-    try:
-        qs = request.GET
-        holder_id = _get_param(qs, "holder_id", str, default=None)
-        status_key = _get_param(qs, "status", str, default=None)
-        affilation_id = _get_param(qs, "affilation_id", str, default=None)
-        this_week_flag = _get_param(qs, "this_week", str, default=None)
-        
-        
-    except Exception:
-        return JsonResponse({"status": "error", "message": "Invalid query parameters."}, status=400)
-    
-    status_keys = request.GET.getlist("status")
-    
-    if not status_keys:
-        return JsonResponse({"status": "error", "message": "status is required."}, status=400)
-    
-    unknown = [k for k in status_keys if k not in STATUS_MAP]
-    if unknown:
-        return JsonResponse({"status": "error", "message": f"Unknown status: {unknown}"}, status=400)
-
-    jp_statuses = [STATUS_MAP[k] for k in status_keys]
-    
-    jp_status = STATUS_MAP.get(status_key)
-    if not jp_status:
-        return JsonResponse({"status": "error", "message": f"Unknown status '{status_key}'."}, status=400)
-
-    qs = plan_base_qs()
-    qs = apply_plan_filters(
-        qs,
-        holder_id=holder_id,
-        affilation_id=affilation_id,
-        this_week_flag=this_week_flag,
-    )
-
-    qs = (
-        qs.filter(status__in=jp_statuses)
-        .order_by("plan_time", "inspection_no__inspection_no")
-        .prefetch_related("practitioners__member_id")
-    )
-    
-    rows = _serialize_plan_rows(qs)
-    return JsonResponse({"status": "success", "rows": rows})
-
 
 
 def api_plans(request):    
@@ -595,112 +344,7 @@ def api_plans(request):
     ))
     return JsonResponse({"status":"success", "rows":rows}, status=200)
 
-# ---------------------------
-# API: グループスケジュール取得
-# ---------------------------
-@login_required
-def api_group_schedule(request):
-    """
-    グループスケジュール（team_holder_scope）を「今日±days日」の plan_time で返す。
-    クエリ:
-      - days: 整数（デフォルト 1）… 今日±days（例: 1 → 前日〜翌日）
-      - center_date: YYYY-MM-DD（省略時は今日）
-    戻り:
-      { status:"success", rows:[...], window:{start:str, end:str} }
-    """
-    affilation_id = (request.GET.get("affiliation_id") or "")
 
-    days_str = (request.GET.get("days") or "").strip()
-    try:
-        days = int(days_str) if days_str else 1
-    except ValueError:
-        days = 1
-    # 過度な範囲を防ぐ（必要なら調整）
-    days = max(0, min(days, 7))
-
-    center_str = (request.GET.get("center_date") or "").strip()
-    if center_str:
-        try:
-            center_date = datetime.strptime(center_str, "%Y-%m-%d").date()
-        except ValueError:
-            center_date = date.today()
-    else:
-        center_date = date.today()
-
-    start_date = center_date - timedelta(days=days)
-    end_date_exclusive = center_date + timedelta(days=days + 1)
-
-    start_dt = datetime.combine(start_date, dt_time.min)
-    end_dt   = datetime.combine(end_date_exclusive, dt_time.min)
-    
-    plan_base = plan_base_qs()
-    
-    
-    
-    affilation_member = select_members_by_affiliation_id(affilation_id)
-    
-    sort_affilation_member = build_member_dict(affilation_member)
-            
-    #member_map = extract_team_member_map(team_profiles, affilation_id)
-    
-    scope = _team_holder_scope(plan_base, affilation_id, sort_affilation_member)
-
-
-    # 期間で絞り込み（plan_time があるものだけ）
-    qs = (
-        scope
-        .filter(
-            plan_time__gte=start_dt,
-            plan_time__lt=end_dt,
-            plan_time__isnull=False,
-            status__in=[PlanStatus.IN_PROGRESS, PlanStatus.DELAYED],
-        )
-        .order_by("holder__name", "plan_time", "inspection_no__inspection_no")
-    )
-
-    # 既存の行シリアライザを再利用（テーブルと同じ形式で返す）
-    rows = _serialize_plan_rows(qs)
-
-    return JsonResponse({
-        "status": "success",
-        "rows": rows,
-        "member": sort_affilation_member,
-        "window": {"start": start_dt.isoformat(), "end": end_dt.isoformat()},
-    })
-    
-    
-# ---------------------------
-# Team_profiles['profiles'] から {member_id: member_name} をユニーク順序で抽出。
-# ---------------------------
-def extract_team_member_map(team_profiles, affiliation_id: int) -> Dict[str, str]:
-    """
-    team_profiles['profiles'] から {member_id: member_name} をユニーク順序で抽出。
-    """
-    profiles = team_profiles.get("profiles", [])
-    profiles = profiles.filter(belongs_id=affiliation_id)
-    seen: Dict[str, str] = {}
-    for p in profiles:
-        u = getattr(p, "user", None)
-        if not u:
-            continue
-        mid  = getattr(u, "member_id", None)
-        name = getattr(u, "name", None)
-        if mid:
-            key = str(mid)
-            if key not in seen:
-                seen[key] = name or ""
-    return seen
-
-# 既存 team_holder_scope は IDs を受ける想定のままでOK
-
-def _team_holder_scope(qs, affilation_id: int, member_ids):
-    return qs.filter(
-        Q(approver__profile__belongs_id=affilation_id) |
-        (
-            Q(holder_id__in=member_ids) &
-            ~Q(approver__profile__belongs_id=affilation_id)
-        )
-    )
 def parse_client_iso_to_aware(s: str,
                               default_tz: Optional[ZoneInfo] = None
                               ) -> Optional[datetime]:
@@ -807,72 +451,6 @@ def api_update_plan_time(request, plan_id: int):
 
     resp = {"status": "success", "data": data}
     return JsonResponse(resp, status=200)
-        
-@login_required
-def home_legacy_view(request):
-    cache_manager = request.cache_manager
-    cache_manager_if = request.cache_manager_if
-    organization_code = request.organization_code
-    if request.method == 'GET':
-        try:
-            affiliation_pattern_times_dict, team_profiles = set_profiles_dict(request, cache_manager_if)
-            
-            # ログインユーザー（Member_tb）
-            default_user = team_profiles['user_profile'].user
-            
-            #グループ
-            affilation_id = team_profiles['user_profile'].belongs_id
-            
-            plan_base = plan_base_qs()
-            
-            member_map = extract_team_member_map(team_profiles, affilation_id)
-            team_holder_scope = _team_holder_scope(plan_base, affilation_id, member_map)
-            
-
-            summary = team_holder_scope.aggregate(
-                **status_annotations(status_field="status", id_field="plan_id")
-            )
-            
-            holders_summary = _holders_breakdown(team_holder_scope)
-            
-            
-            plan_base_team = team_holder_scope
-            plan_week = filter_this_week_plan_time_plans(plan_base_team)
-
-            group_all = _aggregate_status_counts(plan_base_team)
-            group_week = _aggregate_status_counts(plan_week)
-
-            me_qs = plan_base.filter(holder=default_user)
-            me_all = _aggregate_status_counts(me_qs)
-
-            personal_progress = {
-                "group_this_week": group_week,
-                "group_this_all": group_all,
-                "me_this_all": me_all,
-            }
-            
-            # --- 最初にテーブルに表示する行 ---
-            initial_rows = _serialize_plan_rows(
-                me_qs.filter(status=STATUS_PENDING)
-                    .order_by("plan_time","inspection_no__inspection_no")
-            )
-            #-----
-            
-            context = {
-                "team_profiles": team_profiles['profiles'],
-                "summary": summary,
-                "holder_summary": holders_summary,
-                "personal_progress": personal_progress,
-                "initial_rows": initial_rows,
-                "team_member_map": member_map,
-                "meta": {"affilation_id": affilation_id},
-            }
-            return render(request, "home/home.html", context)
-        except UserProfile.DoesNotExist:
-            return handle_view_error(UserProfile.DoesNotExist(), status_code=404, message='User profile not found')
-        except Exception as e:
-            print("Error:", e)
-            return handle_view_error(e)
 
 
 @login_required

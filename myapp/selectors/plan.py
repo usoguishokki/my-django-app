@@ -247,9 +247,6 @@ def filter_week_plans(qs=None, *, base_date: date | None = None):
 
     return qs.filter(p_date__h_date__range=(start_of_week, end_of_week))
 
-def filter_this_week_plans(qs=None):
-    return filter_week_plans(qs=qs)
-
 def filter_status_plans(qs=None, *, statuses: Optional[Iterable[str]] = None):
     if qs is None:
         qs = plan_base_qs()
@@ -258,31 +255,6 @@ def filter_status_plans(qs=None, *, statuses: Optional[Iterable[str]] = None):
         return qs
 
     return qs.filter(status__in=statuses)
-
-
-def filter_week_plan_time_plans(qs=None, *, base_date: date | None = None):
-    """
-    plan_time が、指定日が属する週（月曜〜日曜）に入る Plan を返す
-    """
-    if qs is None:
-        qs = plan_base_qs()
-
-    start_of_week, end_of_week = get_week_range(base_date)
-
-    start_dt = datetime.combine(start_of_week, time.min)
-    end_dt = datetime.combine(end_of_week + timedelta(days=1), time.min)
-
-    return qs.filter(
-        plan_time__isnull=False,
-        plan_time__gte=start_dt,
-        plan_time__lt=end_dt,
-    )
-
-def filter_this_week_plan_time_plans(qs=None):
-    """
-    plan_time ベースで今週（月曜〜日曜）の Plan を返す
-    """
-    return filter_week_plan_time_plans(qs=qs)
 
 
 def select_schedule_day_plans(*, affiliation_id: int, target_date: date):

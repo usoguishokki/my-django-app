@@ -2,37 +2,6 @@ import {
     asynchronousCommunication,
     requestFile,
 } from '../asyncCommunicator/index.js';
-/**
- * ステータス別の行を取得
- * @param {Object} p
- *  - statusKey: 'waiting'|'approval'|'delayed'|'rejected' など英語キー
- *  - holderId?:  文字列（個人で絞るとき）
- *  - affilationId?: 数値（班で絞るとき / waiting を班で見る等）
- *  - thisWeek?:  true|false（今週だけに限定）
- *  - limit?: number, offset?: number
- */
-export function fetchWdRows(p = {}) {
-    const params = new URLSearchParams();
-
-    const statusKeys = Array.isArray(p.statusKeys)
-        ? p.statusKeys
-        : (p.statusKey ? [p.statusKey] : []);
-    
-    statusKeys.forEach(k => params.append("status", k)); 
-
-
-    if (p.holderId)     params.set("holder_id", p.holderId);
-    if (p.affilationId) params.set("affilation_id", String(p.affilationId));
-    if (p.thisWeek != null) params.set("this_week", p.thisWeek ? "1" : "0");
-    if (p.limit != null)    params.set("limit", String(p.limit));
-    if (p.offset != null)   params.set("offset", String(p.offset));
-    if (p.week)             params.set("week", p.week);
-
-    return asynchronousCommunication({
-        url: `/api/wd/?${params.toString()}`,
-        method: "GET",
-    }); // => { status:'success', rows:[...], count:number }
-}
 
 export function fetchPlanRows(p = {}) {
     const params = new URLSearchParams();
@@ -51,54 +20,6 @@ export function fetchPlanRows(p = {}) {
         url: `/api/plans/?${params.toString()}`,
         method: 'GET',
     }); // => { status:'success', rows:[...], count: n, selected:{data_alias} }
-}
-
-export function fetchUserChange(params = {}) {
-    const qs = new URLSearchParams();
-    if (params.payload.userId)     qs.set("holder_id", params.payload.userId);
-    if (params.payload.affiliation_id) qs.set("affilation_id", params.payload.affiliation_id);
-    if (params.payload.status) qs.set("status", params.payload.status);
-    if (params.payload.thisWeek != null) qs.set("this_week", String(params.payload.thisWeek ? 1 : 0));
-    return asynchronousCommunication({ 
-        url: `/api/user_change/?${qs.toString()}`, 
-        method: "GET", 
-    });
-}
-
-
-/**
- * グループスケジュール取得
- * GET /api/group-schedule/?days=1&center_date=YYYY-MM-DD
- *
- * @param {Object}  p
- * @param {number}  p.days         - 片側の日数（1なら 前後1日ぶんを返す実装想定）
- * @param {string|Date} p.centerDate - 中央日付（省略時は今日）。YYYY-MM-DD 文字列 or Date
- * @returns Promise<{status:'success', rows:Array, window?:{start,end,tz}}>
- */
-export function fetchGroupSchedule(p = {}) {
-    const params = new URLSearchParams();
-  
-    const days = Number.isFinite(p.days) ? Number(p.days) : 1;
-    params.set("days", String(days));
-  
-    // center_date は YYYY-MM-DD に整形
-    let center = p.centerDate;
-    const affiliation_id = p.affiliation_id;
-    if (center instanceof Date) {
-        center = center.toISOString().slice(0, 10);
-    }
-    if (typeof center === "string" && center) {
-        params.set("center_date", center);
-    }
-
-    if (typeof affiliation_id === "string") {
-        params.set("affiliation_id", affiliation_id);
-    }
-  
-    return asynchronousCommunication({
-        url: `/api/group-schedule/?${params.toString()}`,
-        method: "GET",
-    }); // => { status:'success', rows:[...], window:{start,end,tz} }
 }
 
 /**

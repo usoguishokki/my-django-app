@@ -40,13 +40,6 @@ urlpatterns = [
         views.home_view,
         name="home",
     ),
-
-    path(
-        "home-legacy/",
-        views.home_legacy_view,
-        name="home_legacy",
-    ),
-
     path(
         "home-dashboard/",
         RedirectView.as_view(
@@ -63,9 +56,6 @@ urlpatterns = [
     path('plannedMaintenance/', views.planned_maintenance_view, name='plannedMaintenance'),
     path('mobileLider/', views.equipment_ledger_view, name='mobileLider'),
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
-    path("api/wd/", views.api_wd_rows, name="api_wd_rows"),
-    path("api/user_change/", views.api_user_change, name="api_user_change"),
-    path("api/group-schedule/", views.api_group_schedule, name="api_group_schedule"),
     path("api/plans/<int:plan_id>/time/", views.api_update_plan_time, name="api_update_plan_time"),
     path('api/plans/', views.api_plans, name='api_plans'),
     path("api/", include("myapp.urls_api")),
