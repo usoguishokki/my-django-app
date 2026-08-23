@@ -4,7 +4,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Sum, OuterRef, Subquery
-from django.utils import timezone
 from django.db import transaction
 from datetime import datetime, timedelta
 
@@ -21,16 +20,11 @@ from django.views.decorators.cache import never_cache
 from rest_framework.decorators import api_view
 
 from .forms import LoginForm
-from dateutil import parser as dparser
-from zoneinfo import ZoneInfo
 
 import json
-import pytz
-import itertools
 import logging
 import calendar
 
-from typing import Optional
 
 from myapp.selectors.plan import (
     plan_base_qs,
@@ -76,34 +70,6 @@ def extract_request_data(request: HttpRequest):
     
     
     
-utc_zone = pytz.timezone('UTC')
-jst_zone = pytz.timezone('Asia/Tokyo')  
-def convert_utc_to_jst(utc_time_str):
-    """
-    Convert UTC time string to JST (Japan Standard Time).
-    
-    Args:
-    utc_time_str(str): UTC time in ISO format, e.g., "2024-05-06T05:45:00.000Z"
-    
-    Returns:
-    str: The JST time as a atring in the format "YYYY-MM-DD HH:MM:SS"
-    
-    Raises:
-    ValueError: If the input string is not a valid UTC date.
-    """
-    try:
-
-        
-        utc_time = datetime.strptime(utc_time_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-        
-        utc_time = utc_zone.localize(utc_time)
-        
-        jst_time = utc_time.astimezone(jst_zone)
-        
-        return jst_time.strftime("%Y-%m-%d %H:%M:%S")
-    
-    except ValueError as e:
-        return handle_view_error(e)
         
 def convertToDateTimeObject(date_time_str):
     format_date_time = datetime.strptime(date_time_str, '%Y-%m-%d %H:%M:%S')
@@ -172,50 +138,11 @@ def set_leader_profile(profiles, mybelongs):
     return leader_profile
 
 
-def get_cached_login_number(request, cache_manager):
-    login_number_data = get_logged_in_user(request)
-    login_cache = cache_manager.login_key(login_number_data)
-    login_number = cache_manager.get(login_cache['cache_key'])
-    return login_number_data, login_number, login_cache
     
 logger = logging.getLogger(__name__)
 
-def groupActualWorksByMachineBySave(target_plans, work_schedule_entry_ins, _time_zone, registration_events):
-    actual_works = list(target_plans.filter(inspection_no__time_zone=_time_zone).order_by(
-        'inspection_no__control_no__line_name', 'inspection_no__control_no__machine')
-    )
-    
-    actual_machine_data = {}
-    actual_works_group = itertools.groupby(actual_works, key=lambda x: x.inspection_no.control_no.machine)
 
-
-    for machine, works in actual_works_group:
-        works_list = list(works)
-        total_man_hours = sum(work.inspection_no.man_hours for work in works_list)
-        plan_objs = [work for work in works_list]
-        actual_machine_data[machine] = {
-            'total_man_hours': total_man_hours,
-            'plan_objs': plan_objs
-        }    
     
-
-    update_plan_objs = work_schedule_entry_ins.addTaskToSchedule(actual_machine_data)
-    registration_events['plan_obj_list'].extend(update_plan_objs)
-    
-    for obj in update_plan_objs:
-        registration_events['plan_ids_list'].append(str(obj.plan_id))
-        
-    return registration_events
-
-def create_weekly_plan_cache_key(code, name):
-    cache_key = f"{code}_{name}"
-    return cache_key
-    
-def assign_fallback_leader_if_missing(_plan, team_profiles):
-    profiles = team_profiles["profiles"]
-    mybelongs = _plan.weekly_duties.affilation
-    leader_profile = set_leader_profile(profiles, mybelongs)
-    return leader_profile
                         
 def get_details(detail, unique_devices):
     device = detail.applicable_device
@@ -321,26 +248,6 @@ def api_plans(request):
     return JsonResponse({"status":"success", "rows":rows}, status=200)
 
 
-def parse_client_iso_to_aware(s: str,
-                              default_tz: Optional[ZoneInfo] = None
-                              ) -> Optional[datetime]:
-    """
-    クライアントから来た ISO8601 を aware datetime にする。
-    - Z/±HH:MM 付きならそのタイムゾーンを使用
-    - 何も付いていなければ default_tz（未指定なら settings.TIME_ZONE）を付与
-    """
-    if not s:
-        return None
-    try:
-        dt = dparser.isoparse(s)
-    except Exception:
-        return None
-        
-    if timezone.is_naive(dt):
-        if default_tz is None:
-            defulat_tz = timezone.getcurrent_timezone()
-        dt = timezone.make_aware(dt, default_tz)
-    return dt
 
 
 @login_required
@@ -554,25 +461,6 @@ def workContents_view(request):
         return handle_view_error(e, message=f'Error processing request: {str(e)}')
 
 
-def extract_number_from_key(item, key):
-    """
-    任意のキーから値を取得し、最後のアンダーバー以降の数値を抽出する関数。
-
-    Args:
-        item (dict): データ項目を格納した辞書。
-        key (str): 数値抽出の対象となるキー。
-
-    Returns:
-        int: 抽出した数値（整数）。
-    """
-    value = item.get(key, "")
-    if not value:
-        raise ValueError(f"The key '{key}' does not exist in the item or its value is empty.")
-    try:
-        #最後のアンダーバー以降の部分を抽出して整数型に変換
-        return int(value.split('_')[-1])
-    except (ValueError, IndexError):
-         raise ValueError(f"Cannot extract a valid number from the key '{key}' with value '{value}'.")
      
      
 @login_required
