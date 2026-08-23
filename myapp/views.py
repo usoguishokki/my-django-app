@@ -1,10 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpRequest, HttpResponseBadRequest
-from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Sum
-from django.db import transaction
 from datetime import datetime, timedelta
 
 from .backends import MemberAuthenticationBackend
@@ -35,6 +33,19 @@ from myapp.services.inspection_standards import (
 
 from myapp.services.card_work.card_work_page import (
     build_card_work_page_context,
+)
+
+from myapp.selectors.work_contents import (
+    select_work_contents_plans,
+)
+from myapp.presenters.work_contents import (
+    build_work_contents_rows,
+)
+from myapp.services.work_contents import (
+    update_work_contents_plans,
+)
+from myapp.services.user_context import (
+    build_team_profile_context,
 )
 
 def handle_view_error(e, **kwargs):
@@ -86,46 +97,9 @@ def login_view(request):
         form = LoginForm()
     return render(request, 'login.html', {'form': form})
 
-def get_logged_in_user(request):
-    return request.session.get('login_number')
    
-def set_profiles_dict(request, cache_manager_if):
-    request_login_number = get_logged_in_user(request)
-    login_number = cache_manager_if.get_login_number(request_login_number)
-    user_profile, profiles = cache_manager_if.get_profiles(login_number)
-    team_profiles = {
-        'request_login_number': request_login_number,
-        'login_number': login_number,
-        'user_profile': user_profile,
-        'profiles': profiles
-    }
-    
-    affiliation_pattern_times_dict, profiles = cache_manager_if.get_affiliation_pattern_times_dict(
-        team_profiles['user_profile'], 
-        team_profiles['profiles']
-    )
-    
-    return affiliation_pattern_times_dict, team_profiles
 
-def profile(cache_manager_if, login_number):
-    user_profile, profiles = cache_manager_if.get_profiles(login_number)
-    result_dict = {}
-    result_dict["user_profile"] = user_profile
-    mybelongs = user_profile.belongs
-    leader_profile = set_leader_profile(profiles, mybelongs)
-    result_dict["leader_profile"] = leader_profile
-    return result_dict
 
-def set_leader_profile(profiles, mybelongs):
-    try:
-        leader_profile = profiles.get(
-            belongs=mybelongs,
-            job_title='班長'
-        )
-    except ObjectDoesNotExist:
-        leader_profile = None
-    
-    return leader_profile
 
 
     
@@ -141,21 +115,12 @@ def get_details(detail, unique_devices):
     unique_devices[device]['details'].append((detail.contents, detail.standard, detail.method))
     return unique_devices
 
-# --- ステータス定数（models の choices と合わせる）
-
-
-
-
-
-
-
-
 @login_required
 def card_work(request):
     cache_manager_if = request.cache_manager_if
-    _affiliation_pattern_times_dict, team_profiles = set_profiles_dict(
-        request,
-        cache_manager_if,
+    team_profiles = build_team_profile_context(
+        request=request,
+        cache_manager_if=cache_manager_if,
     )
 
     context = build_card_work_page_context(
@@ -168,86 +133,34 @@ def card_work(request):
 @login_required
 def workContents_view(request):
     cache_manager_if = request.cache_manager_if
-    affiliation_pattern_times_dict, team_profiles = set_profiles_dict(request, cache_manager_if)
+    team_profiles = build_team_profile_context(
+        request=request,
+        cache_manager_if=cache_manager_if,
+    )
     organization_code = request.organization_code
-    login_number = team_profiles['login_number']
-    user_dict = profile(cache_manager_if, login_number)
     
-    def batch_update_plans(details, applicant_user):
-        """details: [{'planId', 'planStatus', 'planComment'}, ...]"""
-        plan_ids = [d.get('planId') for d in details if d.get('planId') is not None]
-        if not plan_ids:
-            return [], {}, 0, 0
-        
-        plans = (
-            Plan_tb.objects
-            .filter(plan_id__in=plan_ids)
-            .in_bulk(field_name='plan_id')
-        )
-        
-        plan_list = []
-        affiliation_dict = {}
-        
-        for d in details:
-            pid = int(d.get('planId'))
-            plan_status = d.get('planStatus')
-            plan_comment = d.get('planComment')
-            
-            plan = plans.get(pid)
-            if not plan:
-                continue
-            
-            if plan_status is not None:
-                plan.status = plan_status
-            if plan_comment is not None:
-                plan.comment = plan_comment
-            plan.applicant = applicant_user
-            plan_list.append(plan)
-            
-                    
-        with transaction.atomic():
-            if plan_list:
-                Plan_tb.objects.bulk_update(plan_list, ['status', 'comment', 'applicant'])
-        return len(plan_list)
         
 
-    if request.method != 'POST' or not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        
-        applications_data = Plan_tb.objects.select_related(
-            'applicant',
-            'approver',
-            'inspection_no__control_no__line_name__organization'
-        ).filter(
-            plan_time__isnull=False,
-            inspection_no__control_no__line_name__organization__organization=organization_code
-        ).exclude(
-            status='完了'
+    if (
+        request.method != "POST"
+        or request.headers.get("X-Requested-With") != "XMLHttpRequest"
+    ):
+        applications_data = select_work_contents_plans(
+            organization_code=organization_code,
         )
-        
-        applications_data_list = []
-        for application_data in applications_data:
-            
-            applicant_name = application_data.applicant.name if application_data.applicant else ''
-            approver_name = application_data.approver.name if application_data.approver else ''
-            
-            application_dict = {
-                'id': application_data.plan_id,
-                'status': application_data.status,
-                'work_name': application_data.inspection_no.wark_name,
-                'points_to_note': application_data.points_to_note,
-                'result': application_data.result,
-                'applicant_name': applicant_name,
-                'approver_name': approver_name,
-                'comment': application_data.comment,
-                'implementation_date': application_data.implementation_date
-            }
-            applications_data_list.append(application_dict)
-        
-        return render(request, 
-                      'workContents/workContents.html', 
-                      {'applications_data_list': applications_data_list,
-                       'members': team_profiles['profiles']
-                       })
+
+        applications_data_list = build_work_contents_rows(
+            applications_data,
+        )
+
+        return render(
+            request,
+            "workContents/workContents.html",
+            {
+                "applications_data_list": applications_data_list,
+                "members": team_profiles["profiles"],
+            },
+        )
     try:
         data, action, parse_error = extract_request_data(request)
         if parse_error:
@@ -255,11 +168,14 @@ def workContents_view(request):
         if action != "fetch_approval_or_rejection":
             return HttpResponseBadRequest('Invalid action')
         detailObj = data.get('detail')
-        applicant_user = user_dict['user_profile'].user
+        applicant_user = team_profiles["user_profile"].user
 
 
         details = detailObj if isinstance(detailObj, list) else [detailObj]
-        batch_update_plans(details, applicant_user)
+        update_work_contents_plans(
+            details=details,
+            applicant_user=applicant_user,
+        )
         plan_ids = [d.get('planId') for d in details if d.get('planId') is not None]
                         
         return JsonResponse({'status': 'success', 
@@ -336,8 +252,10 @@ def inspectionStadards_view(request):
 def achievements_view(request):
     cache_manager = request.cache_manager
     cache_manager_if = request.cache_manager_if
-    affiliation_pattern_times_dict, team_profiles = set_profiles_dict(request, cache_manager_if)
-    organization_code = request.organization_code
+    team_profiles = build_team_profile_context(
+        request=request,
+        cache_manager_if=cache_manager_if,
+    )
     login_number = team_profiles['login_number']
     
     def get_month_start_and_end(year, month):
