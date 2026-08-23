@@ -2,8 +2,6 @@ from typing import Optional, List, Dict, Any
 
 from myapp.domain.shifts import to_local_naive, get_shift_day_key_for_impl_dt
 
-from myapp.domain.kpi_cell_detail_result import KPICellDetailResult
-
 from myapp.selectors.kpi_context import DayContext
 
 def _build_period_label(interval: Optional[int], unit: Optional[str]) -> str:

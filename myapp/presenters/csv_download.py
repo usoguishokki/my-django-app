@@ -1,6 +1,6 @@
 from datetime import date
 
-from myapp.models import DayOfWeek, PlanRuleCondition
+from myapp.models import DayOfWeek
 
 
 FISCAL_MONTH_COLUMNS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3]

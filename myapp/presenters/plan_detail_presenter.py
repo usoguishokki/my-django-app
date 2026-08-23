@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from myapp.presenters.formatters import (
     as_text, as_int, dt_iso, d_iso, member_brief, safe_get,
