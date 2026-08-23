@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse, HttpRequest, HttpResponseBadRequest, HttpResponse
+from django.http import JsonResponse, HttpRequest, HttpResponseBadRequest
 from django.core import serializers
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.contrib.auth import login
@@ -901,11 +901,6 @@ def schedule_page(request):
 
     return render(request, "schedule/schedule.html", context)
 
-"""
-def nika_app_view(request):
-    logger.debug(f"🔍 request.COOKIES in nika_app_view: {request.COOKIES}")
-    return render(request, 'index.html')
-"""
 @api_view(['GET'])
 def get_employee(request):
     return JsonResponse({

@@ -1,36 +1,13 @@
 
 from django.contrib import admin
 from django.contrib.auth.views import LogoutView
-from django.urls import include, path, re_path
-from django.http import HttpResponse
+from django.urls import include, path
 
 from myapp import views
-from urllib.parse import urljoin
 from django.conf import settings
-from django.shortcuts import redirect
 from django.conf.urls.static import static
 
 from django.views.generic import RedirectView
-
-import logging
-logger = logging.getLogger('myapp')
-
-"""
-#React用のテストリダイレクト先
-def dev_redirect_view(request):
-    frontend_url = settings.FRONTEND_URL.rstrip("/")
-    path = request.path
-    redirect_url = urljoin(frontend_url, path)
-
-    response = redirect(redirect_url)
-
-    # 🔍 `Set-Cookie` の情報をログに出力
-    logger.debug(f"🔍 dev_redirect_view: Redirecting to {redirect_url}")
-    logger.debug(f"🔍 request.COOKIES in dev_redirect_view: {request.COOKIES}")
-    logger.debug(f"🔍 Django Set-Cookie: SESSION_COOKIE_SAMESITE={settings.SESSION_COOKIE_SAMESITE}, SESSION_COOKIE_SECURE={settings.SESSION_COOKIE_SECURE}")
-
-    return redirect(urljoin(frontend_url, path))
-"""
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -70,11 +47,6 @@ urlpatterns = [
 #API
     path('api/get-chart-data/', views.get_chart_data_view, name='get_chart_data'),
     path('api/employee/', views.get_employee, name='get_employee'),
-#React用
-    #re_path(r'^nika/.*$', nika_app_view, name='nika_app_view') 本番用
-    #re_path(r'^nika/.*$', nika_app_view, name='nika_app_view'), #開発用
-
-#React_SPA用
 ]
 
 if settings.DEBUG:
