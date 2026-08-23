@@ -1,10 +1,6 @@
 from django.db import transaction
 
 from myapp.domain.schedule import InvalidScheduleEventMoveParams
-from myapp.domain.errors import (
-    ScheduleEventMoveNotFound,
-    ScheduleApproverNotFound,
-)
 
 from myapp.services.schedule import move_schedule_event
 
