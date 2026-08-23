@@ -14,7 +14,6 @@ from myapp.models import (
     Plan_tb,
     PlanRuleCondition,
     PlanScheduleRule,
-    DateTag,
 )
 
 

@@ -1,6 +1,6 @@
 # myapp/selectors/kpi_context.py
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import List
 from datetime import date
 
 from myapp.selectors.hozen_calendar import get_calendar_rows, get_all_days, build_date_alias_map

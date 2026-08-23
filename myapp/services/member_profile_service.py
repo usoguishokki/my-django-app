@@ -1,6 +1,3 @@
-from myapp.domain.sort_keys.member_sort import sort_profiles
-
-
 def serialize_member_profile(profile):
     return {
         'user': {
