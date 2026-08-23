@@ -32,8 +32,6 @@ urlpatterns = [
     path('plannedMaintenance/', views.planned_maintenance_view, name='plannedMaintenance'),
     path('mobileLider/', views.equipment_ledger_view, name='mobileLider'),
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
-    path("api/plans/<int:plan_id>/time/", views.api_update_plan_time, name="api_update_plan_time"),
-    path('api/plans/', views.api_plans, name='api_plans'),
     path("api/", include("myapp.urls_api")),
     path('csv-download/', views.csv_download_page, name='csvDownloadPage'),
     path('timeTable/', views.schedule_page, name='timeTable'),
@@ -43,9 +41,6 @@ urlpatterns = [
         views.parts_search_view,
         name="parts_search",
     ),
-
-#API
-    path('api/employee/', views.get_employee, name='get_employee'),
 ]
 
 if settings.DEBUG:

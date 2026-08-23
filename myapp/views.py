@@ -3,21 +3,18 @@ from django.http import JsonResponse, HttpRequest, HttpResponseBadRequest
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Sum, OuterRef, Subquery
+from django.db.models import Q, Sum
 from django.db import transaction
 from datetime import datetime, timedelta
 
 from .backends import MemberAuthenticationBackend
 from .models import (
     Control_tb,
-    Member_tb,
     Plan_tb,
-    Calendar_tb,
     Check_tb,
 )
 from django.views.decorators.cache import never_cache
 
-from rest_framework.decorators import api_view
 
 from .forms import LoginForm
 
@@ -25,10 +22,6 @@ import json
 import logging
 import calendar
 
-
-from myapp.selectors.plan import (
-    plan_base_qs,
-)
 
 from myapp.domain.schedule_initial_filters import (
     build_schedule_initial_filters,
@@ -71,9 +64,6 @@ def extract_request_data(request: HttpRequest):
     
     
         
-def convertToDateTimeObject(date_time_str):
-    format_date_time = datetime.strptime(date_time_str, '%Y-%m-%d %H:%M:%S')
-    return format_date_time
 
                 
 @never_cache
@@ -154,168 +144,10 @@ def get_details(detail, unique_devices):
 # --- ステータス定数（models の choices と合わせる）
 
 
-def _serialize_plan_rows(qs):
-    """
-    Plan_tb の行をテーブル描画用の dict に変換
-    """
-
-    rows = []
-    for plan in qs:
-        chk = plan.inspection_no
-        ctrl = chk.control_no if chk else None
-
-        prac_names = []
-        prac_member_id = []
-        for p in getattr(plan, "practitioners", []).all():
-            if p.member_id and p.member_id.name:
-                prac_names.append(p.member_id.name)
-                prac_member_id.append(p.member_id.member_id)
-
-        approver_affilation = ""
-        if plan.approver and hasattr(plan.approver, "profile") and plan.approver.profile.belongs:
-            approver_affilation = plan.approver.profile.belongs.affilation
-
-        rows.append({
-            "plan__plan_id": plan.plan_id,
-            "status": plan.status,
-            "plan__plan_time": plan.plan_time.strftime("%Y-%m-%dT%H:%M") if plan.plan_time else "",
-            "plan__inspection_no__wark_name": chk.wark_name if chk else "",
-            "plan__inspection_no__man_hours": chk.man_hours if chk and chk.man_hours is not None else "",
-            "holder_name": plan.holder.name if plan.holder else "未割当",
-            "holder_member_id": plan.holder_id,
-            "this_week": False,
-            "affilation__affilation": approver_affilation,
-            "plan__inspection_no__time_zone": chk.time_zone if chk else "",
-            "plan__inspection_no__control_no__machine": ctrl.machine if ctrl else "",
-            "practitioner_id": ", ".join(prac_member_id) if prac_member_id else "",
-            "practitioner_name": ", ".join(prac_names) if prac_names else "",
-            "plan__comment": plan.comment or "",
-            "plan__inspection_no__inspection_no": chk.inspection_no if chk else "",
-            "plan__points_to_note": plan.points_to_note or "",
-        })
-    return rows
-
-
-def api_plans(request):    
-    week_alias = request.GET.get("week")
-    status = request.GET.getlist("status")
-    
-    qs = plan_base_qs()
-    qs = qs.filter(status__in=status)
-    qs = qs.filter(p_date__date_alias=week_alias)
-    
-    # --- 相関サブクエリ（Plan_tb の行ごとに Calendar_tb を (c_date, pattern) で特定）---
-    cal_base = Calendar_tb.objects.filter(
-        c_date_id = OuterRef('p_date_id'),
-        pattern_id = OuterRef('inspection_no__practitioner_id'),
-    )
-    qs = qs.annotate(
-        cal_affilation_id   = Subquery(cal_base.values('affilation_id')[:1]),
-        cal_affilation_name = Subquery(cal_base.values('affilation__affilation')[:1]),
-    )
-    
-    
-    
-    
-    rows = list(qs.values(
-        "plan_id","status","p_date__date_alias","p_date__h_day_of_week",
-        "inspection_no__time_zone","inspection_no__control_no__machine",
-        "inspection_no__control_no__line_name__line_name",
-        "inspection_no__wark_name", "inspection_no__man_hours", 
-        "inspection_no__practitioner__pattern_name",
-        "inspection_no__inspection_no", "inspection_no__day_of_week",
-        "cal_affilation_name","inspection_no__rule__unit","inspection_no__rule__interval",
-        "inspection_no__status"
-    ))
-    return JsonResponse({"status":"success", "rows":rows}, status=200)
 
 
 
 
-@login_required
-def api_update_plan_time(request, plan_id: int):
-    """
-    部分更新: Plan_tb.plan_time / holder を更新する
-    受け取り(JSON):
-      { "plan_time": "2025-08-29T10:30:00.000Z" }
-    返り(JSON):
-      { "status":"success", "plan_id": 123, "plan_time": "ISO8601", "tz": "UTC or local" }
-    """
-    ctype = (request.content_type or "").lower()
-    if not ctype.startswith("application/json"):
-        return JsonResponse(
-            {"status": "error", "message": "Content-Type must be application/json"},
-            status=415
-        )
-
-    data, action, err = extract_request_data(request)
-    if err:
-        return JsonResponse({"status": "error", "message": "Invalid JSON."}, status=400)
-
-    payload = data.get("upDateDict") or {}
-    plan_id = payload.get("planId")
-    plan_time_str = payload.get("beforeStart")
-    holder_id = payload.get("beforeHolderId")
-
-    updates = {}
-    rows = []
-
-    if not plan_time_str and not holder_id:
-        return JsonResponse(
-            {"status": "error", "message": "Nothing to update: plan_time または holder を指定してください。"},
-            status=400
-        )
-
-    dt = None
-    if plan_time_str:
-        dt = convertToDateTimeObject(plan_time_str)
-        if dt is None:
-            return JsonResponse(
-                {"status": "error", "message": "Invalid datetime format."},
-                status=400
-            )
-        updates["plan_time"] = dt
-
-    member = None
-    if holder_id:
-        try:
-            member = Member_tb.objects.get(pk=str(holder_id))
-        except Member_tb.DoesNotExist:
-            return JsonResponse(
-                {"status": "error", "message": "Member not found."},
-                status=404
-            )
-        updates["holder"] = member
-
-    with transaction.atomic():
-        try:
-            plan = Plan_tb.objects.select_for_update().get(pk=plan_id)
-        except Plan_tb.DoesNotExist:
-            return JsonResponse(
-                {"status": "error", "message": "Plan not found."},
-                status=404
-            )
-
-        for field, value in updates.items():
-            setattr(plan, field, value)
-
-        plan.save(update_fields=list(updates.keys()))
-
-        # 更新後の表示用データを Plan_tb 基準で取得
-        qs = (
-            plan_base_qs()
-            .filter(plan_id=plan.plan_id)
-            .prefetch_related("practitioners__member_id")
-        )
-        rows = _serialize_plan_rows(qs)
-
-        data = {
-            "rows": rows,
-            "plan_id": plan.plan_id,
-        }
-
-    resp = {"status": "success", "data": data}
-    return JsonResponse(resp, status=200)
 
 
 @login_required
@@ -647,14 +479,6 @@ def schedule_page(request):
     }
 
     return render(request, "schedule/schedule.html", context)
-
-@api_view(['GET'])
-def get_employee(request):
-    return JsonResponse({
-        "user": str(request.user),
-        "authenticated": request.user.is_authenticated
-    })
-
 
 @login_required
 def home_view(request):

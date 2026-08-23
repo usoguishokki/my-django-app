@@ -3,25 +3,6 @@ import {
     requestFile,
 } from '../asyncCommunicator/index.js';
 
-export function fetchPlanRows(p = {}) {
-    const params = new URLSearchParams();
-    if (p.week) {
-        params.set('week', p.week);
-    }
-
-    if (Array.isArray(p.statuses)) {
-        p.statuses
-            .filter(Boolean)
-            .forEach((status) => {
-                params.append('status', status);
-            });
-    }
-    return asynchronousCommunication({
-        url: `/api/plans/?${params.toString()}`,
-        method: 'GET',
-    }); // => { status:'success', rows:[...], count: n, selected:{data_alias} }
-}
-
 /**
  * KPIマトリクス用データ取得
  * 例）GET /api/kpi-matrix/?period_view=month&target_view=team&metric=plan&base_date=YYYY-MM-DD
