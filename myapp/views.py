@@ -5,9 +5,6 @@ from django.contrib.auth.decorators import login_required
 from datetime import datetime
 
 from .backends import MemberAuthenticationBackend
-from .models import (
-    Plan_tb,
-)
 from django.views.decorators.cache import never_cache
 
 
@@ -190,8 +187,6 @@ def workContents_view(request):
                              'planId': plan_ids,
                             })
         
-    except Plan_tb.DoesNotExist as e:
-        return handle_view_error(e, message='Plan not found')
     except ValueError as e:
         return handle_view_error(e, message=str(e))
     except Exception as e:
