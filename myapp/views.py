@@ -1,14 +1,12 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse, HttpRequest, HttpResponseBadRequest
+from django.shortcuts import render, redirect
+from django.http import JsonResponse, HttpRequest, HttpResponseBadRequest, Http404
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
 
 from .backends import MemberAuthenticationBackend
 from .models import (
-    Control_tb,
     Plan_tb,
-    Check_tb,
 )
 from django.views.decorators.cache import never_cache
 
@@ -53,6 +51,14 @@ from myapp.domain.periods import (
 )
 from myapp.presenters.achievements import (
     build_achievement_page_context,
+)
+from myapp.selectors.equipment import (
+    get_equipment_by_control_no,
+    find_equipment_by_control_no,
+    select_checks_by_control,
+)
+from myapp.presenters.equipment import (
+    build_inspection_list_checks,
 )
 
 def handle_view_error(e, **kwargs):
@@ -115,12 +121,6 @@ logger = logging.getLogger(__name__)
 
     
                         
-def get_details(detail, unique_devices):
-    device = detail.applicable_device
-    if device not in unique_devices:
-        unique_devices[device] = {'details': []}
-    unique_devices[device]['details'].append((detail.contents, detail.standard, detail.method))
-    return unique_devices
 
 @login_required
 def card_work(request):
@@ -328,34 +328,51 @@ def planned_maintenance_view(request):
 
 @login_required
 def equipment_ledger_view(request):
-    if request.method == 'GET':
-        code  = request.GET.get('machine-code')
-        result = Control_tb.objects.get(control_no=code)
+    if request.method == "GET":
+        code = request.GET.get(
+            "machine-code"
+        )
+
+        equipment = get_equipment_by_control_no(
+            control_no=code,
+        )
+
         return render(
             request,
-            'mobilLedger.html',
+            "mobilLedger.html",
             {
-                'EquipmentInformation': result,
-            }
+                "EquipmentInformation": equipment,
+            },
         )
 
 @login_required       
-def card_by_control_view(request, control_no):
-    equipment = get_object_or_404(Control_tb, control_no=control_no)
-    checks = Check_tb.objects.filter(control_no=equipment).order_by('id')
-    
-    for check in checks:
-        unique_devices = {}
-        for details in check.db_details.all():
-            unique_devices = get_details(details, unique_devices)
-        check.details_unique_devices = unique_devices
-            
+def card_by_control_view(
+    request,
+    control_no,
+):
+    equipment = find_equipment_by_control_no(
+        control_no=control_no,
+    )
+
+    if equipment is None:
+        raise Http404(
+            "Equipment not found."
+        )
+
+    checks = select_checks_by_control(
+        equipment=equipment,
+    )
+
+    prepared_checks = build_inspection_list_checks(
+        checks,
+    )
+
     return render(
         request,
-        'mobileInspectionList.html',
+        "mobileInspectionList.html",
         {
-            'plans': checks
-        }
+            "plans": prepared_checks,
+        },
     )
 
 @login_required     
