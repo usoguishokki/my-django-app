@@ -3,10 +3,9 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta
 from typing import Literal, Tuple, Union, Optional
 from myapp.domain.shifts import (
-    get_shift_day_bucket_for_impl_dt, 
     get_shift_day_key_for_impl_dt,
-    calc_shift_window_dt_from_pattern, 
-    get_shift_window, 
+    calc_shift_window_dt_from_pattern,
+    get_shift_window,
     to_local_naive,
     is_impl_in_plan_window
 )

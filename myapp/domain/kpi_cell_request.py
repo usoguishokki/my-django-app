@@ -4,8 +4,7 @@ from datetime import date
 from typing import Literal, Optional, Union, Tuple, cast
 
 from myapp.domain.errors import InvalidCellDetailParams, InvalidPeriodKey
-from myapp.domain.kpi_constants import PERIOD_VIEWS, KPI_METRICS, CLICKABLE_METRICS
-from myapp.domain.org_constants import TEAM_KEYS  # 例: ("A","B","C","all","unknown") のように定義しておくのが理想
+from myapp.domain.kpi_constants import PERIOD_VIEWS, CLICKABLE_METRICS
 
 # ---- 型（静的型チェック用）----
 PeriodView = Literal["month", "week", "day"]
