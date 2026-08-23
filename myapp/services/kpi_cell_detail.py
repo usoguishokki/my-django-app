@@ -1,10 +1,8 @@
 from datetime import datetime
-from django.db.models import F
 
 from myapp.domain.kpi_cell_request import KPICellDetailParams, parse_period_key
 from myapp.domain.kpi_cell_matcher import match_cell
 from myapp.domain.errors import InvalidFiltersJSON, InvalidPeriodKey
-from myapp.domain.kpi_cell_detail_result import KPICellDetailResult
 
 from myapp.domain.periods import get_fiscal_year_range
 
@@ -15,41 +13,6 @@ from myapp.selectors.kpi_context import build_day_context
 
 from myapp.presenters.kpi_cell_detail_presenter import build_cell_detail_payload
 
-
-"""
-def _attach_inspection_date_alias(
-    *,
-    rows: List[Dict[str, Any]],
-    team_key: Optional[str],
-    day_ctx: Optional[DayContext],
-) -> None:
-    alias_map = (day_ctx.date_alias_map if day_ctx else None)
-    shift_pattern_map = (day_ctx.shift_pattern_map if day_ctx else None)
-    pattern_time_map  = (day_ctx.pattern_time_map if day_ctx else None)
-
-    for r in rows:
-        impl = r.get("implementation_date")
-        if not impl:
-            r["inspection_date_alias"] = None
-            continue
-
-        impl_dt = to_local_naive(impl)
-        if not impl_dt:
-            r["inspection_date_alias"] = None
-            continue
-
-        # day_view で map があるときだけ夜勤補正
-        if team_key and alias_map and shift_pattern_map and pattern_time_map:
-            shift_day = get_shift_day_key_for_impl_dt(
-                impl_dt, team_key,
-                shift_pattern_map=shift_pattern_map,
-                pattern_time_map=pattern_time_map,
-            )
-            r["inspection_date_alias"] = alias_map.get(shift_day) if shift_day else None
-        else:
-            # fallback: 補正なし（week/monthなど）
-            r["inspection_date_alias"] = None  # もしくは impl_dt.date() の alias を別途取るなら別設計
-"""
 
 def build_kpi_cell_detail_result(params: KPICellDetailParams):
     period_view = params.period_view
@@ -68,7 +31,6 @@ def build_kpi_cell_detail_result(params: KPICellDetailParams):
     fy_start, fy_end = get_fiscal_year_range(base)
     month_ranges = get_month_ranges(fy_start, fy_end)
     
-    day_ctx = None
     day_ctx = build_day_context(fy_start=fy_start, fy_end=fy_end)
 
     if period_view == "day":
