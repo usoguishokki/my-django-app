@@ -45,7 +45,6 @@ urlpatterns = [
     ),
 
 #API
-    path('api/get-chart-data/', views.get_chart_data_view, name='get_chart_data'),
     path('api/employee/', views.get_employee, name='get_employee'),
 ]
 

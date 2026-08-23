@@ -15,7 +15,6 @@ from .models import (
     Plan_tb,
     Calendar_tb,
     Check_tb,
-    Hozen_calendar_tb,
 )
 from django.views.decorators.cache import never_cache
 
@@ -748,105 +747,6 @@ def planned_maintenance_view(request):
             'plannedMaintenance/plannedMaintenance.html'
         )
         
-def get_chart_data_view(request):
-    organization_code = request.organization_code
-    # 色のリストを定義（必要に応じて追加）
-    shiftpatterns = ['1直', '2直', '3直', '休日']
-    
-    background_colors = {
-        '1直': "rgba(45, 120, 218, 0.8)",
-        '2直': "rgba(52, 236, 123, 0.8)",
-        '3直': "rgba(255, 105, 105, 0.8)",
-        '休日': "rgba(112, 112, 112, 0.8)"
-    }
-    try:
-        if request.method == 'GET':
-            if request.GET.get('action') == 'weekly-manhours':
-                
-                hozen_week = hozen_common_data()
-                result = Hozen_calendar_tb.objects.filter(
-                    plans_by_date__inspection_no__control_no__line_name__organization__organization=organization_code,
-                    h_date__range=("2025-04-01", "2026-03-31")
-                ).filter(
-                    plans_by_date__inspection_no__practitioner__pattern_name__isnull=False  # NULLを除外
-                ).exclude(
-                    plans_by_date__inspection_no__practitioner__pattern_name=''  # 空文字を除外
-                ).values(
-                    'date_alias',
-                    'plans_by_date__inspection_no__practitioner__pattern_name'
-                ).annotate(
-                    total_man_hours=Sum('plans_by_date__inspection_no__man_hours')
-                )
-
-                result_list = list(result)
-        
-                chart_data = {
-                    "labels": hozen_week['hozen_week'],
-                    "datasets": []
-                }
-        
-                for pattern in shiftpatterns:
-                    dataset = {
-                        "label": pattern,
-                        "data": [],
-                        "backgroundColor": background_colors[pattern]
-                    }
-            
-                    for week in hozen_week['hozen_week']:
-                        filtered_count = sum(
-                            1 for item in result_list
-                            if item['date_alias'] == week and
-                            item['plans_by_date__inspection_no__practitioner__pattern_name'] == pattern
-                        )
-                
-                        filtered = next(
-                            (item['total_man_hours'] for item in result_list
-                            if item['date_alias'] == week and
-                            item['plans_by_date__inspection_no__practitioner__pattern_name'] == pattern),
-                            0
-                        )
-                        dataset['data'].append(filtered)
-                    chart_data['datasets'].append(dataset)
- 
-                return JsonResponse({
-                    'status': 'success',
-                    'data': chart_data
-                })
-            
-            elif request.GET.get('action') == 'man-hours-by-machine':
-                result = Plan_tb.objects.values(
-                    'inspection_no__control_no__machine'
-                ).annotate(
-                    total_man_hours=Sum('inspection_no__man_hours')
-                ).order_by('-total_man_hours')
-            
-                chart_data = {
-                    "labels": [],
-                    "datasets": [
-                        {
-                            "label": "工数合計",
-                            "data": [],
-                            "backgroundColor": "rgba(45, 120, 218, 0.8)"
-                        }
-                    ]
-                }
-                count = 0
-                for item in result:
-                    machine = item['inspection_no__control_no__machine'] or "不明"
-                    man_hours = item['total_man_hours'] or 0
-                
-                    chart_data['labels'].append(machine)
-                    chart_data["datasets"][0]['data'].append(man_hours)
-                    count += 1
-                    
-                    if count == 50: 
-                        break
-                return JsonResponse({
-                    'status': 'success',
-                    'data': chart_data
-                })
-    except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
         
 
 @login_required
