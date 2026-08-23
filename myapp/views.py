@@ -1,59 +1,55 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpRequest, HttpResponseBadRequest
-from django.core import serializers
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Sum, Min, Max, OuterRef, Subquery, Value
-from django.db.models.functions import Coalesce, TruncDate
+from django.db.models import Q, Sum, OuterRef, Subquery
 from django.utils import timezone
 from django.db import transaction
-from datetime import datetime, timedelta, time as dt_time, date
+from datetime import datetime, timedelta
+
 from .backends import MemberAuthenticationBackend
 from .models import (
-    Control_tb, Member_tb, Plan_tb, Db_details_tb, Calendar_tb, Check_tb,
-    ShiftPattan_tb, UserProfile, WeeklyDuty, Hozen_calendar_tb,
-    DayOfWeek, PlanStatus
+    Control_tb,
+    Member_tb,
+    Plan_tb,
+    Calendar_tb,
+    Check_tb,
+    Hozen_calendar_tb,
 )
 from django.views.decorators.cache import never_cache
 
-from collections import defaultdict
-from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view
 
-from .workScheduleEntry import WorkScheduleEntry
-from .decorators import ajax_login_required
 from .forms import LoginForm
 from dateutil import parser as dparser
 from zoneinfo import ZoneInfo
+
 import json
 import pytz
 import itertools
 import logging
 import calendar
-import csv
-from typing import Optional, List, Sequence, Iterable, Union, Tuple
+
+from typing import Optional
 
 from myapp.selectors.plan import (
     plan_base_qs,
 )
 
-from myapp.selectors.calendar import (
-    annotate_plan_affiliation_from_calendar
+from myapp.domain.schedule_initial_filters import (
+    build_schedule_initial_filters,
 )
-
-
-from myapp.domain.sort_keys.inspection_no import inspection_no_sort_key
-from myapp.domain.schedule_initial_filters import build_schedule_initial_filters
 from myapp.domain.errors import InvalidMachineSelection
+
 from myapp.services.inspection_standards import (
     build_inspection_standards_context,
     build_inspection_standard_details_payload,
 )
 
-from myapp.services.card_work.card_work_page import build_card_work_page_context
-
-logger = logging.getLogger('myapp')
+from myapp.services.card_work.card_work_page import (
+    build_card_work_page_context,
+)
 
 def hozen_common_data():
     common_data = {
