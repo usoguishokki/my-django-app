@@ -1,21 +1,14 @@
-from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 
 from myapp.services.kpi_matrix import build_kpi_matrix_response
 from myapp.services.kpi_cell_detail import build_kpi_cell_detail_result
 from myapp.services.plan_detail import build_plan_detail_result
-from myapp.services.inspection_card_detail import build_inspection_card_detail_result
-from myapp.services.inspection_card_plans import build_inspection_card_plans_result
 
 from myapp.domain.kpi_request import parse_kpi_request_params
 from myapp.domain.kpi_cell_request import parse_kpi_cell_detail_params
 
-from myapp.presenters.plan_detail_presenter import build_plan_detail_payload, build_plan_detail_payload_from_check
-from myapp.presenters.inspection_card_plans_presenter import build_inspection_card_plans_payload
-
-import csv
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, JsonResponse
+from myapp.presenters.plan_detail_presenter import build_plan_detail_payload
 
 @login_required
 def kpi_matrix_api(request):
