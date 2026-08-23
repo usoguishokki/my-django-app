@@ -214,21 +214,9 @@ def api_plans(request):
         cal_affilation_name = Subquery(cal_base.values('affilation__affilation')[:1]),
     )
     
-    #simple_params = {
-    #    "week_alias": request.GET.get("week"),
-    #    "status": request.GET.get("status"),
-    #}
     
-    #q_simple = build_q_from_simple_params(simple_params, field_map=field_map, status_map=status_map)
     
-    #q_adv = Q()
-    #if (f := request.GET.get("filters")):
-    #    try:
-    #        q_adv = build_q_from_filters(json.loads(f), field_map=field_map,
-    #                                     status_map=status_map, op_map=op_map,
-    #                                     negated_ops=negated_ops)
     
-    #qs = qs.filter(q_simple).filter(q_adv)
     rows = list(qs.values(
         "plan_id","status","p_date__date_alias","p_date__h_day_of_week",
         "inspection_no__time_zone","inspection_no__control_no__machine",
@@ -562,8 +550,6 @@ def achievements_view(request):
         return daily_works_inf
         
     if request.method == 'GET':
-        #months = range(1, 13)
-        #loop_count = range(-1, 1)
         week_information = cache_manager_if.get_week_information()
         this_week = week_information['this_week']
 
