@@ -21,7 +21,6 @@ from collections import defaultdict
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 
-#from .models import SHIFTPATTERN_WORKER_VIEW
 from .workScheduleEntry import WorkScheduleEntry
 from .decorators import ajax_login_required
 from .forms import LoginForm
@@ -32,7 +31,6 @@ import pytz
 import itertools
 import logging
 import calendar
-import logging
 import csv
 from typing import Optional, List, Sequence, Iterable, Union, Tuple
 
@@ -47,8 +45,6 @@ from myapp.selectors.calendar import (
 
 from myapp.domain.sort_keys.inspection_no import inspection_no_sort_key
 from myapp.domain.schedule_initial_filters import build_schedule_initial_filters
-from myapp.domain.errors import InvalidMachineSelection
-
 from myapp.domain.errors import InvalidMachineSelection
 from myapp.services.inspection_standards import (
     build_inspection_standards_context,
