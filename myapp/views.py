@@ -2,8 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpRequest, HttpResponseBadRequest
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Sum
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from .backends import MemberAuthenticationBackend
 from .models import (
@@ -18,7 +17,6 @@ from .forms import LoginForm
 
 import json
 import logging
-import calendar
 
 
 from myapp.domain.schedule_initial_filters import (
@@ -46,6 +44,15 @@ from myapp.services.work_contents import (
 )
 from myapp.services.user_context import (
     build_team_profile_context,
+)
+from myapp.services.achievements import (
+    build_achievement_month_details,
+)
+from myapp.domain.periods import (
+    parse_year_month_label,
+)
+from myapp.presenters.achievements import (
+    build_achievement_page_context,
 )
 
 def handle_view_error(e, **kwargs):
@@ -258,75 +265,35 @@ def achievements_view(request):
     )
     login_number = team_profiles['login_number']
     
-    def get_month_start_and_end(year, month):
-        month_start = datetime(year, month, 1)
-        _, last_day = calendar.monthrange(year, month)
-        month_end = datetime(year, month, last_day)
-        return month_start.date(), month_end.date()
     
-    def get_working_hours(month_start, month_end):
-        hozen_calendar = cache_manager.get('hozen_calendars')
-        statuses = ['完了', '承認待ち']
-        base_queryset = Plan_tb.objects.filter(
-            Q(status__in=statuses),
-            implementation_date__range=(month_start, month_end),
-            practitioners__member_id=login_number
-        )
-        daily_works_inf = []
-        current_date = month_start
-        while current_date <= month_end:
-            day_queryset = base_queryset.filter(implementation_date=current_date)
-            
-            total_count = day_queryset.count()
-            
-            active_hours = day_queryset.filter(
-                inspection_no__time_zone='稼動中'
-            ).aggregate(total_hours=Sum('result_man_hours')).get('total_hours',0)
-            
-            inactive_hours = day_queryset.filter(
-                inspection_no__time_zone='停止中'
-            ).aggregate(total_hours=Sum('result_man_hours')).get('total_hours', 0)
-            
-            date_alias = hozen_calendar.get(h_date=current_date).date_alias
-            
-            daily_works_inf.append({
-                'date': current_date,
-                'hozen_calendar': date_alias,
-                'active_hours': active_hours or 0,
-                'inactive_hours': inactive_hours or 0,
-                'total_count': total_count
-            })
-            current_date += timedelta(days=1)
-        return daily_works_inf
         
     if request.method == 'GET':
-        week_information = cache_manager_if.get_week_information()
-        this_week = week_information['this_week']
 
         
         today = datetime.today()
         current_year = today.year
         current_month = today.month
         
-        months = []
-        for count in range(-1, 2):
-            for month in range(1, 13):
-                months.append(f"{current_year-count}年{month}月")
                 
     
 
-        month_start, month_end = get_month_start_and_end(current_year, current_month)
-        daily_works_inf = get_working_hours(month_start, month_end)
+        daily_works_inf = build_achievement_month_details(
+            cache_manager=cache_manager,
+            login_number=login_number,
+            year=current_year,
+            month=current_month,
+        )
         
     
+        context = build_achievement_page_context(
+            current_year=current_year,
+            daily_works_inf=daily_works_inf,
+        )
+
         return render(
             request,
-            'achivements.html',
-            {
-                'this_week': this_week,
-                'months': months,
-                'daily_works_inf': daily_works_inf
-            }
+            "achivements.html",
+            context,
         )
     elif request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         data, action, parse_error = extract_request_data(request)
@@ -334,11 +301,16 @@ def achievements_view(request):
             return handle_view_error(parse_error, status_code=400, message='Invalid JSON data')
         if action == "get_month_details":
             date_str = data.get('data')
-            year = int(date_str.split('年')[0])
-            month = int(date_str.split('年')[1].replace('月', ''))
+            selected_month = parse_year_month_label(
+                date_str
+            )
             
-            month_start, month_end = get_month_start_and_end(year, month)
-            daily_works_inf = get_working_hours(month_start, month_end)
+            daily_works_inf = build_achievement_month_details(
+                cache_manager=cache_manager,
+                login_number=login_number,
+                year=selected_month.year,
+                month=selected_month.month,
+            )
             
             return JsonResponse({
                 'status': 'success',

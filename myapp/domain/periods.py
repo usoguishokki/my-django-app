@@ -8,6 +8,10 @@ import re
 
 
 MONTH_VALUE_PATTERN = re.compile(r"^\d{4}-\d{2}$")
+MONTH_LABEL_PATTERN = re.compile(
+    r"^(?P<year>\d{4})\u5e74(?P<month>\d{1,2})\u6708$"
+)
+
 
 
 def fiscal_month_index(m: int) -> int:
@@ -46,6 +50,60 @@ class YearMonth:
         year = total // 12
         month = total % 12 + 1
         return YearMonth(year=year, month=month)
+
+
+def get_month_date_range(
+    year: int,
+    month: int,
+) -> tuple[date, date]:
+    current = YearMonth(
+        year=year,
+        month=month,
+    )
+
+    next_month = current.add_months(1)
+
+    start_date = date(
+        current.year,
+        current.month,
+        1,
+    )
+
+    end_date = (
+        date(
+            next_month.year,
+            next_month.month,
+            1,
+        )
+        - timedelta(days=1)
+    )
+
+    return start_date, end_date
+
+
+def parse_year_month_label(
+    value: str,
+) -> YearMonth:
+    if not value or not isinstance(value, str):
+        raise ValueError(
+            "month label is required"
+        )
+
+    normalized = value.strip()
+
+    match = MONTH_LABEL_PATTERN.match(
+        normalized
+    )
+
+    if not match:
+        raise ValueError(
+            f"invalid month label: {value}"
+        )
+
+    return YearMonth(
+        year=int(match.group("year")),
+        month=int(match.group("month")),
+    )
 
 
 def parse_year_month(value: str) -> YearMonth:
