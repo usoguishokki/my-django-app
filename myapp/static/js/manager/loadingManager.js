@@ -344,73 +344,6 @@ export async function swapSkeletonToRows(
 }
 
 
-/** ガント領域にスケルトンを描画 */
-export function mountGanttSkeleton(rootEl, {
-    rows = 6, leftWidth = 120, barHeight = 20, padding = 8
-} = {}) {
-    if (!rootEl) return {};
-    // 既存スケルトンを撤去
-    unmountGanttSkeleton(rootEl);
-  
-    // 左（担当者名）
-    const left = document.createElement('div');
-    left.className = 'assignee-skeleton';
-    left.style.width = `${leftWidth}px`;
-    left.style.top = 'var(--gantt-skel-head-h)'; // 右のヘッダ高さと揃える
-  
-    for (let i = 0; i < rows; i++) {
-        const r = document.createElement('div');
-        r.className = 'assignee-skel-row';
-        const b = document.createElement('div');
-        b.className = 'assignee-skel-block';
-        r.appendChild(b);
-        left.appendChild(r);
-    }
-  
-    // 右（タイムライン）
-    const overlay = document.createElement('div');
-    overlay.className = 'gantt-skeleton-overlay';
-    // CSS で left: var(--gantt-skel-left-w) を使うが、保険で inline もセット可能
-    overlay.style.left = `var(--gantt-skel-left-w)`;
-  
-    const header = document.createElement('div');
-    header.className = 'gantt-skel-header';
-    const headerBlock = document.createElement('div');
-    headerBlock.className = 'skeleton-block';
-    header.appendChild(headerBlock);
-  
-    const body = document.createElement('div');
-    body.className = 'gantt-skel-body';
-  
-    for (let i = 0; i < rows; i++) {
-        const row = document.createElement('div');
-        row.className = 'gantt-skel-row';
-        // 1〜2本のバーを仮で入れる
-
-        // ★ バーは常に100%（横幅いっぱい）
-        const bar = document.createElement('div');
-        bar.className = 'gantt-skel-bar';
-        bar.style.width = '100%';
-        bar.style.marginLeft = '0';
-        row.appendChild(bar);
-        body.appendChild(row);
-
-    }
-  
-    overlay.appendChild(header);
-    overlay.appendChild(body);
-  
-    // ルートに取り付け
-    rootEl.appendChild(left);
-    rootEl.appendChild(overlay);
-  
-    // loading クラスで本体を不可視化（CSS 側で opacity:0 / pointer-events:none）
-    rootEl.classList.add('loading');
-  
-    return { overlay, left };
-}
-
-
 /**
 * モバイルリスト用のスケルトンを生成・設置
 * @param {HTMLElement} listEl #mobileList などスクロール領域の直下
@@ -491,52 +424,6 @@ export async function swapSkeletonToMobileList(
 }
 
 
-
-export function unmountGanttSkeleton(rootEl) {
-    if (!rootEl) return;
-    rootEl.querySelector('.assignee-skeleton')?.remove();
-    rootEl.querySelector('.gantt-skeleton-overlay')?.remove();
-    rootEl.classList.remove('loading');
-}
-
-
-/** スケルトン表示中に非同期処理を待つ（置き換えは別関数で） */
-export async function withGanttSkeleton(rootEl, fetcher, opts) {
-    mountGanttSkeleton(rootEl, opts);
-    return await fetcher();
-}
-
-/** スケルトン → 実データへクロスフェード切替 */
-export async function swapSkeletonToGantt(rootEl, render, { duration = 240, easing = "ease" } = {}) {
-    if (!rootEl) { render?.(); return; }
-    const overlay = rootEl.querySelector('.gantt-skeleton-overlay');
-    const left = rootEl.querySelector('.assignee-skeleton');
-    
-    const gantt = rootEl.querySelector('#gantt');
-    const names = rootEl.querySelector('.assignee-container');
-
-    //) スケルトンをフェードアウト
-
-    [overlay, left].forEach(el => {
-        el.style.transition = `opacity ${duration}ms ${easing}`;
-        el.style.opacity = '0';
-    });
-
-    await wait(duration);
-
-    //) 実描画
-    render?.();
-
-      //) 本体をフェードイン（loading を外して CSS の opacity:0 を解除）
-    [gantt, names].forEach(el => {
-        if (!el) return;
-        el.style.transition = `opacity ${duration}ms ${easing}`;
-    });
-    rootEl.classList.remove('loading');
-    void (gantt?.offsetHeight); void (names?.offsetHeight);
-    [gantt, names].forEach(el => { if (el) el.style.opacity = '1'; });
-    await wait(duration);
-}
 
 function activateElementLoadingOverlay(overlay) {
   if (!overlay) {
