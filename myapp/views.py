@@ -152,12 +152,6 @@ def get_details(detail, unique_devices):
     return unique_devices
 
 # --- ステータス定数（models の choices と合わせる）
-STATUS_WAITING   = '配布待ち'
-STATUS_PENDING   = '実施待ち'
-STATUS_APPROVAL  = '承認待ち'
-STATUS_DONE      = '完了'
-STATUS_REJECTED  = '差戻し'
-STATUS_DELAYED   = '遅れ'
 
 
 def _serialize_plan_rows(qs):
