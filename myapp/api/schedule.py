@@ -1,7 +1,6 @@
 
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from myapp.http.json import (
     InvalidJsonBody,
@@ -52,18 +51,17 @@ from myapp.services.schedule_bulk_registration import (
 )
 
 
+@require_GET
 @login_required
 def schedule_day_api(request):
     try:
-        params = parse_schedule_day_request_params(request.GET)
+        params = parse_schedule_day_request_params(
+            request.GET
+        )
     except InvalidScheduleRequestParams as exc:
-        return JsonResponse(
-            {
-                'status': 'error',
-                'message': str(exc),
-            },
+        return json_error_response(
+            str(exc),
             status=400,
-            json_dumps_params={'ensure_ascii': False},
         )
 
     payload = build_schedule_day_result(
@@ -71,21 +69,24 @@ def schedule_day_api(request):
         target_date=params.target_date,
     )
 
-    return JsonResponse(payload, json_dumps_params={'ensure_ascii': False})
+    return json_response(
+        payload,
+    )
 
 
+@require_GET
 @login_required
 def schedule_member_week_api(request):
     try:
-        params = parse_schedule_member_week_request_params(request.GET)
+        params = (
+            parse_schedule_member_week_request_params(
+                request.GET
+            )
+        )
     except InvalidScheduleRequestParams as exc:
-        return JsonResponse(
-            {
-                'status': 'error',
-                'message': str(exc),
-            },
+        return json_error_response(
+            str(exc),
             status=400,
-            json_dumps_params={'ensure_ascii': False},
         )
 
     payload = build_schedule_member_week_result(
@@ -93,10 +94,10 @@ def schedule_member_week_api(request):
         target_date=params.target_date,
     )
 
-    return JsonResponse(payload, json_dumps_params={'ensure_ascii': False})
+    return json_response(
+        payload,
+    )
 
-@require_POST
-@login_required
 @require_POST
 @login_required
 def schedule_event_move_api(request):
@@ -141,8 +142,6 @@ def schedule_event_move_api(request):
 
 @require_POST
 @login_required
-@require_POST
-@login_required
 def schedule_bulk_move_api(request):
     try:
         payload = parse_json_body(
@@ -184,29 +183,31 @@ def schedule_bulk_move_api(request):
     )
 
 
+@require_GET
 @login_required
 def schedule_test_cards_week_api(request):
     try:
-        params = parse_schedule_test_cards_week_request_params(request.GET)
-    except InvalidScheduleRequestParams as exc:
-        return JsonResponse(
-            {
-                'status': 'error',
-                'message': str(exc),
-            },
-            status=400,
-            json_dumps_params={'ensure_ascii': False},
+        params = (
+            parse_schedule_test_cards_week_request_params(
+                request.GET
+            )
         )
+    except InvalidScheduleRequestParams as exc:
+        return json_error_response(
+            str(exc),
+            status=400,
+        )
+
     payload = build_schedule_test_cards_week_result(
         target_date=params.target_date,
         date_alias=params.date_alias,
         shift_pattern_id=params.shift_pattern_id,
     )
-    
-    return JsonResponse(payload, json_dumps_params={'ensure_ascii': False})
 
-@require_POST
-@login_required
+    return json_response(
+        payload,
+    )
+
 @require_POST
 @login_required
 def schedule_event_retract_api(request):
@@ -248,29 +249,32 @@ def schedule_event_retract_api(request):
         response,
     )
 
+@require_GET
 @login_required
 def schedule_test_card_team_options_api(request):
     try:
-        params = parse_schedule_test_card_team_options_request_params(request.GET)
+        params = (
+            parse_schedule_test_card_team_options_request_params(
+                request.GET
+            )
+        )
     except InvalidScheduleRequestParams as exc:
-        return JsonResponse(
-            {
-                'status': 'error',
-                'message': str(exc),
-            },
+        return json_error_response(
+            str(exc),
             status=400,
-            json_dumps_params={'ensure_ascii': False},
         )
 
-    payload = build_schedule_test_card_team_options_result(
-        target_date=params.target_date,
-        date_alias=params.date_alias,
+    payload = (
+        build_schedule_test_card_team_options_result(
+            target_date=params.target_date,
+            date_alias=params.date_alias,
+        )
     )
 
-    return JsonResponse(payload, json_dumps_params={'ensure_ascii': False})
+    return json_response(
+        payload,
+    )
 
-@require_POST
-@login_required
 @require_POST
 @login_required
 def schedule_bulk_registration_api(request):
@@ -319,8 +323,6 @@ def schedule_bulk_registration_api(request):
         response,
     )
 
-@require_POST
-@login_required
 @require_POST
 @login_required
 def schedule_bulk_retract_api(request):
