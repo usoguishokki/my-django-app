@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.http import JsonResponse, HttpRequest, HttpResponseBadRequest, Http404
+from django.http import HttpResponseBadRequest, Http404
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
@@ -11,7 +11,6 @@ from django.views.decorators.http import require_GET, require_http_methods
 
 from .forms import LoginForm
 
-import json
 import logging
 
 
@@ -58,30 +57,16 @@ from myapp.selectors.equipment import (
 from myapp.presenters.equipment import (
     build_inspection_list_checks,
 )
+from myapp.http.json import (
+    InvalidJsonBody,
+    json_response,
+    parse_json_body,
+)
+from myapp.http.errors import (
+    logged_json_error_response,
+)
 
-def handle_view_error(e, **kwargs):
-    """
-    共通のエラーハンドリングを行う関数
-    """
-    status_code = kwargs.get('status_code', 500)
-    message = kwargs.get('message', str(e))
-    
-    logger.error(f'Error: {message} - {str(e)}', exc_info=True)
-    
-    #JsonResponseでエラーメッセージとステータスコード
-    return JsonResponse(
-        {'status': 'error', 'message': message}, 
-        status=status_code,
-        json_dumps_params={'ensure_ascii': False})
         
-def extract_request_data(request: HttpRequest):
-    try:
-        data = json.loads(request.body)
-        action = data.get('action')
-        return data, action, None
-    except json.JSONDecodeError as e:
-        #JSONデータのバーズに失敗した場合、エラーハンドリング関数
-        return None, None, e
     
     
     
@@ -173,16 +158,19 @@ def workContents_view(request):
             "Unsupported request."
         )
 
-    data, action, parse_error = extract_request_data(
-        request
-    )
-
-    if parse_error:
-        return handle_view_error(
-            parse_error,
-            status_code=400,
-            message="Invalid JSON data",
+    try:
+        data = parse_json_body(
+            request
         )
+    except InvalidJsonBody as exc:
+        return logged_json_error_response(
+            logger=logger,
+            exc=exc,
+            message="Invalid JSON data",
+            status=400,
+        )
+
+    action = data.get("action")
 
     if action != "fetch_approval_or_rejection":
         return HttpResponseBadRequest(
@@ -220,24 +208,29 @@ def workContents_view(request):
             if detail.get("planId") is not None
         ]
 
-        return JsonResponse({
+        return json_response({
             "status": "success",
             "message": "Plan updated successfuly",
             "planId": plan_ids,
         })
 
-    except ValueError as e:
-        return handle_view_error(
-            e,
-            message=str(e),
+    except ValueError as exc:
+        return logged_json_error_response(
+            logger=logger,
+            exc=exc,
+            message=str(exc),
+            status=500,
         )
 
-    except Exception as e:
-        return handle_view_error(
-            e,
+    except Exception as exc:
+        return logged_json_error_response(
+            logger=logger,
+            exc=exc,
             message=(
-                f"Error processing request: {str(e)}"
+                "Error processing request: "
+                f"{str(exc)}"
             ),
+            status=500,
         )
 
 
@@ -263,27 +256,27 @@ def inspectionStadards_view(request):
             "Unsupported request."
         )
 
-    data, action, parse_error = extract_request_data(
-        request
-    )
-
-    if parse_error:
-        return handle_view_error(
-            parse_error,
-            status_code=400,
+    try:
+        data = parse_json_body(
+            request
+        )
+    except InvalidJsonBody as exc:
+        return logged_json_error_response(
+            logger=logger,
+            exc=exc,
             message="Invalid JSON data",
+            status=400,
         )
 
+    action = data.get("action")
+
     if action != "get_details":
-        return JsonResponse(
+        return json_response(
             {
                 "status": "error",
                 "message": "Unsupported action.",
             },
             status=400,
-            json_dumps_params={
-                "ensure_ascii": False,
-            },
         )
 
     try:
@@ -292,35 +285,33 @@ def inspectionStadards_view(request):
                 filter_data=data.get("data"),
             )
         )
-    except InvalidMachineSelection as e:
-        return handle_view_error(
-            e,
-            status_code=400,
-            message=str(e),
+    except InvalidMachineSelection as exc:
+        return logged_json_error_response(
+            logger=logger,
+            exc=exc,
+            message=str(exc),
+            status=400,
         )
 
-    return JsonResponse(
+    return json_response(
         payload,
-        json_dumps_params={
-            "ensure_ascii": False,
-        },
     )
 
 
 @login_required
 @require_http_methods(["GET", "POST"])
 def achievements_view(request):
-    cache_manager = request.cache_manager
-    cache_manager_if = request.cache_manager_if
-
-    team_profiles = build_team_profile_context(
-        request=request,
-        cache_manager_if=cache_manager_if,
-    )
-
-    login_number = team_profiles["login_number"]
-
     if request.method == "GET":
+        cache_manager = request.cache_manager
+        cache_manager_if = request.cache_manager_if
+
+        team_profiles = build_team_profile_context(
+            request=request,
+            cache_manager_if=cache_manager_if,
+        )
+
+        login_number = team_profiles["login_number"]
+
         today = datetime.today()
         current_year = today.year
         current_month = today.month
@@ -351,16 +342,19 @@ def achievements_view(request):
             "Unsupported request."
         )
 
-    data, action, parse_error = extract_request_data(
-        request
-    )
-
-    if parse_error:
-        return handle_view_error(
-            parse_error,
-            status_code=400,
-            message="Invalid JSON data",
+    try:
+        data = parse_json_body(
+            request
         )
+    except InvalidJsonBody as exc:
+        return logged_json_error_response(
+            logger=logger,
+            exc=exc,
+            message="Invalid JSON data",
+            status=400,
+        )
+
+    action = data.get("action")
 
     if action != "get_month_details":
         return HttpResponseBadRequest(
@@ -373,12 +367,23 @@ def achievements_view(request):
         selected_month = parse_year_month_label(
             date_str
         )
-    except ValueError as e:
-        return handle_view_error(
-            e,
-            status_code=400,
-            message=str(e),
+    except ValueError as exc:
+        return logged_json_error_response(
+            logger=logger,
+            exc=exc,
+            message=str(exc),
+            status=400,
         )
+
+    cache_manager = request.cache_manager
+    cache_manager_if = request.cache_manager_if
+
+    team_profiles = build_team_profile_context(
+        request=request,
+        cache_manager_if=cache_manager_if,
+    )
+
+    login_number = team_profiles["login_number"]
 
     daily_works_inf = build_achievement_month_details(
         cache_manager=cache_manager,
@@ -387,7 +392,7 @@ def achievements_view(request):
         month=selected_month.month,
     )
 
-    return JsonResponse({
+    return json_response({
         "status": "success",
         "details": daily_works_inf,
     })
