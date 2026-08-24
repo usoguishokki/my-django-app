@@ -329,38 +329,54 @@ def inspectionStadards_view(request):
 @require_http_methods(["GET", "POST"])
 def achievements_view(request):
     if request.method == "GET":
-        cache_manager = request.cache_manager
-        cache_manager_if = request.cache_manager_if
-
-        team_profiles = build_team_profile_context(
-            request=request,
-            cache_manager_if=cache_manager_if,
+        return _render_achievements_page(
+            request
         )
 
-        login_number = team_profiles["login_number"]
+    return _handle_achievements_post(
+        request
+    )
 
-        today = datetime.today()
-        current_year = today.year
-        current_month = today.month
 
-        daily_works_inf = build_achievement_month_details(
-            cache_manager=cache_manager,
-            login_number=login_number,
-            year=current_year,
-            month=current_month,
-        )
+def _render_achievements_page(
+    request,
+):
+    cache_manager = request.cache_manager
+    cache_manager_if = request.cache_manager_if
 
-        context = build_achievement_page_context(
-            current_year=current_year,
-            daily_works_inf=daily_works_inf,
-        )
+    team_profiles = build_team_profile_context(
+        request=request,
+        cache_manager_if=cache_manager_if,
+    )
 
-        return render(
-            request,
-            "achivements.html",
-            context,
-        )
+    login_number = team_profiles["login_number"]
 
+    today = datetime.today()
+    current_year = today.year
+    current_month = today.month
+
+    daily_works_inf = build_achievement_month_details(
+        cache_manager=cache_manager,
+        login_number=login_number,
+        year=current_year,
+        month=current_month,
+    )
+
+    context = build_achievement_page_context(
+        current_year=current_year,
+        daily_works_inf=daily_works_inf,
+    )
+
+    return render(
+        request,
+        "achivements.html",
+        context,
+    )
+
+
+def _handle_achievements_post(
+    request,
+):
     if (
         request.headers.get("X-Requested-With")
         != "XMLHttpRequest"
