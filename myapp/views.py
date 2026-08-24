@@ -126,30 +126,46 @@ def card_work(request):
 @require_http_methods(["GET", "POST"])
 def workContents_view(request):
     if request.method == "GET":
-        cache_manager_if = request.cache_manager_if
-
-        team_profiles = build_team_profile_context(
-            request=request,
-            cache_manager_if=cache_manager_if,
+        return _render_work_contents_page(
+            request
         )
 
-        applications_data = select_work_contents_plans(
-            organization_code=request.organization_code,
-        )
+    return _handle_work_contents_post(
+        request
+    )
 
-        applications_data_list = build_work_contents_rows(
-            applications_data,
-        )
 
-        return render(
-            request,
-            "workContents/workContents.html",
-            {
-                "applications_data_list": applications_data_list,
-                "members": team_profiles["profiles"],
-            },
-        )
+def _render_work_contents_page(
+    request,
+):
+    cache_manager_if = request.cache_manager_if
 
+    team_profiles = build_team_profile_context(
+        request=request,
+        cache_manager_if=cache_manager_if,
+    )
+
+    applications_data = select_work_contents_plans(
+        organization_code=request.organization_code,
+    )
+
+    applications_data_list = build_work_contents_rows(
+        applications_data,
+    )
+
+    return render(
+        request,
+        "workContents/workContents.html",
+        {
+            "applications_data_list": applications_data_list,
+            "members": team_profiles["profiles"],
+        },
+    )
+
+
+def _handle_work_contents_post(
+    request,
+):
     if (
         request.headers.get("X-Requested-With")
         != "XMLHttpRequest"
