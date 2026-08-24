@@ -60,7 +60,6 @@ from myapp.domain.schedule_results import (
 
 from myapp.presenters.schedule import (
     present_schedule_event_move_result,
-    present_team_schedules,
 )
 
 from myapp.domain.errors import (
@@ -99,22 +98,6 @@ def filter_plans_overlapping_window(plans, *, window):
             window=window,
         )
     ]
-
-def build_team_schedules_for_date(*, target_date):
-    """
-    指定日の班シフト情報を取得して、フロント表示用に変換する。
-
-    Calendar_tb
-      ↓
-    present_team_schedules()
-      ↓
-    teamSchedules 用データ
-    """
-    calendar_rows = select_calendars_by_date(
-        target_date=target_date,
-    )
-
-    return present_team_schedules(calendar_rows)
 
 def build_schedule_day_result(*, affiliation_id, target_date):
     members_qs = select_members_by_affiliation_id(affiliation_id)
