@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Optional
 import re
 
@@ -79,6 +79,21 @@ def get_month_date_range(
     )
 
     return start_date, end_date
+
+
+def parse_ymd_date(
+    value: str,
+):
+    if not value:
+        return None
+
+    try:
+        return datetime.strptime(
+            value,
+            "%Y-%m-%d",
+        ).date()
+    except ValueError:
+        return None
 
 
 def parse_year_month_label(

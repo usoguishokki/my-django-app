@@ -1,7 +1,6 @@
 # myapp/api/home/dashboard.py
 
 import logging
-from datetime import datetime
 
 
 from django.contrib.auth.decorators import login_required
@@ -11,6 +10,11 @@ from myapp.http.json import (
     json_error_response,
     json_response,
 )
+
+from myapp.domain.periods import (
+    parse_ymd_date,
+)
+
 
 
 from myapp.selectors.home.dashboard import (
@@ -192,18 +196,6 @@ def home_my_tasks_api(request):
     )
 
 
-def parse_ymd_date(value: str):
-    """
-    yyyy-mm-dd 文字列を date に変換する。
-    不正な場合は None を返す。
-    """
-    if not value:
-        return None
-
-    try:
-        return datetime.strptime(value, "%Y-%m-%d").date()
-    except ValueError:
-        return None
 
 
 @require_GET
