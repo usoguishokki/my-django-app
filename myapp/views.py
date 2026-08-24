@@ -21,7 +21,10 @@ from myapp.domain.errors import InvalidMachineSelection
 
 from myapp.services.inspection_standards import (
     build_inspection_standards_context,
-    build_inspection_standard_details_payload,
+    build_inspection_standard_details_result,
+)
+from myapp.presenters.inspection_standards import (
+    present_inspection_standard_detail_rows,
 )
 
 from myapp.services.card_work.card_work_page import (
@@ -323,10 +326,8 @@ def _handle_inspection_standards_post(
         )
 
     try:
-        payload = (
-            build_inspection_standard_details_payload(
-                filter_data=data.get("data"),
-            )
+        result = build_inspection_standard_details_result(
+            filter_data=data.get("data"),
         )
     except InvalidMachineSelection as exc:
         return logged_json_error_response(
@@ -335,6 +336,13 @@ def _handle_inspection_standards_post(
             message=str(exc),
             status=400,
         )
+
+    payload = {
+        "status": "success",
+        "details": present_inspection_standard_detail_rows(
+            result.rows
+        ),
+    }
 
     return json_response(
         payload,

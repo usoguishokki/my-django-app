@@ -65,10 +65,11 @@ from myapp.selectors.inspection_standards import (
     select_inspection_standard_rule_by_id,
     select_inspection_standard_shift_pattern_by_pattern_id,
 )
-from myapp.presenters.inspection_standards import (
-    present_inspection_standard_detail_rows,
-    present_inspection_standard_common_item_options,
-    present_inspection_standard_common_items,
+from myapp.domain.inspection_standard_results import (
+    InspectionStandardDetailsResult,
+    InspectionStandardCommonItemOptionsResult,
+    InspectionStandardCommonItemsUpdateResult,
+    InspectionStandardCardCreateResult,
 )
 
 from myapp.domain.inspection_standard_plan_schedule import (
@@ -148,11 +149,10 @@ def build_inspection_standards_context(*, organization_code: str) -> dict[str, A
     }
 
 
-def build_inspection_standard_details_payload(*, filter_data: Any) -> dict[str, Any]:
-    """
-    点検基準書明細取得APIの payload を組み立てる。
-    """
-
+def build_inspection_standard_details_result(
+    *,
+    filter_data: Any,
+) -> InspectionStandardDetailsResult:
     normalized_filter_data = normalize_inspection_standard_control_filter(
         filter_data
     )
@@ -162,19 +162,19 @@ def build_inspection_standard_details_payload(*, filter_data: Any) -> dict[str, 
     )
 
     if control is None:
-        return {
-            'status': 'success',
-            'details': [],
-        }
+        return InspectionStandardDetailsResult(
+            rows=[],
+        )
 
     rows = select_inspection_standard_detail_rows_by_control_no(
         control_no=control.control_no,
     )
 
-    return {
-        'status': 'success',
-        'details': present_inspection_standard_detail_rows(rows),
-    }
+    return InspectionStandardDetailsResult(
+        rows=rows,
+    )
+
+
 
 
 def update_inspection_standard_detail(
@@ -294,17 +294,20 @@ def delete_inspection_standard_detail(
             inspection_no=payload['inspection_no'],
         )
     
-def build_inspection_standard_common_item_options_payload() -> dict[str, Any]:
+def build_inspection_standard_common_item_options_result(
+) -> InspectionStandardCommonItemOptionsResult:
     rules = select_inspection_standard_rule_options()
-    shift_patterns = select_inspection_standard_shift_pattern_options()
 
-    return {
-        'status': 'success',
-        'options': present_inspection_standard_common_item_options(
-            rules=rules,
-            shift_patterns=shift_patterns,
-        ),
-    }
+    shift_patterns = (
+        select_inspection_standard_shift_pattern_options()
+    )
+
+    return InspectionStandardCommonItemOptionsResult(
+        rules=rules,
+        shift_patterns=shift_patterns,
+    )
+
+
 
     
 def update_inspection_standard_common_items(
@@ -312,7 +315,7 @@ def update_inspection_standard_common_items(
     check_id,
     data,
     operated_by=None,
-) -> dict[str, Any]:
+) -> InspectionStandardCommonItemsUpdateResult:
     """
     点検基準書 共通項目を更新する。
 
@@ -412,12 +415,10 @@ def update_inspection_standard_common_items(
             note=payload['change_reason'],
         )
         
-        response = present_inspection_standard_common_items(check)
-        
-        if plan_sync_result is not None:
-            response['planSync'] = plan_sync_result.to_dict()
-        
-        return response
+        return InspectionStandardCommonItemsUpdateResult(
+            check=check,
+            plan_sync_result=plan_sync_result,
+        )
 
     
 def resolve_common_item_status(
@@ -830,7 +831,7 @@ def create_inspection_standard_card(
     *,
     data,
     operated_by=None,
-) -> dict[str, Any]:
+) -> InspectionStandardCardCreateResult:
     """
     点検カードを新規作成する。
 
@@ -912,12 +913,10 @@ def create_inspection_standard_card(
             note=change_reason,
         )
 
-        return {
-            'checkId': check.id,
-            'inspectionNo': check.inspection_no,
-            'commonItems': present_inspection_standard_common_items(check),
-            'detailCount': len(details),
-        }
+        return InspectionStandardCardCreateResult(
+            check=check,
+            detail_count=len(details),
+        )
 
 def record_inspection_standard_card_create_history(
     *,

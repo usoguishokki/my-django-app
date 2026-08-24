@@ -17,11 +17,15 @@ from myapp.services.inspection_standards import (
     update_inspection_standard_detail,
     create_inspection_standard_detail,
     delete_inspection_standard_detail,
-    build_inspection_standard_common_item_options_payload,
+    build_inspection_standard_common_item_options_result,
     update_inspection_standard_common_items,
     build_inspection_standard_common_items_plan_preview,
     create_inspection_standard_card,
     abolish_inspection_standard_card,
+)
+from myapp.presenters.inspection_standards import (
+    present_inspection_standard_common_item_options,
+    present_inspection_standard_common_items,
 )
 from myapp.services.inspection_card_detail import (
     build_inspection_card_detail_result,
@@ -239,7 +243,15 @@ def inspection_standard_detail_create_api(request):
 @login_required
 def inspection_standard_common_item_options_api(request):
     try:
-        payload = build_inspection_standard_common_item_options_payload()
+        result = build_inspection_standard_common_item_options_result()
+
+        payload = {
+            'status': 'success',
+            'options': present_inspection_standard_common_item_options(
+                rules=result.rules,
+                shift_patterns=result.shift_patterns,
+            ),
+        }
 
         return json_response(
             payload,
@@ -272,8 +284,17 @@ def inspection_standard_common_items_update_api(request, check_id: int):
             operated_by=request.user,
         )
 
+        common_items = present_inspection_standard_common_items(
+            result.check
+        )
+
+        if result.plan_sync_result is not None:
+            common_items['planSync'] = (
+                result.plan_sync_result.to_dict()
+            )
+
         return _success_response({
-            'commonItems': result,
+            'commonItems': common_items,
         })
 
     except InspectionStandardError as error:
@@ -405,8 +426,17 @@ def inspection_standard_card_create_api(request):
             operated_by=request.user,
         )
 
+        card = {
+            'checkId': result.check.id,
+            'inspectionNo': result.check.inspection_no,
+            'commonItems': present_inspection_standard_common_items(
+                result.check
+            ),
+            'detailCount': result.detail_count,
+        }
+
         return _success_response({
-            'card': result,
+            'card': card,
         })
 
     except InspectionStandardError as error:
