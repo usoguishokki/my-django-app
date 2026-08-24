@@ -1,5 +1,8 @@
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from myapp.http.json import (
+    json_error_response,
+    json_response,
+)
 from django.views.decorators.http import require_GET, require_POST
 
 from myapp.domain.periods import build_fiscal_year_months, build_month_range
@@ -27,15 +30,6 @@ from myapp.services.csv_download.plan_result_matcher import (
 )
 
 
-def _json_error(message: str, *, status: int = 400) -> JsonResponse:
-    return JsonResponse(
-        {
-            "status": "error",
-            "message": message,
-        },
-        status=status,
-        json_dumps_params={"ensure_ascii": False},
-    )
 
 
 def _build_target_months_from_post(request):
@@ -68,10 +62,9 @@ def _build_target_months_from_post(request):
 def inspection_standard_machines_api(request):
     items = get_controls_for_inspection_standard_machine_options()
     payload = build_control_machine_options_payload(items=items)
-    return JsonResponse(
+    return json_response(
         payload,
         status=200,
-        json_dumps_params={"ensure_ascii": False},
     )
 
 
@@ -81,12 +74,12 @@ def inspection_standard_download_api(request):
     control_no = (request.POST.get("control_no") or "").strip()
 
     if not control_no:
-        return _json_error("control_no is required")
+        return json_error_response("control_no is required")
 
     try:
         return build_inspection_standard_csv_response(control_no=control_no)
     except InvalidMachineSelection as exc:
-        return _json_error(str(exc))
+        return json_error_response(str(exc))
 
 
 @login_required
@@ -95,7 +88,7 @@ def inspection_plan_result_download_api(request):
     try:
         target_months = _build_target_months_from_post(request)
     except (InvalidCsvDownloadParams, InvalidCsvDownloadType) as exc:
-        return _json_error(str(exc))
+        return json_error_response(str(exc))
 
     calendar_rows = list(calendar_rows_for_year_months(target_months))
 
