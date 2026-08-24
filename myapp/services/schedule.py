@@ -51,19 +51,16 @@ from myapp.selectors.calendar import (
     annotate_plan_affiliation_from_calendar,
 )
 
+from myapp.domain.schedule_results import (
+    ScheduleDayResult,
+    ScheduleMemberWeekResult,
+    ScheduleTestCardsWeekResult,
+    ScheduleTestCardTeamOptionsResult,
+)
+
 from myapp.presenters.schedule import (
-    present_schedule_items,
-    present_schedule_members,
-    present_schedule_breaks,
-    present_team_schedules,
-    present_schedule_member_week_items,
-    present_schedule_test_cards_week_items,
-    present_schedule_test_card_team_options,
-    build_schedule_day_payload,
-    build_schedule_member_week_payload,
-    build_schedule_test_cards_week_payload,
-    build_schedule_test_card_team_options_payload,
     present_schedule_event_move_result,
+    present_team_schedules,
 )
 
 from myapp.domain.errors import (
@@ -143,23 +140,14 @@ def build_schedule_day_result(*, affiliation_id, target_date):
 
     active_date_alias = get_date_alias_by_date(target_date)
 
-    members = present_schedule_members(sorted_members)
-
-    items = present_schedule_items(
-        overlapping_plans,
-        window=window,
-    )
-
-    breaks = present_schedule_breaks(calendar_obj)
-    team_schedules = present_team_schedules(calendar_rows)
-
-    return build_schedule_day_payload(
+    return ScheduleDayResult(
         target_date=target_date,
         affiliation_id=affiliation_id,
-        members=members,
-        items=items,
-        breaks=breaks,
-        team_schedules=team_schedules,
+        sorted_members=sorted_members,
+        overlapping_plans=overlapping_plans,
+        window=window,
+        calendar_obj=calendar_obj,
+        calendar_rows=calendar_rows,
         active_date_alias=active_date_alias,
     )
 
@@ -179,14 +167,12 @@ def build_schedule_member_week_result(*, member_id, target_date):
         for current_date in week_dates
     ]
 
-    items = present_schedule_member_week_items(plans_qs)
-
-    return build_schedule_member_week_payload(
+    return ScheduleMemberWeekResult(
         member_id=member_id,
         target_date=target_date,
         week_start=week_start,
         days=days,
-        items=items,
+        plans_qs=plans_qs,
     )
 
 def should_assign_approver_on_registration(*, current_status, was_unscheduled):
@@ -293,11 +279,9 @@ def build_schedule_test_cards_week_result(
     
     plans_qs = annotate_plan_affiliation_from_calendar(plans_qs)
 
-    items = present_schedule_test_cards_week_items(plans_qs)
-
-    return build_schedule_test_cards_week_payload(
+    return ScheduleTestCardsWeekResult(
         target_date=target_date,
-        items=items,
+        plans_qs=plans_qs,
         date_alias_options=build_hozen_date_alias_options(
             active_date_alias=active_date_alias,
         ),
@@ -367,10 +351,8 @@ def build_schedule_test_card_team_options_result(
             target_date=resolved_target_date,
         )
 
-    team_options = present_schedule_test_card_team_options(calendar_rows)
-
-    return build_schedule_test_card_team_options_payload(
+    return ScheduleTestCardTeamOptionsResult(
         target_date=resolved_target_date,
         active_date_alias=active_date_alias,
-        team_options=team_options,
+        calendar_rows=calendar_rows,
     )

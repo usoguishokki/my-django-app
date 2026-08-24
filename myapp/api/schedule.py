@@ -38,6 +38,20 @@ from myapp.services.schedule import (
     retract_schedule_event,
 )
 
+from myapp.presenters.schedule import (
+    build_schedule_day_payload,
+    build_schedule_member_week_payload,
+    build_schedule_test_card_team_options_payload,
+    build_schedule_test_cards_week_payload,
+    present_schedule_breaks,
+    present_schedule_items,
+    present_schedule_member_week_items,
+    present_schedule_members,
+    present_schedule_test_card_team_options,
+    present_schedule_test_cards_week_items,
+    present_team_schedules,
+)
+
 from myapp.services.schedule_bulk_pullback import (
     bulk_retract_schedule_events,
 )
@@ -68,9 +82,36 @@ def schedule_day_api(request):
             status=400,
         )
 
-    payload = build_schedule_day_result(
+    result = build_schedule_day_result(
         affiliation_id=params.affiliation_id,
         target_date=params.target_date,
+    )
+
+    members = present_schedule_members(
+        result.sorted_members,
+    )
+
+    items = present_schedule_items(
+        result.overlapping_plans,
+        window=result.window,
+    )
+
+    breaks = present_schedule_breaks(
+        result.calendar_obj,
+    )
+
+    team_schedules = present_team_schedules(
+        result.calendar_rows,
+    )
+
+    payload = build_schedule_day_payload(
+        target_date=result.target_date,
+        affiliation_id=result.affiliation_id,
+        members=members,
+        items=items,
+        breaks=breaks,
+        team_schedules=team_schedules,
+        active_date_alias=result.active_date_alias,
     )
 
     return json_response(
@@ -93,9 +134,21 @@ def schedule_member_week_api(request):
             status=400,
         )
 
-    payload = build_schedule_member_week_result(
+    result = build_schedule_member_week_result(
         member_id=params.member_id,
         target_date=params.target_date,
+    )
+
+    items = present_schedule_member_week_items(
+        result.plans_qs,
+    )
+
+    payload = build_schedule_member_week_payload(
+        member_id=result.member_id,
+        target_date=result.target_date,
+        week_start=result.week_start,
+        days=result.days,
+        items=items,
     )
 
     return json_response(
@@ -202,10 +255,21 @@ def schedule_test_cards_week_api(request):
             status=400,
         )
 
-    payload = build_schedule_test_cards_week_result(
+    result = build_schedule_test_cards_week_result(
         target_date=params.target_date,
         date_alias=params.date_alias,
         shift_pattern_id=params.shift_pattern_id,
+    )
+
+    items = present_schedule_test_cards_week_items(
+        result.plans_qs,
+    )
+
+    payload = build_schedule_test_cards_week_payload(
+        target_date=result.target_date,
+        items=items,
+        date_alias_options=result.date_alias_options,
+        active_date_alias=result.active_date_alias,
     )
 
     return json_response(
@@ -268,11 +332,19 @@ def schedule_test_card_team_options_api(request):
             status=400,
         )
 
-    payload = (
-        build_schedule_test_card_team_options_result(
-            target_date=params.target_date,
-            date_alias=params.date_alias,
-        )
+    result = build_schedule_test_card_team_options_result(
+        target_date=params.target_date,
+        date_alias=params.date_alias,
+    )
+
+    team_options = present_schedule_test_card_team_options(
+        result.calendar_rows,
+    )
+
+    payload = build_schedule_test_card_team_options_payload(
+        target_date=result.target_date,
+        active_date_alias=result.active_date_alias,
+        team_options=team_options,
     )
 
     return json_response(
