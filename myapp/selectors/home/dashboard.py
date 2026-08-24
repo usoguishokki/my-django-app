@@ -8,6 +8,7 @@ from myapp.models import (
     Db_details_tb,
     Hozen_calendar_tb,
     Plan_tb,
+    UserProfile,
 )
 
 from myapp.domain.home.progress import get_status_value_map
@@ -18,6 +19,35 @@ from myapp.selectors.plan import (
     plan_base_qs,
     select_holder_incomplete_plan_rows,
 )
+
+
+def select_home_user_profile(
+    *,
+    user,
+    include_user: bool = False,
+):
+    related_fields = [
+        "organization",
+        "belongs",
+    ]
+
+    if include_user:
+        related_fields.append(
+            "user"
+        )
+
+    try:
+        return (
+            UserProfile.objects
+            .select_related(
+                *related_fields
+            )
+            .get(
+                user=user,
+            )
+        )
+    except UserProfile.DoesNotExist:
+        return None
 
 
 def select_home_affiliations_by_organization(*, organization_id) -> QuerySet:

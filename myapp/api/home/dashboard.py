@@ -13,7 +13,10 @@ from myapp.http.json import (
 )
 
 
-from myapp.models import UserProfile
+from myapp.selectors.home.dashboard import (
+    select_home_user_profile,
+)
+
 from myapp.services.home.dashboard import (
     build_home_assign_member_options_response,
     build_home_my_tasks_response,
@@ -26,23 +29,6 @@ from myapp.services.home.dashboard import (
 logger = logging.getLogger(__name__)
 
 
-def get_home_user_profile(request, *, include_user: bool = False):
-    """
-    home API共通のログインユーザープロフィール取得。
-
-    include_user=True:
-      home_my_tasks_api のように user.member_id を使う場合に指定する。
-    """
-    related_fields = ["organization", "belongs"]
-
-    if include_user:
-        related_fields.append("user")
-
-    return (
-        UserProfile.objects
-        .select_related(*related_fields)
-        .get(user=request.user)
-    )
 
 
 def build_home_success_response(
@@ -74,9 +60,10 @@ def home_overall_progress_api(request):
     全体の進捗:
       ログインユーザーと同じ組織に属する班すべて
     """
-    try:
-        user_profile = get_home_user_profile(request)
-    except UserProfile.DoesNotExist:
+    user_profile = select_home_user_profile(
+        user=request.user,
+    )
+    if user_profile is None:
         return build_user_profile_not_found_response()
 
     try:
@@ -102,9 +89,10 @@ def home_my_team_progress_api(request):
     """
     home中央「ログインユーザー所属班の進捗」API。
     """
-    try:
-        user_profile = get_home_user_profile(request)
-    except UserProfile.DoesNotExist:
+    user_profile = select_home_user_profile(
+        user=request.user,
+    )
+    if user_profile is None:
         return build_user_profile_not_found_response()
 
     try:
@@ -149,9 +137,10 @@ def home_my_team_day_detail_api(request):
             status=400,
         )
 
-    try:
-        user_profile = get_home_user_profile(request)
-    except UserProfile.DoesNotExist:
+    user_profile = select_home_user_profile(
+        user=request.user,
+    )
+    if user_profile is None:
         return build_user_profile_not_found_response()
 
     try:
@@ -179,12 +168,11 @@ def home_my_tasks_api(request):
     """
     home右側「自分の未完了タスク」API。
     """
-    try:
-        user_profile = get_home_user_profile(
-            request,
-            include_user=True,
-        )
-    except UserProfile.DoesNotExist:
+    user_profile = select_home_user_profile(
+        user=request.user,
+        include_user=True,
+    )
+    if user_profile is None:
         return build_user_profile_not_found_response()
 
     try:
@@ -230,9 +218,10 @@ def home_assign_member_options_api(request):
     常昼などA/B/C班以外:
       A/B/C班すべてのメンバー
     """
-    try:
-        user_profile = get_home_user_profile(request)
-    except UserProfile.DoesNotExist:
+    user_profile = select_home_user_profile(
+        user=request.user,
+    )
+    if user_profile is None:
         return build_user_profile_not_found_response()
 
     try:
