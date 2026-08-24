@@ -6,6 +6,7 @@ from datetime import datetime
 
 from .backends import MemberAuthenticationBackend
 from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_GET, require_http_methods
 
 
 from .forms import LoginForm
@@ -251,26 +252,22 @@ def inspectionStadards_view(request):
     
     
 @login_required
+@require_http_methods(["GET", "POST"])
 def achievements_view(request):
     cache_manager = request.cache_manager
     cache_manager_if = request.cache_manager_if
+
     team_profiles = build_team_profile_context(
         request=request,
         cache_manager_if=cache_manager_if,
     )
-    login_number = team_profiles['login_number']
-    
-    
-        
-    if request.method == 'GET':
 
-        
+    login_number = team_profiles["login_number"]
+
+    if request.method == "GET":
         today = datetime.today()
         current_year = today.year
         current_month = today.month
-        
-                
-    
 
         daily_works_inf = build_achievement_month_details(
             cache_manager=cache_manager,
@@ -278,8 +275,7 @@ def achievements_view(request):
             year=current_year,
             month=current_month,
         )
-        
-    
+
         context = build_achievement_page_context(
             current_year=current_year,
             daily_works_inf=daily_works_inf,
@@ -290,55 +286,84 @@ def achievements_view(request):
             "achivements.html",
             context,
         )
-    elif request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        data, action, parse_error = extract_request_data(request)
-        if parse_error:
-            return handle_view_error(parse_error, status_code=400, message='Invalid JSON data')
-        if action == "get_month_details":
-            date_str = data.get('data')
-            selected_month = parse_year_month_label(
-                date_str
-            )
-            
-            daily_works_inf = build_achievement_month_details(
-                cache_manager=cache_manager,
-                login_number=login_number,
-                year=selected_month.year,
-                month=selected_month.month,
-            )
-            
-            return JsonResponse({
-                'status': 'success',
-                'details': daily_works_inf
-            })
-            
-def planned_maintenance_view(request):
-    if request.method == 'GET':
-        return render(
-            request,
-            'plannedMaintenance/plannedMaintenance.html'
+
+    if (
+        request.headers.get("X-Requested-With")
+        != "XMLHttpRequest"
+    ):
+        return HttpResponseBadRequest(
+            "Unsupported request."
         )
+
+    data, action, parse_error = extract_request_data(
+        request
+    )
+
+    if parse_error:
+        return handle_view_error(
+            parse_error,
+            status_code=400,
+            message="Invalid JSON data",
+        )
+
+    if action != "get_month_details":
+        return HttpResponseBadRequest(
+            "Invalid action"
+        )
+
+    date_str = data.get("data")
+
+    try:
+        selected_month = parse_year_month_label(
+            date_str
+        )
+    except ValueError as e:
+        return handle_view_error(
+            e,
+            status_code=400,
+            message=str(e),
+        )
+
+    daily_works_inf = build_achievement_month_details(
+        cache_manager=cache_manager,
+        login_number=login_number,
+        year=selected_month.year,
+        month=selected_month.month,
+    )
+
+    return JsonResponse({
+        "status": "success",
+        "details": daily_works_inf,
+    })
+
+
+@require_GET
+def planned_maintenance_view(request):
+    return render(
+        request,
+        "plannedMaintenance/plannedMaintenance.html",
+    )
         
         
 
 @login_required
+@require_GET
 def equipment_ledger_view(request):
-    if request.method == "GET":
-        code = request.GET.get(
-            "machine-code"
-        )
+    code = request.GET.get(
+        "machine-code"
+    )
 
-        equipment = get_equipment_by_control_no(
-            control_no=code,
-        )
+    equipment = get_equipment_by_control_no(
+        control_no=code,
+    )
 
-        return render(
-            request,
-            "mobilLedger.html",
-            {
-                "EquipmentInformation": equipment,
-            },
-        )
+    return render(
+        request,
+        "mobilLedger.html",
+        {
+            "EquipmentInformation": equipment,
+        },
+    )
 
 @login_required       
 def card_by_control_view(
