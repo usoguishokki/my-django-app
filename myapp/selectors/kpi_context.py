@@ -1,20 +1,10 @@
 # myapp/selectors/kpi_context.py
-from dataclasses import dataclass
-from typing import List
-from datetime import date
 
+from myapp.domain.kpi_context import DayContext
 from myapp.selectors.hozen_calendar import get_calendar_rows, get_all_days, build_date_alias_map
 from myapp.selectors.shifts import (
     build_shift_context,
 )
-
-@dataclass(frozen=True)
-class DayContext:
-    cal_rows: List[dict]
-    all_days: List[date]
-    date_alias_map: dict
-    pattern_time_map: dict
-    shift_pattern_map: dict
 
 def build_day_context(
     *,
