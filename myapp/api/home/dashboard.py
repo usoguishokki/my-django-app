@@ -5,7 +5,9 @@ from datetime import datetime
 
 
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+
+from myapp.http.json import json_response
 
 
 from myapp.models import UserProfile
@@ -41,16 +43,16 @@ def get_home_user_profile(request, *, include_user: bool = False):
 
 
 def build_user_profile_not_found_response():
-    return JsonResponse(
+    return json_response(
         {
             "status": "error",
             "message": "ユーザープロフィールが見つかりません。",
         },
         status=404,
-        json_dumps_params={"ensure_ascii": False},
     )
 
 
+@require_GET
 @login_required
 def home_overall_progress_api(request):
     """
@@ -71,24 +73,23 @@ def home_overall_progress_api(request):
     except Exception:
         logger.exception("[home_overall_progress_api] failed")
 
-        return JsonResponse(
+        return json_response(
             {
                 "status": "error",
                 "message": "全体進捗の取得に失敗しました。",
             },
             status=500,
-            json_dumps_params={"ensure_ascii": False},
-        )
+            )
 
-    return JsonResponse(
+    return json_response(
         {
             "status": "success",
             "data": payload,
         },
-        json_dumps_params={"ensure_ascii": False},
     )
 
 
+@require_GET
 @login_required
 def home_my_team_progress_api(request):
     """
@@ -106,24 +107,23 @@ def home_my_team_progress_api(request):
     except Exception:
         logger.exception("[home_my_team_progress_api] failed")
 
-        return JsonResponse(
+        return json_response(
             {
                 "status": "error",
                 "message": "所属班進捗の取得に失敗しました。",
             },
             status=500,
-            json_dumps_params={"ensure_ascii": False},
-        )
+            )
 
-    return JsonResponse(
+    return json_response(
         {
             "status": "success",
             "data": payload,
         },
-        json_dumps_params={"ensure_ascii": False},
     )
 
 
+@require_GET
 @login_required
 def home_my_team_day_detail_api(request):
     """
@@ -137,24 +137,22 @@ def home_my_team_day_detail_api(request):
     status_key = request.GET.get("statusKey", "")
 
     if not target_date:
-        return JsonResponse(
+        return json_response(
             {
                 "status": "error",
                 "message": "日付が正しくありません。",
             },
             status=400,
-            json_dumps_params={"ensure_ascii": False},
-        )
+            )
 
     if not status_key:
-        return JsonResponse(
+        return json_response(
             {
                 "status": "error",
                 "message": "ステータスが指定されていません。",
             },
             status=400,
-            json_dumps_params={"ensure_ascii": False},
-        )
+            )
 
     try:
         user_profile = get_home_user_profile(request)
@@ -170,24 +168,23 @@ def home_my_team_day_detail_api(request):
     except Exception:
         logger.exception("[home_my_team_day_detail_api] failed")
 
-        return JsonResponse(
+        return json_response(
             {
                 "status": "error",
                 "message": "所属班進捗の詳細取得に失敗しました。",
             },
             status=500,
-            json_dumps_params={"ensure_ascii": False},
-        )
+            )
 
-    return JsonResponse(
+    return json_response(
         {
             "status": "success",
             "data": payload,
         },
-        json_dumps_params={"ensure_ascii": False},
     )
 
 
+@require_GET
 @login_required
 def home_my_tasks_api(request):
     """
@@ -208,21 +205,19 @@ def home_my_tasks_api(request):
     except Exception:
         logger.exception("[home_my_tasks_api] failed")
 
-        return JsonResponse(
+        return json_response(
             {
                 "status": "error",
                 "message": "個別進捗の取得に失敗しました。",
             },
             status=500,
-            json_dumps_params={"ensure_ascii": False},
-        )
+            )
 
-    return JsonResponse(
+    return json_response(
         {
             "status": "success",
             "data": payload,
         },
-        json_dumps_params={"ensure_ascii": False},
     )
 
 
@@ -240,6 +235,7 @@ def parse_ymd_date(value: str):
         return None
 
 
+@require_GET
 @login_required
 def home_assign_member_options_api(request):
     """
@@ -263,19 +259,17 @@ def home_assign_member_options_api(request):
     except Exception:
         logger.exception("[home_assign_member_options_api] failed")
 
-        return JsonResponse(
+        return json_response(
             {
                 "status": "error",
                 "message": "作業者候補の取得に失敗しました。",
             },
             status=500,
-            json_dumps_params={"ensure_ascii": False},
-        )
+            )
 
-    return JsonResponse(
+    return json_response(
         {
             "status": "success",
             "data": payload,
         },
-        json_dumps_params={"ensure_ascii": False},
     )
