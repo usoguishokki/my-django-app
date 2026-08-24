@@ -1,7 +1,10 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
 
-from myapp.http.json import json_response
+from myapp.http.json import (
+    json_error_response,
+    json_response,
+)
 
 from myapp.services.kpi_matrix import build_kpi_matrix_response
 from myapp.services.kpi_cell_detail import build_kpi_cell_detail_result
@@ -21,7 +24,10 @@ def kpi_matrix_api(request):
         resp, status = build_kpi_matrix_response(params, filters_json=filters_json)
         return json_response(resp, status=status)
     except ValueError as e:
-        return json_response({"status": "error", "message": str(e)}, status=400)
+        return json_error_response(
+            str(e),
+            status=400,
+        )
     
 @require_GET
 @login_required
@@ -36,7 +42,10 @@ def kpi_matrix_cell_detail_api(request):
         return json_response(payload, status=status)
     
     except ValueError as e:
-        return json_response({"status": "error", "message": str(e)}, status=400)
+        return json_error_response(
+            str(e),
+            status=400,
+        )
     
 @require_GET
 @login_required
@@ -56,4 +65,7 @@ def plan_detail_api(request, plan_id: int):
         return json_response(payload, status=200)
 
     except ValueError as e:
-        return json_response({"status": "error", "message": str(e)}, status=400)
+        return json_error_response(
+            str(e),
+            status=400,
+        )
