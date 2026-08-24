@@ -8,6 +8,12 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_GET
 
+from myapp.http.json import (
+    InvalidJsonBody,
+    json_response,
+    parse_json_body,
+)
+
 from myapp.domain.errors import InspectionStandardError
 from myapp.services.inspection_standards import (
     update_inspection_standard_detail,
@@ -47,6 +53,7 @@ from myapp.services.inspection_standard_history_cancellation import (
     cancel_inspection_standard_history,
 )
 
+@require_GET
 @login_required
 def inspection_card_detail_api(request, inspection_no: str):
     """
@@ -81,6 +88,7 @@ def inspection_card_detail_api(request, inspection_no: str):
         return _bad_request_response(error)
 
 
+@require_GET
 @login_required
 def inspection_card_plans_api(request, inspection_no: str):
     """
@@ -314,57 +322,72 @@ def inspection_standard_common_items_update_api(request, check_id: int):
         
         
 def _parse_json_body(request) -> dict:
-    if not request.body:
-        return {}
-
     try:
-        return json.loads(request.body.decode('utf-8'))
-    except json.JSONDecodeError:
-        raise ValueError('リクエスト形式が不正です。')
+        return parse_json_body(
+            request,
+            empty_as_object=True,
+        )
+    except InvalidJsonBody as exc:
+        raise ValueError(
+            "\u30ea\u30af\u30a8\u30b9\u30c8"
+            "\u5f62\u5f0f\u304c\u4e0d\u6b63"
+            "\u3067\u3059\u3002"
+        ) from exc
 
 
-def _success_response(payload: dict, *, status: int = 200) -> JsonResponse:
-    return JsonResponse(
+def _success_response(
+    payload: dict,
+    *,
+    status: int = 200,
+):
+    return json_response(
         {
-            'success': True,
+            "success": True,
             **payload,
         },
         status=status,
-        json_dumps_params={'ensure_ascii': False},
     )
 
 
-def _domain_error_response(error: InspectionStandardError) -> JsonResponse:
-    return JsonResponse(
+def _domain_error_response(
+    error: InspectionStandardError,
+):
+    return json_response(
         {
-            'success': False,
-            'message': str(error),
-            'detail': getattr(error, 'detail', str(error)),
+            "success": False,
+            "message": str(error),
+            "detail": getattr(
+                error,
+                "detail",
+                str(error),
+            ),
         },
         status=400,
-        json_dumps_params={'ensure_ascii': False},
     )
 
 
-def _bad_request_response(error: ValueError) -> JsonResponse:
-    return JsonResponse(
+def _bad_request_response(
+    error: ValueError,
+):
+    return json_response(
         {
-            'success': False,
-            'message': str(error),
+            "success": False,
+            "message": str(error),
         },
         status=400,
-        json_dumps_params={'ensure_ascii': False},
     )
 
 
-def _server_error_response(*, message: str) -> JsonResponse:
-    return JsonResponse(
+def _server_error_response(
+    *,
+    message: str,
+):
+    return json_response(
         {
-            'success': False,
-            'message': message,
+            "success": False,
+            "message": message,
         },
         status=500,
-        json_dumps_params={'ensure_ascii': False},
     )
 
 
