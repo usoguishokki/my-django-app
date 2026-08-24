@@ -265,16 +265,32 @@ def _execute_work_contents_update(
 @require_http_methods(["GET", "POST"])
 def inspectionStadards_view(request):
     if request.method == "GET":
-        context = build_inspection_standards_context(
-            organization_code=request.organization_code,
+        return _render_inspection_standards_page(
+            request
         )
 
-        return render(
-            request,
-            "inspectionStandards/inspectionStandards.html",
-            context,
-        )
+    return _handle_inspection_standards_post(
+        request
+    )
 
+
+def _render_inspection_standards_page(
+    request,
+):
+    context = build_inspection_standards_context(
+        organization_code=request.organization_code,
+    )
+
+    return render(
+        request,
+        "inspectionStandards/inspectionStandards.html",
+        context,
+    )
+
+
+def _handle_inspection_standards_post(
+    request,
+):
     if (
         request.headers.get("X-Requested-With")
         != "XMLHttpRequest"
