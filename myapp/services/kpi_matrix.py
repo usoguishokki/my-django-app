@@ -11,7 +11,7 @@ from myapp.selectors.kpi_queryset import build_kpi_plan_queryset, kpi_rows
 from myapp.selectors.hozen_calendar import get_month_ranges
 from myapp.selectors.kpi_context import build_day_context
 
-from myapp.presenters.kpi_matrix_presenter import build_matrix
+from myapp.domain.kpi_matrix import KPIMatrixResult
 
 
 def build_kpi_matrix_response(params: KPIRequestParams, *, filters_json: Optional[str] = None):
@@ -63,7 +63,7 @@ def build_kpi_matrix_response(params: KPIRequestParams, *, filters_json: Optiona
         shift_pattern_map=(day_ctx.shift_pattern_map if day_ctx else None),
     )
     
-    matrix = build_matrix(
+    result = KPIMatrixResult(
         period_view=params.period_view,
         target_view=params.target_view,
         data=data,
@@ -83,10 +83,4 @@ def build_kpi_matrix_response(params: KPIRequestParams, *, filters_json: Optiona
         ),
     )
 
-    # 次ステップで period_view ごとの処理に進むので、いったんここまで返す
-    return {
-        "status": "success",
-        "periodView": params.period_view,
-        "targetView": params.target_view,
-        "matrix": matrix,
-    }, 200
+    return result, 200
