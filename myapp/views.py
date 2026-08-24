@@ -193,6 +193,17 @@ def _handle_work_contents_post(
             "Invalid action"
         )
 
+    return _execute_work_contents_update(
+        request=request,
+        data=data,
+    )
+
+
+def _execute_work_contents_update(
+    *,
+    request,
+    data,
+):
     try:
         cache_manager_if = request.cache_manager_if
 
