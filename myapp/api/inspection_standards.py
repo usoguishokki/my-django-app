@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import json
 
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_GET
 
 from myapp.http.json import (
@@ -67,10 +65,9 @@ def inspection_card_detail_api(request, inspection_no: str):
         )
 
         if status != 200:
-            return JsonResponse(
+            return json_response(
                 result,
                 status=status,
-                json_dumps_params={"ensure_ascii": False},
             )
 
         payload = build_plan_detail_payload_from_check(
@@ -78,10 +75,9 @@ def inspection_card_detail_api(request, inspection_no: str):
             plan=result.get("plan"),
         )
 
-        return JsonResponse(
+        return json_response(
             payload,
             status=200,
-            json_dumps_params={"ensure_ascii": False},
         )
 
     except ValueError as error:
@@ -102,10 +98,9 @@ def inspection_card_plans_api(request, inspection_no: str):
         )
 
         if status != 200:
-            return JsonResponse(
+            return json_response(
                 result,
                 status=status,
-                json_dumps_params={"ensure_ascii": False},
             )
 
         payload = build_inspection_card_plans_payload(
@@ -113,10 +108,9 @@ def inspection_card_plans_api(request, inspection_no: str):
             plans=result,
         )
 
-        return JsonResponse(
+        return json_response(
             payload,
             status=200,
-            json_dumps_params={"ensure_ascii": False},
         )
 
     except ValueError as error:
@@ -180,13 +174,12 @@ def inspection_standard_detail_delete_api(request, detail_id: int):
             operated_by=request.user,
         )
 
-        return JsonResponse(
+        return json_response(
             {
                 'success': True,
                 'detail': result,
             },
             status=200,
-            json_dumps_params={'ensure_ascii': False},
         )
 
     except InspectionStandardError as error:
@@ -196,13 +189,12 @@ def inspection_standard_detail_delete_api(request, detail_id: int):
         return _bad_request_response(error)
 
     except Exception:
-        return JsonResponse(
+        return json_response(
             {
                 'success': False,
                 'message': '点検基準書の明細削除に失敗しました。',
             },
             status=500,
-            json_dumps_params={'ensure_ascii': False},
         )
 
 
@@ -230,13 +222,12 @@ def inspection_standard_detail_create_api(request):
             operated_by=request.user,
         )
 
-        return JsonResponse(
+        return json_response(
             {
                 'success': True,
                 'detail': result,
             },
             status=200,
-            json_dumps_params={'ensure_ascii': False},
         )
 
     except InspectionStandardError as error:
@@ -246,13 +237,12 @@ def inspection_standard_detail_create_api(request):
         return _bad_request_response(error)
 
     except Exception:
-        return JsonResponse(
+        return json_response(
             {
                 'success': False,
                 'message': '点検基準書の明細追加に失敗しました。',
             },
             status=500,
-            json_dumps_params={'ensure_ascii': False},
         )
         
         
@@ -262,20 +252,18 @@ def inspection_standard_common_item_options_api(request):
     try:
         payload = build_inspection_standard_common_item_options_payload()
 
-        return JsonResponse(
+        return json_response(
             payload,
             status=200,
-            json_dumps_params={'ensure_ascii': False},
         )
 
     except Exception:
-        return JsonResponse(
+        return json_response(
             {
                 'status': 'error',
                 'message': '共通項目変更の選択肢取得に失敗しました。',
             },
             status=500,
-            json_dumps_params={'ensure_ascii': False},
         )
         
 
@@ -295,13 +283,12 @@ def inspection_standard_common_items_update_api(request, check_id: int):
             operated_by=request.user,
         )
 
-        return JsonResponse(
+        return json_response(
             {
                 'success': True,
                 'commonItems': result,
             },
             status=200,
-            json_dumps_params={'ensure_ascii': False},
         )
 
     except InspectionStandardError as error:
@@ -311,13 +298,12 @@ def inspection_standard_common_items_update_api(request, check_id: int):
         return _bad_request_response(error)
 
     except Exception:
-        return JsonResponse(
+        return json_response(
             {
                 'success': False,
                 'message': '共通項目の更新に失敗しました。',
             },
             status=500,
-            json_dumps_params={'ensure_ascii': False},
         )
         
         
@@ -407,13 +393,12 @@ def inspection_standard_common_items_plan_preview_api(request, check_id: int):
             data=payload,
         )
 
-        return JsonResponse(
+        return json_response(
             {
                 'success': True,
                 'planPreview': result,
             },
             status=200,
-            json_dumps_params={'ensure_ascii': False},
         )
 
     except InspectionStandardError as error:
@@ -423,13 +408,12 @@ def inspection_standard_common_items_plan_preview_api(request, check_id: int):
         return _bad_request_response(error)
 
     except Exception:
-        return JsonResponse(
+        return json_response(
             {
                 'success': False,
                 'message': '計画日のプレビュー取得に失敗しました。',
             },
             status=500,
-            json_dumps_params={'ensure_ascii': False},
         )
 
 
@@ -515,10 +499,9 @@ def inspection_standard_history_list_api(request):
             control_no=control_no,
         )
 
-        return JsonResponse(
+        return json_response(
             result,
             status=200,
-            json_dumps_params={'ensure_ascii': False},
         )
 
     except InspectionStandardError as error:
@@ -623,10 +606,9 @@ def inspection_standard_history_detail_api(request, history_id: int):
             history_id=history_id,
         )
 
-        return JsonResponse(
+        return json_response(
             result,
             status=200,
-            json_dumps_params={'ensure_ascii': False},
         )
 
     except InspectionStandardError as error:
