@@ -174,13 +174,9 @@ def inspection_standard_detail_delete_api(request, detail_id: int):
             operated_by=request.user,
         )
 
-        return json_response(
-            {
-                'success': True,
-                'detail': result,
-            },
-            status=200,
-        )
+        return _success_response({
+            'detail': result,
+        })
 
     except InspectionStandardError as error:
         return _domain_error_response(error)
@@ -189,12 +185,8 @@ def inspection_standard_detail_delete_api(request, detail_id: int):
         return _bad_request_response(error)
 
     except Exception:
-        return json_response(
-            {
-                'success': False,
-                'message': '点検基準書の明細削除に失敗しました。',
-            },
-            status=500,
+        return _server_error_response(
+            message='点検基準書の明細削除に失敗しました。'
         )
 
 
@@ -222,13 +214,9 @@ def inspection_standard_detail_create_api(request):
             operated_by=request.user,
         )
 
-        return json_response(
-            {
-                'success': True,
-                'detail': result,
-            },
-            status=200,
-        )
+        return _success_response({
+            'detail': result,
+        })
 
     except InspectionStandardError as error:
         return _domain_error_response(error)
@@ -237,12 +225,8 @@ def inspection_standard_detail_create_api(request):
         return _bad_request_response(error)
 
     except Exception:
-        return json_response(
-            {
-                'success': False,
-                'message': '点検基準書の明細追加に失敗しました。',
-            },
-            status=500,
+        return _server_error_response(
+            message='点検基準書の明細追加に失敗しました。'
         )
         
         
@@ -283,13 +267,9 @@ def inspection_standard_common_items_update_api(request, check_id: int):
             operated_by=request.user,
         )
 
-        return json_response(
-            {
-                'success': True,
-                'commonItems': result,
-            },
-            status=200,
-        )
+        return _success_response({
+            'commonItems': result,
+        })
 
     except InspectionStandardError as error:
         return _domain_error_response(error)
@@ -298,12 +278,8 @@ def inspection_standard_common_items_update_api(request, check_id: int):
         return _bad_request_response(error)
 
     except Exception:
-        return json_response(
-            {
-                'success': False,
-                'message': '共通項目の更新に失敗しました。',
-            },
-            status=500,
+        return _server_error_response(
+            message='共通項目の更新に失敗しました。'
         )
         
         
@@ -393,13 +369,9 @@ def inspection_standard_common_items_plan_preview_api(request, check_id: int):
             data=payload,
         )
 
-        return json_response(
-            {
-                'success': True,
-                'planPreview': result,
-            },
-            status=200,
-        )
+        return _success_response({
+            'planPreview': result,
+        })
 
     except InspectionStandardError as error:
         return _domain_error_response(error)
@@ -408,12 +380,8 @@ def inspection_standard_common_items_plan_preview_api(request, check_id: int):
         return _bad_request_response(error)
 
     except Exception:
-        return json_response(
-            {
-                'success': False,
-                'message': '計画日のプレビュー取得に失敗しました。',
-            },
-            status=500,
+        return _server_error_response(
+            message='計画日のプレビュー取得に失敗しました。'
         )
 
 
