@@ -9,7 +9,7 @@ from myapp.models import Calendar_tb, Hozen_calendar_tb, Practitioner_tb
 
 from myapp.domain.errors import InvalidFiltersJSON
 from myapp.selectors.plan import plan_base_qs
-from myapp.services.query_builders import (
+from myapp.selectors.query_builders import (
     build_q_from_simple_params,
     build_q_from_filters,
 )
