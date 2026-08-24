@@ -7,10 +7,19 @@ class InvalidJsonBody(ValueError):
     pass
 
 
-def parse_json_body(request):
+def parse_json_body(
+    request,
+    *,
+    empty_as_object=False,
+):
+    raw_body = request.body
+
+    if empty_as_object and not raw_body:
+        return {}
+
     try:
         return json.loads(
-            request.body
+            raw_body
         )
     except json.JSONDecodeError as exc:
         raise InvalidJsonBody(
