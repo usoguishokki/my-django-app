@@ -1,10 +1,14 @@
 # myapp/api/pullback.py
 
-import json
-
-from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 
+from myapp.http.json import (
+    InvalidJsonBody,
+    json_error_response,
+    json_response,
+    parse_json_body,
+)
 from myapp.services.pullback import (
     execute_single_pullback,
     execute_bulk_pullback,
@@ -15,77 +19,104 @@ from myapp.presenters.pullback_presenter import (
 )
 
 
+def _parse_pullback_json(request):
+    try:
+        return parse_json_body(
+            request,
+            encoding="utf-8",
+        )
+    except InvalidJsonBody as exc:
+        cause = exc.__cause__
+
+        raise ValueError(
+            str(cause or exc)
+        ) from exc
+
+
+@require_POST
 @login_required
 def pullback_api(request):
     """
-    単体引戻しAPI
+    Single pullback API.
     POST /api/pullback/
     body: { "planId": 123 }
     """
     try:
-        data = json.loads(request.body.decode("utf-8"))
-        plan_id = data.get("planId")
+        data = _parse_pullback_json(
+            request
+        )
 
-        result, http_status = execute_single_pullback(
-            plan_id=plan_id,
+        plan_id = data.get(
+            "planId"
+        )
+
+        result, http_status = (
+            execute_single_pullback(
+                plan_id=plan_id,
+            )
         )
 
         if http_status != 200:
-            return JsonResponse(
+            return json_response(
                 result,
                 status=http_status,
-                json_dumps_params={"ensure_ascii": False},
             )
 
         payload = build_single_pullback_payload(
             plan=result,
         )
-        return JsonResponse(
+
+        return json_response(
             payload,
             status=200,
-            json_dumps_params={"ensure_ascii": False},
         )
 
-    except ValueError as e:
-        return JsonResponse(
-            {"status": "error", "message": str(e)},
+    except ValueError as exc:
+        return json_error_response(
+            str(exc),
             status=400,
-            json_dumps_params={"ensure_ascii": False},
         )
-        
 
+
+@require_POST
 @login_required
 def bulk_pullback_api(request):
     """
-    一括引戻しAPI
+    Bulk pullback API.
     POST /api/bulk-actions/pullback/
-    body: { "planIds": [1,2,3] }
+    body: { "planIds": [1, 2, 3] }
     """
     try:
-        data = json.loads(request.body.decode("utf-8"))
-        plan_ids = data.get("planIds", [])
+        data = _parse_pullback_json(
+            request
+        )
 
-        result, http_status = execute_bulk_pullback(
-            plan_ids=plan_ids,
+        plan_ids = data.get(
+            "planIds",
+            [],
+        )
+
+        result, http_status = (
+            execute_bulk_pullback(
+                plan_ids=plan_ids,
+            )
         )
 
         if http_status != 200:
-            return JsonResponse(
+            return json_response(
                 result,
                 status=http_status,
-                json_dumps_params={"ensure_ascii": False},
             )
 
         payload = build_bulk_pullback_payload()
-        return JsonResponse(
+
+        return json_response(
             payload,
             status=200,
-            json_dumps_params={"ensure_ascii": False},
         )
 
-    except ValueError as e:
-        return JsonResponse(
-            {"status": "error", "message": str(e)},
+    except ValueError as exc:
+        return json_error_response(
+            str(exc),
             status=400,
-            json_dumps_params={"ensure_ascii": False},
         )

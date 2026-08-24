@@ -11,11 +11,22 @@ def parse_json_body(
     request,
     *,
     empty_as_object=False,
+    encoding=None,
 ):
     raw_body = request.body
 
     if empty_as_object and not raw_body:
         return {}
+
+    if encoding is not None:
+        try:
+            raw_body = raw_body.decode(
+                encoding
+            )
+        except UnicodeDecodeError as exc:
+            raise InvalidJsonBody(
+                "Invalid JSON data"
+            ) from exc
 
     try:
         return json.loads(
