@@ -89,6 +89,7 @@ def extract_request_data(request: HttpRequest):
 
                 
 @never_cache
+@require_http_methods(["GET", "POST"])
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('home')
@@ -121,6 +122,7 @@ logger = logging.getLogger(__name__)
                         
 
 @login_required
+@require_GET
 def card_work(request):
     cache_manager_if = request.cache_manager_if
     team_profiles = build_team_profile_context(
@@ -365,7 +367,8 @@ def equipment_ledger_view(request):
         },
     )
 
-@login_required       
+@login_required
+@require_GET
 def card_by_control_view(
     request,
     control_no,
@@ -395,11 +398,13 @@ def card_by_control_view(
         },
     )
 
-@login_required     
+@login_required
+@require_GET
 def csv_download_page(request):
     return render(request, 'csvDownload/csvDownload.html')
 
 @login_required
+@require_GET
 def schedule_page(request):
     context = {
         "schedule_initial_data": build_schedule_initial_filters(user=request.user),
@@ -408,6 +413,7 @@ def schedule_page(request):
     return render(request, "schedule/schedule.html", context)
 
 @login_required
+@require_GET
 def home_view(request):
     """
     正式なhome画面。
@@ -423,6 +429,7 @@ def home_view(request):
     )
 
 @login_required
+@require_GET
 def parts_search_view(request):
     """
     部品検索画面を表示する。
