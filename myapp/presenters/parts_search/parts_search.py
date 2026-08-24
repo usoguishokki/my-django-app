@@ -7,10 +7,8 @@ from typing import Any, Union
 
 from myapp.domain.parts_search.parts_search import (
     PARTS_SEARCH_RESULT_LIMIT,
-    resolve_parts_section,
-)
-from myapp.services.parts_search.parts_search import (
     PartsSearchResult,
+    resolve_parts_section,
 )
 
 

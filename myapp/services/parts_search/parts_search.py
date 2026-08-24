@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
 from myapp.domain.parts_search.parts_search import (
     PartsSearchCriteria,
+    PartsSearchResult,
     build_parts_search_criteria,
 )
 from myapp.domain.parts_search.rack_location import (
@@ -20,37 +20,6 @@ from myapp.selectors.parts_search.rack_location import (
 )
 
 
-@dataclass(frozen=True)
-class PartsSearchResult:
-    """
-    部品検索結果。
-
-    criteria:
-        正規化・検証済みの検索条件。
-
-    items:
-        MARPから取得し、
-        保管場所情報を付加した部品情報。
-    """
-
-    criteria: PartsSearchCriteria
-    items: tuple[dict[str, Any], ...]
-
-    @property
-    def count(self) -> int:
-        """
-        検索結果件数を返す。
-        """
-        return len(
-            self.items
-        )
-
-    @property
-    def found(self) -> bool:
-        """
-        検索結果が1件以上あるか判定する。
-        """
-        return self.count > 0
 
 
 def _attach_rack_location(

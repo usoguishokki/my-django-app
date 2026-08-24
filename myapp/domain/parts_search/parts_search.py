@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 
 MAX_SEARCH_VALUE_LENGTH = 100
@@ -126,6 +126,32 @@ class PartsSearchCriteria:
             "parts_name": self.parts_name,
             "parts_model": self.parts_model,
         }
+
+
+@dataclass(frozen=True)
+class PartsSearchResult:
+    """
+    部品検索結果。
+
+    criteria:
+        正規化・検証済みの検索条件。
+
+    items:
+        保管場所情報を付加した部品情報。
+    """
+
+    criteria: PartsSearchCriteria
+    items: tuple[dict[str, Any], ...]
+
+    @property
+    def count(self) -> int:
+        return len(
+            self.items
+        )
+
+    @property
+    def found(self) -> bool:
+        return self.count > 0
 
 
 _SEARCH_FIELD_LABELS = {
