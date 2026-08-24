@@ -13,7 +13,16 @@ from myapp.selectors.calendar import (
 )
 from myapp.selectors.control import get_controls_for_inspection_standard_machine_options
 from myapp.selectors.csv_download import get_plan_rows_for_csv
-from myapp.services.csv_download.inspection_standard import build_inspection_standard_csv_response
+from myapp.services.csv_download.inspection_standard import (
+    build_inspection_standard_csv_source,
+    build_inspection_standard_csv_response,
+)
+
+from myapp.presenters.csv_download import (
+    build_inspection_standard_csv_header,
+    build_inspection_standard_csv_rows,
+)
+
 
 from myapp.services.csv_download.streaming_csv_builder import stream_csv_response
 from myapp.services.csv_download.row_presenter import present_occurrence_row
@@ -77,7 +86,21 @@ def inspection_standard_download_api(request):
         return json_error_response("control_no is required")
 
     try:
-        return build_inspection_standard_csv_response(control_no=control_no)
+        checks, filename = build_inspection_standard_csv_source(
+            control_no=control_no,
+        )
+
+        header = build_inspection_standard_csv_header()
+
+        rows = build_inspection_standard_csv_rows(
+            checks=checks,
+        )
+
+        return build_inspection_standard_csv_response(
+            header=header,
+            rows=rows,
+            filename=filename,
+        )
     except InvalidMachineSelection as exc:
         return json_error_response(str(exc))
 
