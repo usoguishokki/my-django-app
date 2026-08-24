@@ -24,9 +24,9 @@ from myapp.selectors.card_work.card_work import (
 
 from myapp.selectors.members import select_all_members
 
-from myapp.presenters.card_work.card_work import (
-    build_card_work_error_state,
-    build_card_work_initial_state,
+from myapp.domain.card_work.card_work_page_results import (
+    CardWorkPageErrorResult,
+    CardWorkPageSuccessResult,
 )
 
 
@@ -36,9 +36,7 @@ def build_card_work_page_context(*, request, team_profiles):
         team_profiles=team_profiles,
     )
 
-    return {
-        "card_work_initial_state": initial_state,
-    }
+    return initial_state
 
 
 def build_card_work_initial_state_from_request(*, request, team_profiles):
@@ -55,7 +53,7 @@ def build_card_work_initial_state_from_request(*, request, team_profiles):
         )
 
     if source != "home" or scope != "my_tasks":
-        return build_card_work_error_state(
+        return CardWorkPageErrorResult(
             message="このカード作業画面はhomeから開いてください。",
             source=source,
             scope=scope,
@@ -67,7 +65,7 @@ def build_card_work_initial_state_from_request(*, request, team_profiles):
     status_value = resolve_card_work_status_value(status_key)
 
     if not target_date:
-        return build_card_work_error_state(
+        return CardWorkPageErrorResult(
             message="date の形式が正しくありません。",
             source=source,
             scope=scope,
@@ -76,7 +74,7 @@ def build_card_work_initial_state_from_request(*, request, team_profiles):
         )
 
     if not status_value:
-        return build_card_work_error_state(
+        return CardWorkPageErrorResult(
             message="対象外のステータスです。",
             source=source,
             scope=scope,
@@ -114,7 +112,7 @@ def build_card_work_initial_state_from_request(*, request, team_profiles):
     plans = list(plans_qs[:300])
     members = list(select_all_members())
 
-    return build_card_work_initial_state(
+    return CardWorkPageSuccessResult(
         source=source,
         scope=scope,
         status_key=status_key,
@@ -138,7 +136,7 @@ def build_card_work_initial_state_from_work_contents(
     try:
         plan_id = int(plan_id_text)
     except (TypeError, ValueError):
-        return build_card_work_error_state(
+        return CardWorkPageErrorResult(
             message="plan_id が正しくありません。",
             source="work_contents",
             scope="plan",
@@ -155,7 +153,7 @@ def build_card_work_initial_state_from_work_contents(
     plans = list(plans_qs[:1])
 
     if not plans:
-        return build_card_work_error_state(
+        return CardWorkPageErrorResult(
             message="対象カードが見つかりません。",
             source="work_contents",
             scope="plan",
@@ -172,7 +170,7 @@ def build_card_work_initial_state_from_work_contents(
         base_plans_qs,
     )
 
-    return build_card_work_initial_state(
+    return CardWorkPageSuccessResult(
         source="work_contents",
         scope="plan",
         status_key="",

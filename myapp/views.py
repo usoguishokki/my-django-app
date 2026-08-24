@@ -30,6 +30,14 @@ from myapp.presenters.inspection_standards import (
 from myapp.services.card_work.card_work_page import (
     build_card_work_page_context,
 )
+from myapp.domain.card_work.card_work_page_results import (
+    CardWorkPageErrorResult,
+    CardWorkPageSuccessResult,
+)
+from myapp.presenters.card_work.card_work import (
+    build_card_work_error_state,
+    build_card_work_initial_state,
+)
 
 from myapp.selectors.work_contents import (
     select_work_contents_plans,
@@ -118,10 +126,43 @@ def card_work(request):
         cache_manager_if=cache_manager_if,
     )
 
-    context = build_card_work_page_context(
+    result = build_card_work_page_context(
         request=request,
         team_profiles=team_profiles,
     )
+
+    if isinstance(result, CardWorkPageErrorResult):
+        initial_state = build_card_work_error_state(
+            message=result.message,
+            source=result.source,
+            scope=result.scope,
+            status_key=result.status_key,
+            date_text=result.date_text,
+        )
+    else:
+        assert isinstance(
+            result,
+            CardWorkPageSuccessResult,
+        )
+
+        initial_state = build_card_work_initial_state(
+            source=result.source,
+            scope=result.scope,
+            status_key=result.status_key,
+            status_label=result.status_label,
+            date_text=result.date_text,
+            plans=result.plans,
+            members=result.members,
+            login_user=result.login_user,
+            active_filters=result.active_filters,
+            filter_options=result.filter_options,
+            filter_rows=result.filter_rows,
+            summary_count=result.summary_count,
+        )
+
+    context = {
+        "card_work_initial_state": initial_state,
+    }
 
     return render(request, "card/card_work.html", context)
         
