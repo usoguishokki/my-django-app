@@ -36,8 +36,13 @@ from myapp.presenters.inspection_card_plans_presenter import (
     build_inspection_card_plans_payload,
 )
 from myapp.services.inspection_standard_history_query import (
-    build_inspection_standard_history_list_payload,
-    build_inspection_standard_history_detail_payload,
+    build_inspection_standard_history_list_result,
+    build_inspection_standard_history_detail_result,
+)
+
+from myapp.presenters.inspection_standard_history import (
+    present_inspection_standard_history_list,
+    present_inspection_standard_history_detail,
 )
 from myapp.services.inspection_standard_history_approval import (
     approve_inspection_standard_history,
@@ -461,14 +466,19 @@ def inspection_standard_history_list_api(request):
         machine = request.GET.get('machine', '')
         control_no = request.GET.get('control_no', '')
         
-        result = build_inspection_standard_history_list_payload(
+        histories = build_inspection_standard_history_list_result(
             inspection_no=inspection_no,
             machine=machine,
             control_no=control_no,
         )
 
+        payload = {
+            'success': True,
+            'histories': present_inspection_standard_history_list(histories),
+        }
+
         return json_response(
-            result,
+            payload,
             status=200,
         )
 
@@ -570,12 +580,17 @@ def inspection_standard_history_detail_api(request, history_id: int):
     """
 
     try:
-        result = build_inspection_standard_history_detail_payload(
+        history = build_inspection_standard_history_detail_result(
             history_id=history_id,
         )
 
+        payload = {
+            'success': True,
+            'history': present_inspection_standard_history_detail(history),
+        }
+
         return json_response(
-            result,
+            payload,
             status=200,
         )
 
