@@ -60,12 +60,6 @@ def update_inspection_standard_history_note(
         )
 
 
-    if is_inspection_standard_history_fully_approved(history):
-        raise InspectionStandardError(
-            '班長・組長・工長の承認が完了しているため、'
-            '変更理由は編集できません。'
-        )
-
     note_max_length = history._meta.get_field('note').max_length
 
     normalized_note = normalize_inspection_standard_history_note(
@@ -74,9 +68,6 @@ def update_inspection_standard_history_note(
     )
 
     current_note = str(history.note or '')
-
-    if normalized_note == current_note:
-        return history
 
     if normalized_note == current_note:
         return history
