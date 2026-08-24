@@ -5,8 +5,10 @@ from __future__ import annotations
 import logging
 
 import pyodbc
-from django.http import HttpRequest, JsonResponse
+from django.http import HttpRequest, HttpResponse
 from django.views.decorators.http import require_GET
+
+from myapp.http.json import json_response
 
 from myapp.domain.parts_search.parts_search import (
     PartsSearchValidationError,
@@ -27,11 +29,11 @@ def _error_response(
     code: str,
     message: str,
     status: int,
-) -> JsonResponse:
+) -> HttpResponse:
     """
     部品検索APIのエラーレスポンスを生成する。
     """
-    return JsonResponse(
+    return json_response(
         {
             "success": False,
             "error": {
@@ -41,9 +43,6 @@ def _error_response(
             "items": [],
         },
         status=status,
-        json_dumps_params={
-            "ensure_ascii": False,
-        },
     )
 
 
@@ -83,7 +82,7 @@ def _get_search_parameters(
 @require_GET
 def parts_search_api(
     request: HttpRequest,
-) -> JsonResponse:
+) -> HttpResponse:
     """
     指定された条件で部品を検索する。
 
@@ -126,12 +125,9 @@ def parts_search_api(
             result
         )
 
-        return JsonResponse(
+        return json_response(
             payload,
             status=200,
-            json_dumps_params={
-                "ensure_ascii": False,
-            },
         )
 
     except PartsSearchValidationError as error:
