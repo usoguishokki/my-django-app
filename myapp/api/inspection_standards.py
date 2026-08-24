@@ -514,13 +514,13 @@ def inspection_standard_history_note_update_api(
     try:
         payload = _parse_json_body(request)
 
-        result = update_inspection_standard_history_note(
+        history = update_inspection_standard_history_note(
             history_id=history_id,
             note=payload.get('note'),
         )
 
         return _success_response({
-            'history': result,
+            'history': present_inspection_standard_history_detail(history),
         })
 
     except InspectionStandardError as error:
@@ -549,13 +549,13 @@ def inspection_standard_history_cancel_api(
     """
 
     try:
-        result = cancel_inspection_standard_history(
+        history = cancel_inspection_standard_history(
             history_id=history_id,
             cancelled_by=request.user,
         )
 
         return _success_response({
-            'history': result,
+            'history': present_inspection_standard_history_detail(history),
         })
 
     except InspectionStandardError as error:
@@ -632,14 +632,14 @@ def inspection_standard_history_approve_api(request, history_id: int):
             or ''
         )
 
-        result = approve_inspection_standard_history(
+        history = approve_inspection_standard_history(
             history_id=history_id,
             approval_role=approval_role,
             approved_by=request.user,
         )
 
         return _success_response({
-            'history': result,
+            'history': present_inspection_standard_history_detail(history),
         })
 
     except InspectionStandardError as error:

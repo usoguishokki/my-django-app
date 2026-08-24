@@ -13,9 +13,6 @@ from myapp.domain.inspection_standard_history_approval_policy import (
 from myapp.domain.inspection_standard_history_note_policy import (
     normalize_inspection_standard_history_note,
 )
-from myapp.presenters.inspection_standard_history import (
-    present_inspection_standard_history_detail,
-)
 from myapp.selectors.inspection_standard_history import (
     select_inspection_standard_history_for_update_by_id,
 )
@@ -31,7 +28,7 @@ def update_inspection_standard_history_note(
     *,
     history_id: int,
     note,
-) -> dict:
+):
     """
     点検基準書変更履歴の変更理由を更新する。
 
@@ -79,12 +76,12 @@ def update_inspection_standard_history_note(
     current_note = str(history.note or '')
 
     if normalized_note == current_note:
-        return present_inspection_standard_history_detail(history)
+        return history
 
     if normalized_note == current_note:
-        return present_inspection_standard_history_detail(history)
+        return history
 
     history.note = normalized_note
     history.save(update_fields=['note'])
 
-    return present_inspection_standard_history_detail(history)
+    return history

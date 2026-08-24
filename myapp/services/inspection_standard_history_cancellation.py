@@ -19,9 +19,6 @@ from myapp.domain.inspection_standard_history_cancellation_policy import (
     is_inspection_standard_history_cancelled,
 )
 from myapp.models import InspectionStandardHistory
-from myapp.presenters.inspection_standard_history import (
-    present_inspection_standard_history_detail,
-)
 from myapp.selectors.inspection_standard_history import (
     select_inspection_standard_history_for_update_by_id,
 )
@@ -32,7 +29,7 @@ def cancel_inspection_standard_history(
     *,
     history_id: int,
     cancelled_by,
-) -> dict:
+):
     """
     点検基準書の変更履歴を取り消す。
 
@@ -58,7 +55,7 @@ def cancel_inspection_standard_history(
         cancelled_by=cancelled_by,
     )
 
-    return present_inspection_standard_history_detail(history)
+    return history
 
 
 def validate_inspection_standard_history_cancellation(

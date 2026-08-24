@@ -12,9 +12,6 @@ from myapp.domain.errors import (
     InspectionStandardNotFound,
 )
 from myapp.models import InspectionStandardHistory
-from myapp.presenters.inspection_standard_history import (
-    present_inspection_standard_history_detail,
-)
 
 
 from myapp.domain.inspection_standard_history_approval_policy import (
@@ -84,7 +81,7 @@ def approve_inspection_standard_history(
     history_id: int,
     approval_role: str,
     approved_by,
-) -> dict:
+):
     """
     点検基準書変更履歴の承認を行う。
 
@@ -114,7 +111,7 @@ def approve_inspection_standard_history(
         approved_by=approved_by,
     )
 
-    return present_inspection_standard_history_detail(history)
+    return history
 
 
 def get_approval_role_config(approval_role: str) -> ApprovalRoleConfig:
