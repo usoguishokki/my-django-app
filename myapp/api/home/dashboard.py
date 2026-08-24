@@ -7,7 +7,10 @@ from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
 
-from myapp.http.json import json_response
+from myapp.http.json import (
+    json_error_response,
+    json_response,
+)
 
 
 from myapp.models import UserProfile
@@ -42,12 +45,22 @@ def get_home_user_profile(request, *, include_user: bool = False):
     )
 
 
-def build_user_profile_not_found_response():
+def build_home_success_response(
+    payload,
+):
     return json_response(
         {
-            "status": "error",
-            "message": "ユーザープロフィールが見つかりません。",
+            "status": "success",
+            "data": payload,
         },
+    )
+
+
+
+
+def build_user_profile_not_found_response():
+    return json_error_response(
+        "ユーザープロフィールが見つかりません。",
         status=404,
     )
 
@@ -73,19 +86,13 @@ def home_overall_progress_api(request):
     except Exception:
         logger.exception("[home_overall_progress_api] failed")
 
-        return json_response(
-            {
-                "status": "error",
-                "message": "全体進捗の取得に失敗しました。",
-            },
+        return json_error_response(
+            "全体進捗の取得に失敗しました。",
             status=500,
-            )
+        )
 
-    return json_response(
-        {
-            "status": "success",
-            "data": payload,
-        },
+    return build_home_success_response(
+        payload,
     )
 
 
@@ -107,19 +114,13 @@ def home_my_team_progress_api(request):
     except Exception:
         logger.exception("[home_my_team_progress_api] failed")
 
-        return json_response(
-            {
-                "status": "error",
-                "message": "所属班進捗の取得に失敗しました。",
-            },
+        return json_error_response(
+            "所属班進捗の取得に失敗しました。",
             status=500,
-            )
+        )
 
-    return json_response(
-        {
-            "status": "success",
-            "data": payload,
-        },
+    return build_home_success_response(
+        payload,
     )
 
 
@@ -137,22 +138,16 @@ def home_my_team_day_detail_api(request):
     status_key = request.GET.get("statusKey", "")
 
     if not target_date:
-        return json_response(
-            {
-                "status": "error",
-                "message": "日付が正しくありません。",
-            },
+        return json_error_response(
+            "日付が正しくありません。",
             status=400,
-            )
+        )
 
     if not status_key:
-        return json_response(
-            {
-                "status": "error",
-                "message": "ステータスが指定されていません。",
-            },
+        return json_error_response(
+            "ステータスが指定されていません。",
             status=400,
-            )
+        )
 
     try:
         user_profile = get_home_user_profile(request)
@@ -168,19 +163,13 @@ def home_my_team_day_detail_api(request):
     except Exception:
         logger.exception("[home_my_team_day_detail_api] failed")
 
-        return json_response(
-            {
-                "status": "error",
-                "message": "所属班進捗の詳細取得に失敗しました。",
-            },
+        return json_error_response(
+            "所属班進捗の詳細取得に失敗しました。",
             status=500,
-            )
+        )
 
-    return json_response(
-        {
-            "status": "success",
-            "data": payload,
-        },
+    return build_home_success_response(
+        payload,
     )
 
 
@@ -205,19 +194,13 @@ def home_my_tasks_api(request):
     except Exception:
         logger.exception("[home_my_tasks_api] failed")
 
-        return json_response(
-            {
-                "status": "error",
-                "message": "個別進捗の取得に失敗しました。",
-            },
+        return json_error_response(
+            "個別進捗の取得に失敗しました。",
             status=500,
-            )
+        )
 
-    return json_response(
-        {
-            "status": "success",
-            "data": payload,
-        },
+    return build_home_success_response(
+        payload,
     )
 
 
@@ -259,17 +242,11 @@ def home_assign_member_options_api(request):
     except Exception:
         logger.exception("[home_assign_member_options_api] failed")
 
-        return json_response(
-            {
-                "status": "error",
-                "message": "作業者候補の取得に失敗しました。",
-            },
+        return json_error_response(
+            "作業者候補の取得に失敗しました。",
             status=500,
-            )
+        )
 
-    return json_response(
-        {
-            "status": "success",
-            "data": payload,
-        },
+    return build_home_success_response(
+        payload,
     )
