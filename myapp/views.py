@@ -418,6 +418,17 @@ def _handle_achievements_post(
             status=400,
         )
 
+    return _build_achievement_month_details_response(
+        request=request,
+        selected_month=selected_month,
+    )
+
+
+def _build_achievement_month_details_response(
+    *,
+    request,
+    selected_month,
+):
     cache_manager = request.cache_manager
     cache_manager_if = request.cache_manager_if
 
