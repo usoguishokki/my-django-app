@@ -14,7 +14,7 @@ from .forms import LoginForm
 import logging
 
 
-from myapp.domain.schedule_initial_filters import (
+from myapp.services.schedule_initial_filters import (
     build_schedule_initial_filters,
 )
 from myapp.domain.errors import InvalidMachineSelection
