@@ -138,22 +138,18 @@ def card_work(request):
     return render(request, "card/card_work.html", context)
         
 @login_required
+@require_http_methods(["GET", "POST"])
 def workContents_view(request):
-    cache_manager_if = request.cache_manager_if
-    team_profiles = build_team_profile_context(
-        request=request,
-        cache_manager_if=cache_manager_if,
-    )
-    organization_code = request.organization_code
-    
-        
+    if request.method == "GET":
+        cache_manager_if = request.cache_manager_if
 
-    if (
-        request.method != "POST"
-        or request.headers.get("X-Requested-With") != "XMLHttpRequest"
-    ):
+        team_profiles = build_team_profile_context(
+            request=request,
+            cache_manager_if=cache_manager_if,
+        )
+
         applications_data = select_work_contents_plans(
-            organization_code=organization_code,
+            organization_code=request.organization_code,
         )
 
         applications_data_list = build_work_contents_rows(
@@ -168,91 +164,149 @@ def workContents_view(request):
                 "members": team_profiles["profiles"],
             },
         )
+
+    if (
+        request.headers.get("X-Requested-With")
+        != "XMLHttpRequest"
+    ):
+        return HttpResponseBadRequest(
+            "Unsupported request."
+        )
+
+    data, action, parse_error = extract_request_data(
+        request
+    )
+
+    if parse_error:
+        return handle_view_error(
+            parse_error,
+            status_code=400,
+            message="Invalid JSON data",
+        )
+
+    if action != "fetch_approval_or_rejection":
+        return HttpResponseBadRequest(
+            "Invalid action"
+        )
+
     try:
-        data, action, parse_error = extract_request_data(request)
-        if parse_error:
-            return handle_view_error(parse_error, status_code=400, message='Invalid JSON data')
-        if action != "fetch_approval_or_rejection":
-            return HttpResponseBadRequest('Invalid action')
-        detailObj = data.get('detail')
-        applicant_user = team_profiles["user_profile"].user
+        cache_manager_if = request.cache_manager_if
 
+        team_profiles = build_team_profile_context(
+            request=request,
+            cache_manager_if=cache_manager_if,
+        )
 
-        details = detailObj if isinstance(detailObj, list) else [detailObj]
+        detail_obj = data.get("detail")
+
+        details = (
+            detail_obj
+            if isinstance(detail_obj, list)
+            else [detail_obj]
+        )
+
+        applicant_user = (
+            team_profiles["user_profile"].user
+        )
+
         update_work_contents_plans(
             details=details,
             applicant_user=applicant_user,
         )
-        plan_ids = [d.get('planId') for d in details if d.get('planId') is not None]
-                        
-        return JsonResponse({'status': 'success', 
-                             'message': 'Plan updated successfuly', 
-                             'planId': plan_ids,
-                            })
-        
+
+        plan_ids = [
+            detail.get("planId")
+            for detail in details
+            if detail.get("planId") is not None
+        ]
+
+        return JsonResponse({
+            "status": "success",
+            "message": "Plan updated successfuly",
+            "planId": plan_ids,
+        })
+
     except ValueError as e:
-        return handle_view_error(e, message=str(e))
+        return handle_view_error(
+            e,
+            message=str(e),
+        )
+
     except Exception as e:
-        return handle_view_error(e, message=f'Error processing request: {str(e)}')
+        return handle_view_error(
+            e,
+            message=(
+                f"Error processing request: {str(e)}"
+            ),
+        )
 
 
-     
-     
 @login_required
+@require_http_methods(["GET", "POST"])
 def inspectionStadards_view(request):
-    if request.method == 'GET':
+    if request.method == "GET":
         context = build_inspection_standards_context(
             organization_code=request.organization_code,
         )
 
         return render(
             request,
-            'inspectionStandards/inspectionStandards.html',
+            "inspectionStandards/inspectionStandards.html",
             context,
         )
 
     if (
-        request.method == 'POST'
-        and request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        request.headers.get("X-Requested-With")
+        != "XMLHttpRequest"
     ):
-        data, action, parse_error = extract_request_data(request)
-
-        if parse_error:
-            return handle_view_error(
-                parse_error,
-                status_code=400,
-                message='Invalid JSON data',
-            )
-
-        if action != 'get_details':
-            return JsonResponse(
-                {
-                    'status': 'error',
-                    'message': 'Unsupported action.',
-                },
-                status=400,
-                json_dumps_params={'ensure_ascii': False},
-            )
-
-        try:
-            payload = build_inspection_standard_details_payload(
-                filter_data=data.get('data'),
-            )
-        except InvalidMachineSelection as e:
-            return handle_view_error(
-                e,
-                status_code=400,
-                message=str(e),
-            )
-
-        return JsonResponse(
-            payload,
-            json_dumps_params={'ensure_ascii': False},
+        return HttpResponseBadRequest(
+            "Unsupported request."
         )
 
-    return HttpResponseBadRequest('Unsupported request.')
-    
-    
+    data, action, parse_error = extract_request_data(
+        request
+    )
+
+    if parse_error:
+        return handle_view_error(
+            parse_error,
+            status_code=400,
+            message="Invalid JSON data",
+        )
+
+    if action != "get_details":
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "Unsupported action.",
+            },
+            status=400,
+            json_dumps_params={
+                "ensure_ascii": False,
+            },
+        )
+
+    try:
+        payload = (
+            build_inspection_standard_details_payload(
+                filter_data=data.get("data"),
+            )
+        )
+    except InvalidMachineSelection as e:
+        return handle_view_error(
+            e,
+            status_code=400,
+            message=str(e),
+        )
+
+    return JsonResponse(
+        payload,
+        json_dumps_params={
+            "ensure_ascii": False,
+        },
+    )
+
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def achievements_view(request):
