@@ -24,6 +24,7 @@ from myapp.domain.shifts import calc_shift_window_dt
 from myapp.domain.schedule_bulk_registration import (
     BulkRegistrationTask,
     BulkRegistrationBusyBlock,
+    BulkRegistrationCommitResult,
     ScheduleBulkRegistrationAllocator,
     normalize_time_zone as normalize_bulk_time_zone,
     normalize_naive_datetime,
@@ -46,9 +47,6 @@ from myapp.selectors.plan import (
     aggregate_plan_count_and_man_hours,
 )
 
-from myapp.presenters.schedule_bulk_registration import (
-    build_bulk_registration_commit_response,
-)
 
 
 def get_required_bulk_registration_member(member_id):
@@ -412,7 +410,7 @@ def bulk_register_schedule_events(*, payload, requested_user):
         plan_ids=updated_plan_ids,
     )
 
-    return build_bulk_registration_commit_response(
+    return BulkRegistrationCommitResult(
         assigned_plan_ids=updated_plan_ids,
         unassigned_plan_ids=allocation_result.unassigned_plan_ids,
         aggregate=aggregate,

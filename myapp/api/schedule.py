@@ -50,6 +50,10 @@ from myapp.services.schedule_bulk_registration import (
     bulk_register_schedule_events,
 )
 
+from myapp.presenters.schedule_bulk_registration import (
+    build_bulk_registration_commit_response,
+)
+
 
 @require_GET
 @login_required
@@ -290,7 +294,7 @@ def schedule_bulk_registration_api(request):
         )
 
     try:
-        response = bulk_register_schedule_events(
+        result = bulk_register_schedule_events(
             payload=payload,
             requested_user=request.user,
         )
@@ -318,6 +322,12 @@ def schedule_bulk_registration_api(request):
             str(exc),
             status=404,
         )
+
+    response = build_bulk_registration_commit_response(
+        assigned_plan_ids=result.assigned_plan_ids,
+        unassigned_plan_ids=result.unassigned_plan_ids,
+        aggregate=result.aggregate,
+    )
 
     return json_response(
         response,

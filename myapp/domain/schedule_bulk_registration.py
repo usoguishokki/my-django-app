@@ -41,6 +41,13 @@ class BulkRegistrationAllocationResult:
     unassigned_plan_ids: list[int]
 
 
+@dataclass(frozen=True)
+class BulkRegistrationCommitResult:
+    assigned_plan_ids: list[int]
+    unassigned_plan_ids: list[int]
+    aggregate: dict
+
+
 def normalize_time_zone(value):
     value = (value or '').strip()
 
