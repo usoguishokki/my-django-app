@@ -5,12 +5,12 @@ from datetime import date
 from typing import Optional
 
 
-from myapp.presenters.home.dashboard_presenter import (
-    build_home_assign_member_options_payload,
-    build_my_tasks_payload,
-    build_my_team_day_detail_payload,
-    build_my_team_progress_payload,
-    build_overall_progress_payload,
+from myapp.domain.home.dashboard_results import (
+    HomeAssignMemberOptionsResult,
+    HomeMyTasksResult,
+    HomeMyTeamDayDetailResult,
+    HomeMyTeamProgressResult,
+    HomeOverallProgressResult,
 )
 
 
@@ -100,7 +100,7 @@ def build_home_overall_progress_response(*, user_profile) -> dict:
         **shift_context,
     )
 
-    return build_overall_progress_payload(
+    return HomeOverallProgressResult(
         overall_counts=overall_counts,
         overall_attention_rows=overall_attention_rows,
         schedule_date_alias_map=schedule_date_alias_map,
@@ -265,7 +265,7 @@ def build_home_my_team_progress_response(*, user_profile, target_date=None) -> d
         base_date=target_date,
     )
 
-    return build_my_team_progress_payload(
+    return HomeMyTeamProgressResult(
         affiliation_id=scope["affiliation_id"],
         affiliation_name=scope["affiliation_name"],
         scope_type=scope["scope_type"],
@@ -346,7 +346,7 @@ def build_home_my_team_day_detail_response(
         status_key=status_key,
     )
 
-    return build_my_team_day_detail_payload(
+    return HomeMyTeamDayDetailResult(
         target_date=target_date,
         status_key=status_key,
         task_rows=task_rows,
@@ -521,7 +521,7 @@ def build_home_my_tasks_response(*, user_profile) -> dict:
         **shift_context,
     )
 
-    return build_my_tasks_payload(
+    return HomeMyTasksResult(
         holder=holder,
         task_rows=task_rows,
         schedule_date_alias_map=schedule_date_alias_map,
@@ -545,7 +545,7 @@ def build_home_assign_member_options_response(*, user_profile) -> dict:
         scope["affiliation_ids"]
     )
 
-    return build_home_assign_member_options_payload(
+    return HomeAssignMemberOptionsResult(
         scope=scope,
         members=members,
     )

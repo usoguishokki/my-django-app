@@ -29,6 +29,14 @@ from myapp.services.home.dashboard import (
     build_home_overall_progress_response,
 )
 
+from myapp.presenters.home.dashboard_presenter import (
+    build_home_assign_member_options_payload,
+    build_my_tasks_payload,
+    build_my_team_day_detail_payload,
+    build_my_team_progress_payload,
+    build_overall_progress_payload,
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -71,8 +79,20 @@ def home_overall_progress_api(request):
         return build_user_profile_not_found_response()
 
     try:
-        payload = build_home_overall_progress_response(
+        result = build_home_overall_progress_response(
             user_profile=user_profile,
+        )
+        payload = build_overall_progress_payload(
+            overall_counts=result.overall_counts,
+            overall_attention_rows=result.overall_attention_rows,
+            schedule_date_alias_map=result.schedule_date_alias_map,
+            shift_pattern_map=result.shift_pattern_map,
+            pattern_time_map=result.pattern_time_map,
+            login_affiliation_id=result.login_affiliation_id,
+            scope_type=result.scope_type,
+            scope_label=result.scope_label,
+            scope_description=result.scope_description,
+            title=result.title,
         )
     except Exception:
         logger.exception("[home_overall_progress_api] failed")
@@ -100,8 +120,18 @@ def home_my_team_progress_api(request):
         return build_user_profile_not_found_response()
 
     try:
-        payload = build_home_my_team_progress_response(
+        result = build_home_my_team_progress_response(
             user_profile=user_profile,
+        )
+        payload = build_my_team_progress_payload(
+            affiliation_id=result.affiliation_id,
+            affiliation_name=result.affiliation_name,
+            scope_type=result.scope_type,
+            team_title=result.team_title,
+            team_counts=result.team_counts,
+            today_item=result.today_item,
+            week_day_items=result.week_day_items,
+            current_period=result.current_period,
         )
     except Exception:
         logger.exception("[home_my_team_progress_api] failed")
@@ -148,10 +178,15 @@ def home_my_team_day_detail_api(request):
         return build_user_profile_not_found_response()
 
     try:
-        payload = build_home_my_team_day_detail_response(
+        result = build_home_my_team_day_detail_response(
             user_profile=user_profile,
             target_date=target_date,
             status_key=status_key,
+        )
+        payload = build_my_team_day_detail_payload(
+            target_date=result.target_date,
+            status_key=result.status_key,
+            task_rows=result.task_rows,
         )
     except Exception:
         logger.exception("[home_my_team_day_detail_api] failed")
@@ -180,8 +215,15 @@ def home_my_tasks_api(request):
         return build_user_profile_not_found_response()
 
     try:
-        payload = build_home_my_tasks_response(
+        result = build_home_my_tasks_response(
             user_profile=user_profile,
+        )
+        payload = build_my_tasks_payload(
+            holder=result.holder,
+            task_rows=result.task_rows,
+            schedule_date_alias_map=result.schedule_date_alias_map,
+            shift_pattern_map=result.shift_pattern_map,
+            pattern_time_map=result.pattern_time_map,
         )
     except Exception:
         logger.exception("[home_my_tasks_api] failed")
@@ -217,8 +259,12 @@ def home_assign_member_options_api(request):
         return build_user_profile_not_found_response()
 
     try:
-        payload = build_home_assign_member_options_response(
+        result = build_home_assign_member_options_response(
             user_profile=user_profile,
+        )
+        payload = build_home_assign_member_options_payload(
+            scope=result.scope,
+            members=result.members,
         )
     except Exception:
         logger.exception("[home_assign_member_options_api] failed")
