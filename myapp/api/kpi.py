@@ -13,6 +13,9 @@ from myapp.services.plan_detail import build_plan_detail_result
 from myapp.domain.kpi_request import parse_kpi_request_params
 from myapp.domain.kpi_cell_request import parse_kpi_cell_detail_params
 
+from myapp.presenters.kpi_cell_detail_presenter import (
+    build_cell_detail_payload,
+)
 from myapp.presenters.plan_detail_presenter import build_plan_detail_payload
 
 @require_GET
@@ -37,9 +40,27 @@ def kpi_matrix_cell_detail_api(request):
     """
     try:
         params = parse_kpi_cell_detail_params(request.GET)
-        payload, status = build_kpi_cell_detail_result(params)
-    
-        return json_response(payload, status=status)
+        result, status = build_kpi_cell_detail_result(params)
+
+        if status != 200:
+            return json_response(
+                result,
+                status=status,
+            )
+
+        payload = build_cell_detail_payload(
+            period_view=result.period_view,
+            period_key_raw=result.period_key_raw,
+            team_key=result.team_key,
+            metric=result.metric,
+            rows=result.rows,
+            day_ctx=result.day_ctx,
+        )
+
+        return json_response(
+            payload,
+            status=200,
+        )
     
     except ValueError as e:
         return json_error_response(

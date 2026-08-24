@@ -11,7 +11,7 @@ from myapp.selectors.kpi_queryset import build_kpi_plan_queryset, kpi_rows
 from myapp.selectors.hozen_calendar import get_month_ranges
 from myapp.selectors.kpi_context import build_day_context
 
-from myapp.presenters.kpi_cell_detail_presenter import build_cell_detail_payload
+from myapp.domain.kpi_cell_detail import KPICellDetailResult
 
 
 def build_kpi_cell_detail_result(params: KPICellDetailParams):
@@ -60,7 +60,7 @@ def build_kpi_cell_detail_result(params: KPICellDetailParams):
     if set(row_ids) != set(matched_ids):
         return {"status": "error", "message": "mismatch: returned set != cell set"}, 500
 
-    payload = build_cell_detail_payload(
+    result = KPICellDetailResult(
         period_view=period_view,
         period_key_raw=period_key_raw,
         team_key=team_key,
@@ -69,7 +69,7 @@ def build_kpi_cell_detail_result(params: KPICellDetailParams):
         day_ctx=day_ctx,
     )
 
-    return payload, 200
+    return result, 200
     
     
     
