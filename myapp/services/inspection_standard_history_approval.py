@@ -184,30 +184,6 @@ def validate_approval_state(
             )
 
 
-def validate_approval_state(
-    *,
-    history: InspectionStandardHistory,
-    role_config: ApprovalRoleConfig,
-) -> None:
-    if is_inspection_standard_history_approved(
-        history,
-        field_prefix=role_config.field_prefix,
-    ):
-        raise InspectionStandardError(
-            f'{role_config.label}はすでに完了しています。'
-        )
-
-    if role_config.prerequisite_field_prefix:
-        if not is_inspection_standard_history_approved(
-            history,
-            field_prefix=role_config.prerequisite_field_prefix,
-        ):
-            raise InspectionStandardError(
-                f'{role_config.prerequisite_label}が完了していないため、'
-                f'{role_config.label}はできません。'
-            )
-
-
 def apply_approval(
     *,
     history: InspectionStandardHistory,
