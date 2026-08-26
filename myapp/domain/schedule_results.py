@@ -38,3 +38,7 @@ class ScheduleTestCardTeamOptionsResult:
     target_date: Any
     active_date_alias: Any
     calendar_rows: Any
+
+@dataclass(frozen=True)
+class ScheduleEventMoveResult:
+    plan: Any

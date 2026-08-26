@@ -56,10 +56,7 @@ from myapp.domain.schedule_results import (
     ScheduleMemberWeekResult,
     ScheduleTestCardsWeekResult,
     ScheduleTestCardTeamOptionsResult,
-)
-
-from myapp.presenters.schedule import (
-    present_schedule_event_move_result,
+    ScheduleEventMoveResult,
 )
 
 from myapp.domain.errors import (
@@ -232,10 +229,9 @@ def move_schedule_event(*, payload, requested_user):
 
     plan.save(update_fields=update_fields)
 
-    return {
-        'status': 'success',
-        'data': present_schedule_event_move_result(plan),
-    }
+    return ScheduleEventMoveResult(
+        plan=plan,
+    )
     
 def build_schedule_test_cards_week_result(
     *,

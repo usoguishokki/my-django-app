@@ -50,6 +50,7 @@ from myapp.presenters.schedule import (
     present_schedule_test_card_team_options,
     present_schedule_test_cards_week_items,
     present_team_schedules,
+    present_schedule_event_move_result,
 )
 
 from myapp.services.schedule_bulk_pullback import (
@@ -170,10 +171,17 @@ def schedule_event_move_api(request):
         )
 
     try:
-        response = move_schedule_event(
+        result = move_schedule_event(
             payload=payload,
             requested_user=request.user,
         )
+
+        response = {
+            "status": "success",
+            "data": present_schedule_event_move_result(
+                result.plan
+            ),
+        }
 
     except InvalidScheduleEventMoveParams as exc:
         return json_error_response(
