@@ -8,11 +8,11 @@ from django.db import transaction
 from myapp.models import (
     Check_tb,
     Db_details_tb,
-    CheckStatus,
     InspectionStandardHistorySource,
     InspectionStandardHistoryOperation,
     InspectionStandardHistoryTargetType,
 )
+from myapp.domain.check_status import CheckStatus
 from myapp.services.inspection_standard_history import (
     create_inspection_standard_history,
     add_history_target,

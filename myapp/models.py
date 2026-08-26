@@ -11,6 +11,7 @@ from django.utils import timezone
 from myapp.domain.day_of_week import DayOfWeek
 from myapp.domain.time_zone_status import TimeZoneStatus
 from myapp.domain.db_detail_status import DbDetailStatus
+from myapp.domain.check_status import CheckStatus
 """
 初期のmakemigrationsの実行後に作成される、initial.pyに以下のコードを追加する必要ある。(カスタムマイグレーション)
 なぜ？ Menber_tb menber_idとpasswordを同じにするため。
@@ -55,14 +56,6 @@ class WeekSlot(models.IntegerChoices):
     W3 = 3, "3週目"
     W4 = 4, "4週目"
     RESERVE = 6, "予備週"
-
-class CheckStatus(models.TextChoices):
-    DAILY = "日常点検", "日常点検"
-    PERIODIC = "定期点検", "定期点検"
-    SYMPTOM_MGMT = "兆候管理", "兆候管理"
-    AUTOMATE = "自動化", "自動化"
-    MAKER = "メーカ", "メーカ"
-    ABOLISHED = "廃止", "廃止"
 
 class PlanStatus(models.TextChoices):
     WAITING = "配布待ち", "配布待ち"

@@ -1,7 +1,7 @@
 # myapp/domain/checks/constants.py
 from __future__ import annotations
 
-from myapp.models import CheckStatus
+from myapp.domain.check_status import CheckStatus
 
 from myapp.domain.db_detail_status import DbDetailStatus
 

@@ -6,7 +6,9 @@ from datetime import date, datetime, time, timedelta
 from django.db.models import Count, F, Max, Prefetch, Q, Sum
 from django.db.models.functions import Coalesce
 
-from myapp.models import Calendar_tb, Plan_tb, CheckStatus, Db_details_tb, PlanStatus
+from myapp.models import Calendar_tb, Plan_tb, Db_details_tb, PlanStatus
+
+from myapp.domain.check_status import CheckStatus
 
 from myapp.domain.periods import get_week_range, get_fiscal_year_range
 from myapp.domain.schedule_time_window import (
