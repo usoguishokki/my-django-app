@@ -51,6 +51,7 @@ from myapp.presenters.schedule import (
     present_schedule_test_cards_week_items,
     present_team_schedules,
     present_schedule_event_move_result,
+    build_schedule_bulk_move_payload,
 )
 
 from myapp.services.schedule_bulk_pullback import (
@@ -220,9 +221,13 @@ def schedule_bulk_move_api(request):
         )
 
     try:
-        response = bulk_move_schedule_events(
+        result = bulk_move_schedule_events(
             payload=payload,
             requested_user=request.user,
+        )
+
+        response = build_schedule_bulk_move_payload(
+            result.move_results,
         )
 
     except InvalidScheduleEventMoveParams as exc:

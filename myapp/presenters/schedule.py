@@ -230,6 +230,32 @@ def present_schedule_event_move_result(plan):
         'holderId': holder.member_id if holder else '',
         'planTime': plan.plan_time.isoformat() if plan.plan_time else None,
     }
+
+
+def build_schedule_bulk_move_payload(move_results):
+    data_list = [
+        present_schedule_event_move_result(
+            move_result.plan
+        )
+        for move_result in move_results
+    ]
+
+    plan_ids = [
+        data.get('planId') or data.get('plan_id')
+        for data in data_list
+        if data.get('planId') or data.get('plan_id')
+    ]
+
+    return {
+        'status': 'success',
+        'events': {
+            'plan_ids_list': plan_ids,
+            'count': len(move_results),
+        },
+        'data': {
+            'events': data_list,
+        },
+    }
     
 def present_schedule_test_cards_week_items(plans_qs):
     items = []

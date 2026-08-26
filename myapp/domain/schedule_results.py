@@ -42,3 +42,7 @@ class ScheduleTestCardTeamOptionsResult:
 @dataclass(frozen=True)
 class ScheduleEventMoveResult:
     plan: Any
+
+@dataclass(frozen=True)
+class ScheduleBulkMoveResult:
+    move_results: tuple[ScheduleEventMoveResult, ...]
