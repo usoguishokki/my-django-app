@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from django.db.models import QuerySet, Prefetch
 
-from myapp.models import Check_tb, Db_details_tb, DbDetailStatus
+from myapp.models import Check_tb, Db_details_tb
+
+from myapp.domain.db_detail_status import DbDetailStatus
 
 from myapp.domain.checks.constants import (
     CSV_EXCLUDED_CHECK_STATUSES,
