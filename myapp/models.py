@@ -7,6 +7,8 @@ from django.core.exceptions import ValidationError
 import uuid
 
 from django.utils import timezone
+
+from myapp.domain.day_of_week import DayOfWeek
 """
 初期のmakemigrationsの実行後に作成される、initial.pyに以下のコードを追加する必要ある。(カスタムマイグレーション)
 なぜ？ Menber_tb menber_idとpasswordを同じにするため。
@@ -51,15 +53,6 @@ class WeekSlot(models.IntegerChoices):
     W3 = 3, "3週目"
     W4 = 4, "4週目"
     RESERVE = 6, "予備週"
-
-class DayOfWeek(models.IntegerChoices):
-    MON = 0, "月"
-    TUE = 1, "火"
-    WED = 2, "水"
-    THU = 3, "木"
-    FRI = 4, "金"
-    SAT = 5, "土"
-    SUN = 6, "日"
 
 class CheckStatus(models.TextChoices):
     DAILY = "日常点検", "日常点検"

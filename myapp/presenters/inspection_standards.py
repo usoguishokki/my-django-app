@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Iterable, Mapping
 
-from myapp.models import DayOfWeek, CheckStatus, TimeZoneStatus, DbDetailStatus
+from myapp.models import CheckStatus, TimeZoneStatus, DbDetailStatus
+
+from myapp.domain.day_of_week import DayOfWeek
 
 from myapp.domain.sort_keys.inspection_no import inspection_no_sort_key
 from myapp.presenters.plan_schedule_rule import (

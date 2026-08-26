@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from myapp.models import DayOfWeek, WeekSlot
+from myapp.models import WeekSlot
+
+from myapp.domain.day_of_week import DayOfWeek
 
 
 CSV_HEADER = (
