@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Iterable, Mapping
 
-from myapp.models import CheckStatus, TimeZoneStatus, DbDetailStatus
+from myapp.models import CheckStatus, DbDetailStatus
+
+from myapp.domain.time_zone_status import TimeZoneStatus
 
 from myapp.domain.day_of_week import DayOfWeek
 

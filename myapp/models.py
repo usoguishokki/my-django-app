@@ -9,6 +9,7 @@ import uuid
 from django.utils import timezone
 
 from myapp.domain.day_of_week import DayOfWeek
+from myapp.domain.time_zone_status import TimeZoneStatus
 """
 初期のmakemigrationsの実行後に作成される、initial.pyに以下のコードを追加する必要ある。(カスタムマイグレーション)
 なぜ？ Menber_tb menber_idとpasswordを同じにするため。
@@ -67,10 +68,6 @@ class DbDetailStatus(models.TextChoices):
     MAKER = 'メーカ', 'メーカ'
     AUTOMATION = '自動化', '自動化'
     ABOLISHED = '廃止', '廃止'
-
-class TimeZoneStatus(models.TextChoices):
-    RUNNING = "稼働中", "稼働中"
-    STOPPED = "停止中", "停止中"
 
 class PlanStatus(models.TextChoices):
     WAITING = "配布待ち", "配布待ち"

@@ -1,6 +1,8 @@
 from django.db.models import Count, Q, Sum
 
-from myapp.models import PlanStatus, Plan_tb, TimeZoneStatus
+from myapp.models import PlanStatus, Plan_tb
+
+from myapp.domain.time_zone_status import TimeZoneStatus
 
 
 def select_achievement_daily_aggregates(
