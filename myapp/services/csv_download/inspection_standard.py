@@ -5,7 +5,9 @@ from urllib.parse import quote
 from django.http import HttpResponse
 
 from myapp.selectors.csv_download import get_inspection_standard_rows
-from myapp.models import Control_tb
+from myapp.selectors.control import (
+    select_control_by_control_no,
+)
 
 
 def build_inspection_standard_csv_source(
@@ -72,11 +74,14 @@ def _get_machine_name(control_no: str) -> str:
     if control_no == "all":
         return "全て"
 
-    try:
-        control = Control_tb.objects.get(control_no=control_no)
-        return control.machine or control_no
-    except Control_tb.DoesNotExist:
+    control = select_control_by_control_no(
+        control_no=control_no,
+    )
+
+    if control is None:
         return control_no
+
+    return control.machine or control_no
 
 
 def _build_inspection_standard_filename(machine_name: str) -> str:

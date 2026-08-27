@@ -67,6 +67,18 @@ def select_control_for_inspection_standard_filter(*, filter_data):
     )
     
 
+def select_control_by_control_no(*, control_no: str):
+    """
+    control_no に一致する Control を1件取得する。
+    """
+    try:
+        return Control_tb.objects.get(
+            control_no=control_no,
+        )
+    except Control_tb.DoesNotExist:
+        return None
+
+
 def select_control_for_update_by_control_no(*, control_no: str):
     """
     カード追加時、管理番号単位で採番を直列化するために Control_tb をロックする。
