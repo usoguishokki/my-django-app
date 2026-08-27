@@ -61,6 +61,20 @@ def select_member_by_user_id(user_id: str):
         .first()
     )
 
+def select_members_by_member_ids(*, member_ids):
+    """
+    member_id一覧に一致するメンバーをID辞書で取得する。
+    """
+    members = Member_tb.objects.filter(
+        member_id__in=member_ids,
+    )
+
+    return {
+        member.member_id: member
+        for member in members
+    }
+
+
 def select_member_by_member_id(member_id: str):
     return (
         member_base_qs()

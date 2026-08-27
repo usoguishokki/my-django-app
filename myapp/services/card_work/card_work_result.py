@@ -9,11 +9,14 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
 from myapp.models import (
-    Member_tb,
     Plan_tb,
     Practitioner_tb,
 )
 from myapp.domain.plan_status import PlanStatus
+
+from myapp.selectors.members import (
+    select_members_by_member_ids,
+)
 
 
 class CardWorkResultError(Exception):
@@ -105,7 +108,9 @@ def register_card_work_result(
         organization_code=organization_code,
     )
 
-    members_by_id = select_members_by_ids(params.practitioner_ids)
+    members_by_id = select_members_by_member_ids(
+        member_ids=params.practitioner_ids,
+    )
     missing_member_ids = [
         member_id
         for member_id in params.practitioner_ids
@@ -331,13 +336,6 @@ def replace_practitioners(*, plan, practitioner_ids, members_by_id):
     ])
 
 
-def select_members_by_ids(member_ids):
-    members = Member_tb.objects.filter(member_id__in=member_ids)
-
-    return {
-        member.member_id: member
-        for member in members
-    }
 
 
 def parse_required_int(value, field_label):
