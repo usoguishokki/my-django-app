@@ -340,6 +340,17 @@ def filter_test_card_plans_by_shift_pattern(
         | Q(inspection_no__practitioner_id=HOLIDAY_PRACTITIONER_ID)
     )
 
+def select_work_content_plans_by_ids(*, plan_ids):
+    """
+    作業内容更新対象のPlanをplan_id単位で取得する。
+    """
+    return (
+        Plan_tb.objects
+        .filter(plan_id__in=plan_ids)
+        .in_bulk(field_name="plan_id")
+    )
+
+
 def select_bulk_retract_plans(*, plan_ids):
     """
     スケジュール一括引戻し対象のPlanを取得する。

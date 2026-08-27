@@ -2,6 +2,10 @@ from django.db import transaction
 
 from myapp.models import Plan_tb
 
+from myapp.selectors.plan import (
+    select_work_content_plans_by_ids,
+)
+
 
 def update_work_contents_plans(
     *,
@@ -17,10 +21,8 @@ def update_work_contents_plans(
     if not plan_ids:
         return 0
 
-    plans_by_id = (
-        Plan_tb.objects
-        .filter(plan_id__in=plan_ids)
-        .in_bulk(field_name="plan_id")
+    plans_by_id = select_work_content_plans_by_ids(
+        plan_ids=plan_ids,
     )
 
     plans_to_update = []
