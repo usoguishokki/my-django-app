@@ -4,6 +4,10 @@ from myapp.models import Plan_tb
 
 from myapp.domain.plan_status import PlanStatus
 
+from myapp.selectors.plan import (
+    select_bulk_retract_plans,
+)
+
 from myapp.domain.errors import (
     InvalidScheduleEventRetractParams,
     ScheduleEventRetractNotFound,
@@ -45,12 +49,6 @@ def parse_bulk_retract_payload(payload):
     return list(dict.fromkeys(plan_ids))
 
 
-def select_bulk_retract_plans(plan_ids):
-    return list(
-        Plan_tb.objects
-        .filter(plan_id__in=plan_ids)
-        .select_related('inspection_no')
-    )
 
 def normalize_plan_status(status):
     return str(status or '').strip()
@@ -133,7 +131,9 @@ def bulk_retract_schedule_events(*, payload, requested_user):
 
     plan_ids = parse_bulk_retract_payload(payload)
 
-    plans = select_bulk_retract_plans(plan_ids)
+    plans = select_bulk_retract_plans(
+        plan_ids=plan_ids,
+    )
 
     validate_bulk_retract_targets(
         plans=plans,

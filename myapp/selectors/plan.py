@@ -340,6 +340,17 @@ def filter_test_card_plans_by_shift_pattern(
         | Q(inspection_no__practitioner_id=HOLIDAY_PRACTITIONER_ID)
     )
 
+def select_bulk_retract_plans(*, plan_ids):
+    """
+    スケジュール一括引戻し対象のPlanを取得する。
+    """
+    return list(
+        Plan_tb.objects
+        .filter(plan_id__in=plan_ids)
+        .select_related('inspection_no')
+    )
+
+
 def select_bulk_registration_target_plans(*, plan_ids):
     """
     一括登録対象のPlanを取得する。
