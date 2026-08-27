@@ -6,7 +6,12 @@ from datetime import timedelta
 from typing import Iterable
 
 from myapp.domain.checks.constants import CSV_EXCLUDED_CHECK_STATUSES
-from myapp.models import DateTag, PlanRuleCondition, PlanScheduleRule
+from myapp.domain.date_tag import DateTag
+from myapp.domain.plan_schedule_rule_types import (
+    PlanScheduleUnit,
+    PlanRuleConditionType,
+    PlanRuleConditionOperator,
+)
 
 
 @dataclass(frozen=True)
@@ -100,25 +105,25 @@ def is_calendar_row_matched_to_check_schedule(
 
     unit = getattr(rule, 'unit', None)
 
-    if unit == PlanScheduleRule.Unit.DAY:
+    if unit == PlanScheduleUnit.DAY:
         return is_day_rule_matched(
             check=check,
             calendar_row=calendar_row,
         )
 
-    if unit == PlanScheduleRule.Unit.WEEK:
+    if unit == PlanScheduleUnit.WEEK:
         return is_week_rule_matched(
             check=check,
             calendar_row=calendar_row,
         )
 
-    if unit == PlanScheduleRule.Unit.MONTH:
+    if unit == PlanScheduleUnit.MONTH:
         return is_month_rule_matched(
             check=check,
             calendar_row=calendar_row,
         )
 
-    if unit == PlanScheduleRule.Unit.YEAR:
+    if unit == PlanScheduleUnit.YEAR:
         return is_year_rule_matched(
             check=check,
             calendar_row=calendar_row,
@@ -265,28 +270,28 @@ def is_rule_condition_matched(
     op = condition.op
     value_json = condition.value_json
 
-    if cond_type == PlanRuleCondition.CondType.DAY_OF_WEEK:
+    if cond_type == PlanRuleConditionType.DAY_OF_WEEK:
         return is_in_condition_matched(
             actual=calendar_row.h_day_of_week,
             expected_values=value_json,
             op=op,
         )
 
-    if cond_type == PlanRuleCondition.CondType.WEEK_PARITY:
+    if cond_type == PlanRuleConditionType.WEEK_PARITY:
         return is_in_condition_matched(
             actual=calendar_row.h_week,
             expected_values=value_json,
             op=op,
         )
 
-    if cond_type == PlanRuleCondition.CondType.DATE_TAG:
+    if cond_type == PlanRuleConditionType.DATE_TAG:
         return is_eq_condition_matched(
             actual=calendar_row.date_tag,
             expected=value_json,
             op=op,
         )
 
-    if cond_type == PlanRuleCondition.CondType.NEXT_DATE_TAG:
+    if cond_type == PlanRuleConditionType.NEXT_DATE_TAG:
         next_row = calendar_by_date.get(calendar_row.h_date + timedelta(days=1))
         next_date_tag = getattr(next_row, 'date_tag', None)
 
@@ -300,7 +305,7 @@ def is_rule_condition_matched(
 
 
 def is_in_condition_matched(*, actual, expected_values, op: str) -> bool:
-    if op != PlanRuleCondition.Op.IN:
+    if op != PlanRuleConditionOperator.IN:
         return True
 
     if not isinstance(expected_values, list):
@@ -317,7 +322,7 @@ def get_condition_scalar_value(value_json):
 
 
 def is_eq_condition_matched(*, actual, expected, op: str) -> bool:
-    if op != PlanRuleCondition.Op.EQ:
+    if op != PlanRuleConditionOperator.EQ:
         return True
 
     actual_value = actual or 'NO_TAG'

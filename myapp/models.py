@@ -13,6 +13,12 @@ from myapp.domain.time_zone_status import TimeZoneStatus
 from myapp.domain.db_detail_status import DbDetailStatus
 from myapp.domain.check_status import CheckStatus
 from myapp.domain.plan_status import PlanStatus
+from myapp.domain.date_tag import DateTag
+from myapp.domain.plan_schedule_rule_types import (
+    PlanScheduleUnit,
+    PlanRuleConditionType,
+    PlanRuleConditionOperator,
+)
 """
 初期のmakemigrationsの実行後に作成される、initial.pyに以下のコードを追加する必要ある。(カスタムマイグレーション)
 なぜ？ Menber_tb menber_idとpasswordを同じにするため。
@@ -81,9 +87,6 @@ class InspectionStandardHistoryTargetType(models.TextChoices):
     DETAIL = "DETAIL", "点検項目"
     PLAN = "PLAN", "計画"
 
-
-class DateTag(models.TextChoices):
-    LONG_HOLIDAY = "LONG_HOLIDAY", "連休"
 
 class DateFilterManger(models.Manager):
     def filter_by_date(self, queryset, dates):
@@ -1102,11 +1105,7 @@ class PlanScheduleRule(models.Model):
       - 毎週: unit=W, interval=1
       - 2か月ごと: unit=M, interval=2
     """
-    class Unit(models.TextChoices):
-        DAY = "D", "Day"
-        WEEK = "W", "Week"
-        MONTH = "M", "Month"
-        YEAR = "Y", "Year"
+    Unit = PlanScheduleUnit
 
     name = models.CharField(max_length=64, unique=True)
     unit = models.CharField(max_length=1, choices=Unit.choices)
@@ -1142,15 +1141,9 @@ class PlanRuleCondition(models.Model):
       - rule=15, cond_type=DATE_TAG,   op=EQ, value_json="LONG_HOLIDAY"
     """
 
-    class CondType(models.TextChoices):
-        DAY_OF_WEEK = "DAY_OF_WEEK", "Day of week"
-        WEEK_PARITY = "WEEK_PARITY", "Week parity"
-        DATE_TAG = "DATE_TAG", "Date tag"
-        NEXT_DATE_TAG = "NEXT_DATE_TAG", "Next date tag"
+    CondType = PlanRuleConditionType
 
-    class Op(models.TextChoices):
-        EQ = "EQ", "Equals"
-        IN = "IN", "In"
+    Op = PlanRuleConditionOperator
 
     rule = models.ForeignKey(
         PlanScheduleRule,
