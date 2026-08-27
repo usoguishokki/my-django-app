@@ -36,6 +36,23 @@ def select_card_work_my_task_candidate_rows(
         )
     )
 
+def select_card_work_result_plan_for_update(*, plan_id):
+    """
+    実績登録対象のPlanを行ロック付きで取得する。
+    """
+    return (
+        Plan_tb.objects
+        .select_for_update()
+        .select_related(
+            "holder",
+            "applicant",
+            "approver",
+            "inspection_no__control_no__line_name__organization",
+        )
+        .get(plan_id=plan_id)
+    )
+
+
 def select_card_work_plan_by_id(*, plan_id):
     """
     指定された plan_id のPlanをCard Work表示用に取得する。

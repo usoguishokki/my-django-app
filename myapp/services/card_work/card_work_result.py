@@ -18,6 +18,10 @@ from myapp.selectors.members import (
     select_members_by_member_ids,
 )
 
+from myapp.selectors.card_work.card_work import (
+    select_card_work_result_plan_for_update,
+)
+
 
 class CardWorkResultError(Exception):
     pass
@@ -87,16 +91,8 @@ def register_card_work_result(
     params = parse_card_work_result_payload(payload)
 
     try:
-        plan = (
-            Plan_tb.objects
-            .select_for_update()
-            .select_related(
-                "holder",
-                "applicant",
-                "approver",
-                "inspection_no__control_no__line_name__organization",
-            )
-            .get(plan_id=params.plan_id)
+        plan = select_card_work_result_plan_for_update(
+            plan_id=params.plan_id,
         )
     except Plan_tb.DoesNotExist:
         raise CardWorkResultPlanNotFound("対象の計画が見つかりません。")
