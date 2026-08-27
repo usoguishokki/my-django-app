@@ -89,14 +89,17 @@ def iter_line_frame_base_dates(*, window_start, window_end):
         current_date += timedelta(days=1)
 
 
-def build_line_frame_candidates(*, window_start, window_end):
+def build_line_frame_candidates(*, window_start, window_end, worker_rows):
     frames = []
 
     for base_date in iter_line_frame_base_dates(
         window_start=window_start,
         window_end=window_end,
     ):
-        line_frame_map = build_factory_line_frames(base_date)
+        line_frame_map = build_factory_line_frames(
+            base_date,
+            worker_rows=worker_rows,
+        )
         frames.extend(line_frame_map.values())
 
     return sorted(frames, key=lambda frame: frame['start'])

@@ -35,6 +35,10 @@ from myapp.domain.schedule_bulk_registration import (
     build_bulk_registration_frames_from_worker_bands,
 )
 
+from myapp.selectors.field_workers import (
+    select_factory_line_frame_workers,
+)
+
 from myapp.selectors.members import (
     select_member_by_member_id,
 )
@@ -165,9 +169,12 @@ def build_bulk_registration_frames(*, shift_calendar, window_start, window_end):
         window_end=window_end,
     )
 
+    worker_rows = select_factory_line_frame_workers()
+
     line_frames = build_line_frame_candidates(
         window_start=window_start,
         window_end=window_end,
+        worker_rows=worker_rows,
     )
 
     return build_bulk_registration_frames_from_worker_bands(

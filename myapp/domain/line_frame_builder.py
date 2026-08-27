@@ -1,7 +1,6 @@
 from datetime import datetime, date, time, timedelta
 from typing import Dict, List, Optional, Tuple
 
-from myapp.models import Field_worker_tb
 from myapp.domain.shifts import calc_shift_window_dt
 
 
@@ -50,7 +49,7 @@ def _append_frame(
     })
 
 
-def _collect_stop_ranges(worker_row: Field_worker_tb, shift_start_dt: datetime, shift_end_dt: datetime) -> List[Tuple[datetime, datetime]]:
+def _collect_stop_ranges(worker_row, shift_start_dt: datetime, shift_end_dt: datetime) -> List[Tuple[datetime, datetime]]:
     """
     Field_worker_tb の停止帯を datetime のリストにする。
     今回は以下を停止帯として採用する:
@@ -91,7 +90,7 @@ def _collect_stop_ranges(worker_row: Field_worker_tb, shift_start_dt: datetime, 
     return stop_ranges
 
 
-def _build_shift_frames(worker_row: Field_worker_tb, base_date: date) -> List[dict]:
+def _build_shift_frames(worker_row, base_date: date) -> List[dict]:
     """
     Field_worker_tb の1レコード(1直 or 2直)から、稼働/停止フレームを作る。
     """
@@ -145,7 +144,12 @@ def _to_time_frame_dict(frames: List[dict]) -> Dict[str, dict]:
         for idx, frame in enumerate(frames, start=1)
     }
 
-def build_factory_line_frames(base_date: date, add_gap_stop: bool = True) -> Dict[str, dict]:
+def build_factory_line_frames(
+    base_date: date,
+    *,
+    worker_rows,
+    add_gap_stop: bool = True,
+) -> Dict[str, dict]:
     """
     Field_worker_tb から 1直・2直 を読み取り、
     工場全体の line_frames を構築する。
@@ -154,8 +158,7 @@ def build_factory_line_frames(base_date: date, add_gap_stop: bool = True) -> Dic
       - 1直終了 ～ 2直開始 を「停止中」で補完
       - 2直終了 ～ 翌1直開始 を「停止中」で補完
     """
-    qs = Field_worker_tb.objects.filter(pattern_name__in=["1直", "2直"]).order_by("pattern_id")
-    rows_by_name = {row.pattern_name: row for row in qs}
+    rows_by_name = {row.pattern_name: row for row in worker_rows}
 
     first_shift = rows_by_name.get("1直")
     second_shift = rows_by_name.get("2直")
