@@ -10,10 +10,10 @@ from django.utils.dateparse import parse_datetime
 
 from myapp.models import (
     Member_tb,
-    PlanStatus,
     Plan_tb,
     Practitioner_tb,
 )
+from myapp.domain.plan_status import PlanStatus
 
 
 class CardWorkResultError(Exception):

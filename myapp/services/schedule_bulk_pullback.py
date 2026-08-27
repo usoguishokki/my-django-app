@@ -1,6 +1,8 @@
 from django.db import transaction
 
-from myapp.models import PlanStatus, Plan_tb
+from myapp.models import Plan_tb
+
+from myapp.domain.plan_status import PlanStatus
 
 from myapp.domain.errors import (
     InvalidScheduleEventRetractParams,

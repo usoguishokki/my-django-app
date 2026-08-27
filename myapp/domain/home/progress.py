@@ -2,7 +2,7 @@
 
 from typing import Mapping, Optional
 
-from myapp.models import PlanStatus
+from myapp.domain.plan_status import PlanStatus
 
 
 STATUS_COUNT_KEYS = (

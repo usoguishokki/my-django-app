@@ -1,5 +1,5 @@
 from django.db.models import Q
-from myapp.models import PlanStatus
+from myapp.domain.plan_status import PlanStatus
 
 def build_member_assigned_q(*, member):
     if not member:

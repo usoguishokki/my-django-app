@@ -12,6 +12,7 @@ from myapp.domain.day_of_week import DayOfWeek
 from myapp.domain.time_zone_status import TimeZoneStatus
 from myapp.domain.db_detail_status import DbDetailStatus
 from myapp.domain.check_status import CheckStatus
+from myapp.domain.plan_status import PlanStatus
 """
 初期のmakemigrationsの実行後に作成される、initial.pyに以下のコードを追加する必要ある。(カスタムマイグレーション)
 なぜ？ Menber_tb menber_idとpasswordを同じにするため。
@@ -56,14 +57,6 @@ class WeekSlot(models.IntegerChoices):
     W3 = 3, "3週目"
     W4 = 4, "4週目"
     RESERVE = 6, "予備週"
-
-class PlanStatus(models.TextChoices):
-    WAITING = "配布待ち", "配布待ち"
-    IN_PROGRESS = "実施待ち", "実施待ち"
-    APPROVAL_WAITING = "承認待ち", "承認待ち"
-    COMPLETED = "完了", "完了"
-    SENT_BACK = "差戻し", "差戻し"
-    DELAYED = "遅れ", "遅れ"
 
 
 class InspectionStandardHistorySource(models.TextChoices):

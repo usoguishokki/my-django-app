@@ -3,7 +3,9 @@ from datetime import timedelta
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 
-from myapp.models import PlanStatus, Plan_tb
+from myapp.models import Plan_tb
+
+from myapp.domain.plan_status import PlanStatus
 
 from myapp.services.schedule_approver import (
     get_required_schedule_approver,

@@ -2,7 +2,7 @@ from django.db import transaction
 
 from datetime import timedelta
 
-from myapp.models import PlanStatus
+from myapp.domain.plan_status import PlanStatus
 
 from myapp.services.schedule_approver import (
     get_required_schedule_approver,

@@ -1,4 +1,4 @@
-from myapp.models import PlanStatus
+from myapp.domain.plan_status import PlanStatus
 
 
 def resolve_pullback_status(*, current_status: str) -> str:
