@@ -39,6 +39,7 @@ from myapp.selectors.check import (
 )
 from myapp.selectors.plan import (
     delete_not_completed_plans_by_check,
+    select_not_completed_plans_for_update_by_check,
 )
 from typing import Any
 from myapp.domain.inspection_standards import (
@@ -60,6 +61,7 @@ from myapp.selectors.control import (
 from myapp.selectors.inspection_standards import (
     select_inspection_standard_detail_rows_by_control_no,
     select_inspection_standard_detail_for_update,
+    select_inspection_standard_details_for_update_by_check,
     select_inspection_standard_rule_options,
     select_inspection_standard_shift_pattern_options,
     select_inspection_standard_rule_by_id,
@@ -998,10 +1000,10 @@ def abolish_inspection_standard_card(
 
         before_check_snapshot = build_check_snapshot(check)
 
-        target_details = list(
-            Db_details_tb.objects
-            .select_for_update()
-            .filter(inspection_no=check)
+        target_details = (
+            select_inspection_standard_details_for_update_by_check(
+                check=check,
+            )
         )
 
         before_detail_snapshots = [
@@ -1009,10 +1011,10 @@ def abolish_inspection_standard_card(
             for detail in target_details
         ]
 
-        delete_target_plans = list(
-            check.plans
-            .select_for_update()
-            .exclude(status='完了')
+        delete_target_plans = (
+            select_not_completed_plans_for_update_by_check(
+                check=check,
+            )
         )
 
         before_plan_snapshots = [

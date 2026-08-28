@@ -627,6 +627,17 @@ def select_non_waiting_plan_p_date_ids_by_check_and_date_range(
     )
 
 
+def select_not_completed_plans_for_update_by_check(*, check):
+    """
+    対象Checkに紐づく完了以外のPlanを行ロック付きで取得する。
+    """
+    return list(
+        check.plans
+        .select_for_update()
+        .exclude(status=PlanStatus.COMPLETED)
+    )
+
+
 def delete_not_completed_plans_by_check(*, check) -> int:
     """
     対象Checkに紐づくPlanのうち、完了以外を削除する。

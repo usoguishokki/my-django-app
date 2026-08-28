@@ -44,6 +44,17 @@ def select_inspection_standard_detail_rows_by_control_no(*, control_no: str):
     )
 
 
+def select_inspection_standard_details_for_update_by_check(*, check):
+    """
+    対象Checkに紐づく明細を行ロック付きで取得する。
+    """
+    return list(
+        Db_details_tb.objects
+        .select_for_update()
+        .filter(inspection_no=check)
+    )
+
+
 def select_inspection_standard_detail_for_update(
     *,
     detail_id: int,
