@@ -15,6 +15,8 @@ from myapp.services.plan_shift_context import (
 
 from myapp.selectors.card_work.card_work import (
     apply_card_work_filters,
+    materialize_card_work_plans,
+    filter_card_work_plans_by_ids,
     select_card_work_filter_options,
     select_card_work_filter_rows,
     select_card_work_my_task_candidate_rows,
@@ -205,16 +207,24 @@ def filter_card_work_plans_by_display_date(
     plan_timeの実日付ではなく、
     resolve_plan_display_date()が返すシフト日を使用する。
 
-    戻り値は後続のcount・filter・values_listを使用できるよう、
-    QuerySetのまま返す。
+    表示日の判定はServiceで行い、
+    QuerySetの評価・絞り込みはSelectorへ委譲する。
     """
     if not target_date:
-        return candidate_plans_qs.none()
+        return filter_card_work_plans_by_ids(
+            candidate_plans_qs,
+            plan_ids=[],
+        )
 
-    candidate_plans = list(candidate_plans_qs)
+    candidate_plans = materialize_card_work_plans(
+        candidate_plans_qs
+    )
 
     if not candidate_plans:
-        return candidate_plans_qs.none()
+        return filter_card_work_plans_by_ids(
+            candidate_plans_qs,
+            plan_ids=[],
+        )
 
     shift_context = build_plan_shift_context(
         plan_rows=candidate_plans,
@@ -229,9 +239,7 @@ def filter_card_work_plans_by_display_date(
         ) == target_date
     ]
 
-    if not target_plan_ids:
-        return candidate_plans_qs.none()
-
-    return candidate_plans_qs.filter(
-        plan_id__in=target_plan_ids,
+    return filter_card_work_plans_by_ids(
+        candidate_plans_qs,
+        plan_ids=target_plan_ids,
     )

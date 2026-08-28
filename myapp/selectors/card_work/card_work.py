@@ -65,6 +65,25 @@ def select_card_work_plan_by_id(*, plan_id):
     )
 
 
+def materialize_card_work_plans(qs):
+    """
+    Card Work対象QuerySetをPlan一覧として評価する。
+    """
+    return list(qs)
+
+
+def filter_card_work_plans_by_ids(qs, *, plan_ids):
+    """
+    指定Plan IDだけにCard Work対象QuerySetを絞り込む。
+    """
+    if not plan_ids:
+        return qs.none()
+
+    return qs.filter(
+        plan_id__in=plan_ids,
+    )
+
+
 def apply_card_work_filters(
     qs,
     *,
