@@ -111,18 +111,14 @@ def sync_waiting_plans_for_inspection_standard(
             created_plans=(),
         )
 
-    calendar_rows = list(
-        select_hozen_calendar_rows_for_plan_sync(
-            start_date=create_start_date,
-            end_date=create_end_date,
-        )
+    calendar_rows = select_hozen_calendar_rows_for_plan_sync(
+        start_date=create_start_date,
+        end_date=create_end_date,
     )
 
-    lookup_calendar_rows = list(
-        select_hozen_calendar_rows_for_plan_sync_lookup(
-            start_date=create_start_date,
-            end_date=create_end_date,
-        )
+    lookup_calendar_rows = select_hozen_calendar_rows_for_plan_sync_lookup(
+        start_date=create_start_date,
+        end_date=create_end_date,
     )
 
     calendar_by_date = build_calendar_by_date(lookup_calendar_rows)
@@ -221,12 +217,10 @@ def preview_waiting_plans_for_inspection_standard(
         base_date=PLAN_SYNC_BASE_DATE,
     )
 
-    delete_target_dates = list(
-        select_waiting_plan_calendar_rows_by_check_and_date_range(
-            check=check,
-            start_date=delete_start_date,
-            end_date=delete_end_date,
-        )
+    delete_target_dates = select_waiting_plan_calendar_rows_by_check_and_date_range(
+        check=check,
+        start_date=delete_start_date,
+        end_date=delete_end_date,
     )
 
     if create_start_date > create_end_date:
@@ -241,18 +235,14 @@ def preview_waiting_plans_for_inspection_standard(
             create_target_dates=[],
         )
 
-    calendar_rows = list(
-        select_hozen_calendar_rows_for_plan_sync(
-            start_date=create_start_date,
-            end_date=create_end_date,
-        )
+    calendar_rows = select_hozen_calendar_rows_for_plan_sync(
+        start_date=create_start_date,
+        end_date=create_end_date,
     )
 
-    lookup_calendar_rows = list(
-        select_hozen_calendar_rows_for_plan_sync_lookup(
-            start_date=create_start_date,
-            end_date=create_end_date,
-        )
+    lookup_calendar_rows = select_hozen_calendar_rows_for_plan_sync_lookup(
+        start_date=create_start_date,
+        end_date=create_end_date,
     )
 
     calendar_by_date = build_calendar_by_date(lookup_calendar_rows)

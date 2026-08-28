@@ -129,11 +129,11 @@ def get_first_date_by_date_alias(*, date_alias: str, base_date: date):
     
 def select_hozen_calendar_rows_for_plan_sync(*, start_date, end_date):
     """
-    Plan_tb同期用の保全カレンダーを取得する。
+    Plan_tb同期用の保全カレンダーを一覧として取得する。
     対象期間内だけを返す。
     """
 
-    return (
+    return list(
         Hozen_calendar_tb.objects
         .filter(
             h_date__gte=start_date,
@@ -146,12 +146,12 @@ def select_hozen_calendar_rows_for_plan_sync(*, start_date, end_date):
 def select_hozen_calendar_rows_for_plan_sync_lookup(*, start_date, end_date):
     """
     NEXT_DATE_TAG判定用。
-    end_dateの翌日まで取得する。
+    end_dateの翌日まで一覧として取得する。
     """
 
     from datetime import timedelta
 
-    return (
+    return list(
         Hozen_calendar_tb.objects
         .filter(
             h_date__gte=start_date,
