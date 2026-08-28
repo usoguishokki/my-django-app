@@ -216,10 +216,10 @@ def plans_by_inspection_no_qs(
 
 def select_plan_detail_rows(*, qs, matched_ids):
     """
-    Plan詳細表示用の元データを返す selector。
+    Plan詳細表示用の元データを一覧として返す selector。
     表示用の最終整形（period など）は presenter 側で行う。
     """
-    return (
+    return list(
         qs.filter(plan_id__in=matched_ids)
         .select_related(
             "inspection_no",

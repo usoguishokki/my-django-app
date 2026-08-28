@@ -54,7 +54,7 @@ def build_kpi_cell_detail_result(params: KPICellDetailParams):
 
     matched_ids = list(dict.fromkeys(matched_ids))
     
-    rows = list(select_plan_detail_rows(qs=qs, matched_ids=matched_ids))
+    rows = select_plan_detail_rows(qs=qs, matched_ids=matched_ids)
 
     row_ids = [r["plan_id"] for r in rows]
     if set(row_ids) != set(matched_ids):
