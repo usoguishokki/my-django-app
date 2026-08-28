@@ -364,12 +364,12 @@ def select_bulk_retract_plans(*, plan_ids):
 
 def select_bulk_registration_target_plans(*, plan_ids):
     """
-    一括登録対象のPlanを取得する。
+    一括登録対象のPlanを一覧として取得する。
     """
     if not plan_ids:
-        return Plan_tb.objects.none()
+        return []
 
-    return (
+    return list(
         plan_base_qs()
         .filter(plan_id__in=plan_ids)
         .order_by('plan_id')

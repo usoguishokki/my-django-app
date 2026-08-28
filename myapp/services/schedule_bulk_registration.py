@@ -369,10 +369,8 @@ def bulk_register_schedule_events(*, payload, requested_user):
             'registration frames not found'
         )
 
-    target_plans = list(
-        select_bulk_registration_target_plans(
-            plan_ids=params.plan_ids,
-        )
+    target_plans = select_bulk_registration_target_plans(
+        plan_ids=params.plan_ids,
     )
 
     if not target_plans:
