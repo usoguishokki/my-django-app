@@ -43,11 +43,14 @@ def select_members_by_affiliation_ids(affiliation_ids) -> QuerySet:
     )
 
 
-def select_all_members() -> QuerySet:
+def select_all_members():
     """
     実績入力の実施者候補として、全メンバーを取得する。
     """
-    return member_base_qs().order_by("member_id")
+    return list(
+        member_base_qs()
+        .order_by("member_id")
+    )
 
 
 def select_member_by_user_id(user_id: str):

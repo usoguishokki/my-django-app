@@ -15,6 +15,7 @@ from myapp.services.plan_shift_context import (
 
 from myapp.selectors.card_work.card_work import (
     apply_card_work_filters,
+    count_card_work_plans,
     materialize_card_work_plans,
     filter_card_work_plans_by_ids,
     select_card_work_filter_options,
@@ -97,7 +98,9 @@ def build_card_work_initial_state_from_request(*, request, team_profiles):
         target_date=target_date,
     )
 
-    summary_count = base_plans_qs.count()
+    summary_count = count_card_work_plans(
+        base_plans_qs
+    )
 
     filter_options = select_card_work_filter_options(base_plans_qs)
     filter_rows = select_card_work_filter_rows(base_plans_qs)
@@ -111,8 +114,11 @@ def build_card_work_initial_state_from_request(*, request, team_profiles):
 
     plans_qs = with_card_work_detail_related(plans_qs)
 
-    plans = list(plans_qs[:300])
-    members = list(select_all_members())
+    plans = materialize_card_work_plans(
+        plans_qs,
+        limit=300,
+    )
+    members = select_all_members()
 
     return CardWorkPageSuccessResult(
         source=source,
@@ -152,7 +158,10 @@ def build_card_work_initial_state_from_work_contents(
         base_plans_qs,
     )
 
-    plans = list(plans_qs[:1])
+    plans = materialize_card_work_plans(
+        plans_qs,
+        limit=1,
+    )
 
     if not plans:
         return CardWorkPageErrorResult(
@@ -162,7 +171,7 @@ def build_card_work_initial_state_from_work_contents(
         )
 
     login_user = team_profiles["user_profile"].user
-    members = list(select_all_members())
+    members = select_all_members()
 
     filter_options = select_card_work_filter_options(
         base_plans_qs,

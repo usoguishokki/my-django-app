@@ -65,11 +65,23 @@ def select_card_work_plan_by_id(*, plan_id):
     )
 
 
-def materialize_card_work_plans(qs):
+def count_card_work_plans(qs):
+    """
+    Card Work対象QuerySetの件数を取得する。
+    """
+    return qs.count()
+
+
+def materialize_card_work_plans(qs, *, limit=None):
     """
     Card Work対象QuerySetをPlan一覧として評価する。
+
+    limitが指定された場合は、その件数まで取得する。
     """
-    return list(qs)
+    if limit is None:
+        return list(qs)
+
+    return list(qs[:limit])
 
 
 def filter_card_work_plans_by_ids(qs, *, plan_ids):
