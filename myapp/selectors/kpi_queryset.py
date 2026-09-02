@@ -133,3 +133,16 @@ def kpi_rows(qs):
         "result_man_hours",
         "practitioner_count",
     )
+
+
+def filter_kpi_plans_by_fiscal_year(qs, *, fiscal_year_start, fiscal_year_end):
+    """Apply the KPI day-view fiscal-year database boundary."""
+    return qs.filter(
+        p_date__h_date__gte=fiscal_year_start,
+        p_date__h_date__lt=fiscal_year_end,
+    )
+
+
+def select_kpi_rows(qs):
+    """Evaluate KPI projection rows inside the Selector layer."""
+    return list(kpi_rows(qs))

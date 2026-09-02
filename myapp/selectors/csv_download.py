@@ -82,7 +82,11 @@ def get_plan_rows_for_csv(
             "approver",
         )
         .prefetch_related(
-            Prefetch("practitioners", queryset=practitioner_qs),
+            Prefetch(
+                "practitioners",
+                queryset=practitioner_qs,
+                to_attr="csv_practitioners",
+            ),
         )
         .filter(
             p_date_id__in=normalized_p_date_ids,
@@ -97,3 +101,8 @@ def get_plan_rows_for_csv(
             "plan_id",
         )
     )
+
+
+def select_plan_rows_for_csv(*, p_date_ids: Iterable[int]):
+    """Return the ordered concrete Plan rows required by plan-result CSV."""
+    return list(get_plan_rows_for_csv(p_date_ids=p_date_ids))

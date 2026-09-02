@@ -134,3 +134,11 @@ def select_calendar_by_date_and_affiliation(*, target_date: date, affiliation_id
         )
         .first()
     )
+
+
+def select_calendar_rows_for_year_months(year_months: list[YearMonth]) -> list[Hozen_calendar_tb]:
+    return list(calendar_rows_for_year_months(year_months))
+
+
+def select_calendar_rows_for_dates(dates: Iterable[date]) -> list[Hozen_calendar_tb]:
+    return list(calendar_rows_for_dates(dates))

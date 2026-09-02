@@ -39,7 +39,7 @@ def select_checks_by_control(
     *,
     equipment,
 ):
-    return (
+    return list(
         Check_tb.objects
         .filter(
             control_no=equipment,

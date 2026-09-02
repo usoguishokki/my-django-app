@@ -7,16 +7,12 @@ from django.views.decorators.http import require_GET, require_POST
 
 from myapp.domain.periods import build_fiscal_year_months, build_month_range
 from myapp.presenters.control import build_control_machine_options_payload
-from myapp.selectors.calendar import (
-    calendar_rows_for_dates,
-    calendar_rows_for_year_months,
-)
-from myapp.selectors.control import get_controls_for_inspection_standard_machine_options
-from myapp.selectors.csv_download import get_plan_rows_for_csv
 from myapp.services.csv_download.inspection_standard import (
     build_inspection_standard_csv_source,
     build_inspection_standard_csv_response,
+    load_inspection_standard_machine_options,
 )
+from myapp.services.csv_download.plan_result import build_plan_result_occurrences
 
 from myapp.presenters.csv_download import (
     build_inspection_standard_csv_header,
@@ -33,10 +29,6 @@ from myapp.domain.errors import (
     InvalidMachineSelection,
 )
 
-from myapp.services.csv_download.plan_result_matcher import (
-    collect_plan_implementation_dates,
-    iter_occurrences_from_plans,
-)
 
 
 
@@ -69,7 +61,7 @@ def _build_target_months_from_post(request):
 @login_required
 @require_GET
 def inspection_standard_machines_api(request):
-    items = get_controls_for_inspection_standard_machine_options()
+    items = load_inspection_standard_machine_options()
     payload = build_control_machine_options_payload(items=items)
     return json_response(
         payload,
@@ -113,31 +105,7 @@ def inspection_plan_result_download_api(request):
     except (InvalidCsvDownloadParams, InvalidCsvDownloadType) as exc:
         return json_error_response(str(exc))
 
-    calendar_rows = list(calendar_rows_for_year_months(target_months))
-
-    plans = list(
-        get_plan_rows_for_csv(
-            p_date_ids=[
-                row.pk
-                for row in calendar_rows
-                if row.pk
-            ],
-        )
-    )
-    
-    implementation_calendar_rows = list(
-        calendar_rows_for_dates(
-            collect_plan_implementation_dates(plans)
-        )
-    )
-    
-    occurrences = iter_occurrences_from_plans(
-        plans=plans,
-        calendar_rows=[
-            *calendar_rows,
-            *implementation_calendar_rows,
-        ],
-    )
+    occurrences = build_plan_result_occurrences(target_months=target_months)
     
     rows = (
         present_occurrence_row(occ)

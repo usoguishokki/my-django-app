@@ -62,7 +62,7 @@ def _plan_practitioner_names(plan) -> str:
 
     names: list[str] = []
 
-    for practitioner in getattr(plan, "practitioners", []).all():
+    for practitioner in getattr(plan, "csv_practitioners", []):
         name = _member_name(getattr(practitioner, "member_id", None))
         if name:
             names.append(name)

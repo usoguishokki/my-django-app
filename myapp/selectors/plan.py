@@ -214,6 +214,35 @@ def plans_by_inspection_no_qs(
 
     return qs
 
+
+def select_inspection_card_plans(
+    *,
+    inspection_no: str,
+    statuses: Optional[Iterable[str]] = None,
+):
+    """Return the ordered concrete plan list used by inspection cards."""
+    return list(
+        plans_by_inspection_no_qs(
+            inspection_no=inspection_no,
+            statuses=statuses,
+        )
+    )
+
+
+def select_plan_detail_by_id(*, plan_id: int):
+    """Return one plan with every relation required by the detail payload."""
+    return (
+        plan_base_qs()
+        .select_related("applicant", "approver")
+        .prefetch_related(
+            "inspection_no__db_details",
+            "approvals__member",
+            "practitioners__member_id",
+        )
+        .filter(plan_id=plan_id)
+        .first()
+    )
+
 def select_plan_detail_rows(*, qs, matched_ids):
     """
     Plan詳細表示用の元データを一覧として返す selector。

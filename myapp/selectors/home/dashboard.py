@@ -50,7 +50,11 @@ def select_home_user_profile(
         return None
 
 
-def select_home_affiliations_by_organization(*, organization_id) -> QuerySet:
+def select_user_profile_by_login_number(*, login_number):
+    return UserProfile.objects.get(user_id=login_number)
+
+
+def select_home_affiliations_by_organization(*, organization_id) -> list:
     """
     home画面で扱う班一覧を取得する。
 
@@ -58,9 +62,9 @@ def select_home_affiliations_by_organization(*, organization_id) -> QuerySet:
     常昼などは左側の全体・班別表示から除外する。
     """
     if not organization_id:
-        return Affilation_tb.objects.none()
+        return []
 
-    return (
+    return list(
         Affilation_tb.objects
         .filter(
             user_profiles__organization_id=organization_id,
@@ -377,7 +381,7 @@ def select_team_day_plan_scope(
         .distinct()
     )
 
-def select_overall_attention_plan_rows(*, affiliation_ids: Iterable[int]) -> QuerySet:
+def select_overall_attention_plan_rows(*, affiliation_ids: Iterable[int]) -> list:
     """
     左側「全体進捗」クリック時に表示する仕事一覧用。
 
@@ -390,7 +394,7 @@ def select_overall_attention_plan_rows(*, affiliation_ids: Iterable[int]) -> Que
     ids = normalize_ids(affiliation_ids)
 
     if not ids:
-        return Plan_tb.objects.none()
+        return []
 
     status_map = get_status_value_map()
     target_statuses = [
@@ -404,7 +408,7 @@ def select_overall_attention_plan_rows(*, affiliation_ids: Iterable[int]) -> Que
         affiliation_ids=ids,
     )
 
-    return (
+    return list(
         with_home_task_card_related(qs)
         .filter(
             status__in=target_statuses,
@@ -417,16 +421,18 @@ def select_overall_attention_plan_rows(*, affiliation_ids: Iterable[int]) -> Que
         )
     )
 
-def select_my_incomplete_task_rows(*, holder_id) -> QuerySet:
+def select_my_incomplete_task_rows(*, holder_id) -> list:
     """
     右側「自分の未完了タスク」用。
 
     担当者・未完了条件はPlan共通selectorへ委譲し、
     Homeカード表示に必要な点検詳細だけ追加する。
     """
-    return with_home_task_card_related(
-        select_holder_incomplete_plan_rows(
-            holder_id=holder_id,
+    return list(
+        with_home_task_card_related(
+            select_holder_incomplete_plan_rows(
+                holder_id=holder_id,
+            )
         )
     )
 

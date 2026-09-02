@@ -13,6 +13,13 @@ from myapp.domain.checks.constants import (
 )
 
 
+def select_rule_conditions(*, rule):
+    """Return rule conditions in their configured related-manager ordering."""
+    if rule is None:
+        return []
+    return list(rule.conditions.all())
+
+
 def check_detail_qs() -> QuerySet:
     """
     点検カード（Check_tb）詳細表示に必要な関連をまとめて読むQS
