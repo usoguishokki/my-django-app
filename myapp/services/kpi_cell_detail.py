@@ -7,7 +7,11 @@ from myapp.domain.errors import InvalidFiltersJSON, InvalidPeriodKey
 from myapp.domain.periods import get_fiscal_year_range
 
 from myapp.selectors.plan import select_plan_detail_rows
-from myapp.selectors.kpi_queryset import build_kpi_plan_queryset, kpi_rows
+from myapp.selectors.kpi_queryset import (
+    build_kpi_plan_queryset,
+    filter_kpi_plans_by_fiscal_year,
+    select_kpi_rows,
+)
 from myapp.selectors.hozen_calendar import get_month_ranges
 from myapp.selectors.kpi_context import build_day_context
 
@@ -34,10 +38,14 @@ def build_kpi_cell_detail_result(params: KPICellDetailParams):
     day_ctx = build_day_context(fy_start=fy_start, fy_end=fy_end)
 
     if period_view == "day":
-        qs = qs.filter(p_date__h_date__gte=fy_start, p_date__h_date__lt=fy_end)
+        qs = filter_kpi_plans_by_fiscal_year(
+            qs,
+            fiscal_year_start=fy_start,
+            fiscal_year_end=fy_end,
+        )
         
     matched_ids = []
-    for r in kpi_rows(qs):
+    for r in select_kpi_rows(qs):
         if match_cell(
             metric=metric,
             period_view=period_view,
@@ -70,7 +78,6 @@ def build_kpi_cell_detail_result(params: KPICellDetailParams):
     )
 
     return result, 200
-    
     
     
     

@@ -2,7 +2,7 @@ from myapp.models import Plan_tb
 
 
 def select_work_contents_plans(*, organization_code):
-    return (
+    return list(
         Plan_tb.objects
         .select_related(
             "applicant",

@@ -15,6 +15,7 @@ from myapp.selectors.hozen_calendar import (
     select_hozen_calendar_rows_for_plan_sync,
     select_hozen_calendar_rows_for_plan_sync_lookup,
 )
+from myapp.selectors.check import select_rule_conditions
 from myapp.selectors.plan import (
     bulk_create_waiting_plans_for_check,
     select_waiting_plans_for_update_by_check_and_date_range,
@@ -123,7 +124,7 @@ def sync_waiting_plans_for_inspection_standard(
 
     calendar_by_date = build_calendar_by_date(lookup_calendar_rows)
 
-    rule_conditions = list(check.rule.conditions.all())
+    rule_conditions = select_rule_conditions(rule=check.rule)
 
     matched_calendar_rows = filter_calendar_rows_for_check_schedule(
         check=check,
@@ -247,7 +248,7 @@ def preview_waiting_plans_for_inspection_standard(
 
     calendar_by_date = build_calendar_by_date(lookup_calendar_rows)
 
-    rule_conditions = list(check.rule.conditions.all())
+    rule_conditions = select_rule_conditions(rule=check.rule)
 
     matched_calendar_rows = filter_calendar_rows_for_check_schedule(
         check=check,

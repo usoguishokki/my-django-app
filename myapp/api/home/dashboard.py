@@ -17,16 +17,13 @@ from myapp.domain.periods import (
 
 
 
-from myapp.selectors.home.dashboard import (
-    select_home_user_profile,
-)
-
 from myapp.services.home.dashboard import (
     build_home_assign_member_options_response,
     build_home_my_tasks_response,
     build_home_my_team_day_detail_response,
     build_home_my_team_progress_response,
     build_home_overall_progress_response,
+    get_home_user_profile,
 )
 
 from myapp.presenters.home.dashboard_presenter import (
@@ -72,16 +69,12 @@ def home_overall_progress_api(request):
     全体の進捗:
       ログインユーザーと同じ組織に属する班すべて
     """
-    user_profile = select_home_user_profile(
-        user=request.user,
-    )
+    user_profile = get_home_user_profile(user=request.user)
     if user_profile is None:
         return build_user_profile_not_found_response()
 
     try:
-        result = build_home_overall_progress_response(
-            user_profile=user_profile,
-        )
+        result = build_home_overall_progress_response(user_profile=user_profile)
         payload = build_overall_progress_payload(
             overall_counts=result.overall_counts,
             overall_attention_rows=result.overall_attention_rows,
@@ -113,16 +106,12 @@ def home_my_team_progress_api(request):
     """
     home中央「ログインユーザー所属班の進捗」API。
     """
-    user_profile = select_home_user_profile(
-        user=request.user,
-    )
+    user_profile = get_home_user_profile(user=request.user)
     if user_profile is None:
         return build_user_profile_not_found_response()
 
     try:
-        result = build_home_my_team_progress_response(
-            user_profile=user_profile,
-        )
+        result = build_home_my_team_progress_response(user_profile=user_profile)
         payload = build_my_team_progress_payload(
             affiliation_id=result.affiliation_id,
             affiliation_name=result.affiliation_name,
@@ -171,9 +160,7 @@ def home_my_team_day_detail_api(request):
             status=400,
         )
 
-    user_profile = select_home_user_profile(
-        user=request.user,
-    )
+    user_profile = get_home_user_profile(user=request.user)
     if user_profile is None:
         return build_user_profile_not_found_response()
 
@@ -207,7 +194,7 @@ def home_my_tasks_api(request):
     """
     home右側「自分の未完了タスク」API。
     """
-    user_profile = select_home_user_profile(
+    user_profile = get_home_user_profile(
         user=request.user,
         include_user=True,
     )
@@ -215,9 +202,7 @@ def home_my_tasks_api(request):
         return build_user_profile_not_found_response()
 
     try:
-        result = build_home_my_tasks_response(
-            user_profile=user_profile,
-        )
+        result = build_home_my_tasks_response(user_profile=user_profile)
         payload = build_my_tasks_payload(
             holder=result.holder,
             task_rows=result.task_rows,
@@ -252,16 +237,12 @@ def home_assign_member_options_api(request):
     常昼などA/B/C班以外:
       A/B/C班すべてのメンバー
     """
-    user_profile = select_home_user_profile(
-        user=request.user,
-    )
+    user_profile = get_home_user_profile(user=request.user)
     if user_profile is None:
         return build_user_profile_not_found_response()
 
     try:
-        result = build_home_assign_member_options_response(
-            user_profile=user_profile,
-        )
+        result = build_home_assign_member_options_response(user_profile=user_profile)
         payload = build_home_assign_member_options_payload(
             scope=result.scope,
             members=result.members,

@@ -5,6 +5,12 @@ from myapp.models import Plan_tb
 from myapp.selectors.plan import (
     select_work_content_plans_by_ids,
 )
+from myapp.selectors.work_contents import select_work_contents_plans
+
+
+def load_work_contents_plans(*, organization_code):
+    """Load the concrete plan collection rendered by the work-contents page."""
+    return select_work_contents_plans(organization_code=organization_code)
 
 
 def update_work_contents_plans(

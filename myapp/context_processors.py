@@ -1,9 +1,5 @@
-from .models import UserProfile
+from myapp.services.user_context import build_employee_context
 
 def employee_infomation(request):
     login_number = request.session.get('login_number')
-    if login_number:
-        employee = UserProfile.objects.get(user_id=login_number)
-        if employee:
-            return {'employee': employee}
-    return {}
+    return build_employee_context(login_number=login_number)

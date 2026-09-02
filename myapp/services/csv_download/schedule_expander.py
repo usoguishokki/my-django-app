@@ -15,6 +15,7 @@ from myapp.models import (
     PlanRuleCondition,
     PlanScheduleRule,
 )
+from myapp.selectors.check import select_rule_conditions
 
 
 @dataclass(frozen=True)
@@ -135,7 +136,7 @@ def expand_check_to_occurrences(
     if rule is None:
         return []
 
-    conditions = list(rule.conditions.all())
+    conditions = select_rule_conditions(rule=rule)
 
     matched_rows: list[CsvOccurrence] = []
 

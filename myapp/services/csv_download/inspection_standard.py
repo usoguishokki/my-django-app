@@ -6,8 +6,13 @@ from django.http import HttpResponse
 
 from myapp.selectors.csv_download import get_inspection_standard_rows
 from myapp.selectors.control import (
+    get_controls_for_inspection_standard_machine_options,
     select_control_by_control_no,
 )
+
+
+def load_inspection_standard_machine_options():
+    return get_controls_for_inspection_standard_machine_options()
 
 
 def build_inspection_standard_csv_source(

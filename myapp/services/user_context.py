@@ -1,3 +1,13 @@
+from myapp.selectors.home.dashboard import select_user_profile_by_login_number
+
+
+def build_employee_context(*, login_number):
+    if not login_number:
+        return {}
+    employee = select_user_profile_by_login_number(login_number=login_number)
+    return {"employee": employee} if employee is not None else {}
+
+
 def build_team_profile_context(
     *,
     request,

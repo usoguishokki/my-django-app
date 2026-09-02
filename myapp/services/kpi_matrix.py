@@ -7,7 +7,11 @@ from myapp.domain.kpi_aggregate import aggregate_kpi_by_period
 
 from myapp.domain.periods import get_fiscal_year_range
 
-from myapp.selectors.kpi_queryset import build_kpi_plan_queryset, kpi_rows
+from myapp.selectors.kpi_queryset import (
+    build_kpi_plan_queryset,
+    filter_kpi_plans_by_fiscal_year,
+    select_kpi_rows,
+)
 from myapp.selectors.hozen_calendar import get_month_ranges
 from myapp.selectors.kpi_context import build_day_context
 
@@ -36,7 +40,11 @@ def build_kpi_matrix_response(params: KPIRequestParams, *, filters_json: Optiona
     day_ctx = None
 
     if params.period_view == "day":
-        qs = qs.filter(p_date__h_date__gte=fy_start, p_date__h_date__lt=fy_end)
+        qs = filter_kpi_plans_by_fiscal_year(
+            qs,
+            fiscal_year_start=fy_start,
+            fiscal_year_end=fy_end,
+        )
         day_ctx = build_day_context(fy_start=fy_start, fy_end=fy_end)
 
     elif params.period_view in ("week", "month"):
@@ -46,7 +54,7 @@ def build_kpi_matrix_response(params: KPIRequestParams, *, filters_json: Optiona
     else:
         return {"status": "error", "message": "invalid period_view"}, 400
 
-    rows = kpi_rows(qs)
+    rows = select_kpi_rows(qs)
     
     data, period_keys_set, team_keys_set = aggregate_kpi_by_period(
         rows,

@@ -39,6 +39,7 @@ from myapp.selectors.home.dashboard import (
     select_team_day_detail_task_rows,
     select_team_day_plan_scope,
     select_team_period_plan_scope,
+    select_home_user_profile,
 )
 
 
@@ -88,8 +89,6 @@ def build_home_overall_progress_response(*, user_profile) -> dict:
     overall_attention_rows = select_overall_attention_plan_rows(
         affiliation_ids=scope["affiliation_ids"],
     )
-
-    overall_attention_rows = list(overall_attention_rows)
 
     shift_context = build_plan_shift_context(
         plan_rows=overall_attention_rows,
@@ -165,10 +164,8 @@ def build_overall_scope(
             "title": f"{login_affiliation_name} 全体進捗",
         }
 
-    affiliations = list(
-        select_home_affiliations_by_organization(
-            organization_id=organization_id,
-        )
+    affiliations = select_home_affiliations_by_organization(
+        organization_id=organization_id,
     )
 
     return {
@@ -209,10 +206,8 @@ def build_my_team_scope(*, user_profile) -> dict:
             "title": f"{login_affiliation_name}の進捗",
         }
 
-    affiliations = list(
-        select_home_affiliations_by_organization(
-            organization_id=user_profile.organization_id,
-        )
+    affiliations = select_home_affiliations_by_organization(
+        organization_id=user_profile.organization_id,
     )
 
     return {
@@ -508,9 +503,9 @@ def build_current_period(*, target_date, date_alias: str) -> dict:
 def build_home_my_tasks_response(*, user_profile) -> dict:
     holder = user_profile.user
 
-    task_rows = list(select_my_incomplete_task_rows(
+    task_rows = select_my_incomplete_task_rows(
         holder_id=holder.member_id,
-    ))
+    )
 
     shift_context = build_plan_shift_context(
         plan_rows=task_rows,
@@ -549,3 +544,8 @@ def build_home_assign_member_options_response(*, user_profile) -> dict:
         scope=scope,
         members=members,
     )
+
+
+def get_home_user_profile(*, user, include_user=False):
+    """Load the Home user profile without changing the Controller exception boundary."""
+    return select_home_user_profile(user=user, include_user=include_user)

@@ -9,4 +9,4 @@ def build_member_assigned_plans_result(*, member: str) -> Tuple[Any, int]:
         return {"status": "error", "message": "member is required"}, 400
 
     duties = get_member_assigned_duties(member=member)
-    return list(duties), 200
+    return duties, 200

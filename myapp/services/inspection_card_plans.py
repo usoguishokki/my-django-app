@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Any, Dict, Tuple, List
 
-from myapp.selectors.plan import plans_by_inspection_no_qs
+from myapp.selectors.plan import select_inspection_card_plans
 from myapp.domain.plan_constants import PLAN_STATUS_COMPLETED
 
 def build_inspection_card_plans_result(
@@ -12,8 +12,10 @@ def build_inspection_card_plans_result(
     if not inspection_no:
         return {"status": "error", "message": "inspection_no is required"}, 400
 
-    qs = plans_by_inspection_no_qs(inspection_no=inspection_no, statuses=[statuses])
-    plans = list(qs)
+    plans = select_inspection_card_plans(
+        inspection_no=inspection_no,
+        statuses=[statuses],
+    )
 
     # “見つからない”を 200 +
     return plans, 200

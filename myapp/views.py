@@ -39,13 +39,11 @@ from myapp.presenters.card_work.card_work import (
     build_card_work_initial_state,
 )
 
-from myapp.selectors.work_contents import (
-    select_work_contents_plans,
-)
 from myapp.presenters.work_contents import (
     build_work_contents_rows,
 )
 from myapp.services.work_contents import (
+    load_work_contents_plans,
     update_work_contents_plans,
 )
 from myapp.services.user_context import (
@@ -60,10 +58,9 @@ from myapp.domain.periods import (
 from myapp.presenters.achievements import (
     build_achievement_page_context,
 )
-from myapp.selectors.equipment import (
-    get_equipment_by_control_no,
-    find_equipment_by_control_no,
-    select_checks_by_control,
+from myapp.services.equipment import (
+    load_equipment_by_control_no,
+    load_equipment_inspection_list,
 )
 from myapp.presenters.equipment import (
     build_inspection_list_checks,
@@ -189,7 +186,7 @@ def _render_work_contents_page(
         cache_manager_if=cache_manager_if,
     )
 
-    applications_data = select_work_contents_plans(
+    applications_data = load_work_contents_plans(
         organization_code=request.organization_code,
     )
 
@@ -533,7 +530,7 @@ def equipment_ledger_view(request):
         "machine-code"
     )
 
-    equipment = get_equipment_by_control_no(
+    equipment = load_equipment_by_control_no(
         control_no=code,
     )
 
@@ -551,7 +548,7 @@ def card_by_control_view(
     request,
     control_no,
 ):
-    equipment = find_equipment_by_control_no(
+    equipment, checks = load_equipment_inspection_list(
         control_no=control_no,
     )
 
@@ -559,10 +556,6 @@ def card_by_control_view(
         raise Http404(
             "Equipment not found."
         )
-
-    checks = select_checks_by_control(
-        equipment=equipment,
-    )
 
     prepared_checks = build_inspection_list_checks(
         checks,
