@@ -1,3 +1,7 @@
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
 
@@ -21,14 +25,21 @@ from myapp.presenters.kpi_matrix_presenter import (
 )
 from myapp.presenters.plan_detail_presenter import build_plan_detail_payload
 
+
+def _get_application_local_date():
+    return datetime.now(ZoneInfo(settings.TIME_ZONE)).date()
+
+
 @require_GET
 @login_required
 def kpi_matrix_api(request):
     try:
         params = parse_kpi_request_params(request.GET)
+        as_of_date = params.base_date or _get_application_local_date()
         filters_json = request.GET.get("filters")
         result, status = build_kpi_matrix_response(
             params,
+            as_of_date=as_of_date,
             filters_json=filters_json,
         )
 
@@ -66,7 +77,8 @@ def kpi_matrix_api(request):
             str(e),
             status=400,
         )
-    
+
+
 @require_GET
 @login_required
 def kpi_matrix_cell_detail_api(request):
@@ -75,7 +87,11 @@ def kpi_matrix_cell_detail_api(request):
     """
     try:
         params = parse_kpi_cell_detail_params(request.GET)
-        result, status = build_kpi_cell_detail_result(params)
+        as_of_date = params.base_date or _get_application_local_date()
+        result, status = build_kpi_cell_detail_result(
+            params,
+            as_of_date=as_of_date,
+        )
 
         if status != 200:
             return json_response(

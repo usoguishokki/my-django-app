@@ -1,43 +1,46 @@
-from datetime import datetime
+from datetime import date
 from typing import Optional
 
 from myapp.domain.kpi_request import KPIRequestParams
 from myapp.domain.errors import InvalidFiltersJSON
 from myapp.domain.kpi_aggregate import aggregate_kpi_by_period
 
-from myapp.domain.periods import get_fiscal_year_range
-
 from myapp.selectors.kpi_queryset import (
     build_kpi_plan_queryset,
     filter_kpi_plans_by_fiscal_year,
     select_kpi_rows,
 )
-from myapp.selectors.hozen_calendar import get_month_ranges
-from myapp.selectors.kpi_context import build_day_context
+from myapp.services.kpi_fiscal_context import build_kpi_fiscal_context
 
 from myapp.domain.kpi_matrix import KPIMatrixResult
 
 
-def build_kpi_matrix_response(params: KPIRequestParams, *, filters_json: Optional[str] = None):
+def build_kpi_matrix_response(
+    params: KPIRequestParams,
+    *,
+    as_of_date: date,
+    filters_json: Optional[str] = None,
+):
     """
     KPIマトリクス生成のユースケース（service層）
     """
     
     # ① KPI用ベースQS + 現在月/週
     try:
-        qs, current_h_month, current_h_week = build_kpi_plan_queryset(filters_json=filters_json)
+        qs, current_h_month, current_h_week = build_kpi_plan_queryset(
+            filters_json=filters_json,
+            as_of_date=as_of_date,
+        )
     except InvalidFiltersJSON as e:
         # view側で 400 に変換してもいいが、serviceで返す方針ならここで返す
         return {"status": "error", "message": str(e)}, 400
 
     # ② 会計年度範囲 + month_ranges（month view / fallback に使う）
-    #base = datetime.now().date()
-    base = datetime(2026,4,5).date()
-
-    fy_start, fy_end = get_fiscal_year_range(base)
-    month_ranges = get_month_ranges(fy_start, fy_end)
-
-    day_ctx = None
+    fiscal_context = build_kpi_fiscal_context(as_of_date=as_of_date)
+    fy_start = fiscal_context.fiscal_year_start
+    fy_end = fiscal_context.fiscal_year_end
+    month_ranges = fiscal_context.month_ranges
+    day_ctx = fiscal_context.day_context
 
     if params.period_view == "day":
         qs = filter_kpi_plans_by_fiscal_year(
@@ -45,13 +48,8 @@ def build_kpi_matrix_response(params: KPIRequestParams, *, filters_json: Optiona
             fiscal_year_start=fy_start,
             fiscal_year_end=fy_end,
         )
-        day_ctx = build_day_context(fy_start=fy_start, fy_end=fy_end)
 
-    elif params.period_view in ("week", "month"):
-        # week/monthでも、夜勤跨ぎを計画側に寄せるためにシフト情報を使う。
-        day_ctx = build_day_context(fy_start=fy_start, fy_end=fy_end)
-
-    else:
+    elif params.period_view not in ("week", "month"):
         return {"status": "error", "message": "invalid period_view"}, 400
 
     rows = select_kpi_rows(qs)

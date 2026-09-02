@@ -246,7 +246,7 @@ class plannedMaintenance {
   }
 
   async loadCellDetail({ type, periodKey, team, label }) {
-    const { periodView } = this.state;
+    const { periodView, baseDate } = this.state;
 
     const cell = this.drawers?.panel('cell');
     
@@ -258,6 +258,7 @@ class plannedMaintenance {
         periodKey,
         team,
         metric: type,
+        baseDate,
       });
 
       const rows = res.rows || [];

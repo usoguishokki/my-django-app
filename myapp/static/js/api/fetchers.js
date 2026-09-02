@@ -3,6 +3,15 @@ import {
     requestFile,
 } from '../asyncCommunicator/index.js';
 
+function formatLocalCalendarDate(value) {
+    if (!(value instanceof Date)) return value;
+
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 /**
  * KPIマトリクス用データ取得
  * 例）GET /api/kpi-matrix/?period_view=month&target_view=team&metric=plan&base_date=YYYY-MM-DD
@@ -14,7 +23,7 @@ import {
  * @param {Object} p
  * @param {'month'|'week'|'day'} [p.periodView='month']  - 期間の粒度
  * @param {'team'|'individual'}  [p.targetView='team']   - 班 or 個人
- * @param {string|Date}          [p.baseDate=new Date()] - 基準日（会計年度の判定などに使う想定）
+ * @param {string|Date}          [p.baseDate]            - 基準日（会計年度の判定などに使う想定）
 
  * @param {Object}               [p.filters]             - 追加フィルタ（必要なら JSON で送る）
  *
@@ -31,10 +40,7 @@ export function fetchKpiMatrix(p = {}) {
   
   
     // base_date は YYYY-MM-DD 文字列に整形（会計年度の判定などに使えるように）
-    let base = p.baseDate ?? new Date();
-    if (base instanceof Date) {
-        base = base.toISOString().slice(0, 10);
-    }
+    const base = formatLocalCalendarDate(p.baseDate);
     if (typeof base === "string" && base) {
         params.set("base_date", base);
     }
@@ -77,6 +83,7 @@ export function fetchKpiCellDetail(p = {}) {
     const periodKey  = p.periodKey;
     const team       = p.team;
     const metric     = p.metric;
+    const base       = formatLocalCalendarDate(p.baseDate);
 
     params.set('period_view', periodView);
 
@@ -88,6 +95,9 @@ export function fetchKpiCellDetail(p = {}) {
     }
     if (typeof metric === 'string' && metric) {
         params.set('metric', metric);
+    }
+    if (typeof base === 'string' && base) {
+        params.set('base_date', base);
     }
 
     if (p.filters && typeof p.filters === 'object') {

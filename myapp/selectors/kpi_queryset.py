@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import date
 
 from django.db.models import F, Q, OuterRef, Subquery, IntegerField, CharField
 from django.db.models.functions import Coalesce, TruncDate
@@ -16,7 +16,7 @@ from myapp.selectors.query_builders import (
 from myapp.filters_maps import get_field_map, get_status_map, get_op_map, get_negated_ops
 from typing import Optional
 
-def build_kpi_plan_queryset(*, filters_json: Optional[str]):
+def build_kpi_plan_queryset(*, filters_json: Optional[str], as_of_date: date):
     """
     SRP: KPI集計のための Plan_tb ベース QuerySet を作る（必要な annotate + filters 適用）
     戻り値: (qs, current_h_month, current_h_week)
@@ -106,10 +106,9 @@ def build_kpi_plan_queryset(*, filters_json: Optional[str]):
     qs = qs.filter(q_simple).filter(q_adv)
 
     # --- 今日の h_month, h_week ---
-    today = datetime.now().date()
     current_cal = (
         Hozen_calendar_tb.objects
-        .filter(h_date=today)
+        .filter(h_date=as_of_date)
         .values("h_month", "h_week")
         .first()
     )
