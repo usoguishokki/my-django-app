@@ -5,6 +5,7 @@ from typing import Literal, Optional, Union, Tuple, cast
 
 from myapp.domain.errors import InvalidCellDetailParams, InvalidPeriodKey
 from myapp.domain.kpi_constants import PERIOD_VIEWS, CLICKABLE_METRICS
+from myapp.domain.kpi_date import parse_optional_base_date
 
 # ---- 型（静的型チェック用）----
 PeriodView = Literal["month", "week", "day"]
@@ -20,6 +21,7 @@ class KPICellDetailParams:
     team_key: TeamKey
     metric: Metric
     filters_json: Optional[str]
+    base_date: Optional[date] = None
 
 
 def parse_kpi_cell_detail_params(querydict) -> KPICellDetailParams:
@@ -28,6 +30,7 @@ def parse_kpi_cell_detail_params(querydict) -> KPICellDetailParams:
     team_key = (querydict.get("team") or "").strip()
     metric = (querydict.get("metric") or "").strip()
     filters_json = querydict.get("filters")
+    base_date = parse_optional_base_date(querydict.get("base_date"))
 
     #  period_view は定数へ
     if period_view not in PERIOD_VIEWS:
@@ -53,6 +56,7 @@ def parse_kpi_cell_detail_params(querydict) -> KPICellDetailParams:
         team_key=cast(TeamKey, team_key),
         metric=cast(Metric, metric),
         filters_json=filters_json,
+        base_date=base_date,
     )
 
 
