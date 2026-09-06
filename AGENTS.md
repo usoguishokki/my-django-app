@@ -93,3 +93,7 @@ Do not run migrations merely to validate a refactor. Select manual smoke tests b
 The read-only `python manage.py makemigrations --check --dry-run` command is allowed and is part of the standard validation baseline. Do not create migration files or run `migrate` unless explicitly requested.
 
 `myapp/tests/test_architecture_boundaries.py` is a permanent regression guard. Do not weaken it merely to make a change pass. If a legitimate exception is necessary, explain, review, and document it before altering the guard.
+
+## Database Research
+
+Exploratory Oracle reads use only the dedicated `HOZEN_READONLY` account; production application credentials must never be used for research. Credentials must not be printed, logged, committed, or placed in prompts. Research tooling is read-only and fail-closed: database permissions are the primary security boundary, while SQL validation is defense in depth. Prefer narrow columns and ranges, and do not query unrelated personal or sensitive information. Any Oracle Net NTS bypass for research must remain process-local and temporary and must not alter global Oracle configuration.
