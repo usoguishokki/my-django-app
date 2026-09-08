@@ -1,0 +1,10 @@
+.nagakusa-chat { max-width: 900px; margin: 1rem auto; padding: 1rem; color: #16233a; }
+.nagakusa-chat__header { border-bottom: 2px solid #147d83; }
+.nagakusa-chat__messages { min-height: 280px; margin: 1rem 0; padding: 0; list-style: none; }
+.nagakusa-chat__message { max-width: 80%; margin: .5rem 0; padding: .7rem; border-radius: 6px; white-space: pre-wrap; }
+.nagakusa-chat__message--user { margin-left: auto; background: #dbeafe; }
+.nagakusa-chat__message--assistant { background: #e7f6ef; }
+.nagakusa-chat__message--error { background: #fee2e2; color: #991b1b; }
+.nagakusa-chat__composer { display: grid; gap: .5rem; }
+.nagakusa-chat__composer textarea { min-height: 96px; resize: vertical; }
+.nagakusa-chat__composer button { justify-self: end; min-width: 88px; }

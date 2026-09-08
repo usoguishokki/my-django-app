@@ -49,6 +49,7 @@ web.config
 # Local auth/cache
 token_cache.bin
 *_cache.bin
+.nika-nagakusa-registration-state.json
 
 # Local debug scripts
 debug_*.py

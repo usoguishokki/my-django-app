@@ -612,3 +612,12 @@ def parts_search_view(request):
         request,
         "parts_search/parts_search.html",
     )
+
+
+@login_required
+@require_GET
+def nagakusa_ai_chat_view(request):
+    return render(
+        request,
+        "nagakusa/chat.html",
+    )

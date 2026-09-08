@@ -24,6 +24,15 @@ def build_manifest() -> dict:
             "ai": True,
             "rag_ingest": False,
         },
+        "host_permissions": [
+            {
+                "scope": "ai.message.send",
+                "reason": (
+                    "Send a user-authored Nika maintenance question to the "
+                    "Nagakusa Host AI bridge."
+                ),
+            },
+        ],
         "ai": {
             "help_url": "/api/ai/help",
             "route_url": "/api/ai/route",

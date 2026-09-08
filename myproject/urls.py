@@ -47,6 +47,11 @@ urlpatterns = [
         views.parts_search_view,
         name="parts_search",
     ),
+    path(
+        "ai-chat/",
+        views.nagakusa_ai_chat_view,
+        name="nagakusa_ai_chat",
+    ),
 ]
 
 if settings.DEBUG:

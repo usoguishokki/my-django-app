@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "version": 1,
+    "source": "nika-local",
+    "contract": "Nagakusa plugin runtime compatibility baseline"
+  },
+  "contracts": {
+    "host_ai_interop": {
+      "action": "ai.send_message",
+      "transport": "window.postMessage",
+      "correlation_field": "request_id",
+      "conversation_binding": "conversation_id",
+      "fallback_policy": "no local generative fallback"
+    },
+    "frame_proxy_authentication": {
+      "version": 1,
+      "headers": ["X-Nagakusa-Frame-Auth", "X-Nagakusa-Frame-Auth-Version"],
+      "ttl_seconds": 60
+    }
+  }
+}

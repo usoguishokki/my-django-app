@@ -68,11 +68,17 @@ from myapp.api.nagakusa import (
     nagakusa_ai_tool_call_api,
     nagakusa_ai_tools_api,
     nagakusa_health_api,
+    nagakusa_platform_spec_api,
 )
 
 
 urlpatterns = [
     path("health", nagakusa_health_api, name="nagakusa_health_api"),
+    path(
+        "platform-spec",
+        nagakusa_platform_spec_api,
+        name="nagakusa_platform_spec_api",
+    ),
     path("ai/help", nagakusa_ai_help_api, name="nagakusa_ai_help_api"),
     path("ai/route", nagakusa_ai_route_api, name="nagakusa_ai_route_api"),
     path("ai/tools", nagakusa_ai_tools_api, name="nagakusa_ai_tools_api"),

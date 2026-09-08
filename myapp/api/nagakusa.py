@@ -26,6 +26,7 @@ from myapp.nagakusa.load_safety import (
     tool_call_slot,
 )
 from myapp.nagakusa.manifest import build_manifest
+from myapp.nagakusa.platform_spec import get_platform_spec
 from myapp.services.nagakusa import execute_nagakusa_tool
 
 
@@ -111,6 +112,14 @@ def nagakusa_ai_tools_api(request: HttpRequest) -> HttpResponse:
     if not _runtime_is_available():
         return _error_response(code="runtime_not_configured", status=503)
     return json_response(build_tool_manifest())
+
+
+@require_GET
+def nagakusa_platform_spec_api(request: HttpRequest) -> HttpResponse:
+    del request
+    response = json_response(get_platform_spec())
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 @csrf_exempt
