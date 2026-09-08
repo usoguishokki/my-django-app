@@ -12,6 +12,14 @@ from myapp.api.nagakusa import nagakusa_plugin_manifest
 
 urlpatterns = [
     path(
+        "",
+        RedirectView.as_view(
+            pattern_name="home",
+            permanent=False,
+        ),
+        name="root",
+    ),
+    path(
         '.well-known/nagakusa-plugin.json',
         nagakusa_plugin_manifest,
         name='nagakusa_plugin_manifest',
