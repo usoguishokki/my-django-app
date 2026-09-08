@@ -92,6 +92,10 @@ Do not run migrations merely to validate a refactor. Select manual smoke tests b
 
 The read-only `python manage.py makemigrations --check --dry-run` command is allowed and is part of the standard validation baseline. Do not create migration files or run `migrate` unless explicitly requested.
 
+## Nagakusa Integration
+
+Before changing the Nagakusa runtime, read [docs/nagakusa/README.md](docs/nagakusa/README.md) and its linked architecture and development guides. Preserve the `API -> Service -> Selector -> Model` boundary, do not use localhost HTTP from native Nika Tools, and never expose integration credentials. Keep development port 8010 separate from IIS production port 8000. Plugin Hub actions require explicit approval.
+
 `myapp/tests/test_architecture_boundaries.py` is a permanent regression guard. Do not weaken it merely to make a change pass. If a legitimate exception is necessary, explain, review, and document it before altering the guard.
 
 ## Database Research
