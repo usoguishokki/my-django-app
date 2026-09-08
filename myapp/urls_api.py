@@ -59,9 +59,28 @@ from myapp.api.card_work.card_work import (
 from myapp.api.parts_search.parts_search import (
     parts_search_api,
 )
+from myapp.api.integration.instruction_cards import (
+    instruction_card_search_api,
+)
+from myapp.api.nagakusa import (
+    nagakusa_ai_help_api,
+    nagakusa_ai_route_api,
+    nagakusa_ai_tool_call_api,
+    nagakusa_ai_tools_api,
+    nagakusa_health_api,
+)
 
 
 urlpatterns = [
+    path("health", nagakusa_health_api, name="nagakusa_health_api"),
+    path("ai/help", nagakusa_ai_help_api, name="nagakusa_ai_help_api"),
+    path("ai/route", nagakusa_ai_route_api, name="nagakusa_ai_route_api"),
+    path("ai/tools", nagakusa_ai_tools_api, name="nagakusa_ai_tools_api"),
+    path(
+        "ai/tool-call",
+        nagakusa_ai_tool_call_api,
+        name="nagakusa_ai_tool_call_api",
+    ),
     path("kpi-matrix/", kpi_matrix_api, name="kpi_matrix_api"),
     path("kpi-matrix/cell-detail/", kpi_matrix_cell_detail_api, name="kpi_matrix_cell_detail_api"),
     path("plans/<int:plan_id>/detail/", plan_detail_api, name="plan_detail_api"),
@@ -209,5 +228,10 @@ urlpatterns = [
         "parts-search/",
         parts_search_api,
         name="parts_search_api",
+    ),
+    path(
+        "integration/instruction-cards/search/",
+        instruction_card_search_api,
+        name="instruction_card_search_api",
     ),
 ]

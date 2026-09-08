@@ -8,8 +8,14 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from django.views.generic import RedirectView
+from myapp.api.nagakusa import nagakusa_plugin_manifest
 
 urlpatterns = [
+    path(
+        '.well-known/nagakusa-plugin.json',
+        nagakusa_plugin_manifest,
+        name='nagakusa_plugin_manifest',
+    ),
     path('admin/', admin.site.urls),
     path('login/', views.login_view, name='login'),
     path(
