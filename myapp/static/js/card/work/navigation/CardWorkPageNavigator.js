@@ -1,3 +1,4 @@
+import { pluginUrl } from '../../../pluginUrls.js';
 // static/js/card/work/navigation/CardWorkPageNavigator.js
 
 const CARD_WORK_PAGE_PATH = '/card-work/';
@@ -38,8 +39,7 @@ export function buildCardWorkPageUrl({
     }
 
     const url = new URL(
-        CARD_WORK_PAGE_PATH,
-        window.location.origin
+        pluginUrl(CARD_WORK_PAGE_PATH)
     );
 
     url.searchParams.set('source', source);

@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponseBadRequest, Http404
+from django.urls import reverse
+from myapp.http.plugin_urls import relative_plugin_url
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
@@ -85,7 +87,7 @@ from myapp.http.errors import (
 @require_http_methods(["GET", "POST"])
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('home')
+        return redirect(relative_plugin_url(reverse('home'), request.path_info))
 
     if request.method == 'POST':
         form = LoginForm(request.POST)
@@ -95,7 +97,7 @@ def login_view(request):
             if user:
                 login(request, user)
                 request.session['login_number'] = login_number
-                return redirect('home')
+                return redirect(relative_plugin_url(reverse('home'), request.path_info))
             else:
                 form.add_error('login_number', 'ログイン番号が存在しません。')
     else:
@@ -617,7 +619,10 @@ def parts_search_view(request):
 @login_required
 @require_GET
 def nagakusa_ai_chat_view(request):
+    from myapp.nagakusa.config import ai_agent_mode
+
     return render(
         request,
         "nagakusa/chat.html",
+        {"nagakusa_chat_enabled": ai_agent_mode() == "host"},
     )

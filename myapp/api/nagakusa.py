@@ -31,7 +31,9 @@ from myapp.services.nagakusa import execute_nagakusa_tool
 
 
 def _error_response(*, code: str, status: int) -> HttpResponse:
-    response = json_response({"error": {"code": code}}, status=status)
+    response = json_response({"ok": False, "error": {"code": code, "message": code.replace("_", " ")}}, status=status)
+    if status == 401:
+        response["WWW-Authenticate"] = 'Bearer realm="nagakusa-plugin-ai"'
     response["Cache-Control"] = "no-store"
     return response
 
@@ -71,7 +73,7 @@ def _authorized_json_request(
     scope: str,
 ) -> HttpResponse | None:
     if not _is_authorized(request):
-        return _error_response(code="unauthorized", status=401)
+        return _error_response(code="ai_authentication_required", status=401)
     if not request_body_is_within_limit(request):
         return _error_response(code="request_too_large", status=413)
     if not request_rate_is_allowed(request, scope=scope):
@@ -149,7 +151,7 @@ def nagakusa_ai_tool_call_api(request: HttpRequest) -> HttpResponse:
     except InvalidJsonBody:
         return _error_response(code="invalid_json", status=400)
     except NagakusaToolRequestError as error:
-        return _error_response(code=error.code, status=400)
+        return _error_response(code=error.code, status=404 if error.code == "tool_not_found" else 400)
 
     with tool_call_slot() as acquired:
         if not acquired:

@@ -4,6 +4,10 @@
 .parent-grid {
   visibility: visible; }
 
+.child-grid {
+  overflow-x: hidden;
+  overflow-y: auto; }
+
 .nagakusa-chat {
   max-width: 900px;
   margin: 1rem auto;
@@ -48,3 +52,5 @@
 .nagakusa-chat__composer button {
   justify-self: end;
   min-width: 88px; }
+
+/*# sourceMappingURL=nagakusa_chat.css.map */

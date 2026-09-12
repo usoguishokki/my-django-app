@@ -66,3 +66,9 @@ MTBF算出コード.py
 
 # Local development tools - excluded from production
 /local_tools/
+
+# Local digest-only InstructionCard RAG PoC journal
+/.nika-rag-poc/
+
+# Local AI work checkpoints
+/.ai-checkpoints/

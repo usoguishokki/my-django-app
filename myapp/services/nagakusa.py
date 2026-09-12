@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from myapp.presenters.nagakusa import present_instruction_card_tool_result
-from myapp.services.instruction_card_search import search_instruction_cards
+from myapp.presenters.nagakusa import present_instruction_card_tool_result, present_instruction_card_detail_result
+from myapp.services.instruction_card_search import search_instruction_cards, get_instruction_card_detail
 
 
 def execute_nagakusa_tool(
@@ -11,6 +11,10 @@ def execute_nagakusa_tool(
     tool_name: str,
     arguments: dict[str, Any],
 ) -> dict:
+    if tool_name == "nika_get_instruction_card_detail":
+        return present_instruction_card_detail_result(get_instruction_card_detail(
+            instruction_card_id=arguments["instruction_card_id"],
+        ))
     if tool_name != "nika_search_instruction_cards":
         raise ValueError("unknown_tool")
 

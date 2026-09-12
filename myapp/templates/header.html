@@ -1,68 +1,69 @@
-{% load static %}
-{% load sass_tags %}
+{% load plugin_urls %}
+
 
 
 {% block extra_css %}
-    <link href="{% sass_src 'css/header.scss' %}" rel="stylesheet" type="text/css">
+    <link href="{% plugin_sass 'css/header.scss' %}" rel="stylesheet" type="text/css">
 {% endblock %}
 
 <header class="l-header">
 
     <h1 class="m-site" tabindex="0">
         <span class="site-name">Nika</span>
-        <img src="{% static 'img/Nika.png' %}" alt="icon" class="site-icon">
+        <img src="{% plugin_static 'img/Nika.png' %}" alt="icon" class="site-icon">
 
         <div class="dynamic-links" aria-hidden="true">
-            <a class="menu-item home loading-link" href="{% url 'home' %}">
-                <img src="{% static 'img/home.png' %}" alt="ホームアイコン" class="icon">
+            <a class="menu-item home loading-link" href="{% plugin_url 'home' %}">
+                <img src="{% plugin_static 'img/home.png' %}" alt="ホームアイコン" class="icon">
                 <span class="menu-label"> ホーム</span>
             </a>
 
-            <a class="menu-item time-table time-table-link" href="{% url 'timeTable' %}">
-                <img src="{% static 'img/timetable.svg' %}" alt="タイムテーブル" class="icon">
+            <a class="menu-item time-table time-table-link" href="{% plugin_url 'timeTable' %}">
+                <img src="{% plugin_static 'img/timetable.svg' %}" alt="タイムテーブル" class="icon">
                 <span class="menu-label">タイムテーブル</span>
             </a>
 
-            <a class="menu-item check loading-link" href="{% url 'workContets' %}">
-                <img src="{% static 'img/check.png' %}" alt="確認アイコン" class="icon">
+            <a class="menu-item check loading-link" href="{% plugin_url 'workContets' %}">
+                <img src="{% plugin_static 'img/check.png' %}" alt="確認アイコン" class="icon">
                 <span class="menu-label">確認</span>
             </a>
-            <a class="menu-item planned-maintenance loading-linke" href="{% url 'plannedMaintenance' %}">
-                <img src="{% static 'img/plannedMaintenance.png' %}" alt="計画保全アイコン" class="icon">
+            <a class="menu-item planned-maintenance loading-linke" href="{% plugin_url 'plannedMaintenance' %}">
+                <img src="{% plugin_static 'img/plannedMaintenance.png' %}" alt="計画保全アイコン" class="icon">
                 <span class="menu-label">計画</span>
             </a>
-            <a class="menu-item standards loading-link" href="{% url 'inspectionStadards' %}">
-                <img src="{% static 'img/standard.png' %}" alt="基準書アイコン" class="icon">
+            <a class="menu-item standards loading-link" href="{% plugin_url 'inspectionStadards' %}">
+                <img src="{% plugin_static 'img/standard.png' %}" alt="基準書アイコン" class="icon">
                 <span class="menu-label">点検基準書</span>
             </a>
 
             <!--
-            <a class="achievements loading-link" href="{% url 'achievements' %}">
-                <img src="{% static 'img/achievements.png' %}" alt="個人実績アイコン" class="icon">
+            <a class="achievements loading-link" href="{% plugin_url 'achievements' %}">
+                <img src="{% plugin_static 'img/achievements.png' %}" alt="個人実績アイコン" class="icon">
                 実績
             </a>
             -->
 
-            <a class="menu-item output-csv loading-linke" href="{% url 'csvDownloadPage' %}">
-                <img src="{% static 'img/outputCsv.png' %}" alt="CSVダウンロードアイコン" class="icon">
+            <a class="menu-item output-csv loading-linke" href="{% plugin_url 'csvDownloadPage' %}">
+                <img src="{% plugin_static 'img/outputCsv.png' %}" alt="CSVダウンロードアイコン" class="icon">
                 <span class="menu-label">CSV_DL</span>
             </a>
             <a
                 class="menu-item parts-search loading-link"
-                href="{% url 'parts_search' %}"
+                href="{% plugin_url 'parts_search' %}"
             >
                 <img
-                    src="{% static 'img/parts_search_icon.svg' %}"
+                    src="{% plugin_static 'img/parts_search_icon.svg' %}"
                     alt="予備品検索アイコン"
                     class="icon"
                 >
                 <span class="menu-label">予備品検索</span>
             </a>
-            <a class="menu-item loading-link" href="{% url 'nagakusa_ai_chat' %}">
+            <a class="menu-item loading-link" href="{% plugin_url 'nagakusa_ai_chat' %}"
+               data-nagakusa-ai-entry data-host-plugin-url="{{ nagakusa_host_plugin_url }}">
                 <span class="menu-label">AI相談</span>
             </a>
-            <a class="menu-item logout" href="{% url 'logout' %}">
-                <img src="{% static 'img/logout.png' %}" alt="ログアウトアイコン" class="icon">
+            <a class="menu-item logout" href="{% plugin_url 'logout' %}">
+                <img src="{% plugin_static 'img/logout.png' %}" alt="ログアウトアイコン" class="icon">
                 <span class="menu-label">logout</span>
             </a>
         </div>
@@ -73,15 +74,14 @@
         data-job-title="{{ employee.job_title }}"
         data-affiliation="{{ employee.belongs.affilation}}"
         data-affiliation_id="{{ employee.belongs_id }}">
-        <img src="{% static 'img/user.png' %}" alt="ユーザアイコン" class="icon user-icon">
+        <img src="{% plugin_static 'img/user.png' %}" alt="ユーザアイコン" class="icon user-icon">
         <div id="userProfile" class="user-profile">
             {{ employee.user.name }}
         </div>
     </div>
     
 </header>
+<script src="{% plugin_static 'js/nagakusa/entry.js' %}"></script>
 
-{% block script %}
-    <script type="module" src="{% static 'js/header/header.js' %}"></script>
-{% endblock %}
+<script type="module" src="{% plugin_static 'js/header/header.js' %}"></script>
 

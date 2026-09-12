@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% load static %}
-{% load sass_tags %}
+{% load plugin_urls %}
+
 
 {% block title %}ログイン{% endblock %}
 {% block extra_css %}
-    <link href="{% sass_src 'css/login.scss' %}" rel="stylesheet" type="text/css">
+    <link href="{% plugin_sass 'css/login.scss' %}" rel="stylesheet" type="text/css">
 {% endblock %}
     
 {% block content %}
-    <form class="sign-in" method="post" action="{% url 'login' %}" autocomplete="off">
+    <form class="sign-in" method="post" action="{% plugin_url 'login' %}" autocomplete="off">
         {% csrf_token %}
         <h1 class="sign-in-title">Sign in to Nika</h1>
         {% if form.login_number.errors %}
@@ -20,14 +20,5 @@
         </div>
     </form>
 
-    <script>
-      window.addEventListener('pageshow', function (event) {
-        const navEntries = performance.getEntriesByType('navigation');
-        const navType = navEntries.length > 0 ? navEntries[0].type : '';
-
-        if (event.persisted || navType === 'back_forward') {
-          window.location.reload();
-        }
-      });
-    </script>
+    <script src="{% plugin_static 'js/login.js' %}"></script>
 {% endblock %}

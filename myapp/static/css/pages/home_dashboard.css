@@ -315,8 +315,8 @@
     font-size: 0;
     line-height: 0;
     pointer-events: none;
-    -webkit-mask-image: url("/static/img/arrow.svg");
-    mask-image: url("/static/img/arrow.svg");
+    -webkit-mask-image: url("../../img/arrow.svg");
+    mask-image: url("../../img/arrow.svg");
     -webkit-mask-repeat: no-repeat;
     mask-repeat: no-repeat;
     -webkit-mask-position: center;

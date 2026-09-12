@@ -1,3 +1,4 @@
+$custom-dropdown-arrow-url: '/static/img/arrow.svg' !default;
 @import '../../foundation/typography';
 
 /* =========================================
@@ -87,8 +88,8 @@ $custom-dropdown-shadow: 0 1px 2px rgba(15, 23, 42, 0.06) !default;
   
     pointer-events: none;
   
-    -webkit-mask-image: url('/static/img/arrow.svg');
-    mask-image: url('/static/img/arrow.svg');
+    -webkit-mask-image: url($custom-dropdown-arrow-url);
+    mask-image: url($custom-dropdown-arrow-url);
   
     -webkit-mask-repeat: no-repeat;
     mask-repeat: no-repeat;

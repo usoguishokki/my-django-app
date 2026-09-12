@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% load static %}
-{% load sass_tags %}
+{% load plugin_urls %}
+
 
 {% block title %}AI相談{% endblock %}
 {% block extra_css %}
-<link href="{% sass_src 'css/pages/nagakusa_chat.scss' %}" rel="stylesheet" type="text/css">
+<link href="{% plugin_sass 'css/pages/nagakusa_chat.scss' %}" rel="stylesheet" type="text/css">
 {% endblock %}
 {% block header %}{% include "header.html" %}{% endblock %}
 {% block content %}
-<section class="nagakusa-chat" data-nagakusa-chat aria-label="AI相談">
+<section class="nagakusa-chat" data-nagakusa-chat data-chat-enabled="{{ nagakusa_chat_enabled|yesno:'true,false' }}" aria-label="AI相談">
     <header class="nagakusa-chat__header">
         <h2>AI相談</h2>
         <p data-chat-status>Host接続を確認中です。</p>
@@ -22,6 +22,6 @@
 </section>
 {% endblock %}
 {% block script %}
-<script src="{% static 'js/nagakusa/hostAiBridge.js' %}"></script>
-<script type="module" src="{% static 'js/nagakusa/chat.js' %}"></script>
+<script src="{% plugin_static 'js/nagakusa/hostAiBridge.js' %}"></script>
+<script type="module" src="{% plugin_static 'js/nagakusa/chat.js' %}"></script>
 {% endblock %}

@@ -1,3 +1,4 @@
+import { pluginUrl } from '../pluginUrls.js';
 // static/js/asyncCommunicator/request.js
 
 function getCSRFToken() {
@@ -130,7 +131,7 @@ export async function request(options = {}) {
     if (response.status === 401 || response.status === 403) {
         if (redirectOnAuthError) {
             alert('セッションが切れました。再度ログインしてください。');
-            window.location.href = '/login/';
+            window.location.href = pluginUrl('/login/');
             return null;
         }
 

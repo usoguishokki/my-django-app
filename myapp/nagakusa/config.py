@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
@@ -37,6 +38,53 @@ def frame_auth_secret() -> str:
     return integration_token()
 
 
+def plugin_version() -> str:
+    """Stable release identifier shared by the manifest and browser assets."""
+    return os.getenv("NAGAKUSA_PLUGIN_VERSION", "").strip()
+
+
+def host_plugin_url() -> str:
+    """Public Host entry, never a runtime URL or an inferred deep link."""
+    slug = os.getenv("NAGAKUSA_PLUGIN_MODULE_SLUG", "nika").strip()
+    if not re.fullmatch(r"[a-z0-9_-]+", slug):
+        return ""
+    value = os.getenv(
+        "NAGAKUSA_HOST_PLUGIN_URL",
+        f"{host_base_url().rstrip('/')}/plugins/{slug}/",
+    ).strip()
+    try:
+        parsed = urlsplit(value)
+        valid = (
+            parsed.scheme == "https" and parsed.hostname
+            and not parsed.username and not parsed.password
+            and not parsed.query and not parsed.fragment
+            and not any(character.isspace() for character in value)
+        )
+    except ValueError:
+        return ""
+    return value if valid else ""
+
+
+def host_base_url() -> str:
+    return os.getenv(
+        "NAGAKUSA_BASE_URL", "https://nagakusa-dx.toyota-shokki.co.jp/"
+    ).strip()
+
+
+def ai_agent_mode() -> str:
+    mode = os.getenv("NAGAKUSA_PLUGIN_AI_AGENT_MODE", "disabled").strip().lower()
+    if mode not in {"disabled", "host"}:
+        raise NagakusaConfigurationError("NAGAKUSA_PLUGIN_AI_AGENT_MODE must be disabled or host.")
+    return mode
+
+
+def ai_tools_enabled() -> bool:
+    value = os.getenv("NAGAKUSA_PLUGIN_AI_ENABLED", "0").strip().lower()
+    if value not in {"1", "true", "yes", "on", "0", "false", "no", "off"}:
+        raise NagakusaConfigurationError("NAGAKUSA_PLUGIN_AI_ENABLED must be a boolean.")
+    return value in {"1", "true", "yes", "on"}
+
+
 def platform_spec_url() -> str:
     return os.getenv("NAGAKUSA_PLUGIN_SPEC_API_URL", "").strip()
 
@@ -68,10 +116,15 @@ def registration_key() -> str:
 
 
 def validate_absolute_http_url(value: str, *, name: str) -> str:
-    normalized_value = str(value or "").strip().rstrip("/")
-    parsed = urlsplit(normalized_value)
+    normalized_value = str(value or "").strip()
+    try:
+        parsed = urlsplit(normalized_value)
+        parsed.port
+    except ValueError:
+        raise NagakusaConfigurationError(f"{name} must be an absolute HTTP(S) URL.") from None
     if (
-        parsed.scheme not in {"http", "https"}
+        any(character.isspace() for character in normalized_value)
+        or parsed.scheme not in {"http", "https"}
         or not parsed.hostname
         or parsed.username
         or parsed.password
@@ -122,4 +175,7 @@ def get_runtime_configuration() -> NagakusaRuntimeConfiguration:
             "Nagakusa runtime identity is not configured."
         )
 
+    values["base_url"] = validate_absolute_http_url(
+        values["base_url"], name="NAGAKUSA_RUNTIME_BASE_URL"
+    ).rstrip("/") + "/"
     return NagakusaRuntimeConfiguration(**values)

@@ -58,3 +58,19 @@ def select_instruction_card_candidates(
             "-id",
         )
     )
+
+def select_instruction_card_by_id(*, instruction_card_id: int) -> InstructionCard | None:
+    """Return the unique primary-key record or None; database errors propagate.
+
+    Loads only the maintenance fields consumed by the existing result serializer.
+    No legacy-ID fallback, related-object loading, or writes.
+    """
+    try:
+        return InstructionCard.objects.only(
+            "id", "legacy_id", "issued_date", "completed_date", "process_name",
+            "equipment_name", "maintenance_type", "work_name", "request_text",
+            "action_text", "work_reflection", "replacement_part_1",
+            "replacement_part_2", "completion_status", "card_reference",
+        ).get(pk=instruction_card_id)
+    except InstructionCard.DoesNotExist:
+        return None

@@ -3,6 +3,10 @@ from __future__ import annotations
 from typing import Any
 
 
+TOOL_NAMES = ("nika_search_instruction_cards", "nika_get_instruction_card_detail")
+MAX_INSTRUCTION_CARD_ID = 9223372036854775807
+
+
 class NagakusaToolRequestError(ValueError):
     def __init__(self, *, code: str) -> None:
         super().__init__(code)
@@ -11,11 +15,24 @@ class NagakusaToolRequestError(ValueError):
 
 def build_tool_manifest() -> dict[str, Any]:
     return {
+        "selection": {
+            "strategy": "host_planner_from_tool_metadata",
+            "semantic_fields": [
+                "name", "label", "description", "capability_summary",
+                "when_to_use", "tags", "examples", "returns", "constraints",
+                "capability_type", "entity_type", "scope", "freshness",
+                "follow_up_tools", "screen_keys",
+            ],
+        },
         "tools": [
             {
                 "name": "nika_search_instruction_cards",
                 "label": "Nika InstructionCard Search",
                 "description": "Search Nika historical InstructionCard facts.",
+                "capability_summary": (
+                    "Search live Nika Oracle InstructionCard records for "
+                    "historical maintenance evidence."
+                ),
                 "input_schema": {
                     "type": "object",
                     "properties": {
@@ -39,6 +56,19 @@ def build_tool_manifest() -> dict[str, Any]:
                 "side_effects": "read_only",
                 "risk_level": "read",
                 "planner_priority": 40,
+                "capability_type": "search",
+                "entity_type": "instruction_card",
+                "scope": "nika.instruction_card",
+                "freshness": "live_query",
+                "follow_up_tools": ["nika_get_instruction_card_detail"],
+                "screen_keys": ["nika_ai_chat"],
+                "tags": [
+                    "instruction card",
+                    "maintenance history",
+                    "work history",
+                    "repair record",
+                    "equipment maintenance",
+                ],
                 "when_to_use": [
                     "When historical maintenance cases may help answer a question.",
                 ],
@@ -52,6 +82,39 @@ def build_tool_manifest() -> dict[str, Any]:
                     "Historical records are not formal maintenance standards.",
                     "A zero-result search must not be completed with invented facts.",
                 ],
+            },
+            {
+                "name": "nika_get_instruction_card_detail",
+                "label": "Nika InstructionCard Detail",
+                "description": "Inspect one historical InstructionCard selected from search results.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "instruction_card_id": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": MAX_INSTRUCTION_CARD_ID,
+                            "description": "Use instruction_card_id returned by Nika search, not the potentially duplicate legacy_id.",
+                        },
+                    },
+                    "required": ["instruction_card_id"],
+                    "additionalProperties": False,
+                },
+                "capability_summary": "Read the maintenance evidence for one selected repair or work-history record.",
+                "when_to_use": ["After searching InstructionCards, inspect a selected record before citing its maintenance evidence."],
+                "returns": ["One record with maintenance facts, or status=not_found and record=null.", "Text fields are limited to 4000 characters; truncated_fields identifies shortened fields."],
+                "constraints": ["Use an instruction_card_id from search results; legacy_id is not unique.", "Historical evidence is not a formal maintenance standard.", "Search again for related equipment history when more evidence is needed."],
+                "scope": "nika.instruction_card",
+                "freshness": "live_query",
+                "side_effects": "read_only",
+                "capability_type": "entity_detail",
+                "entity_type": "instruction_card",
+                "risk_level": "read",
+                "follow_up_tools": ["nika_search_instruction_cards"],
+                "screen_keys": ["nika_ai_chat"],
+                "tags": ["instruction card", "maintenance history", "work history", "repair record", "equipment maintenance", "record detail"],
+                "examples": ["Inspect the InstructionCard selected from the maintenance search using its instruction_card_id."],
+                "planner_priority": 40,
             },
         ],
     }
@@ -77,11 +140,23 @@ def parse_tool_call(payload: object) -> tuple[str, dict[str, Any]]:
     tool_name = payload.get("tool")
     arguments = payload.get("arguments")
 
-    if tool_name != "nika_search_instruction_cards":
-        raise NagakusaToolRequestError(code="unknown_tool")
+    if tool_name is None or tool_name == "":
+        raise NagakusaToolRequestError(code="tool_required")
+    if tool_name not in TOOL_NAMES:
+        raise NagakusaToolRequestError(code="tool_not_found")
 
     if not isinstance(arguments, dict):
         raise NagakusaToolRequestError(code="invalid_tool_arguments")
+
+    if tool_name == "nika_get_instruction_card_detail":
+        identifier = arguments.get("instruction_card_id")
+        if (
+            set(arguments) != {"instruction_card_id"}
+            or type(identifier) is not int
+            or not 1 <= identifier <= MAX_INSTRUCTION_CARD_ID
+        ):
+            raise NagakusaToolRequestError(code="invalid_tool_arguments")
+        return tool_name, {"instruction_card_id": identifier}
 
     allowed_keys = {"equipment", "keywords", "limit"}
     if set(arguments) - allowed_keys:

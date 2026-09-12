@@ -208,3 +208,41 @@ class InstructionCardSearchServiceTests(TestCase):
             )
         self.assertEqual(1, len(result.items))
         self.assertEqual(2, selector.call_count)
+
+    def test_response_limit_is_capped_at_ten_after_full_candidate_ranking(self):
+        cards = [
+            SimpleNamespace(
+                id=index,
+                legacy_id=f"CARD-{index}",
+                issued_date=None,
+                completed_date=None,
+                equipment_name="Example equipment",
+                process_name="",
+                work_name="keyword",
+                request_text="",
+                action_text="",
+                work_reflection=None,
+                replacement_part_1=None,
+                replacement_part_2=None,
+                maintenance_type="",
+                completion_status="",
+                card_reference=None,
+            )
+            for index in range(1, 12)
+        ]
+        with patch.object(
+            instruction_card_search,
+            "select_instruction_card_candidates",
+            return_value=cards,
+        ) as selector:
+            result = instruction_card_search.search_instruction_cards(
+                equipment="Example equipment",
+                keywords=("keyword",),
+                limit=10,
+            )
+        self.assertEqual(10, len(result.items))
+        selector.assert_called_once_with(
+            equipment="Example equipment",
+            keywords=("keyword",),
+            exact_equipment=True,
+        )

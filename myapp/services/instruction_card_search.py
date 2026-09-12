@@ -6,6 +6,7 @@ from typing import Any
 from myapp.selectors.instruction_cards import (
     SEARCH_FIELDS,
     select_instruction_card_candidates,
+    select_instruction_card_by_id,
 )
 
 
@@ -141,4 +142,34 @@ def search_instruction_cards(
         equipment=equipment,
         keywords=keywords,
         items=tuple(items[:limit]),
+    )
+
+@dataclass(frozen=True)
+class InstructionCardDetailResult:
+    instruction_card_id: int
+    record: dict[str, Any] | None
+    truncated_fields: tuple[str, ...] = ()
+
+
+def get_instruction_card_detail(*, instruction_card_id: int) -> InstructionCardDetailResult:
+    """Read one card using the existing evidence projection, with bounded text.
+
+    A missing primary key is a normal result; infrastructure errors propagate.
+    No search-match evidence is attributed to a direct ID lookup.
+    """
+    card = select_instruction_card_by_id(instruction_card_id=instruction_card_id)
+    if card is None:
+        return InstructionCardDetailResult(instruction_card_id=instruction_card_id, record=None)
+    record = _as_result_item(card=card, keywords=())
+    for field in ("matched_keywords", "matched_fields", "match_count"):
+        record.pop(field)
+    truncated_fields = []
+    for field, value in record.items():
+        if isinstance(value, str) and len(value) > 4000:
+            record[field] = value[:4000]
+            truncated_fields.append(field)
+    return InstructionCardDetailResult(
+        instruction_card_id=instruction_card_id,
+        record=record,
+        truncated_fields=tuple(truncated_fields),
     )

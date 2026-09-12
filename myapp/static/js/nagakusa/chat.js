@@ -7,6 +7,14 @@ const send = root.querySelector("[data-chat-send]");
 let conversationId = "";
 let sending = false;
 
+function responseText(result) {
+    for (const value of [result.assistant_message, result.message, result.content]) {
+        if (typeof value === "string" && value) return value;
+        if (value && typeof value.content === "string" && value.content) return value.content;
+    }
+    return "回答を受信しました。";
+}
+
 function appendMessage(kind, text) {
     const item = document.createElement("li");
     item.className = `nagakusa-chat__message nagakusa-chat__message--${kind}`;
@@ -14,7 +22,7 @@ function appendMessage(kind, text) {
     messages.append(item);
 }
 
-if (window.parent === window || !window.NagakusaAiBridge) {
+if (root.dataset.chatEnabled !== "true" || window.parent === window || !window.NagakusaAiBridge) {
     status.textContent = "AI相談はNagakusa Host内でのみ利用できます。";
     input.disabled = true;
     send.disabled = true;
@@ -25,7 +33,7 @@ if (window.parent === window || !window.NagakusaAiBridge) {
 form.addEventListener("submit", async function (event) {
     event.preventDefault();
     const text = input.value.trim();
-    if (!text || sending) return;
+    if (!text || sending || input.disabled) return;
     sending = true;
     send.disabled = true;
     appendMessage("user", text);
@@ -34,11 +42,12 @@ form.addEventListener("submit", async function (event) {
     try {
         const result = await window.NagakusaAiBridge.sendMessage({ message: text, conversation_id: conversationId });
         conversationId = String(result.conversation_id || conversationId || "");
-        appendMessage("assistant", String(result.message || result.content || "回答を受信しました。"));
+        appendMessage("assistant", responseText(result));
         status.textContent = "回答を受信しました。";
     } catch (error) {
         status.textContent = "Nagakusa AIを利用できません。";
-        appendMessage("error", "回答を取得できませんでした。");
+        // Display only a structured Host message, never a local exception or stack.
+        appendMessage("error", error.hostMessage || "回答を取得できませんでした。");
     } finally {
         sending = false;
         send.disabled = false;

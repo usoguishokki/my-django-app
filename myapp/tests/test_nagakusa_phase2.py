@@ -23,6 +23,8 @@ IDENTITY = {
     "NAGAKUSA_PLUGIN_MODULE_SLUG": "existing-hozen-module",
     "NAGAKUSA_PLUGIN_LABEL": "Existing Hozen Runtime",
     "NAGAKUSA_PLUGIN_VERSION": "1.0.0",
+    "NAGAKUSA_PLUGIN_AI_AGENT_MODE": "host",
+    "NAGAKUSA_BASE_URL": "https://host.example/",
     "NAGAKUSA_RUNTIME_BASE_URL": "http://127.0.0.1:8010",
     "NAGAKUSA_PLUGIN_AI_API_TOKEN": "a" * 48,
 }
@@ -64,10 +66,10 @@ class NagakusaPhase2Tests(TestCase):
         ):
             payload = platform_spec.get_platform_spec()
         self.assertEqual("local_snapshot", payload["served_from"])
-        self.assertEqual(1, payload["metadata"]["version"])
+        self.assertEqual(25, payload["channel"]["version"])
 
     def test_platform_spec_remote_response_is_cached_and_validated(self):
-        remote = {"metadata": {"version": 2}, "contracts": {}}
+        remote = {"channel": {"version": 25}, "contracts": {}}
         response = type("Response", (), {"payload": remote})()
         with patch.object(platform_spec.cache, "get", return_value=None), patch.object(
             platform_spec, "platform_spec_url", return_value="https://host.example/spec"

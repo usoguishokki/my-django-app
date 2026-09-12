@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from datetime import date
+from pathlib import Path
 from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import patch
@@ -10,6 +11,7 @@ from unittest.mock import patch
 from django.test import RequestFactory
 
 from myapp.api import nagakusa as api
+from myapp.nagakusa.ai import build_tool_manifest
 from myapp.nagakusa import load_safety
 from myapp.services.instruction_card_search import InstructionCardSearchResult
 
@@ -20,6 +22,7 @@ IDENTITY = {
     "NAGAKUSA_PLUGIN_MODULE_SLUG": "nika-maintenance",
     "NAGAKUSA_PLUGIN_LABEL": "Nika",
     "NAGAKUSA_PLUGIN_VERSION": "1.0.0",
+    "NAGAKUSA_PLUGIN_AI_ENABLED": "1",
     "NAGAKUSA_RUNTIME_BASE_URL": "http://127.0.0.1:8010",
     "NAGAKUSA_PLUGIN_AI_API_TOKEN": "test-host-token",
 }
@@ -45,8 +48,13 @@ class NagakusaFoundationTests(TestCase):
         response = api.nagakusa_plugin_manifest(self.factory.get("/manifest"))
         payload = json.loads(response.content)
         self.assertEqual(200, response.status_code)
-        self.assertEqual(["nika_search_instruction_cards"], payload["tools"])
+        self.assertEqual(["nika_search_instruction_cards", "nika_get_instruction_card_detail"], payload["tools"])
         self.assertFalse(payload["features"]["rag_ingest"])
+        self.assertEqual([], payload["data_sources"])
+        self.assertEqual(
+            ["ai.message.send"],
+            [item["scope"] for item in payload["host_permissions"]],
+        )
         self.assertNotIn(IDENTITY["NAGAKUSA_PLUGIN_AI_API_TOKEN"], response.content.decode())
 
     def test_missing_identity_fails_closed(self):
@@ -69,6 +77,48 @@ class NagakusaFoundationTests(TestCase):
         self.assertEqual("read_only", tool["side_effects"])
         self.assertEqual(10, tool["input_schema"]["properties"]["limit"]["maximum"])
 
+    def test_tool_declares_current_platform_metadata(self):
+        tool = build_tool_manifest()["tools"][0]
+        required = {
+            "name", "label", "description", "input_schema",
+            "capability_summary", "when_to_use", "returns", "constraints",
+            "scope", "freshness", "side_effects", "capability_type",
+            "entity_type", "risk_level", "follow_up_tools", "screen_keys",
+            "tags", "examples", "planner_priority",
+        }
+        self.assertEqual(set(), required - set(tool))
+        self.assertEqual("search", tool["capability_type"])
+        self.assertEqual("instruction_card", tool["entity_type"])
+        self.assertEqual("live_query", tool["freshness"])
+        self.assertEqual(["nika_get_instruction_card_detail"], tool["follow_up_tools"])
+        self.assertEqual(["nika_ai_chat"], tool["screen_keys"])
+        self.assertEqual("read_only", tool["side_effects"])
+        self.assertEqual("read", tool["risk_level"])
+
+    def test_tool_response_selection_matches_platform_contract(self):
+        response = api.nagakusa_ai_tools_api(self.factory.get("/api/ai/tools"))
+        self.assertEqual(200, response.status_code)
+        payload = json.loads(response.content)
+        spec_path = Path(__file__).resolve().parents[1] / "nagakusa" / "platform_spec_snapshot.json"
+        contract = json.loads(spec_path.read_text(encoding="utf-8"))["contracts"]["ai_tool_selection"]
+        self.assertEqual({"selection", "tools"}, set(payload))
+        self.assertEqual(contract["strategy"], payload["selection"]["strategy"])
+        self.assertEqual(contract["semantic_manifest_fields"], payload["selection"]["semantic_fields"])
+        self.assertEqual(["nika_search_instruction_cards", "nika_get_instruction_card_detail"], [tool["name"] for tool in payload["tools"]])
+        for tool in payload["tools"]:
+            self.assertTrue(set(payload["selection"]["semantic_fields"]).issubset(tool))
+            self.assertNotIn(tool["name"], contract["reserved_host_tool_names"])
+
+    def test_tool_screen_is_documented_and_matches_existing_chat(self):
+        response = api.nagakusa_ai_help_api(self.factory.get("/api/ai/help"))
+        self.assertEqual(200, response.status_code)
+        screens = {screen["screen_key"]: screen for screen in json.loads(response.content)["screens"]}
+        tool = build_tool_manifest()["tools"][0]
+        self.assertTrue(set(tool["screen_keys"]).issubset(screens))
+        self.assertEqual("AI\u76f8\u8ac7", screens["nika_ai_chat"]["label"])
+        bridge = (Path(__file__).resolve().parents[1] / "static/js/nagakusa/hostAiBridge.js").read_text(encoding="utf-8")
+        self.assertIn('source_screen: "nika_ai_chat"', bridge)
+
     def test_route_requires_bearer_and_delegates_to_host_planner(self):
         missing = api.nagakusa_ai_route_api(
             self.factory.post("/api/ai/route", data="{}", content_type="application/json")
@@ -82,7 +132,7 @@ class NagakusaFoundationTests(TestCase):
         cases = (
             (self.factory.post("/api/ai/tool-call", data="{}", content_type="application/json"), 401),
             (self._post("/api/ai/tool-call", {"tool": "unknown", "arguments": {}}, token="wrong"), 401),
-            (self._post("/api/ai/tool-call", {"tool": "unknown", "arguments": {}}), 400),
+            (self._post("/api/ai/tool-call", {"tool": "unknown", "arguments": {}}), 404),
             (self._post("/api/ai/tool-call", {"tool": "nika_search_instruction_cards", "arguments": {"keywords": []}}), 400),
             (self._post("/api/ai/tool-call", {"tool": "nika_search_instruction_cards", "arguments": {"keywords": ["x"] * 11}}), 400),
             (self._post("/api/ai/tool-call", {"tool": "nika_search_instruction_cards", "arguments": {"keywords": ["日本語"], "limit": 11}}), 400),
@@ -90,6 +140,27 @@ class NagakusaFoundationTests(TestCase):
         for request, expected_status in cases:
             with self.subTest(expected_status=expected_status):
                 self.assertEqual(expected_status, api.nagakusa_ai_tool_call_api(request).status_code)
+
+    def test_spec_28_tool_error_envelopes(self):
+        cases = [({}, "test-host-token", 400, "tool_required"),
+                 ({"tool": ""}, "test-host-token", 400, "tool_required"),
+                 ({"tool": "unknown"}, "test-host-token", 404, "tool_not_found"),
+                 ({}, "wrong", 401, "ai_authentication_required"),
+                 ({"tool": "nika_search_instruction_cards", "arguments": {}},
+                  "test-host-token", 400, "invalid_tool_arguments")]
+        with patch.object(api, "execute_nagakusa_tool") as execute:
+            for payload, token, status, code in cases:
+                response = api.nagakusa_ai_tool_call_api(self._post("/api/ai/tool-call", payload, token=token))
+                self.assertEqual(status, response.status_code)
+                result = json.loads(response.content)
+                self.assertEqual({"ok", "error"}, set(result))
+                self.assertIs(False, result["ok"])
+                self.assertEqual({"code", "message"}, set(result["error"]))
+                self.assertEqual(code, result["error"]["code"])
+                self.assertTrue(result["error"]["message"])
+                if status == 401:
+                    self.assertEqual('Bearer realm="nagakusa-plugin-ai"', response["WWW-Authenticate"])
+            execute.assert_not_called()
 
     def test_tool_call_rejects_invalid_json(self):
         request = self.factory.post(

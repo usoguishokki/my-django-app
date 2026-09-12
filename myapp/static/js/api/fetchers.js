@@ -1,3 +1,4 @@
+import { pluginUrl } from '../pluginUrls.js';
 import {
     asynchronousCommunication,
     requestFile,
@@ -757,21 +758,21 @@ export function executeBulkRegistration(p = {}) {
 
 export function fetchHomeOverallProgress() {
     return asynchronousCommunication({
-        url: '/api/home-dashboard/overall/',
+        url: pluginUrl('/api/home-dashboard/overall/'),
         method: 'GET',
     });
 }
 
 export function fetchHomeMyTeamProgress() {
     return asynchronousCommunication({
-        url: '/api/home-dashboard/my-team/',
+        url: pluginUrl('/api/home-dashboard/my-team/'),
         method: 'GET',
     });
 }
 
 export function fetchHomeMyTasks() {
     return asynchronousCommunication({
-        url: '/api/home-dashboard/my-tasks/',
+        url: pluginUrl('/api/home-dashboard/my-tasks/'),
         method: 'GET',
     });
 }
@@ -788,14 +789,14 @@ export function fetchHomeMyTeamDayDetail(p = {}) {
     }
 
     return asynchronousCommunication({
-        url: `/api/home-dashboard/my-team/day-detail/?${params.toString()}`,
+        url: pluginUrl(`/api/home-dashboard/my-team/day-detail/?${params.toString()}`),
         method: 'GET',
     });
 }
 
 export function fetchHomeAssignMemberOptions() {
     return asynchronousCommunication({
-        url: '/api/home/assign-member-options/',
+        url: pluginUrl('/api/home/assign-member-options/'),
         method: 'GET',
     });
 }

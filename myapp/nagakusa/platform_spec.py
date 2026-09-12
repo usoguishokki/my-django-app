@@ -17,7 +17,7 @@ from myapp.nagakusa.http_client import get_json
 
 
 SNAPSHOT_PATH = Path("myapp") / "nagakusa" / "platform_spec_snapshot.json"
-CACHE_KEY = "nagakusa.platform_spec.v1"
+CACHE_KEY = "nagakusa.platform_spec.channel.v25"
 
 
 def get_platform_spec() -> dict[str, Any]:
@@ -56,11 +56,11 @@ def snapshot_path() -> Path:
 def _validate_spec(payload: object) -> None:
     if not isinstance(payload, dict):
         raise RuntimeError("Platform specification must be an object.")
-    metadata = payload.get("metadata")
+    metadata = payload.get("channel")
     contracts = payload.get("contracts")
     if not isinstance(metadata, dict) or not isinstance(contracts, dict):
         raise RuntimeError("Platform specification has an invalid shape.")
-    if not isinstance(metadata.get("version"), int):
+    if type(metadata.get("version")) is not int or metadata["version"] < 1:
         raise RuntimeError("Platform specification version is invalid.")
 
 

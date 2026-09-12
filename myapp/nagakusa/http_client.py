@@ -1,13 +1,72 @@
 from __future__ import annotations
 
 import json
-import urllib.error
+import re
 import urllib.request
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import quote, quote_plus
 
 
-MAX_RESPONSE_BYTES = 512 * 1024
+from myapp.nagakusa.bounded_http import request_bytes, validate_http_url
+
+
+MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+MAX_REQUEST_BYTES = 256 * 1024
+MAX_ERROR_BYTES = 8192
+
+
+class RemoteHttpError(RuntimeError):
+    """Only sanitized public diagnostics may cross the command boundary."""
+
+    def __init__(self, status: int, *, code: str = "", message: str = ""):
+        self.status = status
+        self.code = code
+        self.public_message = message
+        super().__init__(f"HTTP {status}" + (f" [{code}]" if code else "") + (f": {message}" if message else ""))
+
+
+def _sensitive_values(payload):
+    values = []
+    if isinstance(payload, dict):
+        for key, value in payload.items():
+            if re.search(r'key|token|secret|password|authorization|cookie', str(key), re.I):
+                if isinstance(value, str) and value:
+                    values.append(value)
+            values.extend(_sensitive_values(value))
+    elif isinstance(payload, list):
+        for value in payload:
+            values.extend(_sensitive_values(value))
+    return values
+
+
+def public_response_error(status, payload, *, request_payload=None):
+    """Whitelist scalar JSON error fields; never stringify arbitrary objects/HTML."""
+    data = payload if isinstance(payload, dict) else {}
+    error = data.get('error')
+    fields = error if isinstance(error, dict) else data
+    secrets = _sensitive_values(request_payload) + _sensitive_values(data)
+
+    def clean(value, limit):
+        if not isinstance(value, str):
+            return ''
+        for secret in sorted(set(secrets), key=len, reverse=True):
+            for variant in {secret, quote(secret, safe=''), quote_plus(secret), json.dumps(secret)[1:-1]}:
+                value = value.replace(variant, '[redacted]')
+        # Public fields containing headers, credential assignments or traceback/HTML
+        # are not safe public messages, even if their JSON key is permitted.
+        if re.search(r'authorization|cookie|registration_key|api_token|password|secret|traceback|<[^>]+>', value, re.I):
+            return '[redacted unsafe detail]'
+        return ' '.join(value.split())[:limit]
+
+    code = clean(fields.get('code', data.get('code')), 80)
+    if not re.fullmatch(r'[A-Za-z0-9_.-]{1,80}', code):
+        code = ''
+    message = clean(
+        error if isinstance(error, str) else fields.get('message', fields.get('detail', data.get('detail'))),
+        500,
+    )
+    return RemoteHttpError(status, code=code, message=message)
 
 
 @dataclass(frozen=True)
@@ -46,7 +105,7 @@ def request_json(
         if payload is not None
         else None
     )
-    if encoded_payload is not None and len(encoded_payload) > MAX_RESPONSE_BYTES:
+    if encoded_payload is not None and len(encoded_payload) > MAX_REQUEST_BYTES:
         raise RuntimeError("Outbound request exceeds the allowed size.")
     request = urllib.request.Request(
         url,
@@ -55,21 +114,23 @@ def request_json(
             "Accept": "application/json",
             "Accept-Encoding": "identity",
             "Content-Type": "application/json",
+            "User-Agent": "NagakusaPluginStarter/1",
         },
         method=method,
     )
-    opener = urllib.request.build_opener(_NoRedirect())
-    try:
-        with opener.open(request, timeout=timeout_seconds) as response:
-            if not 200 <= response.status < 300:
-                raise RuntimeError("Remote service returned an error.")
-            if response.headers.get("Content-Encoding", "identity") not in {"", "identity"}:
-                raise RuntimeError("Remote service returned unsupported encoding.")
-            body = response.read(MAX_RESPONSE_BYTES + 1)
-    except (urllib.error.URLError, TimeoutError, OSError) as error:
-        raise RuntimeError("Remote service is unavailable.") from error
-    if len(body) > MAX_RESPONSE_BYTES:
-        raise RuntimeError("Remote response exceeds the allowed size.")
+    validate_http_url(url, label="Nagakusa HTTP URL")
+    response = request_bytes(
+        request, timeout_seconds=timeout_seconds, max_response_bytes=MAX_RESPONSE_BYTES
+    )
+    body = response.body
+    if not 200 <= response.status < 300:
+        data = None
+        if len(body) <= MAX_ERROR_BYTES:
+            try:
+                data = json.loads(body.decode("utf-8"))
+            except (ValueError, UnicodeDecodeError):
+                pass
+        raise public_response_error(response.status, data, request_payload=payload)
     try:
         payload = json.loads(body.decode("utf-8"))
     except (UnicodeDecodeError, ValueError) as error:
@@ -77,9 +138,3 @@ def request_json(
     if not isinstance(payload, dict):
         raise RuntimeError("Remote service returned an invalid response.")
     return BoundedJsonResponse(status=response.status, payload=payload)
-
-
-class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, request, fp, code, message, headers, new_url):
-        del request, fp, code, message, headers, new_url
-        raise RuntimeError("HTTP redirects are not allowed.")

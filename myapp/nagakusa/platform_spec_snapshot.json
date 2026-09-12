@@ -1,21 +1,1986 @@
 {
-  "metadata": {
-    "version": 1,
-    "source": "nika-local",
-    "contract": "Nagakusa plugin runtime compatibility baseline"
+  "channel": {
+    "key": "pluginhub_spec_channel",
+    "label": "Plugin Hub Spec Channel",
+    "version": 25,
+    "environment": "production",
+    "pluginhub_url": "http://nagakusa-dx.toyota-shokki.co.jp/plugins/",
+    "support_api_url": "http://nagakusa-dx.toyota-shokki.co.jp/api/pluginhub/spec-channel/",
+    "offline_snapshot_path": "docs/plugin-spec-snapshot.json",
+    "refresh_command": "python scripts/refresh_platform_spec.py",
+    "manual_escalation": "If the feed does not answer the required design question, open Plugin Hub and confirm the contract with a system administrator before implementing a new cross-app flow."
   },
   "contracts": {
-    "host_ai_interop": {
-      "action": "ai.send_message",
-      "transport": "window.postMessage",
-      "correlation_field": "request_id",
-      "conversation_binding": "conversation_id",
-      "fallback_policy": "no local generative fallback"
+    "required_plugin_endpoints": [
+      "GET /",
+      "GET /.well-known/nagakusa-plugin.json",
+      "GET /api/health",
+      "GET /api/platform-spec",
+      "GET /api/ai/help",
+      "POST /api/ai/route",
+      "GET /api/ai/tools",
+      "POST /api/ai/tool-call"
+    ],
+    "starter_support_endpoints": [
+      "GET /api/debug/context (development only)",
+      "POST /api/images/ (plugin-owned image upload example)",
+      "GET /api/images/<stored_name>/file/ (plugin-owned protected image content example)",
+      "POST /api/ocr (optional server-side GPU OCR proxy example)"
+    ],
+    "standalone_runtime": {
+      "status": "required_minimum",
+      "feature_flag": "features.standalone",
+      "default_enabled": true,
+      "minimum_endpoints": [
+        "GET /",
+        "GET /.well-known/nagakusa-plugin.json",
+        "GET /api/health",
+        "GET /api/platform-spec",
+        "GET /api/ai/help",
+        "POST /api/ai/route",
+        "GET /api/ai/tools",
+        "POST /api/ai/tool-call"
+      ],
+      "minimum_capabilities": [
+        "Direct local browser access through PLUGIN_LOCAL_BROWSER_URL.",
+        "Local health and manifest responses without Nagakusa network calls.",
+        "Platform-spec offline fallback from docs/plugin-spec-snapshot.json.",
+        "Read-only AI helpers backed by local sample data and offline contract data."
+      ],
+      "nagakusa_dependent_capabilities": [
+        "Opening through the Nagakusa host frame.",
+        "Plugin Hub registration and manifest sync.",
+        "Production review and access grants.",
+        "Fresh platform-spec updates from NAGAKUSA_PLUGIN_SPEC_API_URL.",
+        "Host API calls such as GET /plugins/<module_slug>/host-api/users/.",
+        "Real-time Host API capability checks for permission and write decisions.",
+        "Cross-app host bridge and interop broker actions.",
+        "Using ai.send_message to reach the Nagakusa AI agent from a hosted plugin chat.",
+        "Reading saved VIQS 301/302 snapshots through the server-side Data Lake API."
+      ],
+      "guidance": [
+        "Startup scripts should warn on registration failure but still run the local Django server.",
+        "GET /api/health should report standalone status and avoid remote checks.",
+        "Do not introduce mandatory startup dependencies on Nagakusa for read-only local workflows."
+      ]
+    },
+    "starter_feature_defaults": {
+      "status": "configurable",
+      "ai": {
+        "manifest_path": "features.ai",
+        "env_key": "PLUGIN_AI_ENABLED",
+        "default_enabled": false
+      },
+      "desktop": {
+        "manifest_path": "features.desktop",
+        "configurable": false,
+        "default_enabled": true
+      },
+      "launchbar_icon": {
+        "default_visible_for_authorized_users": true,
+        "initial_selection": "on_once_per_registration",
+        "user_can_disable_after_initial_selection": true,
+        "plugin_must_be_enabled": true,
+        "access_boundary": "external plugin access policy and grants",
+        "host_shell_setting": "PLUGIN_HOST_LAUNCHBAR_VISIBLE",
+        "host_shell_setting_scope": "host chrome inside the opened plugin screen only"
+      },
+      "guidance": [
+        "Desktop use is always enabled for all apps; only the AI feature is configurable.",
+        "Restart and re-register or sync the manifest after changing the AI feature.",
+        "Use plugin access as the eligibility boundary, select the icon once after registration, and preserve later user opt-out choices."
+      ]
+    },
+    "plugin_host_shell": {
+      "status": "available",
+      "manifest_path": "ui.host_shell",
+      "surfaces": [
+        "appbar",
+        "launchbar",
+        "ai_dock"
+      ],
+      "value_type": "boolean visibility",
+      "default_visibility": {
+        "appbar": true,
+        "launchbar": true,
+        "ai_dock": true
+      },
+      "starter_default_visibility": {
+        "appbar": true,
+        "launchbar": true,
+        "ai_dock": true
+      },
+      "home_navigation": {
+        "message_type": "nagakusa:host-navigation",
+        "target": "home",
+        "starter_control": "Nagakusaへ戻る",
+        "security": "The host accepts only its own iframe, same-origin messages, and the fixed home target."
+      },
+      "guidance": [
+        "Omit ui.host_shell to preserve the existing host shell around older plugins.",
+        "The starter keeps all three values true until a developer explicitly sets one to false.",
+        "Set individual values to false for mobile or focused full-screen plugin screens.",
+        "Host shell visibility is plugin-wide at launch and does not grant access to the parent DOM.",
+        "Provide an in-plugin navigation or exit path when appbar and launchbar are both hidden.",
+        "The setting does not weaken iframe sandbox, CSP, authentication, access, or CSRF checks."
+      ]
     },
     "frame_proxy_authentication": {
-      "version": 1,
-      "headers": ["X-Nagakusa-Frame-Auth", "X-Nagakusa-Frame-Auth-Version"],
-      "ttl_seconds": 60
+      "status": "available",
+      "availability": "nagakusa_host_frame_proxy_only",
+      "purpose": "Server-verifiable proof of the current Host session, administrator classifications, and current operation-capability decisions without forwarding the Nagakusa session cookie.",
+      "transport": "Host frame proxy request headers to the plugin server only",
+      "headers": {
+        "version": "X-Nagakusa-Frame-Auth-Version: 1",
+        "ticket": "X-Nagakusa-Frame-Auth: v1.<base64url canonical JSON>.<base64url HMAC-SHA256>"
+      },
+      "starter_reference_implementation": {
+        "path": "plugin_app/services/frame_auth.py",
+        "identity_mixin": "NagakusaFrameAuthRequiredMixin",
+        "operation_mixin": "NagakusaOperationCapabilityRequiredMixin",
+        "operation_setting": "required_operation_capability",
+        "verified_subject_attribute": "request.nagakusa_frame_user_id",
+        "administrator_available_attribute": "request.nagakusa_administrator_status_available",
+        "system_administrator_attribute": "request.nagakusa_is_system_admin",
+        "app_administrator_attribute": "request.nagakusa_is_app_admin"
+      },
+      "shared_secret": {
+        "plugin_env_key": "PLUGIN_AI_API_TOKEN",
+        "host_field": "ExternalPluginApp.api_token",
+        "valid_length": "32..255 visible ASCII characters",
+        "key_derivation": "HMAC-SHA256(shared secret, nagakusa:plugin-frame-auth:v1)",
+        "rotation_effect": "Rotating this server-only secret also rotates plugin AI Bearer authentication."
+      },
+      "claims": {
+        "iss": "nagakusa-plugin-frame-proxy",
+        "aud": "registered plugin.module_slug",
+        "app_key": "registered plugin.app_key",
+        "sub": "current authenticated Host user ID as a decimal string",
+        "method": "uppercase HTTP method",
+        "iat": "Unix timestamp",
+        "exp": "Unix timestamp",
+        "jti": "random per-request identifier",
+        "administrator": {
+          "is_system_admin": "boolean",
+          "is_app_admin": "boolean for a direct or group grant on the current plugin"
+        },
+        "operation_capabilities": {
+          "<capability_name>": {
+            "allowed": "boolean"
+          }
+        }
+      },
+      "lifetime": {
+        "host_setting": "PLUGINHUB_FRAME_AUTH_TICKET_TTL_SECONDS",
+        "default_seconds": 30,
+        "allowed_seconds": "10..60",
+        "plugin_maximum_accepted_seconds": 60,
+        "clock_skew_seconds": 5
+      },
+      "parser_limits": {
+        "max_ticket_characters": 8192,
+        "max_operation_capabilities": 32,
+        "max_capability_name_characters": 128
+      },
+      "issuance": {
+        "requires_authenticated_host_user": true,
+        "requires_valid_shared_secret": true,
+        "static_asset_requests": "excluded",
+        "administrator_included_only_when_manifest_declares": "plugin.capabilities.read",
+        "operation_capabilities_included_only_when_manifest_declares": "plugin.capabilities.read",
+        "decision_freshness": "evaluated for each proxied non-static request; never cached"
+      },
+      "verification_rules": [
+        "Require version 1 and exactly three ticket segments.",
+        "Derive the signing key with the fixed domain-separation context and compare HMAC signatures in constant time.",
+        "Require the exact issuer, module_slug audience, app_key, and current HTTP method.",
+        "Reject future, expired, malformed, or longer-than-60-second tickets; allow at most five seconds of clock skew.",
+        "Accept administrator only as an empty object or the exact two boolean fields; empty or absent means unavailable.",
+        "Treat a missing or malformed operation capability and every explicit false decision as denied.",
+        "Use sub only after successful verification; raw X-Nagakusa identity headers remain presentation hints, not authorization evidence."
+      ],
+      "protected_endpoint_policy": "Every plugin-server endpoint that reads or changes Host-authorized data must require a fresh valid ticket and its operation-specific allowed decision. A prior page-render check cannot authorize a later request.",
+      "standalone_policy": "Public standalone health, manifest, platform-spec, and local-only UI may remain available without a ticket, but standalone access never grants Host-authorized data access.",
+      "secret_and_ticket_exposure": "prohibited in browser responses, HTML, JavaScript, postMessage, logs, persistence, debug output, and AI output",
+      "legacy_header_policy": "Never authorize from X-Nagakusa-User-Id, display-name headers, role fields, or X-Nagakusa-Proxy alone."
+    },
+    "host_ai_interop": {
+      "status": "available",
+      "action": "ai.send_message",
+      "kind": "request",
+      "required_manifest_permission": "ai.message.send",
+      "availability": "nagakusa_host_frame_only",
+      "transport": "window.postMessage -> Host Bridge -> durable Django AI response job",
+      "request_message_type": "nagakusa:interop:request",
+      "response_message_type": "nagakusa:interop:response",
+      "envelope_version": 1,
+      "correlation_field": "request_id",
+      "identity_policy": {
+        "user": "derived from the Nagakusa login session",
+        "source_app": "derived from the hosted ExternalPluginApp record",
+        "caller_supplied_user_or_source_app": "ignored"
+      },
+      "input_fields": [
+        "message",
+        "conversation_id (optional)",
+        "source_screen (optional)",
+        "context_snapshot (optional)"
+      ],
+      "result_fields": [
+        "assistant_message",
+        "conversation_id",
+        "request_id",
+        "finish_reason"
+      ],
+      "error_fields": [
+        "code",
+        "message",
+        "retryable",
+        "retry_after_seconds (optional)"
+      ],
+      "limits": {
+        "request_bytes_setting": "PLUGINHUB_AI_INTEROP_MAX_REQUEST_BYTES",
+        "context_bytes_setting": "PLUGINHUB_AI_INTEROP_MAX_CONTEXT_BYTES",
+        "message_chars_setting": "PLUGINHUB_AI_INTEROP_MAX_MESSAGE_CHARS",
+        "rate_limit_setting": "PLUGINHUB_AI_INTEROP_RATE_LIMIT_REQUESTS",
+        "rate_window_setting": "PLUGINHUB_AI_INTEROP_RATE_LIMIT_WINDOW_SECONDS",
+        "conversation_concurrency": 1,
+        "worker_command": "python manage.py run_ai_chat_response_jobs"
+      },
+      "idempotency": "request_id is unique per signed-in user, plugin, and action; payload changes return request_id_conflict",
+      "conversation_binding": "conversation_id may be resumed only by the same signed-in user and source plugin",
+      "audit_event": "plugin.ai_interop_request",
+      "secret_policy": "PLUGIN_AI_API_TOKEN remains server-side and is never sent to the browser, postMessage, logs, or AI output.",
+      "starter": {
+        "mode_env_key": "PLUGIN_AI_AGENT_MODE",
+        "default_mode": "disabled",
+        "modes": [
+          "disabled",
+          "host"
+        ],
+        "host_mode_permission": "ai.message.send",
+        "browser_adapter": "plugin_app/static/plugin_app/js/nagakusa-ai-bridge.js",
+        "availability_fallback": "none",
+        "prompt_customization": {
+          "starter_file": "plugin_app/services/ai_prompt.py",
+          "help_spec_field": "assistant_instructions",
+          "host_prompt_section": "このアプリでの応答方針",
+          "synchronization": "Plugin Hub manifest sync loads GET /api/ai/help even when features.ai is false if ai.message.send is declared.",
+          "production_integrity": "Prompt metadata is covered by the approved AI metadata digest.",
+          "limits": {
+            "max_instructions": 12,
+            "max_chars_per_instruction": 500,
+            "max_total_chars": 4000
+          }
+        }
+      },
+      "fallback_policy": "The standard starter has no local generative fallback; all structured Host errors remain visible."
+    },
+    "plugin_owned_image_uploads": {
+      "status": "starter_example",
+      "host_permission_required": false,
+      "transport": "multipart/form-data through the plugin frame proxy",
+      "upload_path": "api/images/",
+      "content_path": "api/images/<stored_name>/file/",
+      "proxy_request_limit_setting": "PLUGINHUB_PROXY_MAX_REQUEST_BYTES",
+      "starter_image_limit_setting": "PLUGIN_MAX_IMAGE_UPLOAD_BYTES",
+      "supported_formats": [
+        "JPEG",
+        "PNG",
+        "WEBP"
+      ],
+      "url_policy": "relative plugin content-view URLs only",
+      "security_rules": [
+        "Keep the Django CSRF token in multipart FormData; X-CSRFToken may be sent as a duplicate header.",
+        "Do not manually set Content-Type when sending FormData because the browser owns the boundary.",
+        "Validate decoded raster data, byte count, and pixel count; reject SVG and animation.",
+        "Use server-generated storage names and re-encode images to remove metadata and trailing data.",
+        "Do not expose /media/, filesystem paths, upstream direct URLs, or base64 image bodies.",
+        "Keep File and base64 payloads out of postMessage, page context, and browser storage.",
+        "Add plugin-side record authorization, quota, retention, deletion, and backup before production use."
+      ]
+    },
+    "plugin_ocr_gateway": {
+      "status": "optional_starter_example",
+      "default_enabled": false,
+      "host_permission_required": false,
+      "browser_transport": "multipart/form-data to the plugin same-origin endpoint",
+      "plugin_endpoint": "POST api/ocr",
+      "upstream_endpoint": "POST <PLUGIN_OCR_GATEWAY_URL>/api/ocr",
+      "upstream_health_endpoint": "GET <PLUGIN_OCR_GATEWAY_URL>/api/ocr/health",
+      "provider": "paddleocr",
+      "model": "PP-OCRv6_medium",
+      "supported_formats": [
+        "JPEG",
+        "PNG",
+        "WEBP"
+      ],
+      "gateway_hard_limits": {
+        "request_bytes": 15728640,
+        "image_pixels": 25000000
+      },
+      "starter_settings": {
+        "enabled": "PLUGIN_OCR_ENABLED",
+        "gateway_url": "PLUGIN_OCR_GATEWAY_URL",
+        "credential": "PLUGIN_OCR_GATEWAY_API_KEY",
+        "allowed_hosts": "PLUGIN_OCR_GATEWAY_ALLOWED_HOSTS",
+        "allow_insecure_http": "PLUGIN_OCR_GATEWAY_ALLOW_INSECURE_HTTP",
+        "timeout_seconds": "PLUGIN_OCR_GATEWAY_TIMEOUT_SECONDS",
+        "gateway_upload_bytes": "PLUGIN_OCR_GATEWAY_MAX_UPLOAD_BYTES",
+        "gateway_response_bytes": "PLUGIN_OCR_GATEWAY_MAX_RESPONSE_BYTES",
+        "plugin_upload_bytes": "PLUGIN_OCR_MAX_UPLOAD_BYTES",
+        "plugin_request_bytes": "PLUGIN_OCR_MAX_REQUEST_BYTES",
+        "rate_per_minute": "PLUGIN_OCR_RATE_PER_MINUTE",
+        "concurrency": "PLUGIN_OCR_CONCURRENCY",
+        "host_proxy_request_bytes": "PLUGINHUB_PROXY_MAX_REQUEST_BYTES"
+      },
+      "response_shape": {
+        "success": {
+          "ok": true,
+          "result": "GPU OCR result object"
+        },
+        "error": {
+          "ok": false,
+          "error": {
+            "code": "<code>",
+            "message": "<safe message>"
+          }
+        }
+      },
+      "security_rules": [
+        "Use a distinct OCR-scoped Bearer key per plugin; keep it only in server-side secrets.",
+        "Do not call the GPU Gateway from browser JavaScript or expose its URL, key, or raw error body.",
+        "Use an exact upstream host allowlist, reject redirects, and require HTTPS for non-loopback hosts unless closed-network HTTP is explicitly approved.",
+        "Keep the Django CSRF token in FormData and let the browser generate the multipart Content-Type boundary.",
+        "Keep File, Blob, image bytes, and base64 out of postMessage, page context, browser storage, logs, and AI output.",
+        "Apply bounded upload streaming, response bytes, wall-clock timeout, rate, and concurrency before enabling OCR.",
+        "Treat HTTP 429, 502, 503, and 504 as retryable but do not add unbounded or synchronized automatic retries.",
+        "Add plugin-owned login and resource authorization when the plugin server is directly reachable outside the Host proxy."
+      ]
+    },
+    "host_apis": {
+      "viqs_quality_records": {
+        "status": "available",
+        "method": "GET",
+        "path": "/data-lake/api/v1/viqs/quality-records/",
+        "required_manifest_permission": null,
+        "availability": "registered_enabled_plugin_backend",
+        "authentication": {
+          "scheme": "Bearer",
+          "credential_env_key": "PLUGIN_AI_API_TOKEN",
+          "reuses_plugin_registration_token": true,
+          "browser_sessions_accepted": false
+        },
+        "registration_requirements": {
+          "plugin_record_required": true,
+          "plugin_enabled": true,
+          "registration_token_matches": true,
+          "last_sync_status_required": false,
+          "production_status_required": false,
+          "manifest_scope_required": false
+        },
+        "trust_boundary": {
+          "applies_to": "bounded_read_only_saved_snapshot_api",
+          "does_not_approve_plugin_ui_for_production": true,
+          "disabled_registration_revokes_access": true
+        },
+        "query_parameters": {
+          "plants": "Optional: 301, 302, or 301,302. Defaults to both factories.",
+          "body_no": "Optional exact BODY_NO lookup. NFKC-normalized and searched within the latest 2,000 unique saved records.",
+          "limit": "Optional page size from 1 to 100. Defaults to 50.",
+          "cursor": "Optional opaque next_cursor returned by the preceding page."
+        },
+        "body_no_lookup": {
+          "candidate_record_limit": 2000,
+          "match": "NFKC-normalized, trimmed, case-insensitive exact match",
+          "deduplicates_by_record_key": true,
+          "returns_matches_only": true,
+          "uses_saved_snapshot_history": true,
+          "cursor_binds_filter_and_search_revision": true
+        },
+        "pagination": {
+          "style": "signed_cursor",
+          "snapshot_set_pinned": true,
+          "cursor_max_age_seconds": 86400,
+          "maximum_page_size": 100,
+          "maximum_response_bytes": 2097152,
+          "size_truncation_field": "page.truncated_by_size"
+        },
+        "conditional_requests": {
+          "response_header": "ETag",
+          "request_header": "If-None-Match",
+          "unchanged_status": 304
+        },
+        "source_behavior": {
+          "reads_saved_snapshots_only": true,
+          "connects_to_viqs": false,
+          "executes_source_sql": false,
+          "missing_all_selected_snapshots_status": 503,
+          "partial_factory_response_status": 200
+        },
+        "starter_client": {
+          "path": "plugin_app/services/data_lake.py",
+          "callable": "get_viqs_quality_records",
+          "default_timeout_seconds": 10,
+          "default_max_response_bytes": 2097152
+        },
+        "guidance": [
+          "Call this API from plugin server code only and never expose PLUGIN_AI_API_TOKEN to the browser.",
+          "A matching enabled Plugin Hub registration is sufficient; do not wait for manifest sync or production UI approval.",
+          "Follow page.next_cursor explicitly and keep each response bounded to at most 100 records.",
+          "For an exact vehicle lookup, pass body_no and use the Host-bounded latest-2,000-record search instead of paging and filtering in the plugin.",
+          "Use sources timestamps to communicate data freshness instead of triggering a source refresh.",
+          "Do not add VIQS connection settings, credentials, SQL, or ingestion behavior to a plugin."
+        ]
+      },
+      "directory_users": {
+        "status": "available",
+        "method": "GET",
+        "path": "/plugins/<module_slug>/host-api/users/",
+        "required_manifest_permission": "directory.users.search.basic",
+        "availability": "nagakusa_host_frame_only",
+        "filters": {
+          "active_users_only": true,
+          "searchable_users_only": true
+        },
+        "query_parameters": {
+          "q": "Optional search text. Matches email, employee_no, name, display_name, and affiliation.",
+          "limit": "Optional page size from 1 to 100. Defaults to 50.",
+          "cursor": "Optional next_cursor returned by the previous page."
+        },
+        "returned_fields": [
+          "id",
+          "email",
+          "employee_no",
+          "display_name",
+          "affiliation",
+          "group_path"
+        ],
+        "cache_policy": {
+          "cacheable": true,
+          "default_ttl_seconds": 3600,
+          "max_refresh_frequency": "once_per_hour_per_user_session",
+          "starter_cache_storage": "browser sessionStorage with in-memory fallback",
+          "cache_allowed_for": [
+            "directory display",
+            "user picker search",
+            "assignment form suggestions"
+          ],
+          "cache_excluded_for": [
+            "permission checks",
+            "access grants",
+            "roles",
+            "approval state",
+            "write authorization"
+          ]
+        },
+        "excluded_fields": [
+          "role",
+          "is_staff",
+          "is_superuser",
+          "is_active",
+          "phone",
+          "ad_attrs"
+        ],
+        "audit_event": "plugin.directory_users_read",
+        "guidance": [
+          "Use this host API instead of private Nagakusa app URLs, direct DB access, or admin exports.",
+          "Treat results as user-search data, not an offline master cache.",
+          "Use the starter's NagakusaDirectoryUsers helper so automatic refreshes stay behind the one-hour TTL.",
+          "Check permissions and write authorization through real-time host or app contracts, never cached directory records.",
+          "Request a new host permission scope before adding inactive users, contact fields, or write behavior."
+        ]
+      },
+      "current_user": {
+        "status": "available",
+        "method": "GET",
+        "path": "/plugins/<module_slug>/host-api/me/",
+        "required_manifest_permission": "identity.me.read",
+        "availability": "nagakusa_host_frame_only",
+        "returned_fields": [
+          "id",
+          "email",
+          "employee_no",
+          "display_name",
+          "affiliation",
+          "group_path"
+        ],
+        "cache_policy": {
+          "cacheable": true,
+          "default_ttl_seconds": 3600,
+          "max_refresh_frequency": "once_per_hour_per_user_session",
+          "starter_cache_storage": "browser sessionStorage with in-memory fallback",
+          "cache_allowed_for": [
+            "current user display",
+            "form defaults",
+            "non-authoritative personalization"
+          ],
+          "cache_excluded_for": [
+            "permission checks",
+            "access grants",
+            "roles",
+            "approval state",
+            "write authorization"
+          ]
+        },
+        "audit_event": "plugin.host_api_read",
+        "guidance": [
+          "Use this endpoint when headers are not enough for current-user display details.",
+          "Do not infer roles or write access from cached current-user display data."
+        ]
+      },
+      "directory_groups": {
+        "status": "available",
+        "method": "GET",
+        "path": "/plugins/<module_slug>/host-api/groups/",
+        "required_manifest_permission": "directory.groups.read",
+        "availability": "nagakusa_host_frame_only",
+        "filters": {
+          "active_users_only": true,
+          "searchable_users_only": true
+        },
+        "returned_fields": [
+          "path",
+          "name",
+          "depth",
+          "parent_path",
+          "user_count"
+        ],
+        "cache_policy": {
+          "cacheable": true,
+          "default_ttl_seconds": 3600,
+          "max_refresh_frequency": "once_per_hour_per_user_session",
+          "starter_cache_storage": "browser sessionStorage with in-memory fallback",
+          "cache_allowed_for": [
+            "group filters",
+            "organization picker display",
+            "non-authoritative reporting labels"
+          ],
+          "cache_excluded_for": [
+            "permission checks",
+            "access grants",
+            "roles",
+            "approval state",
+            "write authorization"
+          ]
+        },
+        "audit_event": "plugin.host_api_read",
+        "guidance": [
+          "Use group paths for display and filter UI only.",
+          "Use real-time capability or app contracts for group-based authorization decisions."
+        ]
+      },
+      "plugin_capabilities": {
+        "status": "available",
+        "method": "GET",
+        "path": "/plugins/<module_slug>/host-api/capabilities/",
+        "required_manifest_permission": "plugin.capabilities.read",
+        "availability": "nagakusa_host_frame_only",
+        "returned_fields": [
+          "plugin",
+          "user",
+          "capabilities",
+          "administrator",
+          "operation_capabilities",
+          "evaluated_at",
+          "host_permissions",
+          "cache_policy"
+        ],
+        "operation_capabilities": {
+          "genki_monitor.history.read": {
+            "status": "available",
+            "owner_namespace": "genki_monitor",
+            "owner_binding": "plugin.app_key or plugin.module_slug, normalized to lowercase underscore form",
+            "label": "GENKI MONITOR history read",
+            "description": "Show and read the privileged GENKI MONITOR history view.",
+            "decision_shape": {
+              "allowed": "boolean"
+            },
+            "policy": "system_admin_or_current_plugin_app_admin"
+          },
+          "gvis_qa.document.manage": {
+            "status": "available",
+            "owner_namespace": "gvis_qa",
+            "owner_binding": "plugin.app_key or plugin.module_slug, normalized to lowercase underscore form",
+            "label": "GVIS-QA document management",
+            "description": "Create, edit, and reorder documents in GVIS-QA.",
+            "decision_shape": {
+              "allowed": "boolean"
+            },
+            "policy": "system_admin_or_current_plugin_app_admin"
+          },
+          "kensa_call.vehicle_lookup.read": {
+            "status": "available",
+            "owner_namespace": "kensa_call",
+            "owner_binding": "plugin.app_key or plugin.module_slug, normalized to lowercase underscore form",
+            "label": "kensa-call vehicle lookup read",
+            "description": "Read the saved VIQS vehicle details used by the kensa-call frame-number lookup.",
+            "decision_shape": {
+              "allowed": "boolean"
+            },
+            "policy": "authorized_current_plugin_user"
+          }
+        },
+        "decision_shape": {
+          "administrator": {
+            "is_system_admin": "boolean",
+            "is_app_admin": "boolean for a direct or group grant on the current plugin"
+          },
+          "operation_capabilities": {
+            "<capability_name>": {
+              "allowed": "boolean"
+            }
+          }
+        },
+        "response_excludes": [
+          "role",
+          "is_staff",
+          "is_superuser",
+          "can_admin_plugin"
+        ],
+        "cache_policy": {
+          "cacheable": false,
+          "default_ttl_seconds": 0,
+          "max_refresh_frequency": "per_request",
+          "cache_excluded_for": [
+            "all authorization decisions",
+            "permission checks",
+            "access grants",
+            "roles",
+            "approval state",
+            "write authorization"
+          ]
+        },
+        "audit_event": "plugin.host_api_read",
+        "guidance": [
+          "Use operation_capabilities for real-time checks before enabling privileged UI or write actions.",
+          "Use administrator only when a workflow must distinguish system and current-plugin app administrators.",
+          "Check again immediately before the operation; a UI visibility check is not reusable authorization.",
+          "Do not use administrator, me, users, or X-Nagakusa headers as privileged-operation authorization.",
+          "Treat an absent capability or any request/validation failure as denied.",
+          "Do not store this response in browser cache, sessionStorage, localStorage, or plugin databases."
+        ]
+      },
+      "interop_catalog": {
+        "status": "available",
+        "method": "GET",
+        "path": "/plugins/<module_slug>/host-api/interop/",
+        "required_manifest_permission": "interop.catalog.read",
+        "availability": "nagakusa_host_frame_only",
+        "returned_fields": [
+          "version",
+          "host_bridge",
+          "status_levels",
+          "security_rules",
+          "apps"
+        ],
+        "cache_policy": {
+          "cacheable": true,
+          "default_ttl_seconds": 3600,
+          "max_refresh_frequency": "once_per_hour_per_user_session",
+          "starter_cache_storage": "browser sessionStorage with in-memory fallback",
+          "cache_excluded_for": [
+            "permission checks",
+            "write authorization"
+          ]
+        },
+        "audit_event": "plugin.host_api_read",
+        "guidance": [
+          "Inspect the interop catalog before implementing cross-app navigation, requests, or events.",
+          "Treat undeclared app actions as unavailable."
+        ]
+      },
+      "common_masters": {
+        "status": "available",
+        "method": "GET",
+        "path": "/plugins/<module_slug>/host-api/masters/",
+        "required_manifest_permission": "common.masters.read",
+        "availability": "nagakusa_host_frame_only",
+        "returned_fields": [
+          "app_categories",
+          "priorities",
+          "department_tags",
+          "consult_items",
+          "part_heads",
+          "case_statuses",
+          "judgment_types"
+        ],
+        "cache_policy": {
+          "cacheable": true,
+          "default_ttl_seconds": 3600,
+          "max_refresh_frequency": "once_per_hour_per_user_session",
+          "starter_cache_storage": "browser sessionStorage with in-memory fallback",
+          "cache_excluded_for": [
+            "permission checks",
+            "write authorization"
+          ]
+        },
+        "audit_event": "plugin.host_api_read",
+        "guidance": [
+          "Use common masters for labels, filters, and form options.",
+          "Request a separate contract before reading app-specific transactional data."
+        ]
+      },
+      "host_environment": {
+        "status": "available",
+        "method": "GET",
+        "path": "/plugins/<module_slug>/host-api/environment/",
+        "required_manifest_permission": "environment.read",
+        "availability": "nagakusa_host_frame_only",
+        "returned_fields": [
+          "profile",
+          "pluginhub_url",
+          "spec_api_url",
+          "host_api_base_path",
+          "host_api_paths",
+          "cache_defaults",
+          "limits"
+        ],
+        "cache_policy": {
+          "cacheable": true,
+          "default_ttl_seconds": 3600,
+          "max_refresh_frequency": "once_per_hour_per_user_session",
+          "starter_cache_storage": "browser sessionStorage with in-memory fallback",
+          "cache_excluded_for": [
+            "permission checks",
+            "write authorization"
+          ]
+        },
+        "audit_event": "plugin.host_api_read",
+        "guidance": [
+          "Use this endpoint for safe host URLs, endpoint paths, cache defaults, and published limits.",
+          "Do not expect secrets, private settings, or deployment internals in this response."
+        ]
+      }
+    },
+    "rag_ingestion": {
+      "status": "core_owned_approved_sources",
+      "current_sources": [
+        "nagakusa.chat_case",
+        "gvis_qa.document",
+        "gvis_qa.faq"
+      ],
+      "current_record_types": [
+        "external_case",
+        "gvis_document",
+        "gvis_faq"
+      ],
+      "core_pipeline": [
+        "core.services.rag.serializers.build_chat_case_rag_payload",
+        "core.services.rag.serializers.build_gvis_document_rag_payload",
+        "core.services.rag.serializers.build_gvis_faq_rag_payload",
+        "core.RagIngestionJob",
+        "core.RagSourceRecordState",
+        "sync_gvis_qa_rag",
+        "run_rag_ingestion_jobs",
+        "build_rag_manifest",
+        "gvis_search_rag_knowledge",
+        "RAG Gateway /api/rag/ingest/upsert/batch",
+        "RAG Gateway /api/rag/ingest/delete/batch"
+      ],
+      "external_plugin_adapters": {
+        "gvis_qa": {
+          "status": "approved_core_owned_adapter",
+          "plugin_app_key": "gvis_qa",
+          "plugin_module_slug": "gvis-qa",
+          "source_names": [
+            "gvis_qa.document",
+            "gvis_qa.faq"
+          ],
+          "plugin_read_feed": {
+            "method": "GET",
+            "path": "/api/ai/source-records",
+            "authentication": "registered plugin Bearer token",
+            "query_fields": [
+              "source_name",
+              "after_id",
+              "limit"
+            ],
+            "ordering": "database id ascending",
+            "maximum_page_size": 100,
+            "completion_proof": "complete=true and has_more=false on the terminal page",
+            "public_records_only": true,
+            "write_or_ingest_side_effects": false
+          },
+          "core_sync": {
+            "command": "python manage.py sync_gvis_qa_rag",
+            "dry_run_command": "python manage.py sync_gvis_qa_rag --dry-run",
+            "worker": "run_rag_ingestion_jobs",
+            "state_model": "core.RagSourceRecordState",
+            "durable_queue_model": "core.RagIngestionJob",
+            "retry_and_dead_letter": true,
+            "delete_reconciliation": true,
+            "manifest_command": "python manage.py build_rag_manifest --source-name <source_name>",
+            "bounded_settings": [
+              "RAG_GVIS_QA_SOURCE_SYNC_INTERVAL_SECONDS",
+              "RAG_GVIS_QA_SOURCE_PAGE_SIZE",
+              "RAG_GVIS_QA_SOURCE_MAX_RECORDS",
+              "RAG_GVIS_QA_SOURCE_MAX_PAGES",
+              "RAG_GVIS_QA_SOURCE_TIMEOUT_SECONDS"
+            ]
+          },
+          "acl": {
+            "fixed_group": "plugin:gvis-qa:access",
+            "grant_condition": "fresh can_user_access_external_plugin decision for gvis_qa",
+            "missing_or_failed_access_decision": "deny",
+            "ambient_page_context_grants_access": false
+          },
+          "search": {
+            "host_tool": "gvis_search_rag_knowledge",
+            "citations_required": true,
+            "gateway_source_filter_field": "source_name",
+            "live_freshness_tools": [
+              "gvis_search_documents",
+              "gvis_search_faq"
+            ]
+          }
+        }
+      },
+      "starter_policy": "Starter plugins do not publish RAG ingest endpoints or direct RAG Gateway credentials. Only a specifically approved core-owned adapter may consume a bounded protected read feed; this GVIS contract does not create a generic external-plugin ingestion API.",
+      "not_required_plugin_endpoints": [
+        "POST /api/rag/ingest",
+        "GET /api/rag/manifest"
+      ],
+      "reserved_env_keys": [
+        "RAG_GATEWAY_URL",
+        "RAG_INGEST_API_KEY",
+        "RAG_INGEST_ENABLED",
+        "RAG_INGEST_ENVIRONMENT",
+        "RAG_GVIS_QA_ENABLED"
+      ],
+      "guidance": [
+        "RAG ingest/search settings belong to Nagakusa core, not the starter plugin runtime.",
+        "New plugin data still requires an explicit core source contract, ACL model, serializer, durable retry, delete path, reconciliation state/manifest, and cited search tool.",
+        "A plugin-side protected read feed is not an ingestion endpoint and must not receive Gateway credentials.",
+        "For GVIS, require a complete bounded scan before reconciling deletes and retain request-time document/FAQ tools for freshness.",
+        "Expose read-only AI tools from the plugin before adding any durable ingestion path."
+      ]
+    },
+    "interop_request_kinds": [
+      "navigate",
+      "request",
+      "event"
+    ],
+    "reserved_env_keys": [
+      "PLUGIN_KEY",
+      "PLUGIN_APP_KEY",
+      "PLUGIN_MODULE_SLUG",
+      "PLUGIN_LABEL",
+      "PLUGIN_AI_API_TOKEN"
+    ],
+    "secret_env_keys": [
+      "PLUGIN_AI_API_TOKEN"
+    ],
+    "editable_env_keys": [
+      "PLUGIN_SCREEN_TITLE",
+      "PLUGIN_SUMMARY",
+      "PLUGIN_OWNER",
+      "PLUGIN_VERSION",
+      "PLUGIN_CATEGORY_KEY",
+      "PLUGIN_ICON",
+      "PLUGIN_AI_ENABLED",
+      "PLUGIN_HOST_APPBAR_VISIBLE",
+      "PLUGIN_HOST_LAUNCHBAR_VISIBLE",
+      "PLUGIN_HOST_AI_DOCK_VISIBLE",
+      "PLUGIN_AI_AGENT_MODE",
+      "PLUGIN_PORT",
+      "PLUGIN_BASE_URL",
+      "PLUGIN_LOCAL_BROWSER_URL",
+      "PLUGIN_MAX_IMAGE_UPLOAD_BYTES",
+      "PLUGIN_MAX_IMAGE_DIMENSION",
+      "PLUGIN_MAX_IMAGE_PIXELS"
+    ],
+    "ai_tool_selection": {
+      "strategy": "host_planner_from_tool_metadata",
+      "semantic_manifest_fields": [
+        "name",
+        "label",
+        "description",
+        "capability_summary",
+        "when_to_use",
+        "tags",
+        "examples",
+        "returns",
+        "constraints",
+        "capability_type",
+        "entity_type",
+        "scope",
+        "freshness",
+        "follow_up_tools",
+        "screen_keys"
+      ],
+      "prompt_manifest_fields": [
+        "name",
+        "label",
+        "description",
+        "input_schema",
+        "capability_summary",
+        "when_to_use",
+        "returns",
+        "constraints",
+        "scope",
+        "freshness",
+        "side_effects",
+        "capability_type",
+        "entity_type",
+        "risk_level",
+        "follow_up_tools",
+        "screen_keys",
+        "tags",
+        "examples",
+        "planner_priority"
+      ],
+      "starter_smoke_test_fields": [
+        "selection.semantic_fields",
+        "name",
+        "label",
+        "description",
+        "input_schema",
+        "capability_summary",
+        "when_to_use",
+        "returns",
+        "constraints",
+        "scope",
+        "freshness",
+        "side_effects",
+        "capability_type",
+        "entity_type",
+        "risk_level",
+        "follow_up_tools",
+        "screen_keys",
+        "tags",
+        "examples",
+        "planner_priority"
+      ],
+      "allowed_side_effects": [
+        "none",
+        "read_only",
+        "write"
+      ],
+      "allowed_risk_levels": [
+        "read",
+        "draft",
+        "write",
+        "admin_write",
+        "high",
+        "critical"
+      ],
+      "valid_safety_metadata_pairs": [
+        {
+          "side_effects": "none",
+          "risk_level": "read"
+        },
+        {
+          "side_effects": "read_only",
+          "risk_level": "read"
+        },
+        {
+          "side_effects": "write",
+          "risk_level": "draft"
+        },
+        {
+          "side_effects": "write",
+          "risk_level": "write"
+        },
+        {
+          "side_effects": "write",
+          "risk_level": "admin_write"
+        },
+        {
+          "side_effects": "write",
+          "risk_level": "high"
+        },
+        {
+          "side_effects": "write",
+          "risk_level": "critical"
+        }
+      ],
+      "tool_names_must_be_unique": true,
+      "reserved_host_tool_names": [
+        "chart_generate",
+        "cross_app_list_read_tools",
+        "cross_app_read",
+        "desktop_list_workspace_files",
+        "desktop_read_workspace_file",
+        "desktop_search_workspace_files",
+        "get_app_help",
+        "get_current_context_snapshot",
+        "get_current_page_help",
+        "get_error_incident_details",
+        "get_system_overview",
+        "gvis_search_rag_knowledge",
+        "list_available_apps",
+        "list_recent_error_incidents",
+        "memory_get_details",
+        "memory_search",
+        "memory_timeline",
+        "statistics_analyze",
+        "statistics_analyze_and_chart",
+        "table_summarize"
+      ],
+      "host_validation_command": "python manage.py validateplugins --fail-on-warning",
+      "guidance": [
+        "Keep POST /api/ai/route as a compatibility endpoint with empty preferred_tool_calls and continue_with_planner=true.",
+        "Semantic metadata should describe the business problem, not only implementation nouns.",
+        "Tags and examples should include common user synonyms so tools remain selectable as apps grow.",
+        "Returns, constraints, scope, freshness, follow_up_tools, and screen_keys are also visible to core prompts and semantic ranking.",
+        "side_effects, risk_level, and planner_priority influence safety/ranking behavior and must not be left implicit.",
+        "Tool names must be unique within the plugin and must not shadow a host-reserved tool name."
+      ]
+    },
+    "external_ai_runtime": {
+      "route_invocation": "compatibility_call_returns_control_to_host_planner",
+      "authentication": {
+        "scheme": "Bearer",
+        "plugin_env_key": "PLUGIN_AI_API_TOKEN",
+        "required_endpoints": [
+          "POST /api/ai/route",
+          "POST /api/ai/tool-call"
+        ],
+        "public_metadata_endpoints": [
+          "GET /api/ai/help",
+          "GET /api/ai/tools"
+        ],
+        "untrusted_identity_fields": [
+          "page_context",
+          "user"
+        ],
+        "development_rotation": "Rotate the token and run python register_plugin.py --force-register.",
+        "production_rotation": "A system administrator must coordinate the Plugin Hub and plugin token update, then verify authenticated AI POST calls."
+      },
+      "host_context_mode_setting": "AI_EXTERNAL_PLUGIN_CONTEXT_MODE",
+      "default_context_mode": "minimal",
+      "context_modes": {
+        "minimal": {
+          "route_called": true,
+          "route_context": "latest user text plus app_key and screen_key only",
+          "tool_context": "declared arguments, latest user text, app_key, screen_key, and user metadata",
+          "tool_invocation_marker": "optional context_mode=minimal",
+          "excludes": [
+            "earlier conversation history",
+            "persistent memory",
+            "desktop workspace",
+            "other page context",
+            "multimodal binary content"
+          ]
+        },
+        "full": {
+          "route_called": true,
+          "recommended": false,
+          "tool_invocation_marker": "omitted_for_legacy_payload_compatibility",
+          "requires_allowlist_setting": "AI_EXTERNAL_PLUGIN_FULL_CONTEXT_MODULES",
+          "limits": [
+            "AI_APP_UPSTREAM_MAX_REQUEST_BYTES",
+            "AI_APP_UPSTREAM_MAX_RESPONSE_BYTES"
+          ],
+          "multimodal_support": "not_guaranteed"
+        },
+        "disabled": {
+          "route_called": false,
+          "tool_arguments_sent": true,
+          "ambient_context_sent": false,
+          "tool_invocation_marker": "optional context_mode=disabled"
+        }
+      },
+      "resource_identifier_policy": "explicit_validated_tool_arguments_only",
+      "tool_call_error_contract": {
+        "shape": {
+          "ok": false,
+          "error": {
+            "code": "<code>",
+            "message": "<message>"
+          }
+        },
+        "tool_required": {
+          "http_status": 400,
+          "code": "tool_required"
+        },
+        "tool_not_found": {
+          "http_status": 404,
+          "code": "tool_not_found"
+        },
+        "invalid_tool_arguments": {
+          "http_status": 400,
+          "code": "invalid_tool_arguments"
+        },
+        "ai_authentication_required": {
+          "http_status": 401,
+          "code": "ai_authentication_required",
+          "www_authenticate": "Bearer realm=\"nagakusa-plugin-ai\""
+        }
+      }
     }
+  },
+  "interop": {
+    "version": 2,
+    "host_bridge": {
+      "plugin_frame_transport": "window.postMessage -> host bridge -> Django interop broker",
+      "internal_app_transport": "window.NagakusaInterop -> Django interop broker",
+      "navigation_transport": "navigate + handoff_token",
+      "request_transport": "request + brokered JSON response",
+      "event_transport": "request + event publication",
+      "reply_correlation": "request_id",
+      "plugin_request_type": "nagakusa:interop:request",
+      "plugin_response_type": "nagakusa:interop:response",
+      "envelope_version": 1
+    },
+    "status_levels": [
+      "implemented",
+      "planned",
+      "experimental",
+      "none_declared"
+    ],
+    "security_rules": [
+      "The caller identity is determined by the host. Caller-supplied app identities are ignored.",
+      "Every cross-app action must re-check the signed-in user's access to the target app or resource.",
+      "External plugins may only call brokered actions declared in this catalog.",
+      "Large or sensitive payloads should use short-lived handoff tokens instead of query strings.",
+      "Write-side actions should stay opt-in and may require explicit user confirmation.",
+      "PLUGIN_AI_API_TOKEN and other server credentials must never be sent through postMessage or exposed to the browser.",
+      "Request actions use bounded payloads, idempotent request_id values, rate limits, timeouts, and audit logs."
+    ],
+    "apps": [
+      {
+        "app_key": "activity",
+        "label": "Activity",
+        "status": "planned",
+        "notes": [
+          "Activity is the default destination for cross-app notifications and follow-up work."
+        ],
+        "provides": [
+          {
+            "action": "activity.publish_inbox_item",
+            "kind": "event",
+            "status": "planned",
+            "summary": "Publish an inbox item or notification that links back to the source or target app.",
+            "transport": "request + event publication",
+            "allowed_callers": [
+              "internal_app",
+              "external_plugin"
+            ],
+            "access_scope": "user_must_access_activity",
+            "input_fields": [
+              "title",
+              "body",
+              "target_url or target_app/action",
+              "priority",
+              "requires_action"
+            ],
+            "returns": [
+              "event_id",
+              "inbox_item_ids"
+            ]
+          }
+        ]
+      },
+      {
+        "app_key": "chat",
+        "label": "Chat",
+        "status": "planned",
+        "notes": [
+          "Chat is the main cross-app case workflow entrypoint."
+        ],
+        "provides": [
+          {
+            "action": "chat.open_case_new",
+            "kind": "navigate",
+            "status": "planned",
+            "summary": "Open the case creation screen with brokered draft data.",
+            "transport": "navigate + handoff_token",
+            "allowed_callers": [
+              "internal_app",
+              "external_plugin"
+            ],
+            "access_scope": "user_must_access_chat",
+            "input_fields": [
+              "title",
+              "summary",
+              "part_no",
+              "department_ids",
+              "related_resource"
+            ],
+            "returns": [
+              "open_url",
+              "handoff_token",
+              "expires_at"
+            ]
+          },
+          {
+            "action": "chat.open_case_detail",
+            "kind": "navigate",
+            "status": "planned",
+            "summary": "Open an existing case detail screen from another app.",
+            "transport": "navigate",
+            "allowed_callers": [
+              "internal_app",
+              "external_plugin"
+            ],
+            "access_scope": "user_must_access_chat_case",
+            "input_fields": [
+              "case_id"
+            ],
+            "returns": [
+              "open_url"
+            ]
+          },
+          {
+            "action": "chat.get_case_summary",
+            "kind": "request",
+            "status": "planned",
+            "summary": "Return a compact case summary for cross-app display or follow-up logic.",
+            "transport": "request + brokered JSON response",
+            "allowed_callers": [
+              "internal_app",
+              "external_plugin"
+            ],
+            "access_scope": "user_must_access_chat_case",
+            "input_fields": [
+              "case_id"
+            ],
+            "returns": [
+              "case_id",
+              "title",
+              "status",
+              "members",
+              "latest_result_summary"
+            ]
+          }
+        ]
+      },
+      {
+        "app_key": "eci_portal",
+        "label": "ECI Portal",
+        "status": "planned",
+        "notes": [],
+        "provides": [
+          {
+            "action": "eci_portal.open_record",
+            "kind": "navigate",
+            "status": "planned",
+            "summary": "Open an ECI record screen from another app.",
+            "transport": "navigate",
+            "allowed_callers": [
+              "internal_app",
+              "external_plugin"
+            ],
+            "access_scope": "user_must_access_eci_portal",
+            "input_fields": [
+              "eci_no"
+            ],
+            "returns": [
+              "open_url"
+            ]
+          },
+          {
+            "action": "eci_portal.get_record_snapshot",
+            "kind": "request",
+            "status": "planned",
+            "summary": "Return a compact ECI snapshot for cross-app reference.",
+            "transport": "request + brokered JSON response",
+            "allowed_callers": [
+              "internal_app",
+              "external_plugin"
+            ],
+            "access_scope": "user_must_access_eci_portal",
+            "input_fields": [
+              "eci_no"
+            ],
+            "returns": [
+              "eci_no",
+              "title",
+              "status",
+              "updated_at"
+            ]
+          }
+        ]
+      },
+      {
+        "app_key": "data_lake",
+        "label": "Data Lake",
+        "status": "implemented",
+        "notes": [
+          "Connections and SQL are code-managed; the application exposes no connection-registration UI.",
+          "Native applications may use the signed-in Host session and plugin backends may use a server-side Bearer service key."
+        ],
+        "provides": [
+          {
+            "action": "data_lake.list_datasets",
+            "kind": "request",
+            "status": "implemented",
+            "summary": "List code-approved data lake datasets and their current snapshot metadata.",
+            "transport": "read-only JSON API",
+            "allowed_callers": [
+              "internal_app",
+              "external_plugin"
+            ],
+            "access_scope": "data_lake_session_or_service_key",
+            "input_fields": [],
+            "returns": [
+              "datasets",
+              "freshness",
+              "records_endpoint"
+            ]
+          },
+          {
+            "action": "data_lake.get_dataset_records",
+            "kind": "request",
+            "status": "implemented",
+            "summary": "Read a bounded page from the latest immutable dataset snapshot.",
+            "transport": "read-only JSON API with ETag revalidation",
+            "allowed_callers": [
+              "internal_app",
+              "external_plugin"
+            ],
+            "access_scope": "data_lake_session_or_service_key",
+            "input_fields": [
+              "dataset_slug",
+              "offset",
+              "limit"
+            ],
+            "returns": [
+              "snapshot",
+              "columns",
+              "rows",
+              "page"
+            ]
+          }
+        ]
+      },
+      {
+        "app_key": "gallery",
+        "label": "Gallery",
+        "status": "none_declared",
+        "notes": [
+          "Gallery contains UI-only concept samples backed exclusively by dummy data.",
+          "It intentionally exposes no cross-app requests, writes, or business-data contracts."
+        ],
+        "provides": []
+      },
+      {
+        "app_key": "scheduler",
+        "label": "Scheduler",
+        "status": "planned",
+        "notes": [
+          "Scheduler currently exposes a UI-first native app surface without database-backed records."
+        ],
+        "provides": [
+          {
+            "action": "scheduler.open_schedule",
+            "kind": "navigate",
+            "status": "planned",
+            "summary": "Open the schedule board with contextual filters or a selected date.",
+            "transport": "navigate + handoff_token",
+            "allowed_callers": [
+              "internal_app",
+              "external_plugin"
+            ],
+            "access_scope": "user_must_access_scheduler",
+            "input_fields": [
+              "date",
+              "owner",
+              "lane",
+              "title"
+            ],
+            "returns": [
+              "open_url",
+              "handoff_token",
+              "expires_at"
+            ]
+          }
+        ]
+      },
+      {
+        "app_key": "ai",
+        "label": "AI",
+        "status": "implemented",
+        "notes": [
+          "Cross-app AI flows should remain brokered and explicit.",
+          "External plugins call Nagakusa AI with the signed-in Host session; plugin Bearer tokens remain server-side."
+        ],
+        "provides": [
+          {
+            "action": "ai.send_message",
+            "kind": "request",
+            "status": "implemented",
+            "summary": "Send a text message from an approved external plugin to the Nagakusa AI agent and return the correlated answer.",
+            "transport": "window.postMessage -> host bridge -> durable Django AI response job",
+            "allowed_callers": [
+              "external_plugin"
+            ],
+            "access_scope": "user_must_access_ai",
+            "required_manifest_permission": "ai.message.send",
+            "request_envelope": {
+              "type": "nagakusa:interop:request",
+              "version": 1,
+              "action": "ai.send_message",
+              "request_id": "UUID",
+              "payload": "action input object"
+            },
+            "response_envelope": {
+              "type": "nagakusa:interop:response",
+              "version": 1,
+              "action": "ai.send_message",
+              "request_id": "same UUID as request",
+              "ok": "boolean",
+              "result_or_error": "result when ok=true; structured error when ok=false"
+            },
+            "input_fields": [
+              "message",
+              "conversation_id (optional, plugin-bound)",
+              "source_screen (optional)",
+              "context_snapshot (optional, bounded and secret-filtered)"
+            ],
+            "host_derived_fields": [
+              "source_app",
+              "user"
+            ],
+            "returns": [
+              "assistant_message",
+              "conversation_id",
+              "request_id",
+              "finish_reason"
+            ],
+            "error_fields": [
+              "code",
+              "message",
+              "retryable",
+              "retry_after_seconds (optional)"
+            ],
+            "conversation_policy": "one in-flight request per plugin-bound conversation",
+            "idempotency_key": "request_id scoped to signed-in user, plugin, and action",
+            "fallback_policy": "The standard starter has no local generative fallback; surface the structured Host error and retry only after Host availability recovers."
+          },
+          {
+            "action": "ai.open_support_flow",
+            "kind": "navigate",
+            "status": "planned",
+            "summary": "Open an AI support screen with current app and handoff context.",
+            "transport": "navigate + handoff_token",
+            "allowed_callers": [
+              "internal_app",
+              "external_plugin"
+            ],
+            "access_scope": "user_must_access_ai",
+            "input_fields": [
+              "source_app",
+              "source_screen",
+              "user_goal",
+              "context_snapshot"
+            ],
+            "returns": [
+              "open_url",
+              "handoff_token",
+              "expires_at"
+            ]
+          }
+        ]
+      },
+      {
+        "app_key": "accounts",
+        "label": "Accounts",
+        "status": "planned",
+        "notes": [
+          "Accounts is primarily a service-style provider for identity lookups."
+        ],
+        "provides": [
+          {
+            "action": "accounts.lookup_users",
+            "kind": "request",
+            "status": "planned",
+            "summary": "Resolve users by employee number, department, or free-text query.",
+            "transport": "request + brokered JSON response",
+            "allowed_callers": [
+              "internal_app",
+              "external_plugin"
+            ],
+            "access_scope": "user_must_access_accounts_lookup",
+            "input_fields": [
+              "query",
+              "department_ids",
+              "limit"
+            ],
+            "returns": [
+              "users"
+            ]
+          }
+        ]
+      },
+      {
+        "app_key": "parts",
+        "label": "Parts",
+        "status": "planned",
+        "notes": [
+          "Parts is primarily a service-style provider for master-data lookups."
+        ],
+        "provides": [
+          {
+            "action": "parts.lookup_part",
+            "kind": "request",
+            "status": "planned",
+            "summary": "Resolve part master information by part number or alias.",
+            "transport": "request + brokered JSON response",
+            "allowed_callers": [
+              "internal_app",
+              "external_plugin"
+            ],
+            "access_scope": "user_must_access_parts_lookup",
+            "input_fields": [
+              "part_no",
+              "query"
+            ],
+            "returns": [
+              "part_no",
+              "label",
+              "aliases",
+              "attributes"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "changes": [
+    {
+      "change_id": "plugin-spec-channel-universal-desktop-2026-09-07",
+      "published_at": "2026-09-07",
+      "impact": "medium",
+      "title": "All apps are available on desktop without a feature switch.",
+      "supersedes_change_ids": [
+        "plugin-spec-channel-starter-feature-defaults-2026-08-18"
+      ],
+      "summary": "Desktop availability is always enabled. Legacy features.desktop=false is ignored by the Host. The Plugin Hub desktop switch and starter PLUGIN_DESKTOP_ENABLED setting have been removed. AI configuration and existing app access policies still apply.",
+      "required_actions": [
+        "Publish features.desktop=true and remove desktop availability switches.",
+        "Keep PLUGIN_AI_ENABLED=0 until Nagakusa AI integration is ready.",
+        "Verify authorized users can open the app in both Web and desktop clients."
+      ],
+      "ai_prompt_hint": "Use contracts.starter_feature_defaults; desktop availability is not configurable."
+    },
+    {
+      "change_id": "plugin-spec-channel-host-ai-prompt-customization-2026-09-02",
+      "published_at": "2026-09-02",
+      "impact": "high",
+      "title": "The starter uses Nagakusa Host AI with app-level prompt customization.",
+      "supersedes_change_ids": [
+        "plugin-spec-channel-ai-send-message-2026-08-18"
+      ],
+      "summary": "The standard starter no longer carries a custom agent endpoint, browser fallback adapter, or local LLM configuration. Generated answers use ai.send_message and Nagakusa core AI. App-specific behavior is declared as bounded assistant_instructions in GET /api/ai/help and synchronized into the Host system prompt. Tool selection is delegated to the Host planner from declared metadata; the plugin route remains compatibility-only.",
+      "required_actions": [
+        "Set PLUGIN_AI_AGENT_MODE=host and sync the manifest before exposing a plugin-owned chat surface.",
+        "Edit plugin_app/services/ai_prompt.py to tune app behavior; keep instructions declarative and free of secrets or authorization claims.",
+        "Sync the plugin after prompt changes so Plugin Hub refreshes the help metadata and production approval integrity record.",
+        "Use declared tool metadata for app actions and keep features.ai enabled only when Nagakusa AI should call plugin tools.",
+        "Keep POST /api/ai/route as an authenticated compatibility endpoint that returns empty preferred_tool_calls and continue_with_planner=true.",
+        "Surface structured Host errors when Nagakusa AI is unavailable; do not silently switch to a plugin-owned model."
+      ],
+      "ai_prompt_hint": "Inspect contracts.host_ai_interop.starter.prompt_customization, then update ai_prompt.py, the help metadata, and relevant tests together."
+    },
+    {
+      "change_id": "plugin-spec-channel-viqs-body-no-recent-2000-2026-09-01",
+      "published_at": "2026-09-01",
+      "impact": "medium",
+      "title": "The saved VIQS API supports BODY_NO lookup over the latest 2,000 records.",
+      "summary": "Plugin backends can pass body_no to the existing bounded VIQS quality-records API. Nagakusa searches the latest 2,000 unique records from saved snapshot history and returns only exact BODY_NO matches without connecting to VIQS or executing source SQL.",
+      "required_actions": [
+        "Pass body_no to plugin_app.services.data_lake.get_viqs_quality_records from plugin server code when an exact vehicle lookup is required.",
+        "Treat body_no as an NFKC-normalized, trimmed, case-insensitive exact-match value using at most 40 letters, digits, hyphens, or underscores.",
+        "Read data.search and data.query.recent_record_limit to confirm that the bounded candidate window is 2,000 saved records.",
+        "Pass only page.next_cursor for subsequent pages; the cursor preserves the BODY_NO filter, snapshot anchors, and search revision.",
+        "Keep using the existing registered-plugin token and never add VIQS credentials, SQL, or browser-side token handling."
+      ],
+      "ai_prompt_hint": "For an exact VIQS vehicle lookup, call the starter Data Lake client with body_no. The Host searches only its latest 2,000 unique saved records and retains the existing registered-plugin authorization boundary."
+    },
+    {
+      "change_id": "plugin-spec-channel-gvis-qa-rag-sources-2026-08-31",
+      "published_at": "2026-08-31",
+      "impact": "high",
+      "title": "Nagakusa core owns cited RAG sources for GVIS documents and FAQ.",
+      "summary": "The approved GVIS adapter adds gvis_qa.document and gvis_qa.faq to the existing Host RAG pipeline. GVIS exposes only a bounded, bearer-protected read feed; Nagakusa core owns serialization, plugin-access ACL claims, durable queue/retry, deletion reconciliation, manifests, Gateway credentials, and the cited search tool.",
+      "required_actions": [
+        "Run GVIS with PLUGIN_AI_AGENT_MODE=host, keep features.ai enabled, and sync the ai.message.send manifest permission through Plugin Hub.",
+        "Keep GET /api/ai/source-records limited to gvis_qa.document and gvis_qa.faq, require the registered PLUGIN_AI_API_TOKEN Bearer token even in debug loopback, and enforce id-ascending pages of at most 100 records.",
+        "Enable RAG_GVIS_QA_ENABLED only in Nagakusa core after the GVIS feed and registered token are verified; do not copy RAG Gateway URLs or keys into GVIS.",
+        "Use the fixed plugin:gvis-qa:access ACL only after a fresh can_user_access_external_plugin decision; fail closed on missing plugin access.",
+        "Run sync_gvis_qa_rag --dry-run, then sync_gvis_qa_rag and the durable ingestion worker; inspect RagSourceRecordState and build_rag_manifest for both sources.",
+        "Use gvis_search_rag_knowledge for cited semantic evidence and retain gvis_search_documents and gvis_search_faq for request-time freshness.",
+        "Keep POST /api/rag/ingest, GET /api/rag/manifest, RAG_GATEWAY_URL, and RAG_INGEST_API_KEY out of external plugins."
+      ],
+      "ai_prompt_hint": "For GVIS AI answers, use Host mode so Chat case RAG, the core-owned cited GVIS RAG tool, and the live GVIS document/FAQ tools can be planned together. Inspect contracts.rag_ingestion.external_plugin_adapters.gvis_qa and do not add a generic plugin-owned ingestion endpoint or Gateway credential."
+    },
+    {
+      "change_id": "plugin-spec-channel-trusted-data-lake-plugin-token-2026-08-31",
+      "published_at": "2026-08-31",
+      "impact": "high",
+      "title": "Enabled registered plugin backends can use the saved VIQS Data Lake immediately.",
+      "supersedes_change_ids": [
+        "plugin-spec-channel-viqs-data-lake-api-2026-08-27"
+      ],
+      "summary": "For the bounded read-only VIQS snapshot API, an enabled Plugin Hub registration and its matching server-only token are now the authorization boundary. Manifest sync, production publication approval, and a Data Lake manifest scope no longer delay server-to-server reads; production approval still controls whether users can open the plugin UI.",
+      "required_actions": [
+        "Use the existing PLUGIN_AI_API_TOKEN issued with the registered plugin; no separate Data Lake credential or manifest scope is required.",
+        "Call plugin_app.services.data_lake.get_viqs_quality_records from plugin server code and keep the token out of browser code, URLs, logs, and AI output.",
+        "Keep the Plugin Hub registration enabled; disabling it immediately revokes Data Lake access.",
+        "Continue to use bounded pages, ETag revalidation, and sources timestamps; registration trust does not permit direct VIQS connections or ingestion triggers.",
+        "Continue the normal production request and approval workflow before exposing the plugin UI to production users."
+      ],
+      "ai_prompt_hint": "For saved VIQS reads, use the starter Data Lake client with the registered plugin token. Do not add a Data Lake scope, wait for manifest sync, or treat production UI approval as a server-to-server API prerequisite."
+    },
+    {
+      "change_id": "plugin-spec-channel-viqs-data-lake-api-2026-08-27",
+      "published_at": "2026-08-27",
+      "impact": "high",
+      "title": "Registered plugin backends can read saved VIQS 301/302 Data Lake pages.",
+      "summary": "The unified read-only Data Lake API returns paginated VIQS 301/302 quality records from saved snapshots. Registered plugins reuse their existing server-only Plugin Hub token and declare data_lake.viqs.quality_records.read. API calls never connect to VIQS or execute source SQL.",
+      "required_actions": [
+        "Declare data_lake.viqs.quality_records.read only when the plugin uses saved VIQS quality records.",
+        "Call plugin_app.services.data_lake.get_viqs_quality_records from plugin server code and keep PLUGIN_AI_API_TOKEN out of browser code, URLs, logs, and AI output.",
+        "Use limit 1-100 and pass only the opaque page.next_cursor for the next page; do not build an unbounded local mirror.",
+        "Use ETag revalidation and inspect sources[].captured_at and last_checked_at for freshness.",
+        "Treat HTTP 503 as no saved snapshot being available; never trigger VIQS ingestion from an API request.",
+        "Do not copy VIQS endpoints, credentials, or SQL into a plugin application."
+      ],
+      "ai_prompt_hint": "When a plugin needs VIQS quality records, inspect contracts.host_apis.viqs_quality_records, declare its read scope, and use the bounded starter server-side client over saved snapshots."
+    },
+    {
+      "change_id": "plugin-spec-channel-administrator-status-2026-08-26",
+      "published_at": "2026-08-26",
+      "impact": "high",
+      "title": "Plugins can distinguish system and current-plugin app administrators.",
+      "summary": "The no-store capabilities API and signed frame ticket now publish separate administrator.is_system_admin and administrator.is_app_admin booleans. The app-admin value includes direct and group grants for the current plugin only; privileged operations continue to require their operation-specific capability decision.",
+      "required_actions": [
+        "Declare plugin.capabilities.read before reading administrator classifications from the Host API or signed frame ticket.",
+        "Use NagakusaCapabilities.getAdministratorStatus() for fresh browser-side workflow or UI branching, and do not cache its result.",
+        "Use request.nagakusa_administrator_status_available, request.nagakusa_is_system_admin, and request.nagakusa_is_app_admin only after the starter frame-auth mixin verifies the ticket.",
+        "Keep operation_capabilities checks on every privileged endpoint; administrator classifications do not replace operation authorization.",
+        "Treat a missing, empty, malformed, or unavailable administrator claim as unavailable and fail closed where the distinction is required.",
+        "Never forward the Nagakusa session Cookie or authorize from raw X-Nagakusa identity or role headers."
+      ],
+      "ai_prompt_hint": "When a plugin must distinguish administrator types, declare plugin.capabilities.read and use the administrator object from a fresh Host response or the starter's verified request attributes. Continue to authorize privileged operations with operation_capabilities."
+    },
+    {
+      "change_id": "plugin-spec-channel-frame-auth-ticket-2026-08-24",
+      "published_at": "2026-08-24",
+      "impact": "high",
+      "title": "Hosted plugin server requests now carry a signed short-lived frame authentication ticket.",
+      "summary": "The Host frame proxy now signs the current Host user, target plugin, request method, expiry, and current operation-capability decisions into a server-only HMAC ticket. Plugin servers can authorize protected endpoints without receiving the Nagakusa session cookie or trusting raw X-Nagakusa identity headers.",
+      "required_actions": [
+        "Deploy the Host support before requiring the ticket in a production plugin.",
+        "Configure the same 32-to-255-character PLUGIN_AI_API_TOKEN in the plugin server and its Plugin Hub record, then restart and re-register or sync the manifest.",
+        "Use the starter's plugin_app/services/frame_auth.py mixin for protected CBVs; it verifies X-Nagakusa-Frame-Auth-Version, the HMAC ticket signature, issuer, audience, app key, HTTP method, issued-at time, expiry, and maximum 60-second lifetime.",
+        "Declare plugin.capabilities.read before using operation_capabilities from the ticket, and fail closed when the declaration, ticket, decision, or shared secret is absent or invalid.",
+        "For GENKI history endpoints, require a fresh valid ticket whose genki_monitor.history.read decision is explicitly allowed on every request.",
+        "Use the signed subject and decisions for authorization; never use X-Nagakusa-User-Id, display headers, role fields, or a browser-supplied proxy marker as proof.",
+        "Never return, log, cache, persist, or forward the ticket or shared secret to browser code, postMessage, debug output, or AI output."
+      ],
+      "ai_prompt_hint": "Inspect contracts.frame_proxy_authentication before protecting a plugin-server endpoint. Keep standalone public endpoints separate, verify the ticket fail-closed, and apply the matching operation capability to every sensitive request."
+    },
+    {
+      "change_id": "plugin-spec-channel-gvis-qa-document-manage-2026-08-24",
+      "published_at": "2026-08-24",
+      "impact": "high",
+      "title": "GVIS-QA document management has a dedicated Host operation capability.",
+      "summary": "GVIS-QA document creation, editing, and reordering are formally registered as gvis_qa.document.manage. The decision is available only to the matching GVIS-QA plugin namespace and is evaluated from the current Host session on every request.",
+      "required_actions": [
+        "Set PLUGIN_DOCUMENT_ADMIN_CAPABILITY=gvis_qa.document.manage in the GVIS-QA server environment.",
+        "Declare plugin.capabilities.read in the manifest, then restart GVIS-QA and re-register or sync its manifest.",
+        "Fetch the capability once for UI display and again immediately before create, edit, reorder, upload, or save operations.",
+        "Treat missing decisions, explicit false values, malformed responses, standalone access, and Host request failures as denied.",
+        "Verify a system administrator and the current GVIS-QA app administrator are allowed, while an ordinary authorized user is denied.",
+        "Do not reuse GENKI MONITOR capabilities or infer access from role, account attributes, or X-Nagakusa headers."
+      ],
+      "ai_prompt_hint": "For GVIS-QA document controls, set PLUGIN_DOCUMENT_ADMIN_CAPABILITY to gvis_qa.document.manage, sync plugin.capabilities.read, and keep the existing no-store display-time and operation-time Host checks fail-closed."
+    },
+    {
+      "change_id": "plugin-spec-channel-plugin-ocr-gateway-2026-08-24",
+      "published_at": "2026-08-24",
+      "impact": "high",
+      "title": "External plugins can use the bounded server-side PP-OCRv6 gateway proxy.",
+      "summary": "The starter now includes an optional same-origin OCR endpoint, a vendored bounded Python client, and a browser helper. Browser code sends one JPEG, PNG, or WebP file to the plugin; only the plugin server holds the OCR-scoped key and calls the GPU Gateway.",
+      "required_actions": [
+        "Keep PLUGIN_OCR_ENABLED=0 until an app-specific OCR key and approved network route are ready.",
+        "Send multipart FormData to relative api/ocr with Django CSRF; never send File or base64 through postMessage.",
+        "Keep the OCR URL and key server-side, use an exact host allowlist, reject redirects, and require HTTPS unless closed-network HTTP is explicitly approved.",
+        "Keep upload, response, timeout, rate, and concurrency limits within the published hard ceilings.",
+        "Add plugin-owned authentication and resource authorization if the plugin server is reachable outside the Nagakusa frame proxy.",
+        "Use a separate OCR-scoped key per plugin and do not issue the admin scope to ordinary applications."
+      ],
+      "ai_prompt_hint": "Before adding OCR to a plugin, inspect contracts.plugin_ocr_gateway and docs/37-ocr-gateway-guide.md. Keep the GPU credential and upstream error body out of browser code, logs, and AI output."
+    },
+    {
+      "change_id": "plugin-spec-channel-operation-capabilities-2026-08-21",
+      "published_at": "2026-08-21",
+      "impact": "high",
+      "title": "Privileged plugin features now use operation-specific real-time capability decisions.",
+      "summary": "The Host capabilities API now publishes operation_capabilities without returning a generic administrator flag. GENKI MONITOR history access is formally registered as genki_monitor.history.read and is evaluated from the current Host session on every request.",
+      "required_actions": [
+        "Refresh docs/plugin-spec-snapshot.json before implementing a privileged plugin feature.",
+        "Declare plugin.capabilities.read in the plugin manifest before calling the capabilities Host API.",
+        "Use operation_capabilities[capability].allowed instead of role, is_staff, is_superuser, or a generic administrator flag.",
+        "Check once when rendering privileged UI and check again immediately before the privileged operation.",
+        "Do not cache, persist, or reuse a previous capabilities response for a later operation.",
+        "Treat missing decisions, request failures, malformed payloads, and explicit false values as denied."
+      ],
+      "ai_prompt_hint": "For GENKI MONITOR history, add plugin.capabilities.read, call the capabilities Host API through NagakusaCapabilities.check for display and NagakusaCapabilities.require immediately before access, and never infer administrator status from me, users, or X-Nagakusa headers."
+    },
+    {
+      "change_id": "plugin-spec-channel-ai-send-message-2026-08-18",
+      "published_at": "2026-08-18",
+      "impact": "high",
+      "title": "External plugins can use the official AI Dock request bridge.",
+      "summary": "The implemented ai.send_message action lets an approved external plugin send a text message through window.postMessage, the Host Bridge, and the durable Nagakusa AI response-job worker. The Host derives the signed-in user and source plugin, rechecks both access boundaries, and never exposes plugin AI Bearer tokens to browser code. This historical contract is superseded by the Host-only starter contract.",
+      "required_actions": [
+        "Declare the ai.message.send host permission before enabling PLUGIN_AI_AGENT_MODE=host.",
+        "Keep features.ai separate: it controls whether Nagakusa AI may use plugin tools, not whether the plugin may call Host AI.",
+        "Use UUID request_id values and retain the returned plugin-bound conversation_id for follow-up messages.",
+        "Do not send user IDs, source_app identities, credentials, files, base64 data, or plugin Bearer tokens through postMessage.",
+        "Run the durable AI response worker in production and apply the published request, context, timeout, concurrency, and rate limits.",
+        "For current starters, use app help metadata for prompt customization instead of adding a plugin-owned model.",
+        "Surface Host errors rather than silently changing the AI provider."
+      ],
+      "ai_prompt_hint": "Inspect contracts.host_ai_interop and interop.apps[app_key=ai].provides[action=ai.send_message], then follow the newer Host-only prompt-customization change entry."
+    },
+    {
+      "change_id": "plugin-spec-channel-starter-feature-defaults-2026-08-18",
+      "published_at": "2026-08-18",
+      "impact": "medium",
+      "title": "New starters disable host AI use and enable desktop use by default.",
+      "summary": "New starters publish features.ai=false and features.desktop=true by default. Developers can change both values through PLUGIN_AI_ENABLED and PLUGIN_DESKTOP_ENABLED. Enabled registered plugins are automatically shown in the Launchbar for users who pass the plugin access policy.",
+      "required_actions": [
+        "Keep PLUGIN_AI_ENABLED=0 until the plugin is intentionally ready for Nagakusa AI integration.",
+        "Keep or change PLUGIN_DESKTOP_ENABLED according to the plugin's supported surfaces.",
+        "Restart and re-register or sync the manifest after changing either feature flag.",
+        "Do not confuse PLUGIN_HOST_LAUNCHBAR_VISIBLE with app icon access; it controls host chrome inside the plugin screen.",
+        "Verify an authorized user sees the registered app icon and an unauthorized user does not."
+      ],
+      "ai_prompt_hint": "Inspect contracts.starter_feature_defaults before changing starter feature flags or Launchbar behavior. Keep per-user icon visibility tied to the existing plugin access policy."
+    },
+    {
+      "change_id": "plugin-spec-channel-lightweight-gatekeeper-2026-08-17",
+      "published_at": "2026-08-17",
+      "impact": "high",
+      "title": "AI tool safety metadata and external plugin calls now follow the lightweight Gatekeeper contract.",
+      "summary": "External AI tool catalogs must publish valid side_effects/risk_level pairs, unique names, and no host-reserved names. External AI execution POST endpoints authenticate Nagakusa with a plugin-specific Bearer token, and the host defaults remote context sharing to minimal.",
+      "required_actions": [
+        "Use only the allowed side_effects and risk_level values and one of the published valid safety metadata pairs.",
+        "Keep every external plugin AI tool name unique and outside reserved_host_tool_names.",
+        "Run python manage.py validateplugins --fail-on-warning in Nagakusa before enabling enforcement.",
+        "Read AI_EXTERNAL_PLUGIN_CONTEXT_MODE behavior and pass resource identifiers as explicit validated tool arguments.",
+        "Require Authorization: Bearer PLUGIN_AI_API_TOKEN on plugin AI POST endpoints; never use page_context or user payload fields as authentication.",
+        "Roll AI_TOOL_AUTHORIZATION_MODE from observe to enforce only after validation and audit review."
+      ],
+      "ai_prompt_hint": "Before adding or changing an external AI tool, inspect contracts.ai_tool_selection and contracts.external_ai_runtime, update the starter smoke test and examples, then run the host validateplugins command with --fail-on-warning."
+    },
+    {
+      "change_id": "plugin-spec-channel-host-shell-visibility-2026-08-17",
+      "published_at": "2026-08-17",
+      "impact": "medium",
+      "title": "External plugins can hide host shell surfaces for focused and mobile screens.",
+      "summary": "The optional ui.host_shell manifest object controls whether the Nagakusa appbar, launchbar, and AI dock are visible around an external plugin. Omitted fields and the current starter default all three surfaces to visible for backward compatibility.",
+      "required_actions": [
+        "Publish appbar, launchbar, and ai_dock as booleans under ui.host_shell when the plugin needs an explicit host layout.",
+        "Set a surface to false only when the plugin screen should use the released viewport space.",
+        "Keep an in-plugin navigation or exit path when all host navigation surfaces are hidden.",
+        "Use the fixed nagakusa:host-navigation home message for the starter exit control; do not request arbitrary parent URLs.",
+        "Do not treat hidden host chrome as a change to frame sandboxing, authentication, access grants, CSRF, or CSP.",
+        "Verify the hosted screen with a real mobile viewport and keep a viewport meta tag in the host document."
+      ],
+      "ai_prompt_hint": "When building a mobile or full-screen plugin, inspect contracts.plugin_host_shell and configure ui.host_shell instead of reaching into the parent DOM from the plugin iframe."
+    },
+    {
+      "change_id": "plugin-spec-channel-starter-first-connect-2026-08-06",
+      "published_at": "2026-08-06",
+      "impact": "high",
+      "title": "Starter registration now pins the workstation address used for first connection.",
+      "summary": "Starter downloads use the trusted request client IP for PLUGIN_BASE_URL and DJANGO_ALLOWED_HOSTS when Nagakusa runs on another machine. Loopback downloads use the configured or detected LAN IP, with host.docker.internal retained only as a last-resort fallback. Development manifest sync may use only the exact IP pinned to the issued registration key.",
+      "required_actions": [
+        "Keep the generated PLUGIN_BASE_URL unless the workstation network changes.",
+        "The same owner may reissue a starter for an unused reservation or an existing development plugin.",
+        "Configure TRUSTED_PROXY_IPS with only the reverse proxy addresses that connect directly to Django.",
+        "Let start-local read PLUGIN_HOST, PLUGIN_PORT, PLUGIN_BASE_URL, and PLUGIN_LOCAL_BROWSER_URL from .env.",
+        "When changing the startup port, update the Nagakusa-facing and local browser URLs together.",
+        "Continue to require PLUGINHUB_OUTBOUND_ALLOWED_HOSTS before approving a fixed external host for production."
+      ],
+      "ai_prompt_hint": "When diagnosing first registration or HTTP 400/409 errors, compare the generated PLUGIN_BASE_URL, DJANGO_ALLOWED_HOSTS, the workstation address observed by Nagakusa, and the selected startup port."
+    },
+    {
+      "change_id": "plugin-spec-channel-image-upload-transport-2026-07-21",
+      "published_at": "2026-07-21",
+      "impact": "high",
+      "title": "Plugin frame proxy and starter now support bounded multipart image uploads.",
+      "summary": "External plugins can send multipart/form-data through their same-origin frame path. The host bounds request bodies with PLUGINHUB_PROXY_MAX_REQUEST_BYTES, and the starter demonstrates plugin-owned JPEG, PNG, and WebP validation, private storage, and content delivery.",
+      "required_actions": [
+        "Use a relative api/images/ URL so standalone and Nagakusa-hosted modes share the same client code.",
+        "Keep the Django CSRF token in FormData and do not manually set the multipart Content-Type boundary.",
+        "Validate image bytes and pixel count, re-encode supported raster formats, and reject SVG.",
+        "Return a plugin content-view URL instead of /media/, an upstream direct URL, base64, or a filesystem path.",
+        "Add record-level authorization, quota, retention, deletion, and backup rules before production use."
+      ],
+      "ai_prompt_hint": "Before implementing plugin image uploads, inspect contracts.plugin_owned_image_uploads and docs/35-image-upload-guide.md. Keep binary data out of postMessage and browser storage."
+    },
+    {
+      "change_id": "plugin-spec-channel-host-api-suite-2026-07-08",
+      "published_at": "2026-07-08",
+      "impact": "high",
+      "title": "Host-brokered plugin data APIs now cover identity, groups, capabilities, interop, masters, and environment.",
+      "summary": "External plugins can request scoped Host APIs for the current user, directory groups, real-time plugin capabilities, app interop catalog, common reference masters, and safe environment metadata. Display and reference data may be cached for up to 3600 seconds; capability and authorization decisions must be fetched in real time.",
+      "required_actions": [
+        "Declare only the host_permissions scopes the plugin actually needs.",
+        "Use GET /plugins/<module_slug>/host-api/capabilities/ for permission and write-decision checks and do not cache that response.",
+        "Cache identity, directory, group, interop, master, and environment reads for up to 3600 seconds per Nagakusa user session.",
+        "Do not connect to Nagakusa databases, admin exports, or private app endpoints for these datasets.",
+        "Request a new Host API scope before adding sensitive fields, inactive users, raw AD attributes, or write behavior."
+      ],
+      "ai_prompt_hint": "When a plugin needs Nagakusa data, inspect contracts.host_apis and choose the narrowest required_manifest_permission. Keep capabilities reads real-time."
+    },
+    {
+      "change_id": "plugin-spec-channel-host-directory-users-api-2026-07-08",
+      "published_at": "2026-07-08",
+      "impact": "high",
+      "title": "Host-brokered user directory API is available to approved plugins.",
+      "summary": "External plugins can request the directory.users.search.basic host permission to read a paginated, active searchable user directory through the Nagakusa host. The endpoint returns email, basic identity, and affiliation fields and is audited on every call.",
+      "required_actions": [
+        "Declare host_permissions with scope directory.users.search.basic when a plugin needs user search or assignment UI.",
+        "Call GET /plugins/<module_slug>/host-api/users/ from the Nagakusa-hosted frame; do not connect to Nagakusa DBs or private admin endpoints.",
+        "Cache directory user data in the plugin for up to 3600 seconds and refresh it at most once per hour per user session.",
+        "Use q, limit, and cursor for pagination; do not poll or refresh unbounded user lists more frequently than the cache TTL.",
+        "Do not assume inactive users, roles, admin status, or contact fields are available under the basic scope.",
+        "Do not use cached directory data for permissions, access control, approval state, or write authorization decisions."
+      ],
+      "ai_prompt_hint": "When adding user pickers or assignment workflows, use contracts.host_apis.directory_users and require the directory.users.search.basic manifest permission before implementation."
+    },
+    {
+      "change_id": "plugin-spec-channel-starter-standalone-runtime-2026-07-06",
+      "published_at": "2026-07-06",
+      "impact": "high",
+      "title": "Starter plugins must keep a standalone minimum runtime.",
+      "summary": "Starter-built plugins should continue to serve their local UI, health endpoint, platform-spec offline snapshot, and read-only local AI helpers when the main Nagakusa server is unavailable. Registration and host-frame access remain best-effort Nagakusa-dependent behavior.",
+      "required_actions": [
+        "Keep local direct access through PLUGIN_LOCAL_BROWSER_URL working.",
+        "Keep GET /api/health independent from Nagakusa network calls.",
+        "Keep GET /api/platform-spec able to fall back to docs/plugin-spec-snapshot.json.",
+        "Keep read-only AI helper tools usable with local or offline data.",
+        "Do not make startup fail only because Plugin Hub registration is unavailable."
+      ],
+      "ai_prompt_hint": "When updating a starter plugin, verify standalone behavior before adding new Nagakusa dependencies. Use starter_get_standalone_status and docs/85-standalone-mode.md."
+    },
+    {
+      "change_id": "plugin-spec-channel-rag-ingestion-boundary-2026-07-06",
+      "published_at": "2026-07-06",
+      "impact": "medium",
+      "title": "RAG ingestion remains a core-owned chat-case pipeline.",
+      "summary": "Nagakusa core currently ingests only nagakusa.chat_case through the durable core.RagIngestionJob queue and the RAG Gateway batch API. External starter plugins should not publish RAG ingest endpoints or direct RAG Gateway credentials until a Plugin Hub external-source contract is introduced.",
+      "required_actions": [
+        "Do not add POST /api/rag/ingest or GET /api/rag/manifest to starter plugins.",
+        "Keep starter manifest features.rag_ingest false until Plugin Hub publishes an external plugin RAG source contract.",
+        "Do not put RAG_GATEWAY_URL or RAG_INGEST_API_KEY into starter plugin .env files.",
+        "When a plugin needs searchable data, expose read-only AI tools first and escalate the RAG source design to Nagakusa core."
+      ],
+      "ai_prompt_hint": "When updating a starter plugin, treat RAG ingestion as Nagakusa-core owned. Check docs/75-rag-ingestion-boundary.md before adding data-ingestion endpoints or secrets."
+    },
+    {
+      "change_id": "plugin-spec-channel-core-tool-contract-fields-2026-07-06",
+      "published_at": "2026-07-06",
+      "impact": "high",
+      "title": "AI tool manifests now mirror the full core tool prompt contract.",
+      "summary": "Nagakusa core now uses the richer AiToolDefinition contract in prompts, semantic scoring, tool-candidate ranking, and read-risk checks. Starter plugins should publish the same fields that core consumes instead of only the older semantic metadata subset.",
+      "required_actions": [
+        "For every plugin AI tool, publish returns, constraints, scope, freshness, side_effects, follow_up_tools, and screen_keys.",
+        "Keep side_effects and risk_level explicit; use side_effects=read_only and risk_level=read for read-only tools.",
+        "Keep planner_priority as an integer because core uses it as the base ranking score.",
+        "Update docs/examples/tool-manifest-response.json and scripts/smoke_test.py whenever the tool manifest changes."
+      ],
+      "ai_prompt_hint": "When updating a starter plugin, compare /api/ai/tools against the current AiToolDefinition prompt contract before editing route logic or tool-call handlers."
+    },
+    {
+      "change_id": "plugin-spec-channel-semantic-ai-tool-selection-2026-05-18",
+      "published_at": "2026-05-18",
+      "impact": "high",
+      "title": "AI tool metadata now participates in semantic tool selection.",
+      "summary": "Nagakusa now combines explicit route hints, contextual scoring, and semantic tool metadata when choosing AI tools. External plugins should keep tool manifest metadata rich enough for fuzzy user requests and future app growth.",
+      "required_actions": [
+        "For every plugin AI tool, fill capability_summary, when_to_use, tags, examples, capability_type, entity_type, and risk_level.",
+        "Use business-domain words, user-facing synonyms, and common abbreviations in tags and examples.",
+        "Keep docs/examples/tool-manifest-response.json and scripts/smoke_test.py aligned with the real tool manifest.",
+        "Do not rely only on exact route keywords when adding plugin tools."
+      ],
+      "ai_prompt_hint": "Before adding or renaming plugin tools, inspect /api/ai/tools and ensure each tool has semantic selection metadata that describes when AI should choose it."
+    },
+    {
+      "change_id": "plugin-spec-channel-app-interop-catalog-2026-04-27",
+      "published_at": "2026-04-27",
+      "impact": "high",
+      "title": "App interop catalog was added to the Plugin Hub spec channel.",
+      "summary": "The spec channel now publishes a machine-readable interop catalog so development AI can inspect which cross-app navigation, brokered request, and event capabilities each app declares.",
+      "required_actions": [
+        "Read interop.version, interop.host_bridge, interop.security_rules, and interop.apps from the spec feed.",
+        "Use the interop catalog before wiring plugin-to-app flows or prompting an AI to implement them.",
+        "Keep starter docs, examples, and helper tools aligned with the declared interop actions."
+      ],
+      "ai_prompt_hint": "Inspect interop.apps first, then limit design and code changes to declared actions, transports, statuses, and security constraints."
+    },
+    {
+      "change_id": "plugin-spec-channel-bootstrap-2026-04-24",
+      "published_at": "2026-04-24",
+      "impact": "high",
+      "title": "Online and offline spec-channel flow was established for starter plugins.",
+      "summary": "Starter plugins should keep a local snapshot of the Plugin Hub spec channel and use it as an offline fallback when the Nagakusa side is unavailable.",
+      "required_actions": [
+        "Keep GET /api/platform-spec available in the starter plugin.",
+        "Mirror the latest feed into docs/plugin-spec-snapshot.json.",
+        "When Nagakusa is reachable, run python scripts/refresh_platform_spec.py before updating docs or code.",
+        "If the feed changes, update affected endpoints, examples, docs, and tests together."
+      ],
+      "ai_prompt_hint": "Read docs/plugin-spec-snapshot.json first, summarize changes and required_actions, then update the impacted endpoints, docs/examples, and tests in one pass."
+    },
+    {
+      "change_id": "plugin-spec-channel-offline-fallback-2026-04-24",
+      "published_at": "2026-04-24",
+      "impact": "medium",
+      "title": "Local snapshot fallback is now part of the standard starter workflow.",
+      "summary": "When the Plugin Hub API cannot be reached, the starter plugin should continue from the local snapshot and avoid assuming that newer remote contract details are available.",
+      "required_actions": [
+        "Do not hard-fail when NAGAKUSA_PLUGIN_SPEC_API_URL is unavailable.",
+        "Check whether GET /api/platform-spec returned served_from=local_snapshot before making assumptions.",
+        "Run python scripts/refresh_platform_spec.py again after connectivity is restored."
+      ],
+      "ai_prompt_hint": "If Nagakusa is offline, treat docs/plugin-spec-snapshot.json as the source of truth and avoid inventing remote-only details."
+    }
+  ],
+  "ai_instructions": {
+    "online_steps": [
+      "Run python scripts/refresh_platform_spec.py to refresh the latest feed.",
+      "Read GET /api/platform-spec or docs/plugin-spec-snapshot.json.",
+      "Inspect contracts.standalone_runtime before adding startup or runtime dependencies on Nagakusa.",
+      "Inspect contracts.starter_feature_defaults before changing AI, desktop, or Launchbar defaults.",
+      "Inspect contracts.plugin_host_shell before changing the host chrome around a plugin screen.",
+      "Inspect contracts.frame_proxy_authentication before protecting a plugin-server endpoint with Host identity or capabilities.",
+      "Inspect contracts.host_ai_interop before connecting a plugin-owned chat surface to Nagakusa AI or tuning app prompt instructions.",
+      "Inspect interop.apps to confirm declared actions, transports, and statuses.",
+      "Inspect contracts.host_apis before adding host-brokered data reads.",
+      "Inspect contracts.plugin_owned_image_uploads before adding binary upload or content endpoints.",
+      "Inspect contracts.plugin_ocr_gateway before adding OCR or a GPU Gateway connection.",
+      "Inspect contracts.rag_ingestion before adding any RAG ingestion path.",
+      "Inspect contracts.ai_tool_selection and contracts.external_ai_runtime before changing external AI tools.",
+      "Summarize changes.required_actions and ai_prompt_hint before editing code.",
+      "Update affected endpoints, examples, docs, and tests together."
+    ],
+    "offline_steps": [
+      "Treat docs/plugin-spec-snapshot.json as the source of truth when Nagakusa is unreachable.",
+      "Confirm that GET /api/platform-spec returned served_from=local_snapshot.",
+      "Keep contracts.standalone_runtime as the minimum behavior while Nagakusa is unreachable.",
+      "Inspect contracts.starter_feature_defaults before changing AI, desktop, or Launchbar defaults.",
+      "Inspect contracts.plugin_host_shell before changing mobile or full-screen host chrome.",
+      "Inspect contracts.frame_proxy_authentication and do not assume Host-authorized data is available from standalone mode.",
+      "Inspect contracts.host_ai_interop and keep Host errors visible; the starter has no local generative fallback.",
+      "Inspect interop.apps and avoid assuming undeclared capabilities are available.",
+      "Inspect contracts.host_apis and avoid assuming host APIs are available outside the Nagakusa frame.",
+      "Inspect contracts.plugin_owned_image_uploads before changing image transport or storage behavior.",
+      "Inspect contracts.plugin_ocr_gateway before adding OCR and keep GPU credentials server-side.",
+      "Inspect contracts.rag_ingestion and keep RAG ingestion disabled unless the feed says otherwise.",
+      "Inspect contracts.ai_tool_selection and contracts.external_ai_runtime before changing external AI tools.",
+      "Use served_from and remote_error to avoid inventing missing remote-only details.",
+      "Re-run refresh_script after connectivity is restored and compare the diff."
+    ],
+    "prompt_template": "Read docs/plugin-spec-snapshot.json, summarize changes and required_actions, inspect interop.apps for the target app contracts, inspect contracts.standalone_runtime before adding mandatory Nagakusa dependencies, inspect contracts.starter_feature_defaults before changing AI, desktop, or Launchbar defaults, inspect contracts.plugin_host_shell before changing host chrome, inspect contracts.frame_proxy_authentication before using Host identity or operation capabilities in a plugin server, inspect contracts.host_ai_interop before adding a plugin-owned chat surface or app prompt instructions, inspect contracts.host_apis before adding host data reads, inspect contracts.plugin_owned_image_uploads before adding binary uploads, inspect contracts.plugin_ocr_gateway before adding OCR or GPU access, inspect contracts.rag_ingestion before adding any RAG path, inspect contracts.ai_tool_selection and contracts.external_ai_runtime before changing external AI tools, and then update the affected endpoints, docs/examples, and tests. If Nagakusa is reachable, run python scripts/refresh_platform_spec.py first."
   }
 }
