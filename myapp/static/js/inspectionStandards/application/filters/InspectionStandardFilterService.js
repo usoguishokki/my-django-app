@@ -3,6 +3,10 @@
 import { asynchronousCommunication } from '../../../asyncCommunicator/asyncCommunicator.js';
 import { UIManger } from '../../../manager/UIManger.js';
 import { CustomDropdown } from '../../../ui/componets/customDropdown/CustomDropdown.js';
+import {
+  buildInspectionStandardFiltersFromItem,
+  buildInspectionStandardMachineItems,
+} from '../../domain/InspectionStandardEquipmentOptions.js';
 
 const CONTROLS_DATA_SCRIPT_ID = 'inspectionStandardControlsData';
 
@@ -59,8 +63,11 @@ export class InspectionStandardFilterService {
     this.controlNameDropdown = new CustomDropdown(this.controlNameDropdownRoot, {
       items: this._buildMachineItems(this.controlItems),
       value: '',
+      searchable: true,
+      openOnFocus: true,
       placeholder: '選択してください',
       emptyText: '候補がありません',
+      searchPlaceholder: '設備名を検索',
       autoSelectFirst: false,
       onChange: async ({ item }) => {
         await this._handleChange('name', this._buildFiltersFromItem(item));
@@ -92,6 +99,18 @@ export class InspectionStandardFilterService {
       machine: this.currentFilters.machine,
       controlNo: this.currentFilters.controlNo,
     };
+  }
+
+  async reloadCurrentSelection() {
+    const filters = this.getCurrentFilters();
+    const hasSelection = Boolean(filters.machine || filters.controlNo);
+
+    if (!hasSelection) return;
+
+    await this._applyFiltersAndFetch({
+      machine: filters.machine,
+      control_no: filters.controlNo,
+    });
   }
 
   clearFilters({
@@ -279,14 +298,7 @@ export class InspectionStandardFilterService {
   }
 
   _buildMachineItems(items = []) {
-    return items.map((item) => ({
-      value: item.controlNo,
-      label: item.machine || item.controlNo,
-      meta: {
-        machine: item.machine,
-        controlNo: item.controlNo,
-      },
-    }));
+    return buildInspectionStandardMachineItems(items);
   }
 
   _buildControlNoItems(items = []) {
@@ -301,10 +313,7 @@ export class InspectionStandardFilterService {
   }
 
   _buildFiltersFromItem(item = {}) {
-    return {
-      machine: String(item?.meta?.machine ?? '').trim(),
-      controlNo: String(item?.meta?.controlNo ?? item?.value ?? '').trim(),
-    };
+    return buildInspectionStandardFiltersFromItem(item);
   }
 
   _normalizeFilters(filters = {}) {

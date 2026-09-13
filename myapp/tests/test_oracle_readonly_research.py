@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import contextlib
+import io
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -20,6 +23,8 @@ from scripts.research.oracle_readonly import (
     format_json,
     isolated_oracle_client,
     load_connection_settings,
+    load_local_environment,
+    main,
     validate_sql,
     verify_identity,
     verify_object_privileges,
@@ -62,6 +67,38 @@ class SqlValidationTests(unittest.TestCase):
 
 
 class ConnectionContractTests(unittest.TestCase):
+    def _write_local_env(self, directory: str, values: dict[str, str]) -> Path:
+        env_path = Path(directory) / ".env"
+        env_path.write_text(
+            "\n".join(f"{name}={value}" for name, value in values.items()),
+            encoding="utf-8",
+        )
+        return env_path
+
+    def test_loads_readonly_configuration_from_local_env(self):
+        values = {name: f"local-{index}" for index, name in enumerate(ENVIRONMENT_VARIABLES)}
+        values["HOZEN_READONLY_PORT"] = "1521"
+        values["HOZEN_READONLY_USER"] = EXPECTED_USER
+        with tempfile.TemporaryDirectory() as directory:
+            env_path = self._write_local_env(directory, values)
+            with mock.patch.dict(os.environ, {}, clear=True):
+                load_local_environment(env_path)
+                self.assertEqual(values, load_connection_settings(os.environ))
+
+    def test_process_environment_overrides_local_env(self):
+        values = {name: f"local-{index}" for index, name in enumerate(ENVIRONMENT_VARIABLES)}
+        values["HOZEN_READONLY_PORT"] = "1521"
+        values["HOZEN_READONLY_USER"] = EXPECTED_USER
+        with tempfile.TemporaryDirectory() as directory:
+            env_path = self._write_local_env(directory, values)
+            with mock.patch.dict(
+                os.environ,
+                {"HOZEN_READONLY_HOST": "process-host"},
+                clear=True,
+            ):
+                load_local_environment(env_path)
+                self.assertEqual("process-host", os.environ["HOZEN_READONLY_HOST"])
+
     def test_missing_environment_variables_fail_closed(self):
         with self.assertRaisesRegex(ResearchSafetyError, "Missing dedicated"):
             load_connection_settings({})
@@ -72,6 +109,22 @@ class ConnectionContractTests(unittest.TestCase):
         values["HOZEN_READONLY_USER"] = "application_user"
         with self.assertRaisesRegex(ResearchSafetyError, "HOZEN_READONLY"):
             load_connection_settings(values)
+
+    def test_missing_configuration_diagnostic_does_not_emit_secret(self):
+        secret = "test-password-must-not-appear"
+        stderr = io.StringIO()
+        with (
+            mock.patch.dict(
+                os.environ,
+                {"HOZEN_READONLY_PASSWORD": secret},
+                clear=True,
+            ),
+            mock.patch("scripts.research.oracle_readonly.load_local_environment"),
+            contextlib.redirect_stderr(stderr),
+        ):
+            result = main(["--sql", "SELECT 1 FROM DUAL"])
+        self.assertEqual(1, result)
+        self.assertNotIn(secret, stderr.getvalue())
 
     def test_exact_identity_role_and_system_privilege_contract_passes(self):
         verify_identity(EXPECTED_USER, EXPECTED_CONTAINER, {EXPECTED_ROLE}, APPROVED_SYSTEM_PRIVILEGES)
@@ -136,7 +189,10 @@ class ConnectionContractTests(unittest.TestCase):
         self.assertIn("TYPE <> 'USER'", public_queries[0])
         self.assertIn("TABLE_SCHEMA = :owner", public_queries[1])
         self.assertTrue(
-            all(call.kwargs.get("owner") == "MYDJANGO_USER" for call in cursor.execute.call_args_list[-2:])
+            all(
+                call.args[1].get("owner") == "MYDJANGO_USER"
+                for call in cursor.execute.call_args_list[-2:]
+            )
         )
 
     @mock.patch("scripts.research.oracle_readonly._verify_connection")

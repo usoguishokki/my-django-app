@@ -36,25 +36,24 @@
                     data-role="dropdown-input"
                     value=""
                   >
-                  <button
-                    type="button"
-                    class="custom-dropdown__trigger equipment-info__dropdownTrigger"
+                  <input
+                    id="controlNameSearch"
+                    type="search"
+                    class="custom-dropdown__trigger custom-dropdown__editableInput equipment-info__dropdownTrigger"
                     data-role="dropdown-trigger"
+                    data-searchable-input="true"
+                    role="combobox"
                     aria-haspopup="listbox"
                     aria-expanded="false"
-                    aria-label="設備名を選択"
+                    aria-autocomplete="list"
+                    aria-controls="controlNameList"
+                    aria-label="設備名を検索して選択"
+                    placeholder="選択してください"
                   >
-                    <span
-                      class="custom-dropdown__triggerText"
-                      data-role="dropdown-trigger-text"
-                    >
-                      選択してください
-                    </span>
-                    <span
-                      class="custom-dropdown__triggerIcon"
-                      aria-hidden="true"
-                    ></span>
-                  </button>
+                  <span
+                    class="custom-dropdown__triggerIcon custom-dropdown__editableIcon"
+                    aria-hidden="true"
+                  ></span>
         
                   <div
                     class="custom-dropdown__panel"
@@ -62,6 +61,7 @@
                     hidden
                   >
                     <div
+                      id="controlNameList"
                       class="custom-dropdown__list"
                       data-role="dropdown-list"
                     ></div>

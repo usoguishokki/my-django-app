@@ -50,9 +50,11 @@ data to the preservation commit.
 ## Reintegrating production improvements
 
 Production improvements are reviewed and stabilized on
-`fix/production-improvements`, then integrated through the normal Git history
-into `main`. After the production-improvement result is accepted, merge the
-approved `main` changes into `feature/nagakusa-nika`.
+`fix/production-improvements`. After the result is accepted, reintegrate the
+exact approved source branch into `feature/nagakusa-nika`, or merge the
+corresponding approved `main` changes when the release workflow has already
+placed them there. Record the source SHA and merge base so the provenance is
+unambiguous.
 
 Before reintegration:
 

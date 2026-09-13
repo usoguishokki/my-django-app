@@ -3,7 +3,7 @@
 ## Development Checklist
 
 1. Start `Nika - Nagakusa Integration Debug`.
-2. Verify `GET /api/health`, `GET /.well-known/nagakusa-plugin.json`, and `GET /api/ai/tools` at `http://133.222.52.74:8010`.
+2. Verify `GET /api/health`, `GET /.well-known/nagakusa-plugin.json`, and `GET /api/ai/tools` at `http://133.222.52.74:8011`.
 3. Confirm the Nagakusa Host can reach that URL from its own runtime context.
 4. Use the approved Plugin Hub development runtime procedure.
 5. Open Nika inside the Nagakusa Host and open `AI相談`.

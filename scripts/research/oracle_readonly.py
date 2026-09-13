@@ -14,6 +14,8 @@ import tempfile
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
+from dotenv import load_dotenv
+
 
 EXPECTED_USER = "HOZEN_READONLY"
 EXPECTED_CONTAINER = "HOZENPDB"
@@ -31,10 +33,16 @@ ENVIRONMENT_VARIABLES = (
     "HOZEN_READONLY_USER",
     "HOZEN_READONLY_PASSWORD",
 )
+LOCAL_ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
 
 
 class ResearchSafetyError(RuntimeError):
     """Raised when a fail-closed research safety check fails."""
+
+
+def load_local_environment(env_path: Path = LOCAL_ENV_PATH) -> None:
+    """Load ignored local configuration without overriding process values."""
+    load_dotenv(env_path, override=False)
 
 
 def load_connection_settings(environment: Mapping[str, str]) -> dict[str, str]:
@@ -209,7 +217,7 @@ def _fetch_effective_object_privileges(cursor) -> set[tuple[str, str]]:
     grants.update((row[0], row[1]) for row in cursor.fetchall())
     cursor.execute(
         "SELECT OWNER, PRIVILEGE FROM ROLE_TAB_PRIVS WHERE ROLE = :role",
-        role=EXPECTED_ROLE,
+        {"role": EXPECTED_ROLE},
     )
     grants.update((row[0], row[1]) for row in cursor.fetchall())
     return grants
@@ -226,7 +234,7 @@ def _fetch_public_object_privileges(cursor) -> set[tuple[str, str]]:
         cursor.execute(
             f"SELECT {owner_column}, PRIVILEGE FROM {view} "
             f"WHERE GRANTEE = 'PUBLIC' AND {owner_column} = :owner{object_filter}",
-            owner=EXPECTED_OBJECT_OWNER,
+            {"owner": EXPECTED_OBJECT_OWNER},
         )
         grants.update((row[0], row[1]) for row in cursor.fetchall())
     return grants
@@ -303,6 +311,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     sql = args.sql if args.sql is not None else sys.stdin.read()
     try:
+        load_local_environment()
         columns, rows = execute_query(sql, os.environ)
         output = format_json(columns, rows) if args.format == "json" else format_table(columns, rows)
         if hasattr(sys.stdout, "reconfigure"):

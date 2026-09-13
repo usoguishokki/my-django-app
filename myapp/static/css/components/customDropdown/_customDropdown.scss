@@ -60,6 +60,29 @@ $custom-dropdown-shadow: 0 1px 2px rgba(15, 23, 42, 0.06) !default;
     cursor: not-allowed;
   }
 
+  &__editableInput {
+    display: block;
+    padding-right: 42px;
+    cursor: text;
+  }
+
+  &__editableInput::placeholder {
+    color: #64748b;
+    font-weight: $fw-regular;
+  }
+
+  &__editableInput[aria-invalid='true'] {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+  }
+
+  &__editableIcon {
+    position: absolute;
+    top: 15px;
+    right: 14px;
+    z-index: 1;
+  }
+
   &__triggerText {
     min-width: 0;
     overflow: hidden;
@@ -165,6 +188,27 @@ $custom-dropdown-shadow: 0 1px 2px rgba(15, 23, 42, 0.06) !default;
     overscroll-behavior: contain;
 
     border-radius: 10px;
+  }
+
+  &__search {
+    @include type-ui;
+    display: block;
+    width: 100%;
+    min-height: 40px;
+    margin: 0 0 8px;
+    padding: 0 12px;
+    border: 1px solid #cfd8e3;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #111827;
+    box-sizing: border-box;
+  }
+
+  &__search:focus,
+  &__search:focus-visible {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
   }
 
   &__list::-webkit-scrollbar {

@@ -180,9 +180,7 @@ class inspectionStandards {
             detailCount: Array.isArray(details) ? details.length : 0,
           };
       
-          this._setAddCardButtonEnabled(
-            Boolean(machine || controlNo)
-          );
+          this._syncAddCardButtonWithContext();
         },
       
         onDetailsCleared: () => {
@@ -605,6 +603,14 @@ class inspectionStandards {
     );
   }
 
+  _syncAddCardButtonWithContext() {
+    const context = this.cardAddContext ?? {};
+
+    this._setAddCardButtonEnabled(
+      Boolean(context.machine || context.controlNo)
+    );
+  }
+
   _switchAddCardStep({
     element,
     step,
@@ -778,14 +784,12 @@ class inspectionStandards {
     });
   
     if (!response?.success) return;
+
+    this.drawers?.openToLevel?.(0);
+    await this.filterService?.reloadCurrentSelection?.();
+    this._syncAddCardButtonWithContext();
+    return;
   
-    this._setAddCardButtonEnabled(false);
-  
-    this.drawers?.panel('cell')?.setBodyHtml?.(`
-      <div class="drawer__placeholder">
-        カードを追加しました。設備を再選択すると一覧に反映されます。
-      </div>
-    `);
   }
 
   _moveToAddCardStepByControl({ controlEl } = {}) {

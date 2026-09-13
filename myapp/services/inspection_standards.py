@@ -840,6 +840,7 @@ def create_inspection_standard_card(
     作成対象:
       - Check_tb 1件
       - Db_details_tb 複数件
+      - 当年度の周期条件に合う Plan_tb 複数件
     """
 
     payload = normalize_inspection_standard_card_create_payload(data=data)
@@ -907,6 +908,10 @@ def create_inspection_standard_card(
                     status=detail_status,
                 )
             )
+
+        sync_waiting_plans_for_inspection_standard(
+            check=check,
+        )
 
         record_inspection_standard_card_create_history(
             check=check,
