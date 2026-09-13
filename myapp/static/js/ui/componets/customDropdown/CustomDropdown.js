@@ -13,6 +13,7 @@ export class CustomDropdown {
         values: [],
         multiple: false,
         searchable: false,
+        openOnFocus: false,
         placeholder: '選択してください',
         emptyText: '候補がありません',
         searchPlaceholder: '検索',
@@ -61,13 +62,21 @@ export class CustomDropdown {
       this.trigger = this.root.querySelector('[data-role="dropdown-trigger"]');
       this.triggerText = this.root.querySelector('[data-role="dropdown-trigger-text"]');
       this.panel = this.root.querySelector('[data-role="dropdown-panel"]');
-      this.searchInput = this.root.querySelector('[data-role="dropdown-search"]');
+      this.searchInput = this.root.querySelector(
+        '[data-role="dropdown-search"], [data-searchable-input="true"]'
+      );
       this.list = this.root.querySelector('[data-role="dropdown-list"]');
       this.hiddenInput = this.root.querySelector('[data-role="dropdown-input"]');
+      this.isInlineSearch = this.searchInput === this.trigger;
     }
 
     ensureStructure() {
-        if (!this.trigger || !this.triggerText || !this.panel || !this.list) {
+        if (
+          !this.trigger ||
+          (!this.triggerText && !this.isInlineSearch) ||
+          !this.panel ||
+          !this.list
+        ) {
           throw new Error('CustomDropdown: required elements are missing.');
         }
       
@@ -105,6 +114,14 @@ export class CustomDropdown {
         if (this.searchInput) {
           this.searchInput.setAttribute('autocomplete', 'off');
           this.searchInput.setAttribute('spellcheck', 'false');
+          this.searchInput.setAttribute('role', 'combobox');
+          this.searchInput.setAttribute('aria-autocomplete', 'list');
+          this.searchInput.setAttribute('aria-controls', this.list.id);
+          this.searchInput.setAttribute('aria-expanded', 'false');
+          this.searchInput.setAttribute(
+            'placeholder',
+            this.options.searchPlaceholder || '検索'
+          );
         }
     }
   
@@ -112,11 +129,15 @@ export class CustomDropdown {
       this.handleDocumentClick = this.handleDocumentClick.bind(this);
       this.handleWindowResize = this.handleWindowResize.bind(this);
       this.handleTriggerClick = this.handleTriggerClick.bind(this);
+      this.handleTriggerFocus = this.handleTriggerFocus.bind(this);
       this.handleTriggerKeydown = this.handleTriggerKeydown.bind(this);
       this.handlePanelKeydown = this.handlePanelKeydown.bind(this);
       this.handleSearchInput = this.handleSearchInput.bind(this);
   
       this.trigger.addEventListener('click', this.handleTriggerClick);
+      if (this.options.openOnFocus) {
+        this.trigger.addEventListener('focus', this.handleTriggerFocus);
+      }
       this.trigger.addEventListener('keydown', this.handleTriggerKeydown);
       this.panel.addEventListener('keydown', this.handlePanelKeydown);
   
@@ -129,15 +150,56 @@ export class CustomDropdown {
     }
   
     handleTriggerClick() {
+      if (this.options.openOnFocus) {
+        this.open();
+        return;
+      }
+
       this.toggle();
+    }
+
+    handleTriggerFocus() {
+      if (this.suppressNextFocusOpen) {
+        this.suppressNextFocusOpen = false;
+        return;
+      }
+
+      this.open();
     }
   
     handleTriggerKeydown(event) {
       switch (event.key) {
-        case 'Enter':
-        case ' ':
+        case 'Enter': {
+          if (this.isInlineSearch && this.isOpen) {
+            const target = this.getVisibleButtons()[0];
+
+            if (target) {
+              event.preventDefault();
+              this.selectItem(target.dataset.value);
+              this.focusTriggerWithoutOpening();
+            }
+            break;
+          }
+
           event.preventDefault();
-          this.toggle();
+          if (this.options.openOnFocus) {
+            this.open();
+          } else {
+            this.toggle();
+          }
+          break;
+        }
+        case ' ':
+          if (this.isInlineSearch) {
+            break;
+          }
+
+          event.preventDefault();
+          if (this.options.openOnFocus) {
+            this.open();
+          } else {
+            this.toggle();
+          }
           break;
         case 'ArrowDown':
           event.preventDefault();
@@ -166,10 +228,24 @@ export class CustomDropdown {
   
     handlePanelKeydown(event) {
       switch (event.key) {
+        case 'Enter': {
+          const buttons = this.getVisibleButtons();
+          const activeIndex = buttons.findIndex(
+            (button) => button === document.activeElement
+          );
+          const target = buttons[activeIndex >= 0 ? activeIndex : 0];
+
+          if (target) {
+            event.preventDefault();
+            this.selectItem(target.dataset.value);
+            this.focusTriggerWithoutOpening();
+          }
+          break;
+        }
         case 'Escape':
           event.preventDefault();
           this.close();
-          this.trigger.focus();
+          this.focusTriggerWithoutOpening();
           break;
         case 'ArrowDown':
           event.preventDefault();
@@ -193,7 +269,48 @@ export class CustomDropdown {
     }
   
     handleSearchInput(event) {
-      const keyword = event.target.value.trim().toLowerCase();
+      const query = event.target.value;
+      const keyword = query.trim().toLowerCase();
+
+      if (this.isInlineSearch) {
+        const selectedItem = this.items.find(
+          (item) => this.normalizeValue(item.value) === this.selectedValue
+        );
+        const selectionChanged = Boolean(
+          this.selectedValue &&
+          query !== String(selectedItem?.label ?? '')
+        );
+
+        if (selectionChanged) {
+          this.selectedValue = '';
+
+          if (this.hiddenInput) {
+            this.hiddenInput.value = '';
+          }
+
+          const detail = {
+            value: '',
+            item: null,
+            changed: true,
+          };
+
+          this.root.dispatchEvent(
+            new CustomEvent('ui:dropdown-change', {
+              bubbles: true,
+              detail,
+            })
+          );
+
+          if (typeof this.options.onChange === 'function') {
+            this.options.onChange(detail);
+          }
+        }
+
+        this.searchInput.setAttribute(
+          'aria-invalid',
+          keyword && !this.selectedValue ? 'true' : 'false'
+        );
+      }
   
       this.filteredItems = this.items.filter((item) =>
         String(item.label).toLowerCase().includes(keyword)
@@ -232,7 +349,17 @@ export class CustomDropdown {
         (item) => this.normalizeValue(item.value) === this.selectedValue
       );
     
-      const hasSelectedItem = Boolean(selectedItem);
+      const hasSelectedItem = Boolean(this.selectedValue && selectedItem);
+
+      if (this.isInlineSearch) {
+        this.searchInput.value = hasSelectedItem ? selectedItem.label : '';
+        this.searchInput.setAttribute('aria-invalid', 'false');
+
+        if (this.hiddenInput) {
+          this.hiddenInput.value = this.selectedValue;
+        }
+        return;
+      }
     
       this.triggerText.textContent =
         selectedItem?.label || this.options.placeholder || '選択してください';
@@ -318,6 +445,9 @@ export class CustomDropdown {
             event.stopPropagation();
         
             this.selectItem(button.dataset.value);
+            if (this.searchInput) {
+              this.focusTriggerWithoutOpening();
+            }
           });
         });
     }
@@ -331,14 +461,21 @@ export class CustomDropdown {
         this.root.dataset.state = 'open';
         this.panel.hidden = false;
         this.trigger.setAttribute('aria-expanded', 'true');
+        this.searchInput?.setAttribute('aria-expanded', 'true');
       
         if (this.searchInput) {
-          this.searchInput.value = '';
+          if (!this.isInlineSearch) {
+            this.searchInput.value = '';
+          }
           this.filteredItems = [...this.items];
           this.renderList();
       
           requestAnimationFrame(() => {
-            this.searchInput.focus();
+            if (!this.isInlineSearch) {
+              this.searchInput.focus();
+            } else {
+              this.searchInput.select?.();
+            }
             this.updateDirection();
           });
           return;
@@ -358,6 +495,7 @@ export class CustomDropdown {
         this.root.dataset.state = 'closed';
         this.panel.hidden = true;
         this.trigger.setAttribute('aria-expanded', 'false');
+        this.searchInput?.setAttribute('aria-expanded', 'false');
         this.root.dataset.direction = 'down';
         this.focusedIndex = -1;
     }
@@ -369,6 +507,14 @@ export class CustomDropdown {
       }
   
       this.open();
+    }
+
+    focusTriggerWithoutOpening() {
+      if (this.options.openOnFocus) {
+        this.suppressNextFocusOpen = true;
+      }
+
+      this.trigger.focus();
     }
   
     updateDirection() {
@@ -633,6 +779,9 @@ export class CustomDropdown {
       this.close();
   
       this.trigger.removeEventListener('click', this.handleTriggerClick);
+      if (this.options.openOnFocus) {
+        this.trigger.removeEventListener('focus', this.handleTriggerFocus);
+      }
       this.trigger.removeEventListener('keydown', this.handleTriggerKeydown);
       this.panel.removeEventListener('keydown', this.handlePanelKeydown);
   
