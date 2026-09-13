@@ -189,7 +189,10 @@ class ConnectionContractTests(unittest.TestCase):
         self.assertIn("TYPE <> 'USER'", public_queries[0])
         self.assertIn("TABLE_SCHEMA = :owner", public_queries[1])
         self.assertTrue(
-            all(call.kwargs.get("owner") == "MYDJANGO_USER" for call in cursor.execute.call_args_list[-2:])
+            all(
+                call.args[1].get("owner") == "MYDJANGO_USER"
+                for call in cursor.execute.call_args_list[-2:]
+            )
         )
 
     @mock.patch("scripts.research.oracle_readonly._verify_connection")

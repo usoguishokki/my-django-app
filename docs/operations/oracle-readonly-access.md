@@ -21,6 +21,11 @@ The standalone research CLI and Django settings load this file automatically.
 An explicit process environment value takes precedence over the corresponding
 `.env` value, which permits temporary overrides without editing the file.
 
+The alternate Django settings use an Easy Connect DSN (`host:port/service`),
+because Django's Oracle backend treats `NAME` as a SID when `PORT` is set. The
+browser-verification connection also sets `CURRENT_SCHEMA` to `MYDJANGO_USER`
+so existing unqualified model queries resolve to the approved read-only owner.
+
 The repository does not define the environment-specific host, port, service,
 or password. Obtain those values from the DBA/secret-management process. The
 read-only connection uses an explicit host/port/service DSN; do not infer or

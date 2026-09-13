@@ -217,7 +217,7 @@ def _fetch_effective_object_privileges(cursor) -> set[tuple[str, str]]:
     grants.update((row[0], row[1]) for row in cursor.fetchall())
     cursor.execute(
         "SELECT OWNER, PRIVILEGE FROM ROLE_TAB_PRIVS WHERE ROLE = :role",
-        role=EXPECTED_ROLE,
+        {"role": EXPECTED_ROLE},
     )
     grants.update((row[0], row[1]) for row in cursor.fetchall())
     return grants
@@ -234,7 +234,7 @@ def _fetch_public_object_privileges(cursor) -> set[tuple[str, str]]:
         cursor.execute(
             f"SELECT {owner_column}, PRIVILEGE FROM {view} "
             f"WHERE GRANTEE = 'PUBLIC' AND {owner_column} = :owner{object_filter}",
-            owner=EXPECTED_OBJECT_OWNER,
+            {"owner": EXPECTED_OBJECT_OWNER},
         )
         grants.update((row[0], row[1]) for row in cursor.fetchall())
     return grants
