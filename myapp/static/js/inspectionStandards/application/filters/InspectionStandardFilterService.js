@@ -101,6 +101,18 @@ export class InspectionStandardFilterService {
     };
   }
 
+  async reloadCurrentSelection() {
+    const filters = this.getCurrentFilters();
+    const hasSelection = Boolean(filters.machine || filters.controlNo);
+
+    if (!hasSelection) return;
+
+    await this._applyFiltersAndFetch({
+      machine: filters.machine,
+      control_no: filters.controlNo,
+    });
+  }
+
   clearFilters({
     resetTable = true,
     notify = false,
