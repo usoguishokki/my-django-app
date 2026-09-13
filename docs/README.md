@@ -7,7 +7,7 @@ Use this page as the entry point for repository documentation.
 - [`development/`](development/) — how changes are designed, implemented, and verified. Start with the [coding standards](development/coding-standards.md) and [verification playbook](development/verification-playbook.md).
 - [`architecture/`](architecture/) — practical dependency and layer rules. See [layer boundaries](architecture/layer-boundaries.md).
 - `features/` — feature-specific behavior and specifications when such documents are added. Do not move historical specifications solely to enforce this layout.
-- `operations/` — deployment, environment, and production-operation guidance when such documents are added. Do not create empty structure or relocate historical runbooks without a separate reason.
+- [`operations/`](operations/) — deployment, environment, and production-operation guidance, including the [Oracle read-only access runbook](operations/oracle-readonly-access.md).
 
 ## Existing root documents
 
