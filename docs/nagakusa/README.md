@@ -17,8 +17,9 @@ Read next:
 
 1. [00-architecture.md](00-architecture.md)
 2. [10-development-debug.md](10-development-debug.md)
-3. [20-e2e-testing.md](20-e2e-testing.md)
-4. [30-production-and-cutover.md](30-production-and-cutover.md)
-5. [90-troubleshooting.md](90-troubleshooting.md)
+3. [development-workflow.md](development-workflow.md)
+4. [20-e2e-testing.md](20-e2e-testing.md)
+5. [30-production-and-cutover.md](30-production-and-cutover.md)
+6. [90-troubleshooting.md](90-troubleshooting.md)
 
 Credentials are environment variables only. Do not put values in source, browser assets, documentation, logs, or test fixtures.
