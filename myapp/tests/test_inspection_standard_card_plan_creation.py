@@ -5,8 +5,7 @@ from unittest import TestCase
 from unittest.mock import Mock, patch
 
 from myapp.domain.errors import InvalidInspectionStandardParams
-from myapp.domain.plan_status import PlanStatus
-from myapp.models import Hozen_calendar_tb
+from myapp.models import Hozen_calendar_tb, PlanStatus
 from myapp.selectors import plan as plan_selector
 from myapp.services import inspection_standard_plan_sync, inspection_standards
 
@@ -163,8 +162,9 @@ class InspectionStandardCardPlanCreationTests(TestCase):
             operated_by="operator",
             note="Create inspection card",
         )
-        self.assertIs(result.check, self.check)
-        self.assertEqual(1, result.detail_count)
+        self.assertEqual(self.check.id, result["checkId"])
+        self.assertEqual(self.check.inspection_no, result["inspectionNo"])
+        self.assertEqual(1, result["detailCount"])
         self.assertIs(plan.inspection_no, self.check)
         self.assertEqual(date(2026, 4, 14), plan.p_date.h_date)
         self.assertEqual(9, plan.planned_affilation_id)
@@ -247,7 +247,12 @@ class InspectionStandardPlanRuleTests(TestCase):
         self.assertEqual([persisted_plan], result)
 
     def test_existing_card_date_is_not_created_again(self):
-        check = SimpleNamespace(rule=object(), status="active")
+        check = SimpleNamespace(
+            rule=SimpleNamespace(
+                conditions=SimpleNamespace(all=Mock(return_value=[])),
+            ),
+            status="active",
+        )
         existing_date = SimpleNamespace(h_id=101)
         new_date = SimpleNamespace(h_id=102)
         created_plan = object()
@@ -291,11 +296,6 @@ class InspectionStandardPlanRuleTests(TestCase):
                 inspection_standard_plan_sync,
                 "build_calendar_by_date",
                 return_value={},
-            ))
-            stack.enter_context(patch.object(
-                inspection_standard_plan_sync,
-                "select_rule_conditions",
-                return_value=[],
             ))
             stack.enter_context(patch.object(
                 inspection_standard_plan_sync,
