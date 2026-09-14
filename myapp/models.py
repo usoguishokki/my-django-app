@@ -7,6 +7,8 @@ from django.core.exceptions import ValidationError
 import uuid
 
 from django.utils import timezone
+
+from myapp.domain.plan_status import PlanStatus
 """
 初期のmakemigrationsの実行後に作成される、initial.pyに以下のコードを追加する必要ある。(カスタムマイグレーション)
 なぜ？ Menber_tb menber_idとpasswordを同じにするため。
@@ -78,15 +80,6 @@ class DbDetailStatus(models.TextChoices):
 class TimeZoneStatus(models.TextChoices):
     RUNNING = "稼働中", "稼働中"
     STOPPED = "停止中", "停止中"
-
-class PlanStatus(models.TextChoices):
-    WAITING = "配布待ち", "配布待ち"
-    IN_PROGRESS = "実施待ち", "実施待ち"
-    APPROVAL_WAITING = "承認待ち", "承認待ち"
-    COMPLETED = "完了", "完了"
-    SENT_BACK = "差戻し", "差戻し"
-    DELAYED = "遅れ", "遅れ"
-
 
 class InspectionStandardHistorySource(models.TextChoices):
     CARD_CREATE = "CARD_CREATE", "カード追加"

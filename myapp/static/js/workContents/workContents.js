@@ -14,6 +14,7 @@ import { workContentsManager } from './workContentsMappingConfig.js';
 import { bindUIActions } from '../ui/componets/actions/UIActionDispatcher.js';
 
 import { initializeLoadingScreen } from '../manager/loadingManager.js';
+import { openCardWorkPage } from '../card/work/navigation/CardWorkPageNavigator.js';
 
 class workContents {
     constructor() {
@@ -228,11 +229,11 @@ class workContents {
 
         const onRowDoubleClick = (row) => {
             const planId = row.getAttribute('data-plan-id');
-            const url = UIManger._updateUrlQuery(
-                { planId, filterLabel: 'getOne'},
-                { base: '/card/', history: false }
-            );
-            window.location.assign(url.toString());
+            openCardWorkPage({
+                source: 'work_contents',
+                scope: 'plan',
+                planId,
+            });
         };
         
         this.tableManager = new TableManager('myTable', {

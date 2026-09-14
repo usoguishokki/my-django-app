@@ -8,11 +8,13 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from myapp.models import (
-    Member_tb,
-    PlanStatus,
-    Plan_tb,
-    Practitioner_tb,
+from myapp.domain.plan_status import PlanStatus
+from myapp.models import Practitioner_tb
+from myapp.selectors.card_work.card_work import select_card_work_plan_for_update
+from myapp.selectors.members import select_members_by_member_ids
+from myapp.services.card_work.card_work_access import (
+    SUPPORTED_SOURCE_SCOPES,
+    is_card_work_editable,
 )
 
 
@@ -42,15 +44,10 @@ class CardWorkResultMemberNotFound(CardWorkResultError):
 
 VALID_RESULTS = {"OK", "NG"}
 
-SUBMITTABLE_STATUSES = {
-    PlanStatus.IN_PROGRESS,
-    PlanStatus.DELAYED,
-    PlanStatus.SENT_BACK,
-}
-
-
 @dataclass(frozen=True)
 class CardWorkResultParams:
+    source: str
+    scope: str
     plan_id: int
     implementation_datetime: datetime
     result: str
@@ -61,22 +58,19 @@ class CardWorkResultParams:
 
 
 @transaction.atomic
-def register_card_work_result(*, payload, requested_user):
+def register_card_work_result(*, payload, requested_user, organization_code):
     params = parse_card_work_result_payload(payload)
 
-    try:
-        plan = (
-            Plan_tb.objects
-            .select_for_update()
-            .select_related("holder", "applicant", "approver")
-            .get(plan_id=params.plan_id)
-        )
-    except Plan_tb.DoesNotExist:
+    plan = select_card_work_plan_for_update(plan_id=params.plan_id)
+
+    if plan is None:
         raise CardWorkResultPlanNotFound("対象の計画が見つかりません。")
 
     validate_submit_permission(
         plan=plan,
         requested_user=requested_user,
+        source=params.source,
+        organization_code=organization_code,
     )
 
     members_by_id = select_members_by_ids(params.practitioner_ids)
@@ -129,6 +123,14 @@ def parse_card_work_result_payload(payload):
     if not isinstance(payload, dict):
         raise InvalidCardWorkResultPayload("リクエスト形式が正しくありません。")
 
+    source = normalize_text(payload.get("source"))
+    scope = normalize_text(payload.get("scope"))
+
+    if (source, scope) not in SUPPORTED_SOURCE_SCOPES:
+        raise InvalidCardWorkResultPayload(
+            f"Card Workの登録元が正しくありません: {source}/{scope}"
+        )
+
     plan_id = parse_required_int(payload.get("planId"), "計画ID")
     implementation_datetime = parse_required_datetime(
         payload.get("implementationDatetime")
@@ -164,6 +166,8 @@ def parse_card_work_result_payload(payload):
     )
 
     return CardWorkResultParams(
+        source=source,
+        scope=scope,
         plan_id=plan_id,
         implementation_datetime=implementation_datetime,
         result=result,
@@ -174,16 +178,45 @@ def parse_card_work_result_payload(payload):
     )
 
 
-def validate_submit_permission(*, plan, requested_user):
-    if plan.holder_id and plan.holder_id != requested_user.member_id:
+def validate_submit_permission(*, plan, requested_user, source, organization_code):
+    if source == "home":
+        validate_home_submit_permission(plan=plan, requested_user=requested_user)
+    elif source == "work_contents":
+        validate_work_contents_submit_permission(
+            plan=plan,
+            organization_code=organization_code,
+        )
+
+    if not is_card_work_editable(source=source, status=plan.status):
+        raise CardWorkResultStatusNotAllowed(
+            f"現在の状態では実績登録できません。状態: {plan.status}"
+        )
+
+
+def validate_home_submit_permission(*, plan, requested_user):
+    if not plan.holder_id or plan.holder_id != requested_user.member_id:
         raise CardWorkResultPermissionDenied(
             "このカードの実績を登録する権限がありません。"
         )
 
-    if plan.status not in SUBMITTABLE_STATUSES:
-        raise CardWorkResultStatusNotAllowed(
-            f"現在の状態では実績登録できません。状態: {plan.status}"
+
+def validate_work_contents_submit_permission(*, plan, organization_code):
+    if (
+        not organization_code
+        or get_plan_organization_code(plan) != organization_code
+    ):
+        raise CardWorkResultPermissionDenied(
+            "このカードを編集する権限がありません。"
         )
+
+
+def get_plan_organization_code(plan):
+    inspection = getattr(plan, "inspection_no", None)
+    control = getattr(inspection, "control_no", None)
+    line = getattr(control, "line_name", None)
+    organization = getattr(line, "organization", None)
+
+    return str(getattr(organization, "organization", "") or "")
 
 
 def replace_practitioners(*, plan, practitioner_ids, members_by_id):
@@ -199,7 +232,7 @@ def replace_practitioners(*, plan, practitioner_ids, members_by_id):
 
 
 def select_members_by_ids(member_ids):
-    members = Member_tb.objects.filter(member_id__in=member_ids)
+    members = select_members_by_member_ids(member_ids)
 
     return {
         member.member_id: member

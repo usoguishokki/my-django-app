@@ -81,3 +81,17 @@ function normalizePractitionerOption(member = {}) {
         raw: member,
     };
 }
+
+
+export function resolvePractitionerNamesByIds({
+    practitionerIds = [],
+    practitionerOptions = [],
+} = {}) {
+    const labelsById = new Map(
+        practitionerOptions.map((option) => [String(option.value), option.label])
+    );
+
+    return practitionerIds
+        .map((memberId) => labelsById.get(String(memberId)) || '')
+        .filter(Boolean);
+}

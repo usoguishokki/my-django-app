@@ -207,3 +207,34 @@ def with_card_work_detail_related(qs):
             ),
         )
     )
+
+
+def select_card_work_plan_for_organization(*, plan_id, organization_code):
+    """Return an exact Card Work plan only within the requested organization."""
+    if not plan_id or not organization_code:
+        return Plan_tb.objects.none()
+
+    return Plan_tb.objects.filter(
+        plan_id=plan_id,
+        inspection_no__control_no__line_name__organization__organization=(
+            organization_code
+        ),
+    )
+
+
+def select_card_work_plan_for_update(*, plan_id):
+    """Lock and return the exact plan used by the Card Work update service."""
+    try:
+        return (
+            Plan_tb.objects
+            .select_for_update()
+            .select_related(
+                "holder",
+                "applicant",
+                "approver",
+                "inspection_no__control_no__line_name__organization",
+            )
+            .get(plan_id=plan_id)
+        )
+    except Plan_tb.DoesNotExist:
+        return None

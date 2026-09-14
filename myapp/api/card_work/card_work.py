@@ -35,6 +35,7 @@ def card_work_result_register_api(request):
         response = register_card_work_result(
             payload=payload,
             requested_user=request.user,
+            organization_code=request.organization_code,
         )
 
     except InvalidCardWorkResultPayload as exc:
