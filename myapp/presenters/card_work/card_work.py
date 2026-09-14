@@ -15,9 +15,16 @@ def build_card_work_initial_state(
     filter_options=None,
     filter_rows=None,
     summary_count=None,
+    selected_plan_id=None,
+    return_url="",
+    editability_by_plan_id=None,
 ):
+    editability_by_plan_id = editability_by_plan_id or {}
     plan_items = [
-        build_card_work_plan_item(plan)
+        build_card_work_plan_item(
+            plan,
+            editable=bool(editability_by_plan_id.get(plan.plan_id, False)),
+        )
         for plan in plans
     ]
 
@@ -26,6 +33,8 @@ def build_card_work_initial_state(
         "presenterVersion": "card_work_presenter_v1",
         "source": source,
         "scope": scope,
+        "selectedPlanId": selected_plan_id,
+        "returnUrl": return_url,
         "statusKey": status_key,
         "statusLabel": status_label,
         "date": date_text,
@@ -42,7 +51,7 @@ def build_card_work_initial_state(
         "plans": plan_items,
     }
 
-def build_card_work_plan_item(plan):
+def build_card_work_plan_item(plan, *, editable=False):
     inspection = plan.inspection_no
     control = inspection.control_no if inspection else None
     line = control.line_name if control else None
@@ -50,7 +59,10 @@ def build_card_work_plan_item(plan):
     return {
         "planId": plan.plan_id,
         "status": plan.status,
+        "editable": editable,
+        "readOnly": not editable,
         "planTime": plan.plan_time.isoformat() if plan.plan_time else "",
+        "existingResult": build_card_work_existing_result(plan),
         "inspectionNo": inspection.inspection_no if inspection else "",
         "workName": inspection.wark_name if inspection else "",
         "equipmentName": control.machine if control else "",
@@ -188,8 +200,35 @@ def build_card_work_error_state(
         "message": message,
         "source": source,
         "scope": scope,
+        "selectedPlanId": None,
+        "returnUrl": "",
         "statusKey": status_key,
         "date": date_text,
         "count": 0,
         "plans": [],
+    }
+
+
+def build_card_work_existing_result(plan):
+    practitioners = getattr(plan, "prefetched_card_work_practitioners", [])
+
+    return {
+        "implementationDatetime": (
+            plan.implementation_date.isoformat()
+            if plan.implementation_date
+            else ""
+        ),
+        "result": plan.result or "",
+        "implementationContent": plan.points_to_note or "",
+        "practitionerIds": [
+            str(practitioner.member_id.member_id)
+            for practitioner in practitioners
+            if getattr(practitioner, "member_id", None)
+        ],
+        "actualManHours": (
+            plan.result_man_hours
+            if plan.result_man_hours is not None
+            else None
+        ),
+        "comment": plan.comment or "",
     }

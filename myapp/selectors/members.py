@@ -50,6 +50,15 @@ def select_all_members() -> QuerySet:
     return member_base_qs().order_by("member_id")
 
 
+def select_members_by_member_ids(member_ids) -> QuerySet:
+    normalized_ids = [member_id for member_id in member_ids if member_id]
+
+    if not normalized_ids:
+        return member_base_qs().none()
+
+    return member_base_qs().filter(member_id__in=normalized_ids)
+
+
 def select_member_by_user_id(user_id: str):
     """
     ユーザーIDに紐づく Member_tb を1件取得する用途。

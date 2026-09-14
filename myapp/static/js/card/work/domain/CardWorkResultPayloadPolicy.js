@@ -7,8 +7,12 @@ import {
 export function buildCardWorkResultPayload({
     plan = {},
     inputState = {},
+    source = '',
+    scope = '',
 } = {}) {
     return {
+        source: normalizeText(source),
+        scope: normalizeText(scope),
         planId: normalizePlanId(plan?.planId),
         implementationDatetime: buildImplementationDateTimeValue(inputState),
         result: normalizeText(inputState.result),

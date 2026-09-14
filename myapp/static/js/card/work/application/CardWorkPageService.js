@@ -5,8 +5,11 @@ import {
 
 import {
     createDefaultCardWorkInputState,
-    splitImplementationDateTimeValue,
 } from '../domain/CardWorkInputStatePolicy.js';
+
+import {
+    applyExistingCardWorkResult,
+} from '../domain/CardWorkExistingResultPolicy.js';
 
 import {
     CARD_WORK_FILTER_DEFINITIONS,
@@ -29,6 +32,7 @@ import {
     normalizePractitionerOptions,
     readPractitionerSelectionFromDropdownDetail,
     resolveDefaultPractitionerIds,
+    resolvePractitionerNamesByIds,
 } from '../domain/CardWorkPractitionerPolicy.js';
 
 
@@ -50,8 +54,6 @@ import {
 import {
     CardWorkSwipeController,
 } from './CardWorkSwipeController.js';
-
-const CARD_WORK_HOME_URL = '/home/';
 
 const CARD_WORK_PAGE_ACTION_HANDLERS = Object.freeze({
     previous: (service) => service.showPreviousCard(),
@@ -119,7 +121,9 @@ export class CardWorkPageService {
         ? this.initialState.plans
         : [];
     
-        this.initialPlanId = readInitialCardWorkPlanIdFromUrl();
+        this.initialPlanId = normalizeCardWorkPlanId(
+            this.initialState?.selectedPlanId
+        );
         this.currentIndex = resolveInitialCardWorkIndex({
             plans: this.plans,
             planId: this.initialPlanId,
@@ -375,13 +379,15 @@ export class CardWorkPageService {
     }
 
     async submitResult() {
-        if (this.isSubmitting) {
+        if (this.isSubmitting || this.getCurrentPlan()?.readOnly) {
             return;
         }
     
         const payload = buildCardWorkResultPayload({
             plan: this.getCurrentPlan(),
             inputState: this.inputState,
+            source: this.initialState?.source || '',
+            scope: this.initialState?.scope || '',
         });
     
         const validation = validateCardWorkResultPayload(payload);
@@ -428,6 +434,11 @@ export class CardWorkPageService {
     
         if (registeredPlanId) {
             this.draftsByPlanId.delete(registeredPlanId);
+        }
+
+        if (this.initialState?.source === 'work_contents') {
+            this.goToReturnTarget();
+            return;
         }
     
         this.plans = this.plans.filter(
@@ -543,7 +554,15 @@ export class CardWorkPageService {
     }
 
     goToHomeDashboard() {
-        window.location.replace(CARD_WORK_HOME_URL);
+        this.goToReturnTarget();
+    }
+
+    goToReturnTarget() {
+        const returnUrl = String(this.initialState?.returnUrl || '').trim();
+
+        if (returnUrl) {
+            window.location.replace(returnUrl);
+        }
     }
     
     resetFilter() {
@@ -794,14 +813,26 @@ export class CardWorkPageService {
     createInputStateForCurrentPlan({
         isOpen = false,
     } = {}) {
+        const plan = this.getCurrentPlan();
         const planId = this.getCurrentPlanId();
         const draft = planId
             ? this.draftsByPlanId.get(planId)
             : null;
     
+        const defaultState = createDefaultCardWorkInputState({
+            practitionerIds: this.defaultPractitionerIds,
+        });
+
+        const restoredState = applyExistingCardWorkResult(
+            defaultState,
+            plan?.existingResult || {}
+        );
+
         return {
-            ...createDefaultCardWorkInputState({
-                practitionerIds: this.defaultPractitionerIds,
+            ...restoredState,
+            practitionerNames: resolvePractitionerNamesByIds({
+                practitionerIds: restoredState.practitionerIds,
+                practitionerOptions: this.practitionerOptions,
             }),
             ...(draft || {}),
             isOpen,
@@ -920,13 +951,6 @@ function withAllOption(options = []) {
     ];
 }
 
-function readInitialCardWorkPlanIdFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-
-    return String(params.get('plan_id') || '').trim();
-}
-
-
 function resolveInitialCardWorkIndex({
     plans = [],
     planId = '',
@@ -948,13 +972,7 @@ function resolveInitialCardWorkIndex({
 
 
 function resolveCardWorkPlanId(plan = {}) {
-    return normalizeCardWorkPlanId(
-        plan?.planId ??
-        plan?.plan_id ??
-        plan?.PLAN_ID ??
-        plan?.id ??
-        ''
-    );
+    return normalizeCardWorkPlanId(plan?.planId);
 }
 
 
