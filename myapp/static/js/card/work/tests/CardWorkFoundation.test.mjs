@@ -161,11 +161,11 @@ test('Work Contents and Home both delegate URL construction to the shared naviga
 });
 
 
-test('Phase 1 does not enable pending-approval Home navigation', () => {
+test('pending-approval Home navigation stays owned by the Home policy', () => {
     const policy = readFileSync(
         new URL('../../../home/domain/HomeCardNavigationPolicy.js', import.meta.url),
         'utf8'
     );
 
-    assert.doesNotMatch(policy, /['"]approval_waiting['"]/);
+    assert.match(policy, /['"]approval_waiting['"]/);
 });

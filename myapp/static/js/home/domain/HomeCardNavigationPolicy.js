@@ -1,7 +1,8 @@
 // static/js/home/domain/HomeCardNavigationPolicy.js
 
-const CARD_PREVIEW_STATUS_KEYS = new Set([
+const CARD_ITEM_OPENABLE_STATUS_KEYS = new Set([
     'in_progress',
+    'approval_waiting',
 ]);
 
 const CARD_OPENABLE_STATUS_KEYS = new Set([
@@ -14,7 +15,7 @@ export function shouldPreviewCardListFromMyTaskDateGroup({
     statusKey = '',
     dateGroup = null,
 } = {}) {
-    if (!CARD_PREVIEW_STATUS_KEYS.has(statusKey)) {
+    if (!CARD_ITEM_OPENABLE_STATUS_KEYS.has(statusKey)) {
         return false;
     }
 
@@ -55,4 +56,9 @@ function hasPlanTime(item) {
         item?.planTime ||
         item?.planTimeLabel
     );
+}
+
+
+export function canOpenCardPageFromMyTaskItem(statusKey = '') {
+    return CARD_ITEM_OPENABLE_STATUS_KEYS.has(statusKey);
 }

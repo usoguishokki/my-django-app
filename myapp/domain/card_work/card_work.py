@@ -7,6 +7,7 @@ from myapp.domain.home.progress import get_status_value_map
 
 CARD_WORK_OPENABLE_STATUS_KEYS = {
     "in_progress",
+    "approval_waiting",
     "sent_back",
     "delayed",
 }

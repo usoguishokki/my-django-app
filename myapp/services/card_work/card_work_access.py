@@ -11,11 +11,19 @@ SUPPORTED_SOURCE_SCOPES = frozenset({
     (WORK_CONTENTS_SOURCE, WORK_CONTENTS_SCOPE),
 })
 
-EDITABLE_STATUSES = frozenset({
-    PlanStatus.IN_PROGRESS,
-    PlanStatus.DELAYED,
-    PlanStatus.SENT_BACK,
-})
+EDITABLE_STATUSES_BY_SOURCE = {
+    HOME_SOURCE: frozenset({
+        PlanStatus.IN_PROGRESS,
+        PlanStatus.APPROVAL_WAITING,
+        PlanStatus.DELAYED,
+        PlanStatus.SENT_BACK,
+    }),
+    WORK_CONTENTS_SOURCE: frozenset({
+        PlanStatus.IN_PROGRESS,
+        PlanStatus.DELAYED,
+        PlanStatus.SENT_BACK,
+    }),
+}
 
 RETURN_URLS_BY_SOURCE = {
     HOME_SOURCE: "/home/",
@@ -27,8 +35,26 @@ def is_supported_card_work_contract(*, source, scope):
     return (source, scope) in SUPPORTED_SOURCE_SCOPES
 
 
-def is_card_work_editable(*, source, status):
-    return source in RETURN_URLS_BY_SOURCE and status in EDITABLE_STATUSES
+def is_card_work_editable(
+    *,
+    source,
+    status,
+    plan_holder_id="",
+    requested_member_id="",
+):
+    editable_statuses = EDITABLE_STATUSES_BY_SOURCE.get(source, frozenset())
+
+    if status not in editable_statuses:
+        return False
+
+    if source == HOME_SOURCE:
+        return bool(
+            plan_holder_id
+            and requested_member_id
+            and plan_holder_id == requested_member_id
+        )
+
+    return True
 
 
 def get_card_work_return_url(source):

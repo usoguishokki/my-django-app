@@ -154,7 +154,12 @@ class CardWorkAuthorizationAndStatusTests(TestCase):
     def test_existing_editable_statuses_remain_editable(self):
         for status in (PlanStatus.IN_PROGRESS, PlanStatus.DELAYED, PlanStatus.SENT_BACK):
             with self.subTest(status=status):
-                self.assertTrue(is_card_work_editable(source="home", status=status))
+                self.assertTrue(is_card_work_editable(
+                    source="home",
+                    status=status,
+                    plan_holder_id="M001",
+                    requested_member_id="M001",
+                ))
 
 
 class CardWorkPresentationTests(TestCase):

@@ -13,11 +13,14 @@ import {
 } from '../domain/HomeStatusPolicy.js';
 
 
-export function createHomeTaskCardElement(item) {
+export function createHomeTaskCardElement(item, {
+    interactive = false,
+} = {}) {
     const statusKey = item?.statusKey || '';
 
     return createDetailCardElement({
         className: buildTaskCardClassName(statusKey),
+        contentTagName: interactive ? 'button' : 'div',
         dataset: {
             status: statusKey,
             planId: item?.planId ?? '',

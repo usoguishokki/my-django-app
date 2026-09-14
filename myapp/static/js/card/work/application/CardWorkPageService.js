@@ -436,7 +436,13 @@ export class CardWorkPageService {
             this.draftsByPlanId.delete(registeredPlanId);
         }
 
-        if (this.initialState?.source === 'work_contents') {
+        if (
+            this.initialState?.source === 'work_contents' ||
+            (
+                this.initialState?.source === 'home' &&
+                this.initialState?.statusKey === 'approval_waiting'
+            )
+        ) {
             this.goToReturnTarget();
             return;
         }

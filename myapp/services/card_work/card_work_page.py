@@ -156,6 +156,7 @@ def build_card_work_initial_state_from_request(*, request, team_profiles):
         editability_by_plan_id=build_plan_editability(
             source=source,
             plans=plans,
+            requested_user=login_user,
         ),
     )
 
@@ -210,6 +211,7 @@ def build_card_work_initial_state_from_work_contents(
         editability_by_plan_id=build_plan_editability(
             source=WORK_CONTENTS_SOURCE,
             plans=plans,
+            requested_user=login_user,
         ),
     )
 
@@ -232,11 +234,13 @@ def resolve_selected_plan_id(*, plans, plan_id_text):
     )
 
 
-def build_plan_editability(*, source, plans):
+def build_plan_editability(*, source, plans, requested_user):
     return {
         plan.plan_id: is_card_work_editable(
             source=source,
             status=plan.status,
+            plan_holder_id=plan.holder_id,
+            requested_member_id=requested_user.member_id,
         )
         for plan in plans
     }

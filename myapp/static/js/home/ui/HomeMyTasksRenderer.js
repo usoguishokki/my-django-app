@@ -24,6 +24,7 @@ import {
 
 
 import {
+    canOpenCardPageFromMyTaskItem,
     canOpenCardPageFromMyTaskDateGroup,
     shouldPreviewCardListFromMyTaskDateGroup,
 } from '../domain/HomeCardNavigationPolicy.js';
@@ -409,6 +410,7 @@ function createMyTaskCardPreviewElement({
 
     root.appendChild(createHomeDetailTaskList(items, {
         className: 'home-task-list home-my-task-card-preview__list',
+        interactive: true,
     }));
 
     return root;
@@ -425,7 +427,7 @@ function handleMyTaskCardClick(card) {
     if (
         !statusGroup ||
         !dateGroup ||
-        statusGroup.statusKey !== 'in_progress'
+        !canOpenCardPageFromMyTaskItem(statusGroup.statusKey)
     ) {
         return false;
     }

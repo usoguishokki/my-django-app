@@ -25,7 +25,9 @@ export function createHomeDetailTaskList(items = [], options = {}) {
         : [];
 
     safeItems.forEach((item) => {
-        list.appendChild(createHomeTaskCardElement(item));
+        list.appendChild(createHomeTaskCardElement(item, {
+            interactive: Boolean(options.interactive),
+        }));
     });
 
     return list;

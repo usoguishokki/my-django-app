@@ -187,7 +187,12 @@ def validate_submit_permission(*, plan, requested_user, source, organization_cod
             organization_code=organization_code,
         )
 
-    if not is_card_work_editable(source=source, status=plan.status):
+    if not is_card_work_editable(
+        source=source,
+        status=plan.status,
+        plan_holder_id=plan.holder_id,
+        requested_member_id=requested_user.member_id,
+    ):
         raise CardWorkResultStatusNotAllowed(
             f"現在の状態では実績登録できません。状態: {plan.status}"
         )
