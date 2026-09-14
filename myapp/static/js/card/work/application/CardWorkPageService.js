@@ -442,6 +442,11 @@ export class CardWorkPageService {
             return;
         }
 
+        if (this.initialState?.statusKey === 'approval_waiting') {
+            this.goToHomeDashboard();
+            return;
+        }
+
         this.plans = this.plans.filter(
             (plan) => String(plan?.planId ?? '') !== registeredPlanId
         );

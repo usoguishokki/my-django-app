@@ -16,6 +16,10 @@ export function createDetailCardElement({
     const content = document.createElement(resolveContentTagName(contentTagName));
     content.className = contentClassName;
 
+    if (content.tagName === 'BUTTON') {
+        content.type = 'button';
+    }
+
     if (headerElement) {
         content.appendChild(headerElement);
     }

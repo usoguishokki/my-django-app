@@ -54,18 +54,16 @@ VALID_SOURCES = {
     "work_contents",
 }
 
+CARD_WORK_RESULT_EDITABLE_STATUSES = frozenset({
+    PlanStatus.IN_PROGRESS,
+    PlanStatus.APPROVAL_WAITING,
+    PlanStatus.DELAYED,
+    PlanStatus.SENT_BACK,
+})
+
 SUBMITTABLE_STATUSES_BY_SOURCE = {
-    "home": frozenset({
-        PlanStatus.IN_PROGRESS,
-        PlanStatus.DELAYED,
-        PlanStatus.SENT_BACK,
-    }),
-    "work_contents": frozenset({
-        PlanStatus.IN_PROGRESS,
-        PlanStatus.APPROVAL_WAITING,
-        PlanStatus.DELAYED,
-        PlanStatus.SENT_BACK,
-    }),
+    "home": CARD_WORK_RESULT_EDITABLE_STATUSES,
+    "work_contents": CARD_WORK_RESULT_EDITABLE_STATUSES,
 }
 
 
