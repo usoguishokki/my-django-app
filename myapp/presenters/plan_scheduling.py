@@ -10,6 +10,7 @@ ISSUE_MESSAGES = {
     "AMBIGUOUS_SHIFT": "同じ日付・班に複数の直が設定されています。",
     "MISSING_TEAM": "計画班が設定されていません。",
     "MISSING_SLOT": "計画日・班に対応する勤務カレンダーがありません。",
+    "INVALID_SLOT_EFFORT": "同じスロットに工数不備の計画があるため移動できません。",
 }
 
 

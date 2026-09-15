@@ -4,9 +4,11 @@ from collections import defaultdict
 from datetime import date
 
 from myapp.domain.plan_scheduling import (
+    DISPLAY_SHIFT_NAMES,
     build_slot_key,
     calculate_work_minutes,
     get_fiscal_year,
+    is_display_shift,
     resolve_distinct_shift,
 )
 from myapp.presenters.plan_scheduling import (
@@ -49,6 +51,7 @@ def build_plan_scheduling_week_state(*, target_date: date, organization_code: st
         slots_by_pair=slots_by_pair,
         slot_effort=slot_effort,
     )
+    workload_chart = _build_workload_chart(dates)
     issues = [
         issue
         for item in plan_items
@@ -77,6 +80,7 @@ def build_plan_scheduling_week_state(*, target_date: date, organization_code: st
             "endDate": last_day.h_date.isoformat(),
         },
         "dates": dates,
+        "workloadChart": workload_chart,
         "plans": plan_items,
         "dataQuality": {
             "hasErrors": bool(issues),
@@ -113,6 +117,7 @@ def _build_slots_by_pair(calendar_rows):
                 "id": getattr(pattern, "pattern_id", None),
                 "name": getattr(pattern, "pattern_name", "") if pattern else "",
             },
+            "isDisplayed": bool(resolution.is_valid and is_display_shift(pattern)),
             "isValid": resolution.is_valid,
             "dataQualityIssues": issues,
         }
@@ -120,7 +125,9 @@ def _build_slots_by_pair(calendar_rows):
 
 
 def _build_plan_items(plans, slots_by_pair):
-    slot_effort = defaultdict(lambda: {"minutes": 0, "hasInvalidEffort": False})
+    slot_effort = defaultdict(
+        lambda: {"minutes": 0, "hasInvalidEffort": False, "planIds": []}
+    )
     items = []
 
     for plan in plans:
@@ -140,8 +147,14 @@ def _build_plan_items(plans, slots_by_pair):
             elif not slot["isValid"]:
                 issues.extend(slot["dataQualityIssues"])
 
+        # A resolved non-display shift (for example 常昼) is outside the page's
+        # chart, matrix, workspace, and preview universe.
+        if slot is not None and slot["isValid"] and not slot["isDisplayed"]:
+            continue
+
         if slot is not None:
             aggregate = slot_effort[slot["key"]]
+            aggregate["planIds"].append(plan.plan_id)
             if effort.is_valid:
                 aggregate["minutes"] += effort.minutes
             else:
@@ -156,6 +169,15 @@ def _build_plan_items(plans, slots_by_pair):
             "equipmentName": getattr(control, "machine", "") or "",
             "workName": getattr(check, "wark_name", "") or "",
             "workMinutes": effort.minutes,
+            "baseWorkMinutes": getattr(check, "man_hours", None),
+            "baseWorkMinutesLabel": (
+                present_minutes(getattr(check, "man_hours", None))
+                if isinstance(getattr(check, "man_hours", None), int)
+                and not isinstance(getattr(check, "man_hours", None), bool)
+                and getattr(check, "man_hours", None) > 0
+                else "データ不備"
+            ),
+            "requiredPersonCount": getattr(check, "required_person_count", None),
             "workMinutesLabel": (
                 present_minutes(effort.minutes)
                 if effort.is_valid
@@ -175,12 +197,20 @@ def _build_plan_items(plans, slots_by_pair):
             "dataQualityIssues": issues,
         })
 
+    for item in items:
+        aggregate = slot_effort.get(item["current"]["slotKey"])
+        if item["isPreviewable"] and aggregate and aggregate["hasInvalidEffort"]:
+            item["isPreviewable"] = False
+            item["dataQualityIssues"].append(present_issue("INVALID_SLOT_EFFORT"))
+
     return items, slot_effort
 
 
 def _build_date_items(*, maintenance_days, slots_by_pair, slot_effort):
     slots_by_date_id = defaultdict(list)
     for (date_id, _team_id), slot in slots_by_pair.items():
+        if not slot["isDisplayed"]:
+            continue
         aggregate = slot_effort[slot["key"]]
         has_invalid = aggregate["hasInvalidEffort"]
         slot_item = {
@@ -191,6 +221,8 @@ def _build_date_items(*, maintenance_days, slots_by_pair, slot_effort):
                 invalid=has_invalid,
             ),
             "hasInvalidEffort": has_invalid,
+            "planIds": aggregate["planIds"],
+            "planCount": len(aggregate["planIds"]),
         }
         slots_by_date_id[date_id].append(slot_item)
 
@@ -210,3 +242,59 @@ def _build_date_items(*, maintenance_days, slots_by_pair, slot_effort):
             "slots": slots,
         })
     return date_items
+
+
+def _build_workload_chart(dates):
+    """Build authoritative daily/team waiting-workload totals for charting."""
+
+    teams = sorted({
+        (slot["team"]["id"], slot["team"]["name"])
+        for day in dates
+        for slot in day["slots"]
+    }, key=lambda item: item[0])
+    chart_dates = []
+    for day in dates:
+        by_team = defaultdict(lambda: {"minutes": 0, "hasInvalidEffort": False})
+        for slot in day["slots"]:
+            team = by_team[slot["team"]["id"]]
+            if slot["hasInvalidEffort"] or slot["workloadMinutes"] is None:
+                team["hasInvalidEffort"] = True
+            else:
+                team["minutes"] += slot["workloadMinutes"]
+
+        team_workloads = []
+        for team_id, team_name in teams:
+            aggregate = by_team[team_id]
+            invalid = aggregate["hasInvalidEffort"]
+            team_workloads.append({
+                "teamId": team_id,
+                "teamName": team_name,
+                "workloadMinutes": None if invalid else aggregate["minutes"],
+                "workloadLabel": present_minutes(
+                    aggregate["minutes"],
+                    invalid=invalid,
+                ),
+                "hasInvalidEffort": invalid,
+            })
+        has_invalid = any(item["hasInvalidEffort"] for item in team_workloads)
+        total = sum(
+            item["workloadMinutes"] or 0
+            for item in team_workloads
+        )
+        chart_dates.append({
+            "date": day["date"],
+            "label": day["label"],
+            "totalWorkloadMinutes": None if has_invalid else total,
+            "totalWorkloadLabel": present_minutes(total, invalid=has_invalid),
+            "hasInvalidEffort": has_invalid,
+            "teamWorkloads": team_workloads,
+        })
+
+    return {
+        "shiftNames": list(DISPLAY_SHIFT_NAMES),
+        "teams": [
+            {"id": team_id, "name": team_name}
+            for team_id, team_name in teams
+        ],
+        "dates": chart_dates,
+    }

@@ -16,15 +16,16 @@
  */
 
 export class PlanSchedulingController {
-  constructor({ root, apiClient, renderer, buildPreview, filterPlans }) {
+  constructor({ root, apiClient, renderer, buildPreview, selectSlotPlans }) {
     this.root = root;
     this.apiClient = apiClient;
     this.renderer = renderer;
     this.buildPreview = buildPreview;
-    this.filterPlans = filterPlans;
+    this.selectSlotPlans = selectSlotPlans;
     this.state = null;
     this.selectedPlanId = null;
     this.selectedSlotKey = '';
+    this.destinationSlotKey = '';
   }
 
   async init() {
@@ -32,10 +33,6 @@ export class PlanSchedulingController {
     this.root.querySelector('[data-role="week-form"]')?.addEventListener(
       'submit',
       (event) => this.handleWeekSubmit(event),
-    );
-    this.root.querySelector('[data-role="plan-filter"]')?.addEventListener(
-      'input',
-      (event) => this.handlePlanFilter(event.target.value),
     );
     const today = new Date();
     const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000)
@@ -51,8 +48,7 @@ export class PlanSchedulingController {
       this.state = await this.apiClient.fetchWeek(targetDate);
       this.selectedPlanId = null;
       this.selectedSlotKey = '';
-      const filterInput = this.root.querySelector('[data-role="plan-filter"]');
-      if (filterInput) filterInput.value = '';
+      this.destinationSlotKey = '';
       this.renderer.renderState(this.state, this.selection());
     } catch (error) {
       this.renderer.renderError(error.message);
@@ -66,29 +62,32 @@ export class PlanSchedulingController {
   }
 
   handleClick(event) {
-    const planButton = event.target.closest('[data-plan-id]');
-    if (planButton && !planButton.disabled) {
-      this.selectedPlanId = Number(planButton.dataset.planId);
-      const selectedPlan = this.state?.plans.find(
-        (item) => item.planId === this.selectedPlanId,
-      );
-      if (selectedPlan?.current.slotKey === this.selectedSlotKey) {
-        this.selectedSlotKey = '';
-      }
+    const cancelButton = event.target.closest('[data-action="cancel-move"]');
+    if (cancelButton) {
+      this.selectedPlanId = null;
+      this.destinationSlotKey = '';
       this.renderSelection();
       return;
     }
+
+    const moveButton = event.target.closest('[data-action="move"]');
+    if (moveButton && !moveButton.disabled) {
+      this.selectedPlanId = Number(moveButton.dataset.planId);
+      this.destinationSlotKey = '';
+      this.renderSelection();
+      return;
+    }
+
     const slotButton = event.target.closest('[data-slot-key]');
     if (slotButton && !slotButton.disabled) {
-      this.selectedSlotKey = slotButton.dataset.slotKey;
+      if (this.selectedPlanId !== null) {
+        this.destinationSlotKey = slotButton.dataset.slotKey;
+      } else {
+        this.selectedSlotKey = slotButton.dataset.slotKey;
+        this.destinationSlotKey = '';
+      }
       this.renderSelection();
     }
-  }
-
-  handlePlanFilter(query) {
-    if (!this.state) return;
-    const plans = this.filterPlans(this.state.plans, query);
-    this.renderer.renderPlanList(plans, this.selectedPlanId);
   }
 
   renderSelection() {
@@ -98,10 +97,15 @@ export class PlanSchedulingController {
   selection() {
     const plan = this.state?.plans.find((item) => item.planId === this.selectedPlanId);
     const slots = this.state?.dates.flatMap((item) => item.slots) || [];
-    const destination = slots.find((item) => item.key === this.selectedSlotKey);
+    const selectedSlot = slots.find((item) => item.key === this.selectedSlotKey);
+    const destination = slots.find((item) => item.key === this.destinationSlotKey);
     const source = slots.find((item) => item.key === plan?.current.slotKey);
     return {
       plan,
+      selectedSlot,
+      slotPlans: selectedSlot
+        ? this.selectSlotPlans(this.state.plans, selectedSlot)
+        : [],
       destination,
       preview: this.buildPreview(plan, destination, source),
     };

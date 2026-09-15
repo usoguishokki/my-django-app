@@ -16,7 +16,7 @@
 
 import {
   buildWorkloadPreview,
-  filterPlanSummaries,
+  plansForSlot,
 } from '../domain/PlanSchedulingPreviewPolicy.js';
 import { PlanSchedulingApiClient } from '../application/PlanSchedulingApiClient.js';
 import { PlanSchedulingController } from '../application/PlanSchedulingController.js';
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     apiClient: new PlanSchedulingApiClient(),
     renderer: new PlanSchedulingRenderer(root),
     buildPreview: buildWorkloadPreview,
-    filterPlans: filterPlanSummaries,
+    selectSlotPlans: plansForSlot,
   });
   controller.init();
 });

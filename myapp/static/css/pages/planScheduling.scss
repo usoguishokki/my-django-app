@@ -16,7 +16,9 @@
 .plan-scheduling__previewHeader,
 .plan-scheduling__dateControls,
 .plan-scheduling__moveSummary,
-.plan-scheduling__arithmetic {
+.plan-scheduling__arithmetic,
+.plan-scheduling__previewFooter,
+.plan-scheduling__destinationPrompt {
   display: flex;
   align-items: center;
 }
@@ -69,11 +71,11 @@
 
 .plan-scheduling__workspace {
   display: grid;
-  grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
   gap: 16px;
   min-height: 470px;
 }
 
+.plan-scheduling__chart,
 .plan-scheduling__plans,
 .plan-scheduling__matrix,
 .plan-scheduling__preview {
@@ -83,6 +85,7 @@
   box-shadow: 0 3px 12px rgba(29, 54, 77, .06);
 }
 
+.plan-scheduling__chart,
 .plan-scheduling__plans,
 .plan-scheduling__matrix { padding: 14px; }
 .plan-scheduling__sectionHeading { justify-content: space-between; margin-bottom: 12px; }
@@ -90,14 +93,6 @@
 .plan-scheduling__weekLabel { color: var(--ps-blue); font-size: 13px; font-weight: 700; }
 .plan-scheduling__count,
 .plan-scheduling__legend { color: #647482; font-size: 13px; }
-
-.plan-scheduling__planFilter { display: grid; gap: 5px; margin-bottom: 10px; color: #536a7b; font-size: 12px; font-weight: 700; }
-.plan-scheduling__planFilter input {
-  min-height: 36px;
-  padding: 0 10px;
-  border: 1px solid var(--ps-border);
-  border-radius: 6px;
-}
 
 .plan-scheduling__planList {
   display: grid;
@@ -117,12 +112,12 @@
   color: inherit;
   text-align: left;
   background: white;
-  cursor: pointer;
 }
 
-.plan-scheduling__planCard:hover:not(:disabled),
+.plan-scheduling__slot { cursor: pointer; }
+.plan-scheduling__planCard { padding: 14px; }
+
 .plan-scheduling__slot:hover:not(:disabled) { border-color: var(--ps-blue); }
-.plan-scheduling__planCard:focus-visible,
 .plan-scheduling__slot:focus-visible { outline: 3px solid rgba(31, 95, 153, .28); outline-offset: 2px; }
 .plan-scheduling__planCard.is-selected-plan,
 .plan-scheduling__slot.is-selected-destination {
@@ -130,17 +125,48 @@
   background: var(--ps-blue-soft);
   box-shadow: inset 4px 0 var(--ps-blue);
 }
+.plan-scheduling__slot.is-selected-slot { border-color: var(--ps-blue); box-shadow: inset 4px 0 var(--ps-blue); }
 .plan-scheduling__slot.is-current-slot {
   border-color: #7890a3;
   border-style: dashed;
   opacity: 1;
 }
 
-.plan-scheduling__planCard:disabled,
 .plan-scheduling__slot:disabled { cursor: not-allowed; opacity: .68; }
 .plan-scheduling__planPrimary { font-weight: 700; }
 .plan-scheduling__quality,
 .plan-scheduling__slot small { color: #a02d2d; font-size: 12px; }
+
+.plan-scheduling__chartLegend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; margin-bottom: 8px; }
+.plan-scheduling__chartLegend span { display: inline-flex; align-items: center; gap: 5px; color: #536a7b; font-size: 12px; }
+.plan-scheduling__chartLegend i { width: 11px; height: 11px; border-radius: 2px; }
+.plan-scheduling__chartPlot { display: flex; min-height: 230px; border-bottom: 1px solid var(--ps-border); }
+.plan-scheduling__yAxis { align-self: center; color: #667786; font-size: 11px; writing-mode: vertical-rl; transform: rotate(180deg); }
+.plan-scheduling__chartColumns { display: flex; flex: 1; align-items: flex-end; justify-content: space-around; gap: 16px; min-width: 620px; padding: 24px 18px 0; border-left: 1px solid var(--ps-border); background: repeating-linear-gradient(to top, transparent 0, transparent 49px, #edf1f4 50px); }
+.plan-scheduling__chartColumn { display: grid; align-items: end; justify-items: center; gap: 5px; width: 72px; max-width: 12vw; height: 205px; color: #536a7b; font-size: 11px; }
+.plan-scheduling__chartBar { display: flex; flex-direction: column-reverse; justify-content: flex-start; width: 44px; height: 160px; overflow: hidden; border-radius: 4px 4px 0 0; background: #edf1f4; }
+.plan-scheduling__chartSegment { display: block; min-height: 0; }
+.team-0 { background: #286ca8; }
+.team-1 { background: #45a6a0; }
+.team-2 { background: #e09b3d; }
+.team-3 { background: #7967ad; }
+.team-4 { background: #cf6679; }
+.team-5 { background: #6c8e3f; }
+.team-6 { background: #4f84c4; }
+.team-7 { background: #9a7152; }
+
+.plan-scheduling__slotSummary { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.plan-scheduling__slotSummary span { display: grid; gap: 3px; padding: 9px 11px; border-radius: 6px; background: #f1f5f8; }
+.plan-scheduling__slotSummary small,
+.plan-scheduling__planFacts dt { color: #667786; font-size: 11px; }
+.plan-scheduling__workspaceEmpty { margin: 30px 0; color: #647482; text-align: center; }
+.plan-scheduling__planCardHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.plan-scheduling__planCardHeader > div { display: grid; gap: 3px; }
+.plan-scheduling__equipment { color: #536a7b; font-size: 12px; }
+.plan-scheduling__planFacts { display: grid; grid-template-columns: repeat(5, minmax(110px, 1fr)); gap: 8px; margin: 10px 0 0; }
+.plan-scheduling__planFacts div { display: grid; gap: 2px; }
+.plan-scheduling__planFacts dd { margin: 0; font-weight: 700; }
+.plan-scheduling__qualityGroup { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding: 8px; color: #a02d2d; background: #fff0f0; }
 
 .plan-scheduling__dateGrid {
   display: grid;
@@ -197,13 +223,15 @@
   border-radius: 6px;
   background: #f1f5f8;
 }
-.plan-scheduling__arithmetic .is-result { color: white; background: var(--ps-blue); }
-.plan-scheduling__arithmetic .is-result span { color: white; }
-.plan-scheduling__readOnly { margin: 10px 0 0; color: #667786; font-size: 12px; text-align: right; }
+.plan-scheduling__readOnly { margin: 0; color: #667786; font-size: 12px; }
+.plan-scheduling__previewFooter { justify-content: flex-end; gap: 12px; margin-top: 12px; }
+.plan-scheduling__destinationPrompt { justify-content: center; gap: 16px; color: #536a7b; }
 
 @media (max-width: 900px) {
   .plan-scheduling__header { align-items: flex-start; flex-direction: column; }
-  .plan-scheduling__workspace { grid-template-columns: 1fr; }
+  .plan-scheduling__chartPlot { overflow-x: auto; }
+  .plan-scheduling__slotSummary { grid-template-columns: repeat(2, 1fr); }
+  .plan-scheduling__planFacts { grid-template-columns: repeat(2, 1fr); }
   .plan-scheduling__planList { max-height: 300px; }
   .plan-scheduling__preview { position: static; }
   .plan-scheduling__moveSummary,

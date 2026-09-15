@@ -47,8 +47,8 @@ def make_calendar(row_id, day, team_id, team_name, pattern_id, pattern_name):
     )
 
 
-def make_plan(plan_id, day, team_id, *, man_hours=60, people=2):
-    team = SimpleNamespace(affilation_id=team_id, affilation="A班")
+def make_plan(plan_id, day, team_id, *, team_name="A班", man_hours=60, people=2):
+    team = SimpleNamespace(affilation_id=team_id, affilation=team_name)
     control = SimpleNamespace(machine="設備A")
     check = SimpleNamespace(
         inspection_no=f"CARD-{plan_id}",
@@ -175,6 +175,11 @@ class PlanSchedulingStateTests(TestCase):
         self.assertEqual(180, state["dates"][0]["slots"][0]["workloadMinutes"])
         self.assertEqual("180分", state["dates"][0]["slots"][0]["workloadLabel"])
         self.assertEqual(2, len(state["plans"]))
+        self.assertEqual(60, state["plans"][0]["baseWorkMinutes"])
+        self.assertEqual("60分", state["plans"][0]["baseWorkMinutesLabel"])
+        self.assertEqual(2, state["plans"][0]["requiredPersonCount"])
+        self.assertEqual([10, 11], state["dates"][0]["slots"][0]["planIds"])
+        self.assertEqual(2, state["dates"][0]["slots"][0]["planCount"])
         self.assertFalse(state["capabilities"]["canReschedule"])
 
     def test_duplicate_rows_do_not_double_workload(self):
@@ -191,12 +196,9 @@ class PlanSchedulingStateTests(TestCase):
         self.assertEqual(1, len(state["dates"][0]["slots"]))
         self.assertEqual(120, state["dates"][0]["slots"][0]["workloadMinutes"])
 
-    def test_ambiguous_slot_and_invalid_effort_are_reported_safely(self):
+    def test_invalid_effort_is_reported_safely(self):
         day = make_day(1, date(2026, 9, 15))
-        calendars = [
-            make_calendar(1, day, 1, "A班", 1, "1直"),
-            make_calendar(2, day, 1, "A班", 2, "2直"),
-        ]
+        calendars = [make_calendar(1, day, 1, "A班", 1, "1直")]
         state = self.build_state(
             days=[day],
             calendars=calendars,
@@ -204,12 +206,113 @@ class PlanSchedulingStateTests(TestCase):
         )
         slot = state["dates"][0]["slots"][0]
         plan = state["plans"][0]
-        self.assertFalse(slot["isValid"])
+        self.assertTrue(slot["isValid"])
         self.assertIsNone(slot["workloadMinutes"])
         self.assertEqual("集計不可", slot["workloadLabel"])
         self.assertFalse(plan["isPreviewable"])
         self.assertIsNone(plan["workMinutes"])
         self.assertTrue(state["dataQuality"]["hasErrors"])
+
+    def test_ambiguous_calendar_slot_is_not_displayed_and_is_reported(self):
+        day = make_day(1, date(2026, 9, 15))
+        state = self.build_state(
+            days=[day],
+            calendars=[
+                make_calendar(1, day, 1, "A班", 1, "1直"),
+                make_calendar(2, day, 1, "A班", 2, "2直"),
+            ],
+            plans=[make_plan(10, day, 1)],
+        )
+        self.assertEqual([], state["dates"][0]["slots"])
+        self.assertFalse(state["plans"][0]["isPreviewable"])
+        self.assertTrue(state["dataQuality"]["hasErrors"])
+
+    def test_chart_aggregates_each_team_by_date_in_chronological_order(self):
+        first = make_day(1, date(2026, 9, 14))
+        second = make_day(2, date(2026, 9, 15))
+        calendars = [
+            make_calendar(1, first, 1, "A班", 1, "1直"),
+            make_calendar(2, first, 2, "B班", 2, "2直"),
+            make_calendar(3, second, 1, "A班", 3, "3直"),
+            make_calendar(4, second, 2, "B班", 4, "休日"),
+        ]
+        plans = [
+            make_plan(10, first, 1, man_hours=60),
+            make_plan(11, first, 2, team_name="B班", man_hours=40),
+            make_plan(12, second, 2, team_name="B班", man_hours=30),
+        ]
+        state = self.build_state(days=[first, second], calendars=calendars, plans=plans)
+
+        chart = state["workloadChart"]
+        self.assertEqual(["1直", "2直", "3直", "休日"], chart["shiftNames"])
+        self.assertEqual(
+            ["2026-09-14", "2026-09-15"],
+            [item["date"] for item in chart["dates"]],
+        )
+        self.assertEqual(200, chart["dates"][0]["totalWorkloadMinutes"])
+        self.assertEqual(
+            [(1, 120), (2, 80)],
+            [(item["teamId"], item["workloadMinutes"])
+             for item in chart["dates"][0]["teamWorkloads"]],
+        )
+        self.assertEqual(60, chart["dates"][1]["totalWorkloadMinutes"])
+
+    def test_day_shift_is_excluded_and_holiday_is_included_everywhere(self):
+        day = make_day(1, date(2026, 9, 15))
+        calendars = [
+            make_calendar(1, day, 1, "A班", 10, "常昼"),
+            make_calendar(2, day, 2, "B班", 11, "休日"),
+        ]
+        plans = [
+            make_plan(10, day, 1),
+            make_plan(11, day, 2, team_name="B班", man_hours=30),
+        ]
+        state = self.build_state(days=[day], calendars=calendars, plans=plans)
+
+        self.assertEqual(["休日"], [slot["shift"]["name"] for slot in state["dates"][0]["slots"]])
+        self.assertEqual([11], [plan["planId"] for plan in state["plans"]])
+        self.assertEqual(60, state["workloadChart"]["dates"][0]["totalWorkloadMinutes"])
+        self.assertNotIn("常昼", str(state["workloadChart"]))
+
+    def test_slot_plan_membership_is_exact(self):
+        day = make_day(1, date(2026, 9, 15))
+        calendars = [
+            make_calendar(1, day, 1, "A班", 1, "1直"),
+            make_calendar(2, day, 2, "B班", 2, "2直"),
+        ]
+        state = self.build_state(
+            days=[day],
+            calendars=calendars,
+            plans=[make_plan(10, day, 1), make_plan(11, day, 2, team_name="B班")],
+        )
+        slots = state["dates"][0]["slots"]
+        self.assertEqual([10], slots[0]["planIds"])
+        self.assertEqual([11], slots[1]["planIds"])
+
+    def test_invalid_chart_effort_is_not_presented_as_zero(self):
+        day = make_day(1, date(2026, 9, 15))
+        state = self.build_state(
+            days=[day],
+            calendars=[make_calendar(1, day, 1, "A班", 1, "1直")],
+            plans=[make_plan(10, day, 1, man_hours=0)],
+        )
+        chart_day = state["workloadChart"]["dates"][0]
+        self.assertIsNone(chart_day["totalWorkloadMinutes"])
+        self.assertEqual("集計不可", chart_day["totalWorkloadLabel"])
+
+    def test_valid_plan_cannot_preview_from_slot_with_invalid_total(self):
+        day = make_day(1, date(2026, 9, 15))
+        state = self.build_state(
+            days=[day],
+            calendars=[make_calendar(1, day, 1, "A班", 1, "1直")],
+            plans=[make_plan(10, day, 1), make_plan(11, day, 1, man_hours=0)],
+        )
+        valid_plan = state["plans"][0]
+        self.assertFalse(valid_plan["isPreviewable"])
+        self.assertIn(
+            "INVALID_SLOT_EFFORT",
+            [issue["code"] for issue in valid_plan["dataQualityIssues"]],
+        )
 
     def test_reserve_week_is_preserved(self):
         day = make_day(1, date(2027, 1, 6), alias="予備週", week=6)
