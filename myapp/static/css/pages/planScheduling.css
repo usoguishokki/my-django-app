@@ -8,8 +8,7 @@
   min-width: 0;
   padding: 20px;
   color: var(--ps-ink);
-  background: #f4f7fa;
-}
+  background: #f4f7fa; }
 
 .plan-scheduling__header,
 .plan-scheduling__sectionHeading,
@@ -18,13 +17,11 @@
 .plan-scheduling__moveSummary,
 .plan-scheduling__arithmetic {
   display: flex;
-  align-items: center;
-}
+  align-items: center; }
 
 .plan-scheduling__header {
   justify-content: space-between;
-  gap: 24px;
-}
+  gap: 24px; }
 
 .plan-scheduling__eyebrow,
 .plan-scheduling__weekLabel,
@@ -33,74 +30,61 @@
 .plan-scheduling__sectionHeading h2,
 .plan-scheduling__previewHeader p,
 .plan-scheduling__previewHeader h2 {
-  margin: 0;
-}
+  margin: 0; }
 
 .plan-scheduling__eyebrow {
   color: var(--ps-blue);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.12em;
-}
+  letter-spacing: .12em; }
 
 .plan-scheduling__title {
-  font-size: 28px;
-}
+  font-size: 28px; }
 
 .plan-scheduling__description {
   margin-top: 4px;
-  color: #5b6b78;
-}
+  color: #5b6b78; }
 
 .plan-scheduling__dateForm {
   display: grid;
   gap: 6px;
-  font-weight: 700;
-}
+  font-weight: 700; }
 
 .plan-scheduling__dateControls {
-  gap: 8px;
-}
+  gap: 8px; }
 
 .plan-scheduling__dateControls input {
   min-height: 36px;
   padding: 0 10px;
   border: 1px solid var(--ps-border);
   border-radius: 6px;
-  background: white;
-}
+  background: white; }
 
 .plan-scheduling__notice,
 .plan-scheduling__feedback {
   padding: 10px 14px;
-  border-radius: 7px;
-}
+  border-radius: 7px; }
 
 .plan-scheduling__notice {
   color: #31586f;
-  background: var(--ps-blue-soft);
-}
+  background: var(--ps-blue-soft); }
 
 .plan-scheduling__feedback:empty {
-  display: none;
-}
+  display: none; }
 
 .plan-scheduling__feedback {
   color: #7a4d00;
-  background: #fff4d7;
-}
+  background: #fff4d7; }
 
 .plan-scheduling__feedback.is-error {
   color: #962b2b;
-  background: #fdeaea;
-}
+  background: #fdeaea; }
 
 .plan-scheduling__workspace {
   display: grid;
   grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
   gap: 16px;
-  min-height: 470px;
-}
+  min-height: 470px; }
 
 .plan-scheduling__plans,
 .plan-scheduling__matrix,
@@ -108,34 +92,28 @@
   border: 1px solid var(--ps-border);
   border-radius: 10px;
   background: white;
-  box-shadow: 0 3px 12px rgba(29, 54, 77, 0.06);
-}
+  box-shadow: 0 3px 12px rgba(29, 54, 77, 0.06); }
 
 .plan-scheduling__plans,
 .plan-scheduling__matrix {
-  padding: 14px;
-}
+  padding: 14px; }
 
 .plan-scheduling__sectionHeading {
   justify-content: space-between;
-  margin-bottom: 12px;
-}
+  margin-bottom: 12px; }
 
 .plan-scheduling__sectionHeading h2 {
-  font-size: 18px;
-}
+  font-size: 18px; }
 
 .plan-scheduling__weekLabel {
   color: var(--ps-blue);
   font-size: 13px;
-  font-weight: 700;
-}
+  font-weight: 700; }
 
 .plan-scheduling__count,
 .plan-scheduling__legend {
   color: #647482;
-  font-size: 13px;
-}
+  font-size: 13px; }
 
 .plan-scheduling__planFilter {
   display: grid;
@@ -143,22 +121,19 @@
   margin-bottom: 10px;
   color: #536a7b;
   font-size: 12px;
-  font-weight: 700;
-}
+  font-weight: 700; }
 
 .plan-scheduling__planFilter input {
   min-height: 36px;
   padding: 0 10px;
   border: 1px solid var(--ps-border);
-  border-radius: 6px;
-}
+  border-radius: 6px; }
 
 .plan-scheduling__planList {
   display: grid;
   gap: 8px;
   max-height: 65vh;
-  overflow: auto;
-}
+  overflow: auto; }
 
 .plan-scheduling__planCard,
 .plan-scheduling__slot {
@@ -171,48 +146,40 @@
   color: inherit;
   text-align: left;
   background: white;
-  cursor: pointer;
-}
+  cursor: pointer; }
 
 .plan-scheduling__planCard:hover:not(:disabled),
 .plan-scheduling__slot:hover:not(:disabled) {
-  border-color: var(--ps-blue);
-}
+  border-color: var(--ps-blue); }
 
 .plan-scheduling__planCard:focus-visible,
 .plan-scheduling__slot:focus-visible {
   outline: 3px solid rgba(31, 95, 153, 0.28);
-  outline-offset: 2px;
-}
+  outline-offset: 2px; }
 
 .plan-scheduling__planCard.is-selected-plan,
 .plan-scheduling__slot.is-selected-destination {
   border-color: var(--ps-blue);
   background: var(--ps-blue-soft);
-  box-shadow: inset 4px 0 var(--ps-blue);
-}
+  box-shadow: inset 4px 0 var(--ps-blue); }
 
 .plan-scheduling__slot.is-current-slot {
   border-color: #7890a3;
   border-style: dashed;
-  opacity: 1;
-}
+  opacity: 1; }
 
 .plan-scheduling__planCard:disabled,
 .plan-scheduling__slot:disabled {
   cursor: not-allowed;
-  opacity: 0.68;
-}
+  opacity: .68; }
 
 .plan-scheduling__planPrimary {
-  font-weight: 700;
-}
+  font-weight: 700; }
 
 .plan-scheduling__quality,
 .plan-scheduling__slot small {
   color: #a02d2d;
-  font-size: 12px;
-}
+  font-size: 12px; }
 
 .plan-scheduling__dateGrid {
   display: grid;
@@ -220,121 +187,98 @@
   grid-auto-flow: column;
   gap: 10px;
   overflow-x: auto;
-  padding-bottom: 8px;
-}
+  padding-bottom: 8px; }
 
 .plan-scheduling__dateColumn {
   min-height: 390px;
   padding: 10px;
   border: 1px solid var(--ps-border);
   border-radius: 8px;
-  background: #f9fbfc;
-}
+  background: #f9fbfc; }
 
 .plan-scheduling__dateColumn > header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding-bottom: 8px;
-  border-bottom: 2px solid var(--ps-blue);
-}
+  border-bottom: 2px solid var(--ps-blue); }
 
 .plan-scheduling__dateColumn h3,
 .plan-scheduling__shiftGroup h4 {
-  margin: 0;
-}
+  margin: 0; }
 
 .plan-scheduling__dateColumn h3 {
-  font-size: 15px;
-}
+  font-size: 15px; }
 
 .plan-scheduling__dateColumn header span {
   color: #7a4d00;
-  font-size: 11px;
-}
+  font-size: 11px; }
 
 .plan-scheduling__shiftGroup {
-  margin-top: 12px;
-}
+  margin-top: 12px; }
 
 .plan-scheduling__shiftGroup h4 {
   margin-bottom: 5px;
   font-size: 13px;
-  color: #536a7b;
-}
+  color: #536a7b; }
 
 .plan-scheduling__slotList {
   display: grid;
-  gap: 5px;
-}
+  gap: 5px; }
 
 .plan-scheduling__slot {
-  grid-template-columns: 1fr auto;
-}
+  grid-template-columns: 1fr auto; }
 
 .plan-scheduling__slot small {
-  grid-column: 1/-1;
-}
+  grid-column: 1 / -1; }
 
 .plan-scheduling__slot.is-invalid {
-  background: #fff4f4;
-}
+  background: #fff4f4; }
 
 .plan-scheduling__empty {
-  color: #71808c;
-}
+  color: #71808c; }
 
 .plan-scheduling__preview {
   position: sticky;
   bottom: 10px;
-  padding: 14px 18px;
-}
+  padding: 14px 18px; }
 
 .plan-scheduling__previewEmpty {
   margin: 0;
   color: #647482;
-  text-align: center;
-}
+  text-align: center; }
 
 .plan-scheduling__previewHeader {
-  justify-content: space-between;
-}
+  justify-content: space-between; }
 
 .plan-scheduling__previewHeader h2 {
-  font-size: 17px;
-}
+  font-size: 17px; }
 
 .plan-scheduling__previewHeader > strong {
   color: var(--ps-blue);
-  font-size: 22px;
-}
+  font-size: 22px; }
 
 .plan-scheduling__moveSummary {
   gap: 14px;
-  margin-top: 12px;
-}
+  margin-top: 12px; }
 
 .plan-scheduling__moveSummary > div {
   display: grid;
   flex: 1;
-  gap: 3px;
-}
+  gap: 3px; }
 
 .plan-scheduling__moveSummary span,
 .plan-scheduling__arithmetic span {
   color: #667786;
-  font-size: 12px;
-}
+  font-size: 12px; }
 
 .plan-scheduling__arrow {
   color: var(--ps-blue) !important;
-  font-size: 24px !important;
-}
+  font-size: 24px !important; }
 
 .plan-scheduling__arithmetic {
   gap: 8px;
-  margin-top: 12px;
-}
+  margin-top: 12px; }
 
 .plan-scheduling__arithmetic > div {
   display: grid;
@@ -342,46 +286,37 @@
   gap: 3px;
   padding: 8px;
   border-radius: 6px;
-  background: #f1f5f8;
-}
+  background: #f1f5f8; }
 
 .plan-scheduling__arithmetic .is-result {
   color: white;
-  background: var(--ps-blue);
-}
+  background: var(--ps-blue); }
 
 .plan-scheduling__arithmetic .is-result span {
-  color: white;
-}
+  color: white; }
 
 .plan-scheduling__readOnly {
   margin: 10px 0 0;
   color: #667786;
   font-size: 12px;
-  text-align: right;
-}
+  text-align: right; }
 
 @media (max-width: 900px) {
   .plan-scheduling__header {
     align-items: flex-start;
-    flex-direction: column;
-  }
+    flex-direction: column; }
   .plan-scheduling__workspace {
-    grid-template-columns: 1fr;
-  }
+    grid-template-columns: 1fr; }
   .plan-scheduling__planList {
-    max-height: 300px;
-  }
+    max-height: 300px; }
   .plan-scheduling__preview {
-    position: static;
-  }
+    position: static; }
   .plan-scheduling__moveSummary,
   .plan-scheduling__arithmetic {
     align-items: stretch;
-    flex-direction: column;
-  }
+    flex-direction: column; }
   .plan-scheduling__arrow {
     transform: rotate(90deg);
-    align-self: center;
-  }
-}
+    align-self: center; } }
+
+/*# sourceMappingURL=planScheduling.css.map */
