@@ -63,11 +63,32 @@ class StaticReleaseTests(SimpleTestCase):
             source = template.read_text(encoding="utf-8")
             self.assertNotIn("sass_src", source, template.as_posix())
 
-    def test_build_manifest_excludes_unreleased_plan_scheduling(self):
+    def test_plan_scheduling_assets_are_release_inputs(self):
         template_root = Path(__file__).resolve().parent / "templates"
-        source = (template_root / "_assets.scss-build.html").read_text(encoding="utf-8")
+        static_root = Path(__file__).resolve().parent / "static"
+        build_source = (template_root / "_assets.scss-build.html").read_text(
+            encoding="utf-8"
+        )
+        runtime_source = (
+            template_root / "planScheduling" / "plan_scheduling.html"
+        ).read_text(encoding="utf-8")
 
-        self.assertNotIn("planScheduling", source)
+        self.assertIn(
+            "{% sass_src 'css/pages/planScheduling.scss' %}",
+            build_source,
+        )
+        self.assertIn(
+            "{% static 'css/pages/planScheduling.css' %}",
+            runtime_source,
+        )
+        self.assertIn(
+            "{% static 'js/planScheduling/pages/planSchedulingPage.js' %}",
+            runtime_source,
+        )
+        self.assertTrue((static_root / "css/pages/planScheduling.css").is_file())
+        self.assertTrue(
+            (static_root / "js/planScheduling/pages/planSchedulingPage.js").is_file()
+        )
 
     def test_iis_cache_policy_is_fingerprint_only(self):
         project_root = Path(__file__).resolve().parents[1]

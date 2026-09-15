@@ -31,6 +31,9 @@ class SharedLayoutScrollContractTests(TestCase):
         plan_scss = (STATIC_CSS / "pages" / "planScheduling.scss").read_text(
             encoding="utf-8"
         )
+        plan_css = (STATIC_CSS / "pages" / "planScheduling.css").read_text(
+            encoding="utf-8"
+        )
 
         plan_list_rule = plan_scss.split(
             ".plan-scheduling__planList {", 1
@@ -42,7 +45,11 @@ class SharedLayoutScrollContractTests(TestCase):
         )[1].split("}", 1)[0]
         self.assertNotIn("overflow", workspace_rule)
         self.assertIn(".plan-scheduling__drawer {", plan_scss)
-        self.assertIn("max-height: min(720px, calc(100dvh - 32px));", plan_scss)
+        self.assertIn(
+            'max-height: unquote("min(720px, calc(100dvh - 32px))");',
+            plan_scss,
+        )
+        self.assertIn("max-height: min(720px, calc(100dvh - 32px));", plan_css)
         self.assertIn(".plan-scheduling__matrix,", plan_scss)
         self.assertIn("min-width: 0;", plan_scss)
         self.assertIn(".plan-scheduling__dateGrid {", plan_scss)

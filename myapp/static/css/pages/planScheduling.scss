@@ -122,7 +122,7 @@
   display: flex;
   flex-direction: column;
   align-self: start;
-  max-height: min(720px, calc(100dvh - 32px));
+  max-height: unquote("min(720px, calc(100dvh - 32px))");
   padding: 0;
   overflow: hidden;
 }
@@ -271,7 +271,7 @@
 @media (max-width: 900px) {
   .plan-scheduling__header { align-items: flex-start; flex-direction: column; }
   .plan-scheduling__planningLayout.has-drawer { grid-template-columns: minmax(0, 1fr); }
-  .plan-scheduling__drawer { position: absolute; z-index: 5; top: 0; left: 0; width: min(340px, calc(100% - 16px)); max-height: min(680px, calc(100dvh - 32px)); }
+  .plan-scheduling__drawer { position: absolute; z-index: 5; top: 0; left: 0; width: unquote("min(340px, calc(100% - 16px))"); max-height: unquote("min(680px, calc(100dvh - 32px))"); }
   .plan-scheduling__planFacts { grid-template-columns: repeat(2, 1fr); }
   .plan-scheduling__preview { position: static; }
   .plan-scheduling__moveSummary,
