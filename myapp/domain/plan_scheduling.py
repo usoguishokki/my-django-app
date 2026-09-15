@@ -3,6 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+DISPLAY_SHIFT_NAMES = ("1直", "2直", "3直", "休日")
+
+
+def is_display_shift(pattern) -> bool:
+    """Use the authoritative pattern name to define the planning UI universe."""
+
+    return getattr(pattern, "pattern_name", "") in DISPLAY_SHIFT_NAMES
+
+
 @dataclass(frozen=True)
 class WorkEffort:
     minutes: int | None

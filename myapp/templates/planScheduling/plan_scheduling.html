@@ -36,20 +36,16 @@
   <div class="plan-scheduling__feedback" data-role="feedback" role="status" aria-live="polite"></div>
 
   <section class="plan-scheduling__workspace" data-role="workspace" hidden>
-    <aside class="plan-scheduling__plans" aria-labelledby="plan-list-title">
+    <section class="plan-scheduling__chart" aria-labelledby="workload-chart-title">
       <div class="plan-scheduling__sectionHeading">
         <div>
-          <p class="plan-scheduling__weekLabel" data-role="week-label"></p>
-          <h2 id="plan-list-title">配布待ち計画</h2>
+          <p class="plan-scheduling__weekLabel">WORKLOAD OVERVIEW</p>
+          <h2 id="workload-chart-title">日別計画工数</h2>
         </div>
-        <span class="plan-scheduling__count" data-role="plan-count"></span>
+        <span class="plan-scheduling__legend">単位：分</span>
       </div>
-      <label class="plan-scheduling__planFilter">
-        <span>計画を絞り込み</span>
-        <input type="search" data-role="plan-filter" placeholder="点検No・設備・作業名">
-      </label>
-      <div class="plan-scheduling__planList" data-role="plan-list"></div>
-    </aside>
+      <div data-role="workload-chart"></div>
+    </section>
 
     <section class="plan-scheduling__matrix" aria-labelledby="matrix-title">
       <div class="plan-scheduling__sectionHeading">
@@ -61,10 +57,24 @@
       </div>
       <div class="plan-scheduling__dateGrid" data-role="date-grid"></div>
     </section>
+
+    <section class="plan-scheduling__plans" aria-labelledby="plan-list-title">
+      <div class="plan-scheduling__sectionHeading">
+        <div>
+          <p class="plan-scheduling__weekLabel" data-role="selected-slot-label">SLOT WORKSPACE</p>
+          <h2 id="plan-list-title">スロットの計画</h2>
+        </div>
+        <span class="plan-scheduling__count" data-role="plan-count"></span>
+      </div>
+      <div class="plan-scheduling__slotSummary" data-role="slot-summary"></div>
+      <div class="plan-scheduling__planList" data-role="plan-list">
+        <p class="plan-scheduling__workspaceEmpty">計画マトリクスから班を選択してください</p>
+      </div>
+    </section>
   </section>
 
   <section class="plan-scheduling__preview" data-role="preview" aria-live="polite">
-    <p class="plan-scheduling__previewEmpty">計画と移動先候補を選ぶと、工数の変化を確認できます。</p>
+    <p class="plan-scheduling__previewEmpty">計画の「移動」を選ぶと、移動先の工数変化を確認できます。</p>
   </section>
 </main>
 {% endblock %}

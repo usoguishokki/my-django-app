@@ -25,21 +25,21 @@ export function buildWorkloadPreview(plan, destinationSlot, sourceSlot) {
   if (!Number.isInteger(destinationSlot.workloadMinutes)) {
     return null;
   }
+  if (!Number.isInteger(sourceSlot?.workloadMinutes)) {
+    return null;
+  }
 
   const isSameSlot = plan.current.slotKey === destinationSlot.key;
   if (isSameSlot) return null;
-  const sourceWorkload = sourceSlot?.workloadMinutes;
-  const hasValidSourceWorkload = Number.isInteger(sourceWorkload);
+  const sourceWorkload = sourceSlot.workloadMinutes;
 
   return {
     isSameSlot,
     destinationBefore: destinationSlot.workloadMinutes,
     selectedPlan: plan.workMinutes,
     destinationAfter: destinationSlot.workloadMinutes + plan.workMinutes,
-    sourceBefore: hasValidSourceWorkload ? sourceWorkload : null,
-    sourceAfter: hasValidSourceWorkload
-      ? sourceWorkload - plan.workMinutes
-      : null,
+    sourceBefore: sourceWorkload,
+    sourceAfter: sourceWorkload - plan.workMinutes,
   };
 }
 
@@ -55,4 +55,10 @@ export function filterPlanSummaries(plans, query) {
     plan.equipmentName,
     plan.workName,
   ].some((value) => String(value || '').toLocaleLowerCase('ja').includes(normalized)));
+}
+
+export function plansForSlot(plans, slot) {
+  if (!slot || !Array.isArray(slot.planIds)) return [];
+  const planIds = new Set(slot.planIds);
+  return plans.filter((plan) => planIds.has(plan.planId));
 }
