@@ -222,7 +222,9 @@ SASS_PROCESSOR_INCLUDE_DIRS = [
 
 
 # SASS Processor settings
-SASS_PROCESSOR_ENABLED = True
+# Runtime template rendering must resolve the reviewed, committed CSS only.
+# Generate CSS explicitly with `python manage.py compilescss` during development.
+SASS_PROCESSOR_ENABLED = False
 SASS_PROCESSOR_AUTO_INCLUDE = True
 
 # Default primary key field type
