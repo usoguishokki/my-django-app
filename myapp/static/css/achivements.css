@@ -1,4 +1,13 @@
 @charset "UTF-8";
+.u-hidden {
+  display: none !important; }
+
+/*
+ * 一覧表示用カード
+ *
+ * 通知・フローティングカードとは異なり、
+ * 通常のドキュメントフロー内に配置する。
+ */
 .scrollbar-nice::-webkit-scrollbar {
   width: 10px;
   height: 10px; }
@@ -41,7 +50,7 @@ button, select {
   display: inline-block; }
 
 .filter-item {
-  margin: 10px;
+  margin: 5px;
   padding: 5px; }
   .filter-item label {
     display: block;
@@ -232,24 +241,11 @@ button, select {
 /* =========================
    レイアウト：フィルタ + テーブル
    ========================= */
-.parent-filterarea {
-  position: relative;
-  display: flex;
-  /* 左:フィルタ / 右:テーブル */
-  height: 100%;
-  overflow: hidden;
-  padding: 20px 0;
-  /* 上下だけ余白 */
-  gap: clamp(12px, 1.2vw, 20px);
-  /* ← ここで横の間隔をコントロール */ }
-
 .filter-container {
   z-index: 900;
   position: absolute;
-  top: 20px;
-  /* ← 単位pxを忘れず */
   left: 0;
-  height: calc(100% - 40px);
+  height: 100%;
   width: clamp(28px, 2.5vw, 40px);
   /* 2.5vwより安定（画面幅で極端にならない） */
   margin-right: 10px;
@@ -373,5 +369,3 @@ tbody tr > * {
       height: 50%; }
       .parent-filterarea .right-content .graph-container #myStackedBarChart {
         width: 100%; }
-
-/*# sourceMappingURL=achivements.css.map */

@@ -1,12 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
-{% load sass_tags %}
 
 {% block title %}部品検索{% endblock %}
 
 {% block extra_css %}
 <link
-    href="{% sass_src 'css/pages/parts_search.scss' %}"
+    href="{% static 'css/pages/parts_search.css' %}"
     rel="stylesheet"
     type="text/css"
 >

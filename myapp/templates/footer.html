@@ -1,7 +1,6 @@
-{% load sass_tags %}
-
+{% load static %}
 {% block extra_css %}
-    <link href="{% sass_src 'css/footer.scss' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/footer.css' %}" rel="stylesheet" type="text/css">
 {% endblock %}
 <footer>
     <div class="footer-content">

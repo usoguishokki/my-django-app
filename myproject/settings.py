@@ -47,6 +47,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'myapp.middlewares.ModelCacheMiddleware',
+    'myapp.middlewares.NoCacheHtmlMiddleware',
     'corsheaders.middleware.CorsMiddleware',
 ]
 
@@ -208,6 +209,10 @@ STATICFILES_DIRS = [
 #collectstaticを利用する時にコメント化を解除
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Production URLs include a content hash.  Enabling the JavaScript module
+# patterns also rewrites relative ES module imports to their hashed targets.
+STATICFILES_STORAGE = "myproject.staticfiles.StaticFilesStorage"
+
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
@@ -226,6 +231,10 @@ SASS_PROCESSOR_INCLUDE_DIRS = [
 # Generate CSS explicitly with `python manage.py compilescss` during development.
 SASS_PROCESSOR_ENABLED = False
 SASS_PROCESSOR_AUTO_INCLUDE = True
+# Keep committed CSS deterministic regardless of the local DEBUG value.
+SASS_OUTPUT_STYLE = "nested"
+# Explicit build manifests are the only source of SCSS entry points.
+SASS_TEMPLATE_EXTS = [".scss-build.html"]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

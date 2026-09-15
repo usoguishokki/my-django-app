@@ -1,12 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
-{% load sass_tags %}
 
 {% block title %}点検基準書{% endblock %}
 
 {% block extra_css %}
-    <link href="{% sass_src 'css/pages/inspectionStandards.scss' %}" rel="stylesheet" type="text/css">
-    <link href="{% sass_src 'css/components/drawer/_drawer.scss' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/pages/inspectionStandards.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/components/drawer/_drawer.css' %}" rel="stylesheet" type="text/css">
 
 {% endblock %}
 

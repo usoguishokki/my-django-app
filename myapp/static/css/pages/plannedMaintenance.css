@@ -2,6 +2,12 @@
 .u-hidden {
   display: none !important; }
 
+/*
+ * 一覧表示用カード
+ *
+ * 通知・フローティングカードとは異なり、
+ * 通常のドキュメントフロー内に配置する。
+ */
 .scrollbar-nice::-webkit-scrollbar {
   width: 10px;
   height: 10px; }
@@ -626,5 +632,3 @@ button, select {
 [data-ui-root="drawer"].planned-maintenance-container .drawer__table th:nth-child(8), [data-ui-root="drawer"].planned-maintenance-container .drawer__table td:nth-child(8),
 [data-ui-root="drawer"].planned-maintenance-container .drawer__table th:nth-child(9), [data-ui-root="drawer"].planned-maintenance-container .drawer__table td:nth-child(9) {
   width: 80px; }
-
-/*# sourceMappingURL=plannedMaintenance.css.map */

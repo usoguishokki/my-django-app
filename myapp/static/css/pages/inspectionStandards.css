@@ -3850,5 +3850,3 @@ tr.inspection-standard-history-table__row--cancelled:focus-visible {
 @media (max-width: 760px) {
   .inspection-standard-history-detail__approvalStatusGrid {
     grid-template-columns: 1fr; } }
-
-/*# sourceMappingURL=inspectionStandards.css.map */

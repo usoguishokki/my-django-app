@@ -1,12 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
-{% load sass_tags %}
 
 {% block title %}ホーム{% endblock %}
 
 {% block extra_css %}
-    <link href="{% sass_src 'css/pages/home.scss' %}" rel="stylesheet" type="text/css">
-    <link href="{% sass_src 'css/gantt.scss' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/pages/home.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/gantt.css' %}" rel="stylesheet" type="text/css">
 
 {% endblock %}
 

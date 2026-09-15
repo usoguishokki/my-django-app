@@ -1019,5 +1019,3 @@
 /* カードにマウスを乗せた時だけスクロール可能にする */
 .detail-card.click-card:hover .detail-card__body {
   overflow-y: auto; }
-
-/*# sourceMappingURL=_drawer.css.map */

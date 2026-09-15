@@ -1,9 +1,8 @@
 {% load static %}
-{% load sass_tags %}
 
 
 {% block extra_css %}
-    <link href="{% sass_src 'css/header.scss' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/header.css' %}" rel="stylesheet" type="text/css">
 {% endblock %}
 
 <header class="l-header">
