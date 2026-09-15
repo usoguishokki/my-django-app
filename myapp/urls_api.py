@@ -59,9 +59,15 @@ from myapp.api.card_work.card_work import (
 from myapp.api.parts_search.parts_search import (
     parts_search_api,
 )
+from myapp.api.plan_scheduling import plan_scheduling_week_api
 
 
 urlpatterns = [
+    path(
+        "plan-scheduling/week/",
+        plan_scheduling_week_api,
+        name="plan_scheduling_week_api",
+    ),
     path("kpi-matrix/", kpi_matrix_api, name="kpi_matrix_api"),
     path("kpi-matrix/cell-detail/", kpi_matrix_cell_detail_api, name="kpi_matrix_cell_detail_api"),
     path("plans/<int:plan_id>/detail/", plan_detail_api, name="plan_detail_api"),
