@@ -27,7 +27,7 @@ class SharedLayoutScrollContractTests(TestCase):
         self.assertIn("overflow-x: hidden;", child_rule)
         self.assertIn("overflow-y: auto;", child_rule)
 
-    def test_plan_scheduling_uses_natural_page_height(self):
+    def test_plan_scheduling_uses_shell_scroll_and_drawer_local_card_scroll(self):
         plan_scss = (STATIC_CSS / "pages" / "planScheduling.scss").read_text(
             encoding="utf-8"
         )
@@ -36,7 +36,13 @@ class SharedLayoutScrollContractTests(TestCase):
             ".plan-scheduling__planList {", 1
         )[1].split("}", 1)[0]
         self.assertNotIn("max-height", plan_list_rule)
-        self.assertNotIn("overflow", plan_list_rule)
+        self.assertIn("overflow-y: auto;", plan_list_rule)
+        workspace_rule = plan_scss.split(
+            ".plan-scheduling__workspace {", 1
+        )[1].split("}", 1)[0]
+        self.assertNotIn("overflow", workspace_rule)
+        self.assertIn(".plan-scheduling__drawer {", plan_scss)
+        self.assertIn("max-height: min(720px, calc(100dvh - 32px));", plan_scss)
         self.assertIn(".plan-scheduling__matrix,", plan_scss)
         self.assertIn("min-width: 0;", plan_scss)
         self.assertIn(".plan-scheduling__dateGrid {", plan_scss)
@@ -61,3 +67,15 @@ class SharedLayoutScrollContractTests(TestCase):
             with self.subTest(template=relative_path):
                 template = (TEMPLATES / relative_path).read_text(encoding="utf-8")
                 self.assertIn(root_marker, template)
+
+    def test_plan_scheduling_uses_prebuilt_css_with_runtime_sass_disabled(self):
+        template = (
+            TEMPLATES / "planScheduling" / "plan_scheduling.html"
+        ).read_text(encoding="utf-8")
+        settings_source = (
+            Path(__file__).resolve().parents[1] / "myproject" / "settings.py"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("{% static 'css/pages/planScheduling.css' %}", template)
+        self.assertNotIn("sass_src", template)
+        self.assertIn("SASS_PROCESSOR_ENABLED = False", settings_source)

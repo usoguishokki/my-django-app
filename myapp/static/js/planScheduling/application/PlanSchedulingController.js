@@ -15,6 +15,15 @@
  * - GET通信とDOMイベント登録
  */
 
+import {
+  PlanSchedulingMode,
+  beginMove,
+  cancelMove,
+  closeDrawer,
+  initialInteractionState,
+  selectMatrixSlot,
+} from '../domain/PlanSchedulingPreviewPolicy.js';
+
 export class PlanSchedulingController {
   constructor({ root, apiClient, renderer, buildPreview, selectSlotPlans }) {
     this.root = root;
@@ -23,9 +32,7 @@ export class PlanSchedulingController {
     this.buildPreview = buildPreview;
     this.selectSlotPlans = selectSlotPlans;
     this.state = null;
-    this.selectedPlanId = null;
-    this.selectedSlotKey = '';
-    this.destinationSlotKey = '';
+    this.interaction = initialInteractionState();
   }
 
   async init() {
@@ -46,9 +53,7 @@ export class PlanSchedulingController {
     this.renderer.renderLoading();
     try {
       this.state = await this.apiClient.fetchWeek(targetDate);
-      this.selectedPlanId = null;
-      this.selectedSlotKey = '';
-      this.destinationSlotKey = '';
+      this.interaction = initialInteractionState();
       this.renderer.renderState(this.state, this.selection());
     } catch (error) {
       this.renderer.renderError(error.message);
@@ -64,28 +69,34 @@ export class PlanSchedulingController {
   handleClick(event) {
     const cancelButton = event.target.closest('[data-action="cancel-move"]');
     if (cancelButton) {
-      this.selectedPlanId = null;
-      this.destinationSlotKey = '';
+      this.interaction = cancelMove(this.interaction);
+      this.renderSelection();
+      return;
+    }
+
+    const closeButton = event.target.closest('[data-action="close-drawer"]');
+    if (closeButton) {
+      this.interaction = closeDrawer(this.interaction);
       this.renderSelection();
       return;
     }
 
     const moveButton = event.target.closest('[data-action="move"]');
     if (moveButton && !moveButton.disabled) {
-      this.selectedPlanId = Number(moveButton.dataset.planId);
-      this.destinationSlotKey = '';
+      this.interaction = beginMove(
+        this.interaction,
+        Number(moveButton.dataset.planId),
+      );
       this.renderSelection();
       return;
     }
 
     const slotButton = event.target.closest('[data-slot-key]');
     if (slotButton && !slotButton.disabled) {
-      if (this.selectedPlanId !== null) {
-        this.destinationSlotKey = slotButton.dataset.slotKey;
-      } else {
-        this.selectedSlotKey = slotButton.dataset.slotKey;
-        this.destinationSlotKey = '';
-      }
+      this.interaction = selectMatrixSlot(
+        this.interaction,
+        slotButton.dataset.slotKey,
+      );
       this.renderSelection();
     }
   }
@@ -95,13 +106,21 @@ export class PlanSchedulingController {
   }
 
   selection() {
-    const plan = this.state?.plans.find((item) => item.planId === this.selectedPlanId);
+    const plan = this.state?.plans.find(
+      (item) => item.planId === this.interaction.movingPlanId,
+    );
     const slots = this.state?.dates.flatMap((item) => item.slots) || [];
-    const selectedSlot = slots.find((item) => item.key === this.selectedSlotKey);
-    const destination = slots.find((item) => item.key === this.destinationSlotKey);
+    const selectedSlot = slots.find(
+      (item) => item.key === this.interaction.selectedSlotKey,
+    );
+    const destination = slots.find(
+      (item) => item.key === this.interaction.destinationSlotKey,
+    );
     const source = slots.find((item) => item.key === plan?.current.slotKey);
     return {
       plan,
+      mode: this.interaction.mode,
+      isMoving: this.interaction.mode === PlanSchedulingMode.MOVING,
       selectedSlot,
       slotPlans: selectedSlot
         ? this.selectSlotPlans(this.state.plans, selectedSlot)

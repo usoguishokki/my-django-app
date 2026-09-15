@@ -1,11 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
-{% load sass_tags %}
 
 {% block title %}計画調整{% endblock %}
 
 {% block extra_css %}
-<link href="{% sass_src 'css/pages/planScheduling.scss' %}" rel="stylesheet" type="text/css">
+<link href="{% static 'css/pages/planScheduling.css' %}" rel="stylesheet" type="text/css">
 {% endblock %}
 
 {% block header %}
@@ -36,7 +35,21 @@
   <div class="plan-scheduling__feedback" data-role="feedback" role="status" aria-live="polite"></div>
 
   <section class="plan-scheduling__workspace" data-role="workspace" hidden>
-    <section class="plan-scheduling__chart" aria-labelledby="workload-chart-title">
+    <div class="plan-scheduling__planningLayout" data-role="planning-layout">
+      <aside class="plan-scheduling__drawer" data-role="slot-drawer" aria-labelledby="drawer-date" hidden>
+        <header class="plan-scheduling__drawerHeader">
+          <div>
+            <h2 id="drawer-date" data-role="drawer-date"></h2>
+            <p data-role="drawer-slot"></p>
+            <strong data-role="drawer-summary"></strong>
+          </div>
+          <button type="button" class="plan-scheduling__drawerClose" data-action="close-drawer" aria-label="計画ドロワーを閉じる">×</button>
+        </header>
+        <div class="plan-scheduling__planList" data-role="plan-list"></div>
+      </aside>
+
+      <div class="plan-scheduling__planningMain">
+        <section class="plan-scheduling__chart" aria-labelledby="workload-chart-title">
       <div class="plan-scheduling__sectionHeading">
         <div>
           <p class="plan-scheduling__weekLabel">WORKLOAD OVERVIEW</p>
@@ -45,9 +58,9 @@
         <span class="plan-scheduling__legend">単位：分</span>
       </div>
       <div data-role="workload-chart"></div>
-    </section>
+        </section>
 
-    <section class="plan-scheduling__matrix" aria-labelledby="matrix-title">
+        <section class="plan-scheduling__matrix" aria-labelledby="matrix-title">
       <div class="plan-scheduling__sectionHeading">
         <div>
           <p class="plan-scheduling__weekLabel" data-role="week-range"></p>
@@ -56,21 +69,9 @@
         <span class="plan-scheduling__legend">単位：分</span>
       </div>
       <div class="plan-scheduling__dateGrid" data-role="date-grid"></div>
-    </section>
-
-    <section class="plan-scheduling__plans" aria-labelledby="plan-list-title">
-      <div class="plan-scheduling__sectionHeading">
-        <div>
-          <p class="plan-scheduling__weekLabel" data-role="selected-slot-label">SLOT WORKSPACE</p>
-          <h2 id="plan-list-title">スロットの計画</h2>
-        </div>
-        <span class="plan-scheduling__count" data-role="plan-count"></span>
+        </section>
       </div>
-      <div class="plan-scheduling__slotSummary" data-role="slot-summary"></div>
-      <div class="plan-scheduling__planList" data-role="plan-list">
-        <p class="plan-scheduling__workspaceEmpty">計画マトリクスから班を選択してください</p>
-      </div>
-    </section>
+    </div>
   </section>
 
   <section class="plan-scheduling__preview" data-role="preview" aria-live="polite">

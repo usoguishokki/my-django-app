@@ -44,7 +44,7 @@ export function buildWorkloadPreview(plan, destinationSlot, sourceSlot) {
 }
 
 export function formatMinutes(value) {
-  return Number.isInteger(value) ? `${value}分` : '集計不可';
+  return Number.isInteger(value) ? `${value.toLocaleString('ja-JP')}分` : '集計不可';
 }
 
 export function filterPlanSummaries(plans, query) {
@@ -61,4 +61,52 @@ export function plansForSlot(plans, slot) {
   if (!slot || !Array.isArray(slot.planIds)) return [];
   const planIds = new Set(slot.planIds);
   return plans.filter((plan) => planIds.has(plan.planId));
+}
+
+export const PlanSchedulingMode = Object.freeze({
+  NORMAL: 'normal',
+  MOVING: 'moving',
+});
+
+export function initialInteractionState() {
+  return {
+    mode: PlanSchedulingMode.NORMAL,
+    selectedSlotKey: '',
+    movingPlanId: null,
+    destinationSlotKey: '',
+  };
+}
+
+export function selectMatrixSlot(interaction, slotKey) {
+  if (interaction.mode === PlanSchedulingMode.MOVING) {
+    return { ...interaction, destinationSlotKey: slotKey };
+  }
+  return {
+    ...interaction,
+    selectedSlotKey: slotKey,
+    destinationSlotKey: '',
+  };
+}
+
+export function beginMove(interaction, planId) {
+  if (!Number.isInteger(planId)) return interaction;
+  return {
+    ...interaction,
+    mode: PlanSchedulingMode.MOVING,
+    movingPlanId: planId,
+    destinationSlotKey: '',
+  };
+}
+
+export function cancelMove(interaction) {
+  return {
+    ...interaction,
+    mode: PlanSchedulingMode.NORMAL,
+    movingPlanId: null,
+    destinationSlotKey: '',
+  };
+}
+
+export function closeDrawer() {
+  return initialInteractionState();
 }
