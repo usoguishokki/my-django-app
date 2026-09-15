@@ -13,6 +13,14 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
 let _loadingClosing = false;
 let _loadingClosed  = false;
+let _loadingInitialized = false;
+let _loadingFallbackTimer = null;
+
+function clearLoadingFallback() {
+    if (_loadingFallbackTimer === null) return;
+    clearTimeout(_loadingFallbackTimer);
+    _loadingFallbackTimer = null;
+}
 
 /**
  * ローディング画面・表示
@@ -32,7 +40,7 @@ export const showLoadingScreen = () => {
 }
 
 /**
- * ローディング画面・非表示(app:ready で呼ぶ)
+ * ローディング画面・非表示
  */
 export const hideLoadingScreen = () => {
     const loading = document.getElementById('loading');
@@ -41,6 +49,7 @@ export const hideLoadingScreen = () => {
     if (_loadingClosing || _loadingClosed) return;
 
     _loadingClosing = true;
+    clearLoadingFallback();
 
     loading.classList.remove('loading-active');
     loading.classList.add('loading-hidden');
@@ -65,6 +74,7 @@ export const forceHideLoadingScreen = () => {
     const parentGrid = document.getElementById('parentGrid');
     if (!loading || !parentGrid) return;
 
+    clearLoadingFallback();
     loading.classList.remove('loading-active');
     loading.classList.add('loading-hidden');
     loading.style.display = 'none';
@@ -219,8 +229,8 @@ export async function withElementLoading(
 
 
 /**
- * 初期化：app:ready を一度だけ待ち、閉じる。
- * ついでに window.load をフェイルセーフで待つ（画像等の読込が遅延しても閉じられるように）。
+ * Initialize the global loading lifecycle once per document.
+ * app:ready may close it early; document load and the timeout guarantee release.
  */
 export const initializeLoadingScreen = () => {
     const loading = document.getElementById('loading');
@@ -229,22 +239,31 @@ export const initializeLoadingScreen = () => {
         console.error('ローディング要素が見つかりません');
         return;
     }
+    if (_loadingInitialized) return;
 
+    _loadingInitialized = true;
     resetLoadingState();
     showLoadingScreen();
 
     window.addEventListener('app:ready', hideLoadingScreen, { once: true });
 
-    window.addEventListener('load', () => {
+    const hideWhenDocumentLoaded = () => {
         const loading = document.getElementById('loading');
         if (!loading) return;
         if (loading.classList.contains('loading-hidden')) return;
         if (loading.style.display !== 'none') hideLoadingScreen();
-    }, { once: true });
+    };
 
-    setTimeout(() => {
+    _loadingFallbackTimer = setTimeout(() => {
+        _loadingFallbackTimer = null;
         if (loading.style.display !== 'none') hideLoadingScreen();
     }, 10000);
+
+    if (document.readyState === 'complete') {
+        hideWhenDocumentLoaded();
+    } else {
+        window.addEventListener('load', hideWhenDocumentLoaded, { once: true });
+    }
 };
 
 
