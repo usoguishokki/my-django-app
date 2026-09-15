@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load static %}
+{% load sass_tags %}
+
+{% block title %}計画調整{% endblock %}
+
+{% block extra_css %}
+<link href="{% sass_src 'css/pages/planScheduling.scss' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block header %}
+{% include "header.html" %}
+{% endblock %}
+
+{% block content %}
+<main class="plan-scheduling" data-role="plan-scheduling-root">
+  <header class="plan-scheduling__header">
+    <div>
+      <p class="plan-scheduling__eyebrow">PLAN SCHEDULING</p>
+      <h1 class="plan-scheduling__title">計画調整</h1>
+      <p class="plan-scheduling__description">配布待ち計画の工数を、保全週・日付・直・班で確認します。</p>
+    </div>
+    <form class="plan-scheduling__dateForm" data-role="week-form">
+      <label for="plan-scheduling-date">確認する日</label>
+      <div class="plan-scheduling__dateControls">
+        <input id="plan-scheduling-date" type="date" data-role="target-date">
+        <button type="submit" class="ui-btn ui-btn--outline">週を表示</button>
+      </div>
+    </form>
+  </header>
+
+  <div class="plan-scheduling__notice" role="note">
+    閲覧・プレビュー専用です。計画データは変更されません。
+  </div>
+
+  <div class="plan-scheduling__feedback" data-role="feedback" role="status" aria-live="polite"></div>
+
+  <section class="plan-scheduling__workspace" data-role="workspace" hidden>
+    <aside class="plan-scheduling__plans" aria-labelledby="plan-list-title">
+      <div class="plan-scheduling__sectionHeading">
+        <div>
+          <p class="plan-scheduling__weekLabel" data-role="week-label"></p>
+          <h2 id="plan-list-title">配布待ち計画</h2>
+        </div>
+        <span class="plan-scheduling__count" data-role="plan-count"></span>
+      </div>
+      <label class="plan-scheduling__planFilter">
+        <span>計画を絞り込み</span>
+        <input type="search" data-role="plan-filter" placeholder="点検No・設備・作業名">
+      </label>
+      <div class="plan-scheduling__planList" data-role="plan-list"></div>
+    </aside>
+
+    <section class="plan-scheduling__matrix" aria-labelledby="matrix-title">
+      <div class="plan-scheduling__sectionHeading">
+        <div>
+          <p class="plan-scheduling__weekLabel" data-role="week-range"></p>
+          <h2 id="matrix-title">計画工数マトリクス</h2>
+        </div>
+        <span class="plan-scheduling__legend">単位：分</span>
+      </div>
+      <div class="plan-scheduling__dateGrid" data-role="date-grid"></div>
+    </section>
+  </section>
+
+  <section class="plan-scheduling__preview" data-role="preview" aria-live="polite">
+    <p class="plan-scheduling__previewEmpty">計画と移動先候補を選ぶと、工数の変化を確認できます。</p>
+  </section>
+</main>
+{% endblock %}
+
+{% block script %}
+<script type="module" src="{% static 'js/planScheduling/pages/planSchedulingPage.js' %}"></script>
+{% endblock %}

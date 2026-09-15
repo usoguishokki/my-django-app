@@ -1,0 +1,265 @@
+from datetime import date
+from pathlib import Path
+from types import SimpleNamespace
+from unittest import TestCase
+from unittest.mock import MagicMock, patch
+
+from django.contrib.auth.models import AnonymousUser
+from django.test import RequestFactory
+
+from myapp.api.plan_scheduling import plan_scheduling_week_api
+from myapp.domain.plan_scheduling import (
+    calculate_work_minutes,
+    get_fiscal_year,
+    resolve_distinct_shift,
+)
+from myapp.domain.plan_status import PlanStatus
+from myapp.selectors.plan_scheduling import (
+    select_waiting_plans_for_maintenance_dates,
+)
+from myapp.services.plan_scheduling import build_plan_scheduling_week_state
+
+
+def make_day(day_id, value, *, alias="9月3週目", week=3):
+    return SimpleNamespace(
+        h_id=day_id,
+        h_date=value,
+        date_alias=alias,
+        h_week=week,
+    )
+
+
+def make_calendar(row_id, day, team_id, team_name, pattern_id, pattern_name):
+    return SimpleNamespace(
+        c_id=row_id,
+        c_date_id=day.h_id,
+        c_date=day,
+        affilation_id=team_id,
+        affilation=SimpleNamespace(
+            affilation_id=team_id,
+            affilation=team_name,
+        ),
+        pattern_id=pattern_id,
+        pattern=SimpleNamespace(
+            pattern_id=pattern_id,
+            pattern_name=pattern_name,
+        ),
+    )
+
+
+def make_plan(plan_id, day, team_id, *, man_hours=60, people=2):
+    team = SimpleNamespace(affilation_id=team_id, affilation="A班")
+    control = SimpleNamespace(machine="設備A")
+    check = SimpleNamespace(
+        inspection_no=f"CARD-{plan_id}",
+        wark_name="月例点検",
+        man_hours=man_hours,
+        required_person_count=people,
+        control_no=control,
+    )
+    return SimpleNamespace(
+        plan_id=plan_id,
+        status=PlanStatus.WAITING.value,
+        p_date_id=day.h_id,
+        p_date=day,
+        planned_affilation_id=team_id,
+        planned_affilation=team,
+        inspection_no=check,
+    )
+
+
+class PlanSchedulingDomainTests(TestCase):
+    def test_work_minutes_are_person_minutes(self):
+        effort = calculate_work_minutes(man_hours=60, required_person_count=2)
+        self.assertTrue(effort.is_valid)
+        self.assertEqual(120, effort.minutes)
+
+    def test_invalid_effort_is_not_defaulted_to_zero(self):
+        for man_hours, people in ((None, 1), (0, 1), (10, None), (10, 0)):
+            with self.subTest(man_hours=man_hours, people=people):
+                effort = calculate_work_minutes(
+                    man_hours=man_hours,
+                    required_person_count=people,
+                )
+                self.assertFalse(effort.is_valid)
+                self.assertIsNone(effort.minutes)
+
+    def test_identical_calendar_duplicates_resolve_one_shift(self):
+        day = make_day(1, date(2026, 9, 15))
+        rows = [
+            make_calendar(1, day, 1, "A班", 1, "1直"),
+            make_calendar(2, day, 1, "A班", 1, "1直"),
+        ]
+        result = resolve_distinct_shift(rows)
+        self.assertTrue(result.is_valid)
+        self.assertEqual(1, result.pattern.pattern_id)
+
+    def test_ambiguous_distinct_shifts_are_invalid(self):
+        day = make_day(1, date(2026, 9, 15))
+        rows = [
+            make_calendar(1, day, 1, "A班", 1, "1直"),
+            make_calendar(2, day, 1, "A班", 2, "2直"),
+        ]
+        result = resolve_distinct_shift(rows)
+        self.assertFalse(result.is_valid)
+        self.assertEqual("AMBIGUOUS_SHIFT", result.issue_code)
+
+    def test_fiscal_year_identity_handles_year_boundary(self):
+        self.assertEqual(2026, get_fiscal_year(date(2026, 12, 28)))
+        self.assertEqual(2026, get_fiscal_year(date(2027, 1, 4)))
+
+
+class PlanSchedulingSelectorTests(TestCase):
+    def test_waiting_selector_applies_status_and_organization_scope(self):
+        manager = MagicMock()
+        queryset = manager.select_related.return_value
+        queryset.filter.return_value.order_by.return_value = []
+
+        with patch("myapp.selectors.plan_scheduling.Plan_tb.objects", manager):
+            result = select_waiting_plans_for_maintenance_dates(
+                maintenance_date_ids=[10, 11],
+                organization_code="ORG1",
+            )
+
+        self.assertEqual([], result)
+        filters = queryset.filter.call_args.kwargs
+        self.assertEqual(PlanStatus.WAITING.value, filters["status"])
+        self.assertEqual([10, 11], filters["p_date_id__in"])
+        self.assertEqual(
+            "ORG1",
+            filters[
+                "inspection_no__control_no__line_name__organization__organization"
+            ],
+        )
+
+
+class PlanSchedulingStateTests(TestCase):
+    def build_state(self, *, days, calendars, plans):
+        with (
+            patch(
+                "myapp.services.plan_scheduling.select_maintenance_week",
+                return_value=days,
+            ),
+            patch(
+                "myapp.services.plan_scheduling.select_calendar_rows_for_maintenance_dates",
+                return_value=calendars,
+            ),
+            patch(
+                "myapp.services.plan_scheduling.select_waiting_plans_for_maintenance_dates",
+                return_value=plans,
+            ) as select_plans,
+        ):
+            state = build_plan_scheduling_week_state(
+                target_date=days[0].h_date,
+                organization_code="ORG1",
+            )
+        select_plans.assert_called_once_with(
+            maintenance_date_ids=[day.h_id for day in days],
+            organization_code="ORG1",
+        )
+        return state
+
+    def test_chronological_week_and_slot_workload(self):
+        first = make_day(1, date(2026, 9, 14))
+        second = make_day(2, date(2026, 9, 15))
+        calendars = [
+            make_calendar(1, first, 1, "A班", 1, "1直"),
+            make_calendar(2, second, 1, "A班", 2, "2直"),
+        ]
+        plans = [make_plan(10, first, 1), make_plan(11, first, 1, man_hours=30)]
+
+        state = self.build_state(days=[first, second], calendars=calendars, plans=plans)
+
+        self.assertEqual("FY2026:2026-09-14", state["week"]["key"])
+        self.assertEqual(["2026-09-14", "2026-09-15"], [d["date"] for d in state["dates"]])
+        self.assertEqual(180, state["dates"][0]["slots"][0]["workloadMinutes"])
+        self.assertEqual("180分", state["dates"][0]["slots"][0]["workloadLabel"])
+        self.assertEqual(2, len(state["plans"]))
+        self.assertFalse(state["capabilities"]["canReschedule"])
+
+    def test_duplicate_rows_do_not_double_workload(self):
+        day = make_day(1, date(2026, 9, 15))
+        calendars = [
+            make_calendar(1, day, 1, "A班", 1, "1直"),
+            make_calendar(2, day, 1, "A班", 1, "1直"),
+        ]
+        state = self.build_state(
+            days=[day],
+            calendars=calendars,
+            plans=[make_plan(10, day, 1)],
+        )
+        self.assertEqual(1, len(state["dates"][0]["slots"]))
+        self.assertEqual(120, state["dates"][0]["slots"][0]["workloadMinutes"])
+
+    def test_ambiguous_slot_and_invalid_effort_are_reported_safely(self):
+        day = make_day(1, date(2026, 9, 15))
+        calendars = [
+            make_calendar(1, day, 1, "A班", 1, "1直"),
+            make_calendar(2, day, 1, "A班", 2, "2直"),
+        ]
+        state = self.build_state(
+            days=[day],
+            calendars=calendars,
+            plans=[make_plan(10, day, 1, man_hours=0)],
+        )
+        slot = state["dates"][0]["slots"][0]
+        plan = state["plans"][0]
+        self.assertFalse(slot["isValid"])
+        self.assertIsNone(slot["workloadMinutes"])
+        self.assertEqual("集計不可", slot["workloadLabel"])
+        self.assertFalse(plan["isPreviewable"])
+        self.assertIsNone(plan["workMinutes"])
+        self.assertTrue(state["dataQuality"]["hasErrors"])
+
+    def test_reserve_week_is_preserved(self):
+        day = make_day(1, date(2027, 1, 6), alias="予備週", week=6)
+        state = self.build_state(
+            days=[day],
+            calendars=[make_calendar(1, day, 1, "A班", 1, "1直")],
+            plans=[],
+        )
+        self.assertEqual("予備週", state["week"]["label"])
+        self.assertTrue(state["dates"][0]["isReserveWeek"])
+        self.assertEqual(0, state["dates"][0]["slots"][0]["workloadMinutes"])
+
+
+class PlanSchedulingBoundaryTests(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def test_api_requires_login(self):
+        request = self.factory.get("/api/plan-scheduling/week/")
+        request.user = AnonymousUser()
+        response = plan_scheduling_week_api(request)
+        self.assertEqual(302, response.status_code)
+
+    def test_api_passes_authenticated_organization_to_service(self):
+        request = self.factory.get(
+            "/api/plan-scheduling/week/",
+            {"date": "2026-09-15"},
+        )
+        request.user = SimpleNamespace(is_authenticated=True)
+        request.organization_code = "ORG1"
+        with patch(
+            "myapp.api.plan_scheduling.build_plan_scheduling_week_state",
+            return_value={"week": {}, "dates": [], "plans": []},
+        ) as build_state:
+            response = plan_scheduling_week_api(request)
+        self.assertEqual(200, response.status_code)
+        build_state.assert_called_once_with(
+            target_date=date(2026, 9, 15),
+            organization_code="ORG1",
+        )
+
+    def test_phase_a_backend_contains_no_mutation_calls(self):
+        root = Path(__file__).resolve().parent
+        sources = "\n".join(
+            (root / relative).read_text(encoding="utf-8")
+            for relative in (
+                "api/plan_scheduling.py",
+                "selectors/plan_scheduling.py",
+                "services/plan_scheduling.py",
+            )
+        )
+        for forbidden in (".save(", ".create(", ".update(", ".delete(", "bulk_create"):
+            self.assertNotIn(forbidden, sources)

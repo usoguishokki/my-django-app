@@ -22,6 +22,11 @@
                 <span class="menu-label">タイムテーブル</span>
             </a>
 
+            <a class="menu-item plan-scheduling loading-link" href="{% url 'plan_scheduling' %}">
+                <img src="{% static 'img/calendar.png' %}" alt="計画調整アイコン" class="icon">
+                <span class="menu-label">計画調整</span>
+            </a>
+
             <a class="menu-item check loading-link" href="{% url 'workContets' %}">
                 <img src="{% static 'img/check.png' %}" alt="確認アイコン" class="icon">
                 <span class="menu-label">確認</span>

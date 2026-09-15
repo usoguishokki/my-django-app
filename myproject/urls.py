@@ -71,6 +71,11 @@ urlpatterns = [
     path("api/", include("myapp.urls_api")),
     path('csv-download/', views.csv_download_page, name='csvDownloadPage'),
     path('timeTable/', views.schedule_page, name='timeTable'),
+    path(
+        'plan-scheduling/',
+        views.plan_scheduling_page,
+        name='plan_scheduling',
+    ),
     path("card-work/", views.card_work, name="card_work"),
     path(
         "parts-search/",

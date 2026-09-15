@@ -1481,6 +1481,11 @@ def schedule_page(request):
 
     return render(request, "schedule/schedule.html", context)
 
+
+@login_required
+def plan_scheduling_page(request):
+    return render(request, "planScheduling/plan_scheduling.html")
+
 """
 def nika_app_view(request):
     logger.debug(f"🔍 request.COOKIES in nika_app_view: {request.COOKIES}")
