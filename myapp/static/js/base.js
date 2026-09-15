@@ -1,7 +1,10 @@
 import {
     forceHideLoadingScreen,
+    initializeLoadingScreen,
     setupLoadingOnLinkClick,
 } from './manager/loadingManager.js';
+
+initializeLoadingScreen();
 
 function handlePageShow(event) {
     const navEntries = performance.getEntriesByType('navigation');
