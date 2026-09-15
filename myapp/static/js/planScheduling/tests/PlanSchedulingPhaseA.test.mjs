@@ -177,10 +177,10 @@ test('renderer exposes chart, matrix, drawer, and selection contracts', () => {
 
 
 test('stacked bars use stable distinct A/B/C colors and contain no text labels', async () => {
-  const { PlanSchedulingRenderer, TEAM_COLOR_CLASSES } = await importRenderer();
+  const { PlanSchedulingRenderer, TEAM_COLORS } = await importRenderer();
   assert.deepEqual(
-    { ...TEAM_COLOR_CLASSES },
-    { 'A班': 'team-a', 'B班': 'team-b', 'C班': 'team-c' },
+    { ...TEAM_COLORS },
+    { 'A班': '#0072B2', 'B班': '#009E73', 'C班': '#D55E00' },
   );
   const renderer = new PlanSchedulingRenderer({});
   const html = renderer.workloadChartTemplate({
@@ -198,30 +198,60 @@ test('stacked bars use stable distinct A/B/C colors and contain no text labels',
     }],
   });
   assert.match(html, /9月16日（水）/);
-  assert.match(html, /team-a/);
-  assert.match(html, /team-b/);
-  assert.match(html, /team-c/);
+  assert.match(html, /--plan-scheduling-team-color:#0072B2/);
+  assert.match(html, /--plan-scheduling-team-color:#009E73/);
+  assert.match(html, /--plan-scheduling-team-color:#D55E00/);
+  for (const color of Object.values(TEAM_COLORS)) {
+    assert.equal([...html.matchAll(new RegExp(color, 'g'))].length, 2);
+  }
   assert.match(html, /aria-describedby="plan-workload-tooltip-0"/);
   assert.match(html, /role="tooltip"/);
   assert.match(html, /A班[\s\S]*600分/);
   assert.match(html, /B班[\s\S]*800分/);
   assert.match(html, /C班[\s\S]*400分/);
-  assert.match(html, /合計[\s\S]*1,800分/);
+  assert.match(html, /合計[\s\S]*1800分/);
   const segments = [...html.matchAll(/<span class="plan-scheduling__chartSegment[^>]*>(.*?)<\/span>/g)];
   assert.equal(segments.length, 3);
   assert.ok(segments.every((match) => match[1] === ''));
+  assert.doesNotMatch(html, /chartLegend/);
 });
 
 
-test('matrix uses chart shift universe to exclude 常昼 and retain 休日', async () => {
+test('chart tooltip and total defensively exclude values outside A/B/C scope', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const html = new PlanSchedulingRenderer({}).workloadChartTemplate({
+    dates: [{
+      date: '2026-09-16', label: '9/16（水）', totalWorkloadMinutes: 999,
+      totalWorkloadLabel: '999分',
+      teamWorkloads: [
+        { teamName: 'A班', workloadMinutes: 100, workloadLabel: '100分' },
+        { teamName: 'B班', workloadMinutes: 200, workloadLabel: '200分' },
+        { teamName: 'C班', workloadMinutes: 300, workloadLabel: '300分' },
+        { teamName: '連2_A', workloadMinutes: 400, workloadLabel: '400分' },
+        { teamName: '連2_B', workloadMinutes: 500, workloadLabel: '500分' },
+        { teamName: '常昼', workloadMinutes: 600, workloadLabel: '600分' },
+      ],
+    }],
+  });
+  assert.match(html, /600分/);
+  assert.doesNotMatch(html, /連2_A|連2_B|常昼|999分/);
+});
+
+
+test('matrix uses the approved chart universe to exclude 常昼 and 連2 teams while retaining 休日', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
   const renderer = new PlanSchedulingRenderer({});
   const [day] = renderer.matrixDates({
-    workloadChart: { shiftNames: ['1直', '2直', '3直', '休日'] },
+    workloadChart: {
+      shiftNames: ['1直', '2直', '3直', '休日'],
+      teams: [{ name: 'A班' }, { name: 'B班' }, { name: 'C班' }],
+    },
     dates: [{ slots: [
-      { shift: { name: '1直' } },
-      { shift: { name: '休日' } },
-      { shift: { name: '常昼' } },
+      { shift: { name: '1直' }, team: { name: 'A班' } },
+      { shift: { name: '休日' }, team: { name: 'C班' } },
+      { shift: { name: '常昼' }, team: { name: 'A班' } },
+      { shift: { name: '1直' }, team: { name: '連2_A' } },
+      { shift: { name: '2直' }, team: { name: '連2_B' } },
     ] }],
   });
   assert.deepEqual(day.slots.map((item) => item.shift.name), ['1直', '休日']);
@@ -237,6 +267,7 @@ test('drawer is absent before selection and old lower Plan stack is removed', ()
   assert.match(template, /data-action="close-drawer"/);
   assert.doesNotMatch(template, /plan-scheduling__plans/);
   assert.doesNotMatch(template, /selected-slot-label|slot-summary/);
+  assert.doesNotMatch(template, /plan-scheduling__legend/);
 });
 
 
@@ -381,8 +412,7 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   );
   assert.doesNotMatch(scss, /#edf1f4/i);
   assert.match(scss, /\.plan-scheduling__chartBar[^}]*background:\s*transparent/s);
-  assert.match(scss, /--ps-team-a:/);
-  assert.match(scss, /--ps-team-b:/);
-  assert.match(scss, /--ps-team-c:/);
+  assert.match(scss, /--plan-scheduling-team-color/);
+  assert.doesNotMatch(scss, /chartLegend|team-other/);
   assert.match(scss, /\.plan-scheduling__planList[^}]*overflow-y:\s*auto/s);
 });

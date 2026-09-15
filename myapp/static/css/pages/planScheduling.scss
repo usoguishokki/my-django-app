@@ -3,10 +3,6 @@
   --ps-blue-soft: #eaf3fb;
   --ps-border: #d8e0e8;
   --ps-ink: #183044;
-  --ps-team-a: #1769aa;
-  --ps-team-b: #16856f;
-  --ps-team-c: #c46a14;
-  --ps-team-other: #6f647d;
   display: grid;
   gap: 16px;
   min-width: 0;
@@ -105,8 +101,7 @@
 .plan-scheduling__sectionHeading { justify-content: space-between; margin-bottom: 12px; }
 .plan-scheduling__sectionHeading h2 { font-size: 18px; }
 .plan-scheduling__weekLabel { color: var(--ps-blue); font-size: 13px; font-weight: 700; }
-.plan-scheduling__count,
-.plan-scheduling__legend { color: #647482; font-size: 13px; }
+.plan-scheduling__count { color: #647482; font-size: 13px; }
 
 .plan-scheduling__planList {
   display: grid;
@@ -174,9 +169,6 @@
 .plan-scheduling__quality,
 .plan-scheduling__slot small { color: #a02d2d; font-size: 12px; }
 
-.plan-scheduling__chartLegend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; margin-bottom: 8px; }
-.plan-scheduling__chartLegend span { display: inline-flex; align-items: center; gap: 5px; color: #536a7b; font-size: 12px; }
-.plan-scheduling__chartLegend i { flex: 0 0 auto; width: 11px; height: 11px; border-radius: 2px; }
 .plan-scheduling__chartPlot { display: flex; min-height: 230px; overflow-x: auto; border-bottom: 1px solid var(--ps-border); }
 .plan-scheduling__yAxis { align-self: center; color: #667786; font-size: 11px; writing-mode: vertical-rl; transform: rotate(180deg); }
 .plan-scheduling__chartColumns { display: flex; flex: 1; align-items: flex-end; justify-content: space-around; gap: 16px; min-width: 620px; padding: 24px 18px 0; border-left: 1px solid var(--ps-border); }
@@ -184,10 +176,7 @@
 .plan-scheduling__chartBar { display: flex; flex-direction: column-reverse; justify-content: flex-start; width: 44px; height: 160px; padding: 0; overflow: hidden; border: 0; border-radius: 4px 4px 0 0; background: transparent; cursor: help; }
 .plan-scheduling__chartBar:focus-visible { outline: 3px solid rgba(31, 95, 153, .32); outline-offset: 3px; }
 .plan-scheduling__chartSegment { display: block; min-height: 0; }
-.team-a { background: var(--ps-team-a); }
-.team-b { background: var(--ps-team-b); }
-.team-c { background: var(--ps-team-c); }
-.team-other { background: var(--ps-team-other); }
+.plan-scheduling__chartSegment { background: var(--plan-scheduling-team-color); }
 
 .plan-scheduling__chartTooltip { position: absolute; z-index: 4; bottom: 28px; left: 50%; width: 190px; padding: 11px 12px; border: 1px solid #cbd7e0; border-radius: 8px; color: var(--ps-ink); background: white; box-shadow: 0 8px 24px rgba(29, 54, 77, .18); opacity: 0; pointer-events: none; transform: translate(-50%, 6px); transition: opacity .12s ease, transform .12s ease; }
 .plan-scheduling__chartColumn:hover .plan-scheduling__chartTooltip,
@@ -197,7 +186,7 @@
 .plan-scheduling__tooltipTotal { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .plan-scheduling__tooltipRow + .plan-scheduling__tooltipRow { margin-top: 5px; }
 .plan-scheduling__tooltipRow span { display: inline-flex; align-items: center; gap: 7px; }
-.plan-scheduling__tooltipRow i { flex: 0 0 auto; width: 11px; height: 11px; border-radius: 2px; }
+.plan-scheduling__tooltipRow i { flex: 0 0 auto; width: 11px; height: 11px; border-radius: 2px; background: var(--plan-scheduling-team-color); }
 .plan-scheduling__tooltipTotal { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--ps-border); }
 
 .plan-scheduling__planFacts dt { color: #667786; font-size: 11px; }

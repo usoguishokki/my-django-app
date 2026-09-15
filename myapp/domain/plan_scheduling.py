@@ -4,12 +4,25 @@ from dataclasses import dataclass
 
 
 DISPLAY_SHIFT_NAMES = ("1直", "2直", "3直", "休日")
+DISPLAY_TEAM_NAMES = ("A班", "B班", "C班")
 
 
 def is_display_shift(pattern) -> bool:
     """Use the authoritative pattern name to define the planning UI universe."""
 
     return getattr(pattern, "pattern_name", "") in DISPLAY_SHIFT_NAMES
+
+
+def is_display_team(affiliation) -> bool:
+    """Return whether an affiliation belongs to the approved planning scope."""
+
+    return getattr(affiliation, "affilation", "") in DISPLAY_TEAM_NAMES
+
+
+def is_display_slot(*, pattern, affiliation) -> bool:
+    """Keep the matrix and workload chart in one approved planning universe."""
+
+    return is_display_shift(pattern) and is_display_team(affiliation)
 
 
 @dataclass(frozen=True)

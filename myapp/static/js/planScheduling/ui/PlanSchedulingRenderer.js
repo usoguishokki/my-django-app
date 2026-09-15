@@ -22,13 +22,29 @@ const escapeHtml = (value) => String(value ?? '')
   .replaceAll('>', '&gt;').replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;');
 
-export const TEAM_COLOR_CLASSES = Object.freeze({
-  'A班': 'team-a',
-  'B班': 'team-b',
-  'C班': 'team-c',
+export const TEAM_COLORS = Object.freeze({
+  'A班': '#0072B2',
+  'B班': '#009E73',
+  'C班': '#D55E00',
 });
 
-const teamColorClass = (teamName) => TEAM_COLOR_CLASSES[teamName] || 'team-other';
+const teamColorDeclaration = (teamName) =>
+  `--plan-scheduling-team-color:${TEAM_COLORS[teamName]}`;
+
+const approvedChartDay = (day) => {
+  const teamWorkloads = day.teamWorkloads.filter((item) =>
+    Object.hasOwn(TEAM_COLORS, item.teamName));
+  const hasInvalidEffort = teamWorkloads.some((item) => item.hasInvalidEffort);
+  const totalWorkloadMinutes = hasInvalidEffort
+    ? null
+    : teamWorkloads.reduce((sum, item) => sum + (item.workloadMinutes ?? 0), 0);
+  return {
+    ...day,
+    teamWorkloads,
+    totalWorkloadMinutes,
+    totalWorkloadLabel: formatMinutes(totalWorkloadMinutes),
+  };
+};
 
 const tooltipDateLabel = (isoDate, fallback) => {
   const [year, month, day] = String(isoDate || '').split('-').map(Number);
@@ -128,31 +144,33 @@ export class PlanSchedulingRenderer {
   }
 
   workloadChartTemplate(chart) {
-    const maxTotal = Math.max(1, ...chart.dates.map((day) =>
+    const chartDays = chart.dates.map(approvedChartDay);
+    const maxTotal = Math.max(1, ...chartDays.map((day) =>
       day.totalWorkloadMinutes ?? day.teamWorkloads.reduce(
         (sum, item) => sum + (item.workloadMinutes ?? 0), 0,
       )));
-    const bars = chart.dates.map((day, dayIndex) => {
+    const bars = chartDays.map((day, dayIndex) => {
       const segments = day.teamWorkloads.map((item) => {
         const height = Number.isInteger(item.workloadMinutes)
           ? (item.workloadMinutes / maxTotal) * 100 : 0;
-        return `<span class="plan-scheduling__chartSegment ${teamColorClass(item.teamName)}" style="height:${height}%" aria-hidden="true"></span>`;
+        return `<span class="plan-scheduling__chartSegment" style="${teamColorDeclaration(item.teamName)};height:${height}%" aria-hidden="true"></span>`;
       }).join('');
       const tooltipId = `plan-workload-tooltip-${dayIndex}`;
       const rows = day.teamWorkloads.map((item) => `
-        <div class="plan-scheduling__tooltipRow"><span><i class="${teamColorClass(item.teamName)}"></i>${escapeHtml(item.teamName)}</span><strong>${escapeHtml(item.workloadLabel)}</strong></div>`).join('');
+        <div class="plan-scheduling__tooltipRow"><span><i style="${teamColorDeclaration(item.teamName)}"></i>${escapeHtml(item.teamName)}</span><strong>${escapeHtml(item.workloadLabel)}</strong></div>`).join('');
       return `<div class="plan-scheduling__chartColumn"><strong>${escapeHtml(day.totalWorkloadLabel)}</strong><button type="button" class="plan-scheduling__chartBar" aria-label="${escapeHtml(day.label)}の工数詳細" aria-describedby="${tooltipId}">${segments}</button><span>${escapeHtml(day.label)}</span><div class="plan-scheduling__chartTooltip" id="${tooltipId}" role="tooltip"><strong class="plan-scheduling__tooltipDate">${escapeHtml(tooltipDateLabel(day.date, day.label))}</strong>${rows}<div class="plan-scheduling__tooltipTotal"><span>合計</span><strong>${escapeHtml(day.totalWorkloadLabel)}</strong></div></div></div>`;
     }).join('');
-    const legend = chart.teams.map((team) =>
-      `<span><i class="${teamColorClass(team.name)}"></i>${escapeHtml(team.name)}</span>`).join('');
-    return `<div class="plan-scheduling__chartLegend">${legend}</div><div class="plan-scheduling__chartPlot"><span class="plan-scheduling__yAxis">工数（分）</span><div class="plan-scheduling__chartColumns">${bars}</div></div>`;
+    return `<div class="plan-scheduling__chartPlot"><span class="plan-scheduling__yAxis">工数（分）</span><div class="plan-scheduling__chartColumns">${bars}</div></div>`;
   }
 
   matrixDates(state) {
     const shiftNames = new Set(state.workloadChart.shiftNames);
+    const teamNames = new Set(Object.keys(TEAM_COLORS));
     return state.dates.map((day) => ({
       ...day,
-      slots: day.slots.filter((slot) => shiftNames.has(slot.shift.name)),
+      slots: day.slots.filter((slot) => (
+        shiftNames.has(slot.shift.name) && teamNames.has(slot.team.name)
+      )),
     }));
   }
 

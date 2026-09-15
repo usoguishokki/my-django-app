@@ -5,10 +5,11 @@ from datetime import date
 
 from myapp.domain.plan_scheduling import (
     DISPLAY_SHIFT_NAMES,
+    DISPLAY_TEAM_NAMES,
     build_slot_key,
     calculate_work_minutes,
     get_fiscal_year,
-    is_display_shift,
+    is_display_slot,
     resolve_distinct_shift,
 )
 from myapp.presenters.plan_scheduling import (
@@ -117,7 +118,10 @@ def _build_slots_by_pair(calendar_rows):
                 "id": getattr(pattern, "pattern_id", None),
                 "name": getattr(pattern, "pattern_name", "") if pattern else "",
             },
-            "isDisplayed": bool(resolution.is_valid and is_display_shift(pattern)),
+            "isDisplayed": bool(
+                resolution.is_valid
+                and is_display_slot(pattern=pattern, affiliation=first.affilation)
+            ),
             "isValid": resolution.is_valid,
             "dataQualityIssues": issues,
         }
@@ -147,8 +151,9 @@ def _build_plan_items(plans, slots_by_pair):
             elif not slot["isValid"]:
                 issues.extend(slot["dataQualityIssues"])
 
-        # A resolved non-display shift (for example 常昼) is outside the page's
-        # chart, matrix, workspace, and preview universe.
+        # A resolved slot outside the approved shift/team scope (for example
+        # 常昼 or 連2_A) is outside the page's chart, matrix, workspace, and
+        # preview universe.
         if slot is not None and slot["isValid"] and not slot["isDisplayed"]:
             continue
 
@@ -247,27 +252,27 @@ def _build_date_items(*, maintenance_days, slots_by_pair, slot_effort):
 def _build_workload_chart(dates):
     """Build authoritative daily/team waiting-workload totals for charting."""
 
-    teams = sorted({
-        (slot["team"]["id"], slot["team"]["name"])
+    team_ids = {
+        slot["team"]["name"]: slot["team"]["id"]
         for day in dates
         for slot in day["slots"]
-    }, key=lambda item: item[0])
+    }
     chart_dates = []
     for day in dates:
         by_team = defaultdict(lambda: {"minutes": 0, "hasInvalidEffort": False})
         for slot in day["slots"]:
-            team = by_team[slot["team"]["id"]]
+            team = by_team[slot["team"]["name"]]
             if slot["hasInvalidEffort"] or slot["workloadMinutes"] is None:
                 team["hasInvalidEffort"] = True
             else:
                 team["minutes"] += slot["workloadMinutes"]
 
         team_workloads = []
-        for team_id, team_name in teams:
-            aggregate = by_team[team_id]
+        for team_name in DISPLAY_TEAM_NAMES:
+            aggregate = by_team[team_name]
             invalid = aggregate["hasInvalidEffort"]
             team_workloads.append({
-                "teamId": team_id,
+                "teamId": team_ids.get(team_name),
                 "teamName": team_name,
                 "workloadMinutes": None if invalid else aggregate["minutes"],
                 "workloadLabel": present_minutes(
@@ -293,8 +298,8 @@ def _build_workload_chart(dates):
     return {
         "shiftNames": list(DISPLAY_SHIFT_NAMES),
         "teams": [
-            {"id": team_id, "name": team_name}
-            for team_id, team_name in teams
+            {"id": team_ids.get(team_name), "name": team_name}
+            for team_name in DISPLAY_TEAM_NAMES
         ],
         "dates": chart_dates,
     }

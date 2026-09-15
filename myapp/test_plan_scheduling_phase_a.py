@@ -11,6 +11,7 @@ from myapp.api.plan_scheduling import plan_scheduling_week_api
 from myapp.domain.plan_scheduling import (
     calculate_work_minutes,
     get_fiscal_year,
+    is_display_slot,
     is_display_shift,
     resolve_distinct_shift,
 )
@@ -81,6 +82,21 @@ class PlanSchedulingDomainTests(TestCase):
         for name in ("連2", "常昼"):
             with self.subTest(name=name):
                 self.assertFalse(is_display_shift(SimpleNamespace(pattern_name=name)))
+
+    def test_display_slot_scope_requires_approved_shift_and_team_names(self):
+        allowed_pattern = SimpleNamespace(pattern_name="1直")
+        for team_name in ("A班", "B班", "C班"):
+            with self.subTest(team_name=team_name):
+                self.assertTrue(is_display_slot(
+                    pattern=allowed_pattern,
+                    affiliation=SimpleNamespace(affilation=team_name),
+                ))
+        for team_name in ("連2_A", "連2_B", "常昼"):
+            with self.subTest(team_name=team_name):
+                self.assertFalse(is_display_slot(
+                    pattern=allowed_pattern,
+                    affiliation=SimpleNamespace(affilation=team_name),
+                ))
 
     def test_work_minutes_are_person_minutes(self):
         effort = calculate_work_minutes(man_hours=60, required_person_count=2)
@@ -264,7 +280,7 @@ class PlanSchedulingStateTests(TestCase):
         )
         self.assertEqual(200, chart["dates"][0]["totalWorkloadMinutes"])
         self.assertEqual(
-            [(1, 120), (2, 80)],
+            [(1, 120), (2, 80), (None, 0)],
             [(item["teamId"], item["workloadMinutes"])
              for item in chart["dates"][0]["teamWorkloads"]],
         )
@@ -289,6 +305,47 @@ class PlanSchedulingStateTests(TestCase):
         self.assertEqual(80, state["workloadChart"]["dates"][0]["totalWorkloadMinutes"])
         self.assertNotIn("常昼", str(state["workloadChart"]))
         self.assertNotIn("連2", str(state["workloadChart"]))
+
+    def test_chart_and_matrix_exclude_non_planning_team_master_values(self):
+        day = make_day(1, date(2026, 9, 15))
+        state = self.build_state(
+            days=[day],
+            calendars=[
+                make_calendar(1, day, 1, "A班", 1, "1直"),
+                make_calendar(2, day, 2, "B班", 2, "2直"),
+                make_calendar(3, day, 3, "C班", 3, "休日"),
+                make_calendar(4, day, 4, "連2_A", 1, "1直"),
+                make_calendar(5, day, 5, "連2_B", 2, "2直"),
+                make_calendar(6, day, 6, "常昼", 3, "3直"),
+            ],
+            plans=[
+                make_plan(10, day, 1, man_hours=10),
+                make_plan(11, day, 2, team_name="B班", man_hours=20),
+                make_plan(12, day, 3, team_name="C班", man_hours=30),
+                make_plan(13, day, 4, team_name="連2_A", man_hours=40),
+                make_plan(14, day, 5, team_name="連2_B", man_hours=50),
+                make_plan(15, day, 6, team_name="常昼", man_hours=60),
+            ],
+        )
+
+        self.assertEqual(
+            ["A班", "B班", "C班"],
+            [team["name"] for team in state["workloadChart"]["teams"]],
+        )
+        self.assertEqual(
+            ["A班", "B班", "C班"],
+            [slot["team"]["name"] for slot in state["dates"][0]["slots"]],
+        )
+        self.assertEqual([10, 11, 12], [plan["planId"] for plan in state["plans"]])
+        chart_day = state["workloadChart"]["dates"][0]
+        self.assertEqual(120, chart_day["totalWorkloadMinutes"])
+        self.assertEqual(
+            120,
+            sum(item["workloadMinutes"] for item in chart_day["teamWorkloads"]),
+        )
+        self.assertNotIn("連2_A", str(state))
+        self.assertNotIn("連2_B", str(state))
+        self.assertNotIn("常昼", str(state))
 
     def test_slot_plan_membership_is_exact(self):
         day = make_day(1, date(2026, 9, 15))
