@@ -36,6 +36,17 @@ commit しない。
 .\scripts\release-iis.ps1 -AppPoolName "<Application Pool 名>"
 ```
 
+通常は事前に `Activate.ps1` を実行する必要はない。スクリプトは configured production physical path の親にある
+`django_iis_env\Scripts\python.exe` を明示的に解決し、IIS を変更する前に `import django` を検証する。例外的な
+test 環境または別の仮想環境では、明示的に Python を指定できる。
+
+```powershell
+.\scripts\release-iis.ps1 -AppPoolName "<Application Pool 名>" -Python "C:\path\to\python.exe"
+```
+
+App Pool がすでに `Stopped` の場合も安全な開始状態として扱われる。`Started` の場合だけ停止し、予期しない
+transitional state の場合は fail closed する。成功時はどちらの開始状態からでも App Pool は `Started` で終了する。
+
 スクリプトは checkout、IIS site、physical path、App Pool の組み合わせ、clean worktree、
 `DEBUG=False`、runtime Sass 無効、Django deploy check を確認する。既存 staticfiles と rollback 情報を
 checkout の隣の `myproject-release-backups/` に保存した後で App Pool を停止し、`collectstatic --clear` と
