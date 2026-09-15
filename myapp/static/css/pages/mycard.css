@@ -2,6 +2,12 @@
 .u-hidden {
   display: none !important; }
 
+/*
+ * 一覧表示用カード
+ *
+ * 通知・フローティングカードとは異なり、
+ * 通常のドキュメントフロー内に配置する。
+ */
 .scrollbar-nice::-webkit-scrollbar {
   width: 10px;
   height: 10px; }
@@ -1479,5 +1485,3 @@ input[type="checkbox"] {
       .carousel .work-item .wark-contents-standard::before {
         top: 8px;
         bottom: 8px; } }
-
-/*# sourceMappingURL=mycard.css.map */

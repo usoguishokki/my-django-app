@@ -1,11 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
-{% load sass_tags %}
 
 {% block title %}CardList{% endblock %}
 
 {% block extra_css %}
-    <link href="{% sass_src 'css/mobileInspectionList.scss' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/mobileInspectionList.css' %}" rel="stylesheet" type="text/css">
 {% endblock %}
 
 {% block header %}

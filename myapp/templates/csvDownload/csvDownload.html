@@ -1,11 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
-{% load sass_tags %}
 
 {% block title %}CSVダウンロード{% endblock %}
 
 {% block extra_css %}
-<link href="{% sass_src 'css/pages/csvDownload.scss' %}" rel="stylesheet" type="text/css">
+<link href="{% static 'css/pages/csvDownload.css' %}" rel="stylesheet" type="text/css">
 {% endblock %}
 
 {% block header %}

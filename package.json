@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "webpack --mode development --config webpack.config.js",
-    "build": "webpack --mode production --config webpack.config.js"
+    "test": "node scripts/run-js-tests.mjs",
+    "build:scss": "python manage.py compilescss --verbosity 1",
+    "build:js": "node scripts/build-static-js.mjs",
+    "build": "npm run build:scss && npm run build:js"
   },
   "author": "",
   "license": "ISC",

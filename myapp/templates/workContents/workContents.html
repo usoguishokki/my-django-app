@@ -1,11 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
-{% load sass_tags %}
 
 {% block title %}実績確認{% endblock %}
 
 {% block extra_css %}
-    <link href="{% sass_src 'css/pages/workContents.scss' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/pages/workContents.css' %}" rel="stylesheet" type="text/css">
 
 {% endblock %}
 
