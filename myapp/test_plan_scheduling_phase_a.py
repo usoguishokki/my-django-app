@@ -11,9 +11,11 @@ from myapp.api.plan_scheduling import plan_scheduling_week_api
 from myapp.domain.plan_scheduling import (
     calculate_work_minutes,
     get_fiscal_year,
+    is_display_shift,
     resolve_distinct_shift,
 )
 from myapp.domain.plan_status import PlanStatus
+from myapp.presenters.plan_scheduling import present_minutes
 from myapp.selectors.plan_scheduling import (
     select_waiting_plans_for_maintenance_dates,
 )
@@ -69,6 +71,17 @@ def make_plan(plan_id, day, team_id, *, team_name="A班", man_hours=60, people=2
 
 
 class PlanSchedulingDomainTests(TestCase):
+    def test_minute_labels_are_compact_and_readable(self):
+        self.assertEqual("1,800分", present_minutes(1800))
+
+    def test_display_shift_scope_uses_stable_master_names(self):
+        for name in ("1直", "2直", "3直", "休日"):
+            with self.subTest(name=name):
+                self.assertTrue(is_display_shift(SimpleNamespace(pattern_name=name)))
+        for name in ("連2", "常昼"):
+            with self.subTest(name=name):
+                self.assertFalse(is_display_shift(SimpleNamespace(pattern_name=name)))
+
     def test_work_minutes_are_person_minutes(self):
         effort = calculate_work_minutes(man_hours=60, required_person_count=2)
         self.assertTrue(effort.is_valid)
@@ -257,22 +270,25 @@ class PlanSchedulingStateTests(TestCase):
         )
         self.assertEqual(60, chart["dates"][1]["totalWorkloadMinutes"])
 
-    def test_day_shift_is_excluded_and_holiday_is_included_everywhere(self):
+    def test_excluded_shifts_are_removed_and_holiday_is_included_everywhere(self):
         day = make_day(1, date(2026, 9, 15))
         calendars = [
             make_calendar(1, day, 1, "A班", 10, "常昼"),
-            make_calendar(2, day, 2, "B班", 11, "休日"),
+            make_calendar(2, day, 2, "B班", 11, "連2"),
+            make_calendar(3, day, 3, "C班", 12, "休日"),
         ]
         plans = [
             make_plan(10, day, 1),
             make_plan(11, day, 2, team_name="B班", man_hours=30),
+            make_plan(12, day, 3, team_name="C班", man_hours=40),
         ]
         state = self.build_state(days=[day], calendars=calendars, plans=plans)
 
         self.assertEqual(["休日"], [slot["shift"]["name"] for slot in state["dates"][0]["slots"]])
-        self.assertEqual([11], [plan["planId"] for plan in state["plans"]])
-        self.assertEqual(60, state["workloadChart"]["dates"][0]["totalWorkloadMinutes"])
+        self.assertEqual([12], [plan["planId"] for plan in state["plans"]])
+        self.assertEqual(80, state["workloadChart"]["dates"][0]["totalWorkloadMinutes"])
         self.assertNotIn("常昼", str(state["workloadChart"]))
+        self.assertNotIn("連2", str(state["workloadChart"]))
 
     def test_slot_plan_membership_is_exact(self):
         day = make_day(1, date(2026, 9, 15))

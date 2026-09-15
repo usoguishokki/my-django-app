@@ -22,6 +22,22 @@ const escapeHtml = (value) => String(value ?? '')
   .replaceAll('>', '&gt;').replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;');
 
+export const TEAM_COLOR_CLASSES = Object.freeze({
+  'A班': 'team-a',
+  'B班': 'team-b',
+  'C班': 'team-c',
+});
+
+const teamColorClass = (teamName) => TEAM_COLOR_CLASSES[teamName] || 'team-other';
+
+const tooltipDateLabel = (isoDate, fallback) => {
+  const [year, month, day] = String(isoDate || '').split('-').map(Number);
+  if (!year || !month || !day) return fallback;
+  const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+  return `${month}月${day}日（${weekdays[weekday]}）`;
+};
+
 export class PlanSchedulingRenderer {
   constructor(root) {
     this.root = root;
@@ -53,8 +69,8 @@ export class PlanSchedulingRenderer {
   }
 
   renderSelection(_state, selection) {
-    this.renderSlotWorkspace(selection);
-    const selectingDestination = Boolean(selection.plan);
+    this.renderDrawer(selection);
+    const selectingDestination = selection.isMoving;
     this.root.querySelectorAll('[data-slot-key]').forEach((button) => {
       const isCurrent = button.dataset.slotKey === selection.plan?.current.slotKey;
       const isSelectedSlot = button.dataset.slotKey === selection.selectedSlot?.key;
@@ -77,23 +93,20 @@ export class PlanSchedulingRenderer {
         : '<p class="plan-scheduling__previewEmpty">計画の「移動」を選ぶと、移動先の工数変化を確認できます。</p>';
   }
 
-  renderSlotWorkspace(selection) {
+  renderDrawer(selection) {
     const slot = selection.selectedSlot;
+    this.drawer.hidden = !slot;
+    this.planningLayout.classList.toggle('has-drawer', Boolean(slot));
     if (!slot) {
-      this.root.querySelector('[data-role="selected-slot-label"]').textContent = 'SLOT WORKSPACE';
-      this.root.querySelector('[data-role="plan-count"]').textContent = '';
-      this.root.querySelector('[data-role="slot-summary"]').innerHTML = '';
-      this.planList.innerHTML = '<p class="plan-scheduling__workspaceEmpty">計画マトリクスから班を選択してください</p>';
+      this.planList.innerHTML = '';
       return;
     }
-    this.root.querySelector('[data-role="selected-slot-label"]').textContent =
-      `${slot.dateLabel} / ${slot.shift.name} / ${slot.team.name}`;
-    this.root.querySelector('[data-role="plan-count"]').textContent = `${slot.planCount}件`;
-    this.root.querySelector('[data-role="slot-summary"]').innerHTML = `
-      <span><small>日付</small><strong>${escapeHtml(slot.dateLabel)}</strong></span>
-      <span><small>直</small><strong>${escapeHtml(slot.shift.name)}</strong></span>
-      <span><small>班</small><strong>${escapeHtml(slot.team.name)}</strong></span>
-      <span><small>合計工数</small><strong>${escapeHtml(slot.workloadLabel)}</strong></span>`;
+    this.root.querySelector('[data-role="drawer-date"]').textContent =
+      tooltipDateLabel(slot.date, slot.dateLabel);
+    this.root.querySelector('[data-role="drawer-slot"]').textContent =
+      `${slot.shift.name}${slot.team.name}`;
+    this.root.querySelector('[data-role="drawer-summary"]').textContent =
+      `${slot.workloadLabel} / ${slot.planCount}件`;
     this.planList.innerHTML = selection.slotPlans.length
       ? selection.slotPlans.map((plan) => this.planTemplate(plan, selection.plan?.planId)).join('')
       : '<p class="plan-scheduling__empty">このスロットに配布待ち計画はありません。</p>';
@@ -107,8 +120,6 @@ export class PlanSchedulingRenderer {
     return `<article class="plan-scheduling__planCard${selected}" data-plan-card-id="${plan.planId}">
       <div class="plan-scheduling__planCardHeader"><div><span class="plan-scheduling__equipment">${escapeHtml(plan.equipmentName || '設備名なし')}</span><strong class="plan-scheduling__planPrimary">${escapeHtml(plan.inspectionNo)} · ${escapeHtml(plan.workName)}</strong></div><button type="button" class="ui-btn ui-btn--outline" data-action="move" data-plan-id="${plan.planId}" ${plan.isPreviewable ? '' : 'disabled'}>移動</button></div>
       <dl class="plan-scheduling__planFacts">
-        <div><dt>計画日</dt><dd>${escapeHtml(plan.current.dateLabel)}</dd></div>
-        <div><dt>直 / 班</dt><dd>${escapeHtml(plan.current.shift.name || '直不明')} / ${escapeHtml(plan.current.team.name || '班未設定')}</dd></div>
         <div><dt>基本工数</dt><dd>${escapeHtml(plan.baseWorkMinutesLabel)}</dd></div>
         <div><dt>必要人数</dt><dd>${Number.isInteger(plan.requiredPersonCount) ? `${plan.requiredPersonCount}人` : 'データ不備'}</dd></div>
         <div><dt>計算工数</dt><dd>${escapeHtml(plan.workMinutesLabel)}</dd></div>
@@ -121,17 +132,19 @@ export class PlanSchedulingRenderer {
       day.totalWorkloadMinutes ?? day.teamWorkloads.reduce(
         (sum, item) => sum + (item.workloadMinutes ?? 0), 0,
       )));
-    const teamIndex = new Map(chart.teams.map((team, index) => [team.id, index]));
-    const bars = chart.dates.map((day) => {
+    const bars = chart.dates.map((day, dayIndex) => {
       const segments = day.teamWorkloads.map((item) => {
         const height = Number.isInteger(item.workloadMinutes)
           ? (item.workloadMinutes / maxTotal) * 100 : 0;
-        return `<span class="plan-scheduling__chartSegment team-${teamIndex.get(item.teamId) % 8}" style="height:${height}%" title="${escapeHtml(item.teamName)} ${escapeHtml(item.workloadLabel)}"><span class="sr-only">${escapeHtml(item.teamName)} ${escapeHtml(item.workloadLabel)}</span></span>`;
+        return `<span class="plan-scheduling__chartSegment ${teamColorClass(item.teamName)}" style="height:${height}%" aria-hidden="true"></span>`;
       }).join('');
-      return `<div class="plan-scheduling__chartColumn"><strong>${escapeHtml(day.totalWorkloadLabel)}</strong><div class="plan-scheduling__chartBar" aria-label="${escapeHtml(day.label)} 合計 ${escapeHtml(day.totalWorkloadLabel)}">${segments}</div><span>${escapeHtml(day.label)}</span></div>`;
+      const tooltipId = `plan-workload-tooltip-${dayIndex}`;
+      const rows = day.teamWorkloads.map((item) => `
+        <div class="plan-scheduling__tooltipRow"><span><i class="${teamColorClass(item.teamName)}"></i>${escapeHtml(item.teamName)}</span><strong>${escapeHtml(item.workloadLabel)}</strong></div>`).join('');
+      return `<div class="plan-scheduling__chartColumn"><strong>${escapeHtml(day.totalWorkloadLabel)}</strong><button type="button" class="plan-scheduling__chartBar" aria-label="${escapeHtml(day.label)}の工数詳細" aria-describedby="${tooltipId}">${segments}</button><span>${escapeHtml(day.label)}</span><div class="plan-scheduling__chartTooltip" id="${tooltipId}" role="tooltip"><strong class="plan-scheduling__tooltipDate">${escapeHtml(tooltipDateLabel(day.date, day.label))}</strong>${rows}<div class="plan-scheduling__tooltipTotal"><span>合計</span><strong>${escapeHtml(day.totalWorkloadLabel)}</strong></div></div></div>`;
     }).join('');
-    const legend = chart.teams.map((team, index) =>
-      `<span><i class="team-${index % 8}"></i>${escapeHtml(team.name)}</span>`).join('');
+    const legend = chart.teams.map((team) =>
+      `<span><i class="${teamColorClass(team.name)}"></i>${escapeHtml(team.name)}</span>`).join('');
     return `<div class="plan-scheduling__chartLegend">${legend}</div><div class="plan-scheduling__chartPlot"><span class="plan-scheduling__yAxis">工数（分）</span><div class="plan-scheduling__chartColumns">${bars}</div></div>`;
   }
 
@@ -190,6 +203,8 @@ export class PlanSchedulingRenderer {
   get feedback() { return this.root.querySelector('[data-role="feedback"]'); }
   get workspace() { return this.root.querySelector('[data-role="workspace"]'); }
   get planList() { return this.root.querySelector('[data-role="plan-list"]'); }
+  get drawer() { return this.root.querySelector('[data-role="slot-drawer"]'); }
+  get planningLayout() { return this.root.querySelector('[data-role="planning-layout"]'); }
   get dateGrid() { return this.root.querySelector('[data-role="date-grid"]'); }
   get workloadChart() { return this.root.querySelector('[data-role="workload-chart"]'); }
   get preview() { return this.root.querySelector('[data-role="preview"]'); }

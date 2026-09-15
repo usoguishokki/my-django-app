@@ -28,4 +28,4 @@ def present_date_label(value) -> str:
 def present_minutes(value: int | None, *, invalid=False) -> str:
     if invalid or value is None:
         return "集計不可"
-    return f"{value}分"
+    return f"{value:,}分"
