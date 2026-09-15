@@ -91,6 +91,7 @@
 .plan-scheduling__plans,
 .plan-scheduling__matrix,
 .plan-scheduling__preview {
+  min-width: 0;
   border: 1px solid var(--ps-border);
   border-radius: 10px;
   background: white;
@@ -120,9 +121,7 @@
 
 .plan-scheduling__planList {
   display: grid;
-  gap: 8px;
-  max-height: 65vh;
-  overflow: auto; }
+  gap: 8px; }
 
 .plan-scheduling__planCard,
 .plan-scheduling__slot {
@@ -459,8 +458,6 @@
     grid-template-columns: repeat(2, 1fr); }
   .plan-scheduling__planFacts {
     grid-template-columns: repeat(2, 1fr); }
-  .plan-scheduling__planList {
-    max-height: 300px; }
   .plan-scheduling__preview {
     position: static; }
   .plan-scheduling__moveSummary,
