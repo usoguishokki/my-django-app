@@ -161,8 +161,7 @@ const chartSegmentTemplate = ({ item, day, maxTotal, isSelected }) => {
 
 const tooltipWorkloadTemplate = (item) => {
   if (!item.change) return `<strong>${escapeHtml(item.workloadLabel)}</strong>`;
-  const delta = item.change.after - item.change.before;
-  return `<span class="plan-scheduling__tooltipPreview"><span>${formatMinutes(item.change.before)} → ${formatMinutes(item.change.after)}</span><strong>${formatDelta(item.change.before, item.change.after)}</strong><span class="visually-hidden">${formatMinutes(Math.abs(delta))}${delta < 0 ? '減少' : '増加'}</span></span>`;
+  return `<span class="plan-scheduling__tooltipPreview"><span>${formatMinutes(item.change.before)} → ${formatMinutes(item.change.after)}</span><strong>${formatDelta(item.change.before, item.change.after)}</strong></span>`;
 };
 
 const tooltipDateLabel = (isoDate, fallback) => {
@@ -178,14 +177,12 @@ const clamp = (value, minimum, maximum) => Math.min(Math.max(value, minimum), ma
 export const placeChartTooltip = ({ anchorRect, tooltipRect, boundsRect, safeMargin = 8 }) => {
   const minimumLeft = boundsRect.left + safeMargin;
   const maximumLeft = Math.max(minimumLeft, boundsRect.right - tooltipRect.width - safeMargin);
-  const minimumTop = boundsRect.top + safeMargin;
-  const maximumTop = Math.max(minimumTop, boundsRect.bottom - tooltipRect.height - safeMargin);
   const placement = 'below';
   const preferredLeft = anchorRect.left + (anchorRect.width - tooltipRect.width) / 2;
   const top = anchorRect.bottom + safeMargin;
   return {
     left: clamp(preferredLeft, minimumLeft, maximumLeft),
-    top: clamp(top, minimumTop, maximumTop),
+    top,
     placement,
   };
 };
