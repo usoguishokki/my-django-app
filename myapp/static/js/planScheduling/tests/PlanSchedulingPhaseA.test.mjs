@@ -783,7 +783,13 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /--plan-scheduling-team-color/);
   assert.doesNotMatch(scss, /chartLegend|team-other/);
   assert.doesNotMatch(scss, /plan-scheduling__yAxis/);
+  assert.match(scss, /\.plan-scheduling__planList[^}]*display:\s*flex[^}]*flex-direction:\s*column/s);
   assert.match(scss, /\.plan-scheduling__planList[^}]*overflow-y:\s*auto/s);
+  assert.doesNotMatch(scss, /\.plan-scheduling__planList\s*\{[^}]*display:\s*grid/s);
+  assert.match(scss, /\.plan-scheduling__planCard[^}]*flex:\s*0\s+0\s+auto/s);
+  assert.match(scss, /\.plan-scheduling__planCard[^}]*max-height:\s*270px/s);
+  assert.match(scss, /\.plan-scheduling__planCard\s+\.detail-card__body[^}]*max-height:\s*140px/s);
+  assert.match(scss, /\.plan-scheduling__planCard:hover\s+\.detail-card__body[\s\S]*overflow-y:\s*auto/s);
   assert.match(scss, /\.plan-scheduling__chartSegment\.is-selected-chart-segment/);
   assert.match(scss, /has-chart-selection[\s\S]*opacity:\s*\.35/);
   assert.match(scss, /has-chart-selection[\s\S]*filter:\s*saturate\(\.3\)/);

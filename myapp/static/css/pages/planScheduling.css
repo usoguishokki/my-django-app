@@ -129,8 +129,8 @@
   min-width: max-content; }
 
 .plan-scheduling__planList {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   min-height: 0;
   overflow-y: auto; }
@@ -212,7 +212,12 @@
 
 .plan-scheduling__planCard {
   position: relative;
-  min-width: 0; }
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  min-width: 0;
+  max-height: 270px;
+  overflow: hidden; }
 
 .plan-scheduling__planCard .detail-card__header {
   display: block;
@@ -238,11 +243,21 @@
   line-height: 1.4; }
 
 .plan-scheduling__planCard .detail-card__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 140px;
   gap: 12px;
-  padding: 14px; }
+  padding: 14px;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable; }
 
 .plan-scheduling__planCard .detail-card__detailItems {
   gap: 12px; }
+
+.plan-scheduling__planCard:hover .detail-card__body,
+.plan-scheduling__planCard:focus-within .detail-card__body {
+  overflow-y: auto; }
 
 .plan-scheduling__planCardActions {
   display: flex;

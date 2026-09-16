@@ -104,8 +104,8 @@
 .plan-scheduling__matrix { display: grid; grid-template-rows: minmax(0, 1fr); width: 100%; height: 100%; min-width: max-content; }
 
 .plan-scheduling__planList {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   min-height: 0;
   overflow-y: auto;
@@ -145,7 +145,15 @@
 }
 
 .plan-scheduling__slot { cursor: pointer; }
-.plan-scheduling__planCard { position: relative; min-width: 0; }
+.plan-scheduling__planCard {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  min-width: 0;
+  max-height: 270px;
+  overflow: hidden;
+}
 .plan-scheduling__planCard .detail-card__header { display: block; padding: 11px 14px; }
 .plan-scheduling__planCard .detail-card__title { min-width: 0; }
 .plan-scheduling__planCard .detail-card__titleLine {
@@ -160,8 +168,19 @@
   line-height: 1.45;
 }
 .plan-scheduling__planCard .detail-card__titleSub { margin-top: 6px; color: #4b6071; line-height: 1.4; }
-.plan-scheduling__planCard .detail-card__body { gap: 12px; padding: 14px; }
+.plan-scheduling__planCard .detail-card__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 140px;
+  gap: 12px;
+  padding: 14px;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
 .plan-scheduling__planCard .detail-card__detailItems { gap: 12px; }
+.plan-scheduling__planCard:hover .detail-card__body,
+.plan-scheduling__planCard:focus-within .detail-card__body { overflow-y: auto; }
 .plan-scheduling__planCardActions { display: flex; justify-content: flex-end; padding: 9px 12px 11px; border-top: 1px solid #d8e0e8; background: rgba(248, 250, 252, .72); }
 .plan-scheduling__moveButton { flex: 0 0 auto; min-width: 84px; min-height: 38px; padding-inline: 18px; color: var(--ps-blue); border-color: #a9c5db; background: #fff; }
 .plan-scheduling__moveButton:not(:disabled):hover { color: #164b77; border-color: #7eaacb; background: #edf6fc; box-shadow: 0 2px 6px rgba(31, 95, 153, .12); }
