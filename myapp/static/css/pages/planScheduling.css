@@ -199,7 +199,6 @@
 .plan-scheduling__drawer .plan-scheduling__planList {
   padding: 12px; }
 
-.plan-scheduling__planCard,
 .plan-scheduling__slot {
   display: grid;
   gap: 4px;
@@ -215,7 +214,36 @@
   cursor: pointer; }
 
 .plan-scheduling__planCard {
-  padding: 12px; }
+  min-width: 0; }
+
+.plan-scheduling__planCard .detail-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px; }
+
+.plan-scheduling__planCard .detail-card__title {
+  min-width: 0; }
+
+.plan-scheduling__planCard .detail-card__body {
+  gap: 10px; }
+
+.plan-scheduling__moveButton {
+  flex: 0 0 auto;
+  min-width: 72px;
+  color: var(--ps-blue);
+  border-color: #b9d1e5;
+  background: #f8fbfe; }
+
+.plan-scheduling__moveButton:not(:disabled):hover {
+  color: #164b77;
+  border-color: #7eaacb;
+  background: #edf6fc;
+  box-shadow: 0 2px 6px rgba(31, 95, 153, 0.12); }
+
+.plan-scheduling__moveButton:focus-visible {
+  outline: 3px solid rgba(31, 95, 153, 0.28);
+  outline-offset: 2px; }
 
 .plan-scheduling__slot:hover:not(:disabled) {
   border-color: var(--ps-blue); }
@@ -242,9 +270,6 @@
 .plan-scheduling__slot:disabled {
   cursor: not-allowed;
   opacity: .68; }
-
-.plan-scheduling__planPrimary {
-  font-weight: 700; }
 
 .plan-scheduling__quality,
 .plan-scheduling__slot small {
@@ -385,38 +410,6 @@
   padding-top: 7px;
   border-top: 1px solid var(--ps-border); }
 
-.plan-scheduling__planFacts dt {
-  color: #667786;
-  font-size: 11px; }
-
-.plan-scheduling__planCardHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px; }
-
-.plan-scheduling__planCardHeader > div {
-  display: grid;
-  gap: 3px; }
-
-.plan-scheduling__equipment {
-  color: #536a7b;
-  font-size: 12px; }
-
-.plan-scheduling__planFacts {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin: 10px 0 0; }
-
-.plan-scheduling__planFacts div {
-  display: grid;
-  gap: 2px; }
-
-.plan-scheduling__planFacts dd {
-  margin: 0;
-  font-weight: 700; }
-
 .plan-scheduling__qualityGroup {
   display: flex;
   flex-wrap: wrap;
@@ -489,60 +482,143 @@
 
 .plan-scheduling__moveContext {
   display: grid;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid var(--ps-border);
-  border-radius: 7px;
-  background: #f8fbfd; }
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #c8d9e7;
+  border-radius: 9px;
+  background: linear-gradient(145deg, #f8fbfe, #eef6fb); }
 
 .plan-scheduling__moveContextHeader {
-  justify-content: space-between; }
+  justify-content: space-between;
+  gap: 10px; }
+
+.plan-scheduling__moveContextHeader > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0; }
+
+.plan-scheduling__moveContextHeader h2,
+.plan-scheduling__moveContextHeader p {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis; }
 
 .plan-scheduling__moveContextHeader h2 {
-  font-size: 17px; }
+  font-size: 16px; }
 
-.plan-scheduling__moveContextHeader > strong {
-  color: var(--ps-blue);
-  font-size: 22px; }
-
-.plan-scheduling__moveSummary {
-  gap: 14px;
-  margin-top: 12px; }
-
-.plan-scheduling__moveSummary > div {
-  display: grid;
-  flex: 1;
-  gap: 3px; }
-
-.plan-scheduling__moveSummary span,
-.plan-scheduling__arithmetic span {
-  color: #667786;
-  font-size: 12px; }
-
-.plan-scheduling__arrow {
-  color: var(--ps-blue) !important;
-  font-size: 24px !important; }
-
-.plan-scheduling__arithmetic {
-  gap: 8px;
-  margin-top: 12px; }
-
-.plan-scheduling__arithmetic > div {
-  display: grid;
-  flex: 1;
-  gap: 3px;
-  padding: 8px;
-  border-radius: 6px;
-  background: #f1f5f8; }
-
-.plan-scheduling__readOnly {
+.plan-scheduling__moveContextHeader p {
   margin: 0;
   color: #667786;
   font-size: 12px; }
 
-.plan-scheduling__moveContextFooter {
-  justify-content: flex-end;
-  gap: 12px; }
+.plan-scheduling__moveBadge {
+  width: fit-content;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: #1b5b8c;
+  background: #ddecf8;
+  font-size: 11px;
+  font-weight: 700; }
+
+.plan-scheduling__cancelMove {
+  flex: 0 0 auto; }
+
+.plan-scheduling__moveCurrent,
+.plan-scheduling__moveSummary {
+  display: grid;
+  gap: 4px; }
+
+.plan-scheduling__moveCurrent {
+  padding: 9px 10px;
+  border-left: 3px solid var(--ps-blue);
+  background: rgba(255, 255, 255, 0.7); }
+
+.plan-scheduling__moveCurrent span,
+.plan-scheduling__moveSummary span {
+  color: #667786;
+  font-size: 12px; }
+
+.plan-scheduling__moveSummary {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px; }
+
+.plan-scheduling__moveSummary > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px 10px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.72); }
+
+.plan-scheduling__moveSummary strong {
+  overflow-wrap: anywhere;
+  font-size: 12px; }
+
+.plan-scheduling__arrow {
+  color: var(--ps-blue) !important;
+  font-size: 19px !important; }
+
+.plan-scheduling__moveGuidance,
+.plan-scheduling__readOnly {
+  margin: 0;
+  color: #536a7b;
+  font-size: 12px;
+  line-height: 1.5; }
+
+.plan-scheduling__moveImpact {
+  display: grid;
+  gap: 7px; }
+
+.plan-scheduling__moveImpact h3 {
+  margin: 0;
+  color: #334f64;
+  font-size: 13px; }
+
+.plan-scheduling__arithmetic {
+  display: grid;
+  gap: 6px;
+  margin: 0; }
+
+.plan-scheduling__arithmetic > div {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid rgba(113, 143, 165, 0.25); }
+
+.plan-scheduling__arithmetic dt {
+  color: #536a7b;
+  font-size: 12px;
+  font-weight: 700; }
+
+.plan-scheduling__arithmetic dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700; }
+
+.plan-scheduling__arithmetic dd > b {
+  color: #7890a3;
+  font-weight: 400; }
+
+.plan-scheduling__arithmetic dd > strong {
+  margin-left: auto;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 11px; }
+
+.plan-scheduling__arithmetic .is-decrease {
+  color: #9a3412;
+  background: #fff0e8; }
+
+.plan-scheduling__arithmetic .is-increase {
+  color: #166534;
+  background: #eaf7ed; }
 
 @media (max-width: 900px) {
   .plan-scheduling {
@@ -560,12 +636,11 @@
     left: 0;
     width: min(340px, calc(100% - 16px));
     max-height: 100%; }
-  .plan-scheduling__planFacts {
-    grid-template-columns: repeat(2, 1fr); }
   .plan-scheduling__moveSummary,
   .plan-scheduling__arithmetic {
-    align-items: stretch;
-    flex-direction: column; }
+    align-items: stretch; }
+  .plan-scheduling__moveSummary {
+    grid-template-columns: 1fr; }
   .plan-scheduling__arrow {
     transform: rotate(90deg);
     align-self: center; } }

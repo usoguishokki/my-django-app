@@ -53,12 +53,19 @@ def make_calendar(row_id, day, team_id, team_name, pattern_id, pattern_name):
 def make_plan(plan_id, day, team_id, *, team_name="A班", man_hours=60, people=2):
     team = SimpleNamespace(affilation_id=team_id, affilation=team_name)
     control = SimpleNamespace(machine="設備A")
+    rule = SimpleNamespace(interval=1, unit="週")
+    details = SimpleNamespace(all=lambda: [
+        SimpleNamespace(applicable_device="対象部位", contents="点検内容"),
+    ])
     check = SimpleNamespace(
         inspection_no=f"CARD-{plan_id}",
         wark_name="月例点検",
         man_hours=man_hours,
+        day_of_week="月",
         required_person_count=people,
         control_no=control,
+        rule=rule,
+        db_details=details,
     )
     return SimpleNamespace(
         plan_id=plan_id,
@@ -142,7 +149,8 @@ class PlanSchedulingSelectorTests(TestCase):
     def test_waiting_selector_applies_status_and_organization_scope(self):
         manager = MagicMock()
         queryset = manager.select_related.return_value
-        queryset.filter.return_value.order_by.return_value = []
+        prefetched = queryset.prefetch_related.return_value
+        prefetched.filter.return_value.order_by.return_value = []
 
         with patch("myapp.selectors.plan_scheduling.Plan_tb.objects", manager):
             result = select_waiting_plans_for_maintenance_dates(
@@ -151,7 +159,9 @@ class PlanSchedulingSelectorTests(TestCase):
             )
 
         self.assertEqual([], result)
-        filters = queryset.filter.call_args.kwargs
+        self.assertIn("inspection_no__rule", manager.select_related.call_args.args)
+        queryset.prefetch_related.assert_called_once_with("inspection_no__db_details")
+        filters = prefetched.filter.call_args.kwargs
         self.assertEqual(PlanStatus.WAITING.value, filters["status"])
         self.assertEqual([10, 11], filters["p_date_id__in"])
         self.assertEqual(
@@ -207,6 +217,15 @@ class PlanSchedulingStateTests(TestCase):
         self.assertEqual(60, state["plans"][0]["baseWorkMinutes"])
         self.assertEqual("60分", state["plans"][0]["baseWorkMinutesLabel"])
         self.assertEqual(2, state["plans"][0]["requiredPersonCount"])
+        self.assertEqual("設備A", state["plans"][0]["machineName"])
+        self.assertEqual(60, state["plans"][0]["manHours"])
+        self.assertEqual("月", state["plans"][0]["dayOfWeek"])
+        self.assertEqual(1, state["plans"][0]["interval"])
+        self.assertEqual("週", state["plans"][0]["unit"])
+        self.assertEqual(
+            [{"applicableDevice": "対象部位", "contents": "点検内容"}],
+            state["plans"][0]["detailItems"],
+        )
         self.assertEqual([10, 11], state["dates"][0]["slots"][0]["planIds"])
         self.assertEqual(2, state["dates"][0]["slots"][0]["planCount"])
         self.assertFalse(state["capabilities"]["canReschedule"])

@@ -59,10 +59,12 @@ def select_waiting_plans_for_maintenance_dates(
             "p_date",
             "planned_affilation",
             "inspection_no",
+            "inspection_no__rule",
             "inspection_no__control_no",
             "inspection_no__control_no__line_name",
             "inspection_no__control_no__line_name__organization",
         )
+        .prefetch_related("inspection_no__db_details")
         .filter(
             status=PlanStatus.WAITING.value,
             p_date_id__in=maintenance_date_ids,

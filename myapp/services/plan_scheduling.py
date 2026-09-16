@@ -17,6 +17,7 @@ from myapp.presenters.plan_scheduling import (
     present_issue,
     present_minutes,
 )
+from myapp.presenters.inspection_detail_items import build_inspection_detail_items
 from myapp.selectors.plan_scheduling import (
     select_calendar_rows_for_maintenance_dates,
     select_maintenance_week,
@@ -166,13 +167,20 @@ def _build_plan_items(plans, slots_by_pair):
                 aggregate["hasInvalidEffort"] = True
 
         control = getattr(check, "control_no", None)
+        rule = getattr(check, "rule", None)
         plan_date = plan.p_date.h_date
         team = plan.planned_affilation
         items.append({
             "planId": plan.plan_id,
             "inspectionNo": getattr(check, "inspection_no", "") or "",
             "equipmentName": getattr(control, "machine", "") or "",
+            "machineName": getattr(control, "machine", "") or "",
             "workName": getattr(check, "wark_name", "") or "",
+            "manHours": getattr(check, "man_hours", None),
+            "dayOfWeek": getattr(check, "day_of_week", "") or "",
+            "interval": getattr(rule, "interval", None),
+            "unit": getattr(rule, "unit", "") or "",
+            "detailItems": build_inspection_detail_items(check),
             "workMinutes": effort.minutes,
             "baseWorkMinutes": getattr(check, "man_hours", None),
             "baseWorkMinutesLabel": (

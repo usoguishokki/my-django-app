@@ -31,6 +31,36 @@ export const TEAM_COLORS = Object.freeze({
 const teamColorDeclaration = (teamName) =>
   `--plan-scheduling-team-color:${TEAM_COLORS[teamName]}`;
 
+const formatPlanCardTitle = (plan) => [
+  plan.machineName || plan.equipmentName,
+  plan.workName,
+].filter(Boolean).join('_');
+
+const formatPlanCardSubtitle = (plan) => [
+  Number.isFinite(plan.manHours) ? `${plan.manHours}分` : '',
+  plan.dayOfWeek || '',
+  plan.interval != null && plan.interval !== '' && plan.unit
+    ? `${plan.interval}/${plan.unit}`
+    : '',
+].filter(Boolean).join('_');
+
+const detailItemsTemplate = (detailItems) => {
+  if (!Array.isArray(detailItems) || detailItems.length === 0) {
+    return '<p class="detail-card__emptyMessage">点検内容はありません。</p>';
+  }
+  return `<div class="detail-card__detailItems">${detailItems.map((detail) => `
+    <div class="detail-card__detailItem">
+      <div class="detail-card__detailItemDevice">${escapeHtml(detail?.applicableDevice || '')}</div>
+      <div class="detail-card__detailItemContents">${escapeHtml(detail?.contents || '')}</div>
+    </div>`).join('')}</div>`;
+};
+
+const formatDelta = (before, after) => {
+  if (!Number.isInteger(before) || !Number.isInteger(after)) return '—';
+  const delta = after - before;
+  return `${delta >= 0 ? '+' : ''}${formatMinutes(delta)}`;
+};
+
 const approvedChartDay = (day) => {
   const teamWorkloads = day.teamWorkloads.filter((item) =>
     Object.hasOwn(TEAM_COLORS, item.teamName));
@@ -144,17 +174,19 @@ export class PlanSchedulingRenderer {
   }
 
   planTemplate(plan, selectedPlanId = null) {
-    const issues = plan.dataQualityIssues
+    const issues = (plan.dataQualityIssues || [])
       .map((issue) => `<span class="plan-scheduling__quality">${escapeHtml(issue.message)}</span>`)
       .join('');
     const selected = plan.planId === selectedPlanId ? ' is-selected-plan' : '';
-    return `<article class="plan-scheduling__planCard${selected}" data-plan-card-id="${plan.planId}">
-      <div class="plan-scheduling__planCardHeader"><div><span class="plan-scheduling__equipment">${escapeHtml(plan.equipmentName || '設備名なし')}</span><strong class="plan-scheduling__planPrimary">${escapeHtml(plan.inspectionNo)} · ${escapeHtml(plan.workName)}</strong></div><button type="button" class="ui-btn ui-btn--outline" data-action="move" data-plan-id="${plan.planId}" ${plan.isPreviewable ? '' : 'disabled'}>移動</button></div>
-      <dl class="plan-scheduling__planFacts">
-        <div><dt>基本工数</dt><dd>${escapeHtml(plan.baseWorkMinutesLabel)}</dd></div>
-        <div><dt>必要人数</dt><dd>${Number.isInteger(plan.requiredPersonCount) ? `${plan.requiredPersonCount}人` : 'データ不備'}</dd></div>
-        <div><dt>計算工数</dt><dd>${escapeHtml(plan.workMinutesLabel)}</dd></div>
-      </dl>${issues ? `<div class="plan-scheduling__qualityGroup"><strong>データ確認</strong>${issues}</div>` : ''}
+    return `<article class="detail-card plan-scheduling__planCard${selected}" data-plan-card-id="${plan.planId}" data-plan-id="${plan.planId}">
+      <header class="detail-card__header plan-scheduling__planCardHeader">
+        <div class="detail-card__title">
+          <div class="detail-card__titleLine">${escapeHtml(formatPlanCardTitle(plan))}</div>
+          <div class="detail-card__titleSub">${escapeHtml(formatPlanCardSubtitle(plan))}</div>
+        </div>
+        <button type="button" class="ui-btn ui-btn--sm ui-btn--outline plan-scheduling__moveButton" data-action="move" data-plan-id="${plan.planId}" ${plan.isPreviewable ? '' : 'disabled'}>移動</button>
+      </header>
+      <div class="detail-card__body">${detailItemsTemplate(plan.detailItems)}${issues ? `<div class="plan-scheduling__qualityGroup"><strong>データ確認</strong>${issues}</div>` : ''}</div>
     </article>`;
   }
 
@@ -222,20 +254,26 @@ export class PlanSchedulingRenderer {
 
   moveContextTemplate({ plan, destination, preview }) {
     if (!preview) {
-      return `<section class="plan-scheduling__moveContext"><strong>移動先を選択中</strong><span>計画マトリクスから別の有効なスロットを選択してください。</span><button type="button" class="ui-btn ui-btn--outline" data-action="cancel-move">キャンセル</button></section>`;
+      return `<section class="plan-scheduling__moveContext plan-scheduling__moveContext--selecting">
+        <header class="plan-scheduling__moveContextHeader"><div><span class="plan-scheduling__moveBadge">移動先を選択</span><h2>${escapeHtml(formatPlanCardTitle(plan))}</h2><p>${escapeHtml(plan.inspectionNo)}</p></div><button type="button" class="ui-btn ui-btn--sm ui-btn--ghost plan-scheduling__cancelMove" data-action="cancel-move">キャンセル</button></header>
+        <div class="plan-scheduling__moveCurrent"><span>現在</span><strong>${escapeHtml(plan.current.dateLabel)} / ${escapeHtml(plan.current.shift.name)} / ${escapeHtml(plan.current.team.name)}</strong></div>
+        <p class="plan-scheduling__moveGuidance">計画マトリクスから移動先の有効なスロットを選択してください。</p>
+      </section>`;
     }
     const current = plan.current;
-    return `<section class="plan-scheduling__moveContext"><div class="plan-scheduling__moveContextHeader"><div><p>選択中の計画</p><h2>${escapeHtml(plan.inspectionNo)} · ${escapeHtml(plan.workName)}</h2></div><strong>${formatMinutes(preview.selectedPlan)}</strong></div>
+    return `<section class="plan-scheduling__moveContext">
+      <header class="plan-scheduling__moveContextHeader"><div><span class="plan-scheduling__moveBadge">移動プレビュー</span><h2>${escapeHtml(formatPlanCardTitle(plan))}</h2><p>${escapeHtml(plan.inspectionNo)}</p></div><button type="button" class="ui-btn ui-btn--sm ui-btn--ghost plan-scheduling__cancelMove" data-action="cancel-move">キャンセル</button></header>
       <div class="plan-scheduling__moveSummary">
         <div><span>現在</span><strong>${escapeHtml(current.dateLabel)} / ${escapeHtml(current.shift.name)} / ${escapeHtml(current.team.name)}</strong></div>
         <span class="plan-scheduling__arrow" aria-hidden="true">→</span>
         <div><span>移動先</span><strong>${escapeHtml(destination.dateLabel)} / ${escapeHtml(destination.shift.name)} / ${escapeHtml(destination.team.name)}</strong></div>
       </div>
-      <div class="plan-scheduling__arithmetic">
-        <div><span>移動元スロット</span><strong>移動前 ${formatMinutes(preview.sourceBefore)} → 移動後 ${formatMinutes(preview.sourceAfter)}</strong></div>
-        <div><span>移動先スロット</span><strong>移動前 ${formatMinutes(preview.destinationBefore)} → 移動後 ${formatMinutes(preview.destinationAfter)}</strong></div>
-      </div>
-      <div class="plan-scheduling__moveContextFooter"><p class="plan-scheduling__readOnly">プレビューのみ。保存・更新は行われません。</p><button type="button" class="ui-btn ui-btn--outline" data-action="cancel-move">キャンセル</button></div></section>`;
+      <section class="plan-scheduling__moveImpact" aria-label="工数への影響"><h3>工数への影響</h3><dl class="plan-scheduling__arithmetic">
+        <div><dt>移動元</dt><dd><span>${formatMinutes(preview.sourceBefore)}</span><b>→</b><span>${formatMinutes(preview.sourceAfter)}</span><strong class="is-decrease">${formatDelta(preview.sourceBefore, preview.sourceAfter)}</strong></dd></div>
+        <div><dt>移動先</dt><dd><span>${formatMinutes(preview.destinationBefore)}</span><b>→</b><span>${formatMinutes(preview.destinationAfter)}</span><strong class="is-increase">${formatDelta(preview.destinationBefore, preview.destinationAfter)}</strong></dd></div>
+      </dl></section>
+      <p class="plan-scheduling__readOnly">プレビューのみ。保存・更新は行われません。</p>
+    </section>`;
   }
 
   get feedback() { return this.root.querySelector('[data-role="feedback"]'); }

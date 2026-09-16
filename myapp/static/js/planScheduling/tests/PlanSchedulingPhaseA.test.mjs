@@ -176,9 +176,45 @@ test('renderer exposes chart, matrix, drawer, and selection contracts', () => {
   assert.match(renderer, /data-chart-team/);
   assert.doesNotMatch(renderer, /previewTemplate|previewEmpty|destinationPrompt|data-role="preview"/);
   assert.doesNotMatch(renderer, /単位：分|工数（分）|plan-scheduling__yAxis/);
-  assert.match(renderer, /基本工数/);
-  assert.match(renderer, /必要人数/);
-  assert.match(renderer, /計算工数/);
+  assert.match(renderer, /detail-card/);
+  assert.match(renderer, /detailItemsTemplate/);
+  assert.match(renderer, /formatPlanCardTitle/);
+  assert.match(renderer, /formatPlanCardSubtitle/);
+  assert.match(renderer, /formatDelta/);
+});
+
+
+test('drawer Plan cards reuse detail-card content with an independent Move action', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const renderer = new PlanSchedulingRenderer({});
+  const plan = {
+    planId: 10,
+    inspectionNo: 'CARD-10',
+    machineName: '成形機2号機',
+    workName: '日常点検',
+    manHours: 14,
+    dayOfWeek: '月',
+    interval: 1,
+    unit: '週',
+    detailItems: [{ applicableDevice: '対象部位', contents: '点検内容' }],
+    isPreviewable: true,
+    dataQualityIssues: [],
+  };
+  const html = renderer.planTemplate(plan, null);
+
+  assert.match(html, /<article class="detail-card plan-scheduling__planCard/);
+  assert.match(html, /detail-card__titleLine">成形機2号機_日常点検/);
+  assert.match(html, /detail-card__titleSub">14分_月_1\/週/);
+  assert.match(html, /detail-card__detailItemDevice">対象部位/);
+  assert.match(html, /detail-card__detailItemContents">点検内容/);
+  assert.match(html, /ui-btn ui-btn--sm ui-btn--outline plan-scheduling__moveButton/);
+  assert.match(html, /<button[^>]*data-action="move"[^>]*>移動<\/button>/);
+  assert.doesNotMatch(html, /click-card__button/);
+  assert.doesNotMatch(html, /<button[^>]*>[\s\S]*<button/);
+
+  const disabled = renderer.planTemplate({ ...plan, planId: 11, detailItems: [], isPreviewable: false }, null);
+  assert.match(disabled, /点検内容はありません。/);
+  assert.match(disabled, /data-action="move"[^>]*disabled/);
 });
 
 
@@ -386,6 +422,38 @@ test('Move context is rendered inside the selected drawer without a standalone p
   assert.equal(drawer.hidden, false);
   assert.match(planList.innerHTML, /plan-scheduling__moveContext/);
   assert.match(planList.innerHTML, /data-action="cancel-move"/);
+});
+
+
+test('move preview distinguishes destination selection from read-only workload impact', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const renderer = new PlanSchedulingRenderer({});
+  const plan = {
+    inspectionNo: 'CARD-10', machineName: '成形機2号機', workName: '日常点検',
+    current: { dateLabel: '9/16', shift: { name: '2直' }, team: { name: 'B班' } },
+  };
+  const selecting = renderer.moveContextTemplate({ plan, destination: null, preview: null });
+  assert.match(selecting, /移動先を選択/);
+  assert.match(selecting, /9\/16 \/ 2直 \/ B班/);
+  assert.match(selecting, /data-action="cancel-move"/);
+  assert.doesNotMatch(selecting, /保存|確認|confirm/i);
+
+  const preview = renderer.moveContextTemplate({
+    plan,
+    destination: { dateLabel: '9/17', shift: { name: '1直' }, team: { name: 'A班' } },
+    preview: { sourceBefore: 284, sourceAfter: 270, destinationBefore: 133, destinationAfter: 147 },
+  });
+  assert.match(preview, /移動プレビュー/);
+  assert.match(preview, /移動元/);
+  assert.match(preview, /移動先/);
+  assert.match(preview, /284分/);
+  assert.match(preview, /270分/);
+  assert.match(preview, /-14分/);
+  assert.match(preview, /133分/);
+  assert.match(preview, /147分/);
+  assert.match(preview, /\+14分/);
+  assert.match(preview, /プレビューのみ。保存・更新は行われません。/);
+  assert.doesNotMatch(preview, /data-action="(?:save|confirm|submit)/);
 });
 
 
