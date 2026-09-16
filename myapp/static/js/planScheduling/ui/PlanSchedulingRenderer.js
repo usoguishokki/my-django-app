@@ -252,6 +252,9 @@ export class PlanSchedulingRenderer {
       : '';
     this.dateGrid.innerHTML = this.matrixDates(state)
       .map((day) => this.dateTemplate(day)).join('');
+    if (this.maintenanceWeek) {
+      this.maintenanceWeek.innerHTML = this.maintenanceWeekTemplate(state.week, state.dates);
+    }
     this.workspace.hidden = false;
     this.renderSelection(state, selection);
   }
@@ -380,6 +383,14 @@ export class PlanSchedulingRenderer {
     return `<div class="plan-scheduling__chartPlot${projection ? ' has-chart-preview' : ''}"><div class="plan-scheduling__chartColumns">${bars}</div></div>`;
   }
 
+  maintenanceWeekTemplate(week, dates) {
+    const cells = (dates || []).map((day) =>
+      `<span class="plan-scheduling__maintenanceWeekCell" data-plan-date="${escapeHtml(day.date)}"></span>`
+    ).join('');
+    const label = week?.label ? `保全週: ${week.label}` : '保全週情報なし';
+    return `${cells}<p class="plan-scheduling__maintenanceWeekLabel">${escapeHtml(label)}</p>`;
+  }
+
   matrixDates(state) {
     const shiftNames = new Set(state.workloadChart.shiftNames);
     const teamNames = new Set(Object.keys(TEAM_COLORS));
@@ -459,6 +470,7 @@ export class PlanSchedulingRenderer {
   get planningLayout() { return this.root.querySelector('[data-role="planning-layout"]'); }
   get planningMain() { return this.root.querySelector('.plan-scheduling__planningMain'); }
   get matrix() { return this.root.querySelector('.plan-scheduling__matrix'); }
+  get maintenanceWeek() { return this.root.querySelector('[data-role="maintenance-week"]'); }
   get dateGrid() { return this.root.querySelector('[data-role="date-grid"]'); }
   get workloadChart() { return this.root.querySelector('[data-role="workload-chart"]'); }
 }

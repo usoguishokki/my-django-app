@@ -69,6 +69,12 @@ class SharedLayoutScrollContractTests(TestCase):
         planning_canvas_rule = plan_scss.split(
             ".plan-scheduling__planningCanvas {", 1
         )[1].split("}", 1)[0]
+        chart_region_rule = plan_scss.split(
+            ".plan-scheduling__chartRegion {", 1
+        )[1].split("}", 1)[0]
+        maintenance_week_rule = plan_scss.split(
+            ".plan-scheduling__maintenanceWeek {", 1
+        )[1].split("}", 1)[0]
         chart_plot_rule = plan_scss.split(
             ".plan-scheduling__chartPlot {", 1
         )[1].split("}", 1)[0]
@@ -84,9 +90,13 @@ class SharedLayoutScrollContractTests(TestCase):
         self.assertIn("--plan-date-column-width: 190px;", planning_canvas_rule)
         self.assertIn("--plan-date-column-gap: 10px;", planning_canvas_rule)
         self.assertIn(
-            "grid-template-rows: minmax(0, 35fr) minmax(0, 65fr);",
+            "grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);",
             planning_canvas_rule,
         )
+        self.assertIn("grid-template-rows: minmax(0, 1fr) auto;", chart_region_rule)
+        self.assertIn("grid-auto-columns: var(--plan-date-column-width);", maintenance_week_rule)
+        self.assertIn("grid-auto-flow: column;", maintenance_week_rule)
+        self.assertIn("gap: var(--plan-date-column-gap);", maintenance_week_rule)
         self.assertNotIn("max-height", plan_list_rule)
         self.assertIn("overflow-y: auto;", plan_list_rule)
         workspace_rule = plan_scss.split(
