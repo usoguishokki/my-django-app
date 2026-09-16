@@ -567,10 +567,15 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /has-chart-selection[\s\S]*opacity:\s*\.35/);
   assert.match(scss, /has-chart-selection[\s\S]*filter:\s*saturate\(\.3\)/);
   assert.match(scss, /\.plan-scheduling__planningMain[^}]*overflow-x:\s*auto[^}]*overflow-y:\s*hidden/s);
+  assert.match(scss, /\.plan-scheduling__planningMain[^}]*height:\s*100%/s);
   assert.match(scss, /\.plan-scheduling__planningCanvas[^}]*--plan-date-column-width:\s*190px/s);
   assert.match(scss, /\.plan-scheduling__chartColumns[^}]*grid-auto-columns:\s*var\(--plan-date-column-width\)/s);
   assert.match(scss, /\.plan-scheduling__dateGrid[^}]*grid-auto-columns:\s*var\(--plan-date-column-width\)/s);
   assert.match(scss, /\.plan-scheduling__chartPlot[^}]*overflow:\s*visible/s);
+  assert.match(scss, /\[data-role="workload-chart"\][^}]*height:\s*100%/s);
+  assert.match(scss, /\.plan-scheduling__chartPlot[^}]*height:\s*100%/s);
+  assert.match(scss, /\.plan-scheduling__chartColumns[^}]*height:\s*100%/s);
+  assert.match(scss, /\.plan-scheduling__chartColumns[^}]*box-sizing:\s*border-box/s);
   assert.match(scss, /\.plan-scheduling__dateGrid[^}]*overflow-x:\s*visible[^}]*overflow-y:\s*auto/s);
   assert.doesNotMatch(scss, /justify-content:\s*space-around/);
 });

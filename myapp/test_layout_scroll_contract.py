@@ -80,6 +80,7 @@ class SharedLayoutScrollContractTests(TestCase):
         self.assertIn("overflow: hidden;", page_rule)
         self.assertIn("overflow-x: auto;", planning_main_rule)
         self.assertIn("overflow-y: hidden;", planning_main_rule)
+        self.assertIn("height: 100%;", planning_main_rule)
         self.assertIn("--plan-date-column-width: 190px;", planning_canvas_rule)
         self.assertIn("--plan-date-column-gap: 10px;", planning_canvas_rule)
         self.assertIn(
@@ -103,6 +104,15 @@ class SharedLayoutScrollContractTests(TestCase):
         self.assertIn("overflow-y: auto;", date_grid_rule)
         self.assertIn("overflow: visible;", chart_plot_rule)
         self.assertNotIn("overflow-x: auto;", chart_plot_rule)
+        self.assertIn("height: 100%;", chart_plot_rule)
+        self.assertIn("height: 100%;", plan_scss.split(
+            '.plan-scheduling__chart > [data-role="workload-chart"] {', 1
+        )[1].split("}", 1)[0])
+        chart_columns_rule = plan_scss.split(
+            ".plan-scheduling__chartColumns {", 1
+        )[1].split("}", 1)[0]
+        self.assertIn("height: 100%;", chart_columns_rule)
+        self.assertIn("box-sizing: border-box;", chart_columns_rule)
 
     def test_critical_pages_keep_their_layout_roots(self):
         expected_roots = {
