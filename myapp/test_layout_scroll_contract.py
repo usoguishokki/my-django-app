@@ -27,6 +27,30 @@ class SharedLayoutScrollContractTests(TestCase):
         self.assertIn("overflow-x: hidden;", child_rule)
         self.assertIn("overflow-y: auto;", child_rule)
 
+    def test_api_overlay_is_bounded_by_child_grid_without_viewport_overflow(self):
+        base_scss = (STATIC_CSS / "base.scss").read_text(encoding="utf-8")
+        base_css = (STATIC_CSS / "base.css").read_text(encoding="utf-8")
+
+        for source in (base_scss, base_css):
+            with self.subTest(source="scss" if source is base_scss else "css"):
+                child_rule = self.rule(source, ".child-grid")
+                overlay_rule = self.rule(source, ".api-loading")
+
+                self.assertIn("position: relative;", child_rule)
+                self.assertIn("overflow-y: auto;", child_rule)
+                self.assertIn("position: absolute;", overlay_rule)
+                self.assertIn("inset: 0;", overlay_rule)
+                self.assertNotIn("100vw", overlay_rule)
+                self.assertNotIn("100vh", overlay_rule)
+
+        self.assertIn("&--hidden", base_scss)
+        self.assertIn("pointer-events: none;", base_scss)
+        self.assertIn("&--visible", base_scss)
+        self.assertIn(".api-loading__overlay", base_css)
+        inner_overlay_rule = self.rule(base_css, ".api-loading__overlay")
+        self.assertIn("width: 100%;", inner_overlay_rule)
+        self.assertIn("height: 100%;", inner_overlay_rule)
+
     def test_plan_scheduling_uses_shell_scroll_and_drawer_local_card_scroll(self):
         plan_scss = (STATIC_CSS / "pages" / "planScheduling.scss").read_text(
             encoding="utf-8"
