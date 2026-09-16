@@ -182,6 +182,9 @@ test('renderer exposes chart, matrix, drawer, and selection contracts', () => {
   assert.match(renderer, /data-action="cancel-move"/);
   assert.match(renderer, /renderDrawer/);
   assert.match(renderer, /moveContextTemplate/);
+  assert.match(renderer, /moveSelectingContextTemplate/);
+  assert.match(renderer, /placeChartTooltip/);
+  assert.match(renderer, /pointerover|focusin|scroll/);
   assert.match(renderer, /renderChartSelection/);
   assert.match(renderer, /data-chart-date/);
   assert.match(renderer, /data-chart-team/);
@@ -574,7 +577,7 @@ test('Move context is rendered inside the selected drawer without a standalone p
 });
 
 
-test('move preview distinguishes destination selection from read-only workload impact', async () => {
+test('Move immediately opens the same preview component and progressively fills destination impact', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
   const renderer = new PlanSchedulingRenderer({});
   const plan = {
@@ -582,10 +585,12 @@ test('move preview distinguishes destination selection from read-only workload i
     current: { dateLabel: '9/16', shift: { name: '2直' }, team: { name: 'B班' } },
   };
   const selecting = renderer.moveContextTemplate({ plan, destination: null, preview: null });
-  assert.match(selecting, /移動先を選択/);
+  assert.match(selecting, /移動プレビュー/);
   assert.match(selecting, /9\/16/);
   assert.match(selecting, /2直 \/ B班/);
   assert.match(selecting, /14分/);
+  assert.match(selecting, /マトリクスから移動先を選択してください/);
+  assert.doesNotMatch(selecting, /工数への影響|284分|270分|-14分|133分|147分|\+14分/);
   assert.match(selecting, /data-action="cancel-move"/);
   assert.doesNotMatch(selecting, /保存|確認|confirm/i);
 
@@ -605,6 +610,34 @@ test('move preview distinguishes destination selection from read-only workload i
   assert.match(preview, /\+14分/);
   assert.match(preview, /プレビューのみ。保存・更新は行われません。/);
   assert.doesNotMatch(preview, /data-action="(?:save|confirm|submit)/);
+});
+
+
+test('chart tooltip placement remains within the planning bounds', async () => {
+  const { placeChartTooltip } = await importRenderer();
+  const boundsRect = { left: 100, top: 100, right: 700, bottom: 500 };
+  const tooltipRect = { width: 190, height: 140 };
+
+  const normal = placeChartTooltip({
+    anchorRect: { left: 300, top: 300, width: 44, bottom: 360 }, tooltipRect, boundsRect,
+  });
+  assert.deepEqual(normal, { left: 227, top: 152, placement: 'above' });
+
+  const topCollision = placeChartTooltip({
+    anchorRect: { left: 300, top: 108, width: 44, bottom: 160 }, tooltipRect, boundsRect,
+  });
+  assert.deepEqual(topCollision, { left: 227, top: 168, placement: 'below' });
+
+  const leftCollision = placeChartTooltip({
+    anchorRect: { left: 90, top: 300, width: 44, bottom: 360 }, tooltipRect, boundsRect,
+  });
+  assert.equal(leftCollision.left, 108);
+
+  const rightCollisionAfterHorizontalScroll = placeChartTooltip({
+    anchorRect: { left: 680, top: 300, width: 44, bottom: 360 }, tooltipRect, boundsRect,
+  });
+  assert.equal(rightCollisionAfterHorizontalScroll.left, 502);
+  assert.equal(rightCollisionAfterHorizontalScroll.top, 152);
 });
 
 
@@ -807,6 +840,7 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer[^}]*clamp\(380px,\s*26vw,\s*440px\)/s);
   assert.match(scss, /\.plan-scheduling__planCardActions[^}]*justify-content:\s*flex-end/s);
   assert.match(scss, /\.plan-scheduling__chartPlot\.has-chart-preview/);
+  assert.match(scss, /\.plan-scheduling__chartTooltip\.is-positioned[^}]*position:\s*fixed/s);
   assert.match(scss, /\.is-preview-removed/);
   assert.match(scss, /\.is-preview-added/);
   assert.match(scss, /prefers-reduced-motion:\s*reduce/);

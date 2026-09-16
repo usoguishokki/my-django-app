@@ -173,9 +173,67 @@ const tooltipDateLabel = (isoDate, fallback) => {
   return `${month}月${day}日（${weekdays[weekday]}）`;
 };
 
+const clamp = (value, minimum, maximum) => Math.min(Math.max(value, minimum), maximum);
+
+export const placeChartTooltip = ({ anchorRect, tooltipRect, boundsRect, safeMargin = 8 }) => {
+  const minimumLeft = boundsRect.left + safeMargin;
+  const maximumLeft = Math.max(minimumLeft, boundsRect.right - tooltipRect.width - safeMargin);
+  const minimumTop = boundsRect.top + safeMargin;
+  const maximumTop = Math.max(minimumTop, boundsRect.bottom - tooltipRect.height - safeMargin);
+  const preferredTop = anchorRect.top - tooltipRect.height - safeMargin;
+  const placement = preferredTop < minimumTop ? 'below' : 'above';
+  const preferredLeft = anchorRect.left + (anchorRect.width - tooltipRect.width) / 2;
+  const top = placement === 'above'
+    ? preferredTop
+    : anchorRect.bottom + safeMargin;
+  return {
+    left: clamp(preferredLeft, minimumLeft, maximumLeft),
+    top: clamp(top, minimumTop, maximumTop),
+    placement,
+  };
+};
+
 export class PlanSchedulingRenderer {
   constructor(root) {
     this.root = root;
+    this.activeChartBar = null;
+    this.root?.addEventListener?.('pointerover', (event) => this.showChartTooltip(event));
+    this.root?.addEventListener?.('pointerout', (event) => this.hideChartTooltip(event));
+    this.root?.addEventListener?.('focusin', (event) => this.showChartTooltip(event));
+    this.root?.addEventListener?.('focusout', (event) => this.hideChartTooltip(event));
+    this.root?.addEventListener?.('scroll', () => this.positionActiveChartTooltip(), true);
+  }
+
+  showChartTooltip(event) {
+    const chartBar = event.target?.closest?.('.plan-scheduling__chartBar');
+    if (!chartBar) return;
+    this.activeChartBar = chartBar;
+    this.positionActiveChartTooltip();
+  }
+
+  hideChartTooltip(event) {
+    const chartBar = event.target?.closest?.('.plan-scheduling__chartBar');
+    if (!chartBar || chartBar !== this.activeChartBar) return;
+    if (event.relatedTarget?.closest?.('.plan-scheduling__chartBar') === chartBar) return;
+    this.activeChartBar = null;
+  }
+
+  positionActiveChartTooltip() {
+    const chartBar = this.activeChartBar;
+    if (!chartBar?.isConnected) return;
+    const column = chartBar.closest('.plan-scheduling__chartColumn');
+    const tooltip = column?.querySelector('.plan-scheduling__chartTooltip');
+    const bounds = this.planningMain?.getBoundingClientRect?.();
+    if (!tooltip || !bounds) return;
+    tooltip.classList.add('is-positioned');
+    const placement = placeChartTooltip({
+      anchorRect: chartBar.getBoundingClientRect(),
+      tooltipRect: tooltip.getBoundingClientRect(),
+      boundsRect: bounds,
+    });
+    tooltip.style.left = `${placement.left}px`;
+    tooltip.style.top = `${placement.top}px`;
+    tooltip.dataset.placement = placement.placement;
   }
 
   renderLoading() {
@@ -355,17 +413,10 @@ export class PlanSchedulingRenderer {
   }
 
   moveContextTemplate({ plan, destination, preview }) {
-    if (!preview) {
-      return `<section class="plan-scheduling__moveContext plan-scheduling__moveContext--selecting">
-        <header class="plan-scheduling__moveContextHeader"><span class="plan-scheduling__moveState">移動先を選択</span><h2>${escapeHtml(formatPlanCardTitle(plan))}</h2><p>${escapeHtml(plan.inspectionNo)}</p></header>
-        <div class="plan-scheduling__moveCurrent"><div><span>現在</span><strong>${escapeHtml(plan.current.dateLabel)}</strong><small>${escapeHtml(plan.current.shift.name)} / ${escapeHtml(plan.current.team.name)}</small></div><strong class="plan-scheduling__moveWorkload">${formatMinutes(plan.workMinutes)}</strong></div>
-        <p class="plan-scheduling__moveGuidance">マトリクスから移動先を選択してください</p>
-        <footer class="plan-scheduling__moveActions"><button type="button" class="ui-btn ui-btn--sm ui-btn--ghost plan-scheduling__cancelMove" data-action="cancel-move">キャンセル</button></footer>
-      </section>`;
-    }
+    if (!preview) return this.moveSelectingContextTemplate(plan);
     const current = plan.current;
     return `<section class="plan-scheduling__moveContext">
-      <header class="plan-scheduling__moveContextHeader"><span class="plan-scheduling__moveState">移動プレビュー</span><h2>${escapeHtml(formatPlanCardTitle(plan))}</h2><p>${escapeHtml(plan.inspectionNo)}</p></header>
+      <header class="plan-scheduling__moveContextHeader"><span class="plan-scheduling__moveState">移動プレビュー</span><h2>${escapeHtml(formatPlanCardTitle(plan))}</h2><p>${escapeHtml(plan.inspectionNo)} / ${formatMinutes(plan.workMinutes)}</p></header>
       <div class="plan-scheduling__moveSummary">
         <div><span>現在</span><strong>${escapeHtml(current.dateLabel)}</strong><small>${escapeHtml(current.shift.name)} / ${escapeHtml(current.team.name)}</small></div>
         <span class="plan-scheduling__arrow" aria-hidden="true">→</span>
@@ -378,6 +429,17 @@ export class PlanSchedulingRenderer {
       </table></section>
       <p class="plan-scheduling__readOnly">プレビューのみ。保存・更新は行われません。</p>
       <footer class="plan-scheduling__moveActions"><button type="button" class="ui-btn ui-btn--sm ui-btn--ghost plan-scheduling__cancelMove" data-action="cancel-move">キャンセル</button></footer>
+      </section>`;
+  }
+
+  moveSelectingContextTemplate(plan) {
+    return `<section class="plan-scheduling__moveContext">
+      <header class="plan-scheduling__moveContextHeader"><span class="plan-scheduling__moveState">移動プレビュー</span><h2>${escapeHtml(formatPlanCardTitle(plan))}</h2><p>${escapeHtml(plan.inspectionNo)} / ${formatMinutes(plan.workMinutes)}</p></header>
+      <div class="plan-scheduling__moveSummary plan-scheduling__moveSummary--selecting">
+        <div><span>現在</span><strong>${escapeHtml(plan.current.dateLabel)}</strong><small>${escapeHtml(plan.current.shift.name)} / ${escapeHtml(plan.current.team.name)}</small></div>
+        <div><span>移動先</span><strong class="plan-scheduling__moveGuidance">マトリクスから移動先を選択してください</strong></div>
+      </div>
+      <footer class="plan-scheduling__moveActions"><button type="button" class="ui-btn ui-btn--sm ui-btn--ghost plan-scheduling__cancelMove" data-action="cancel-move">キャンセル</button></footer>
     </section>`;
   }
 
@@ -386,6 +448,7 @@ export class PlanSchedulingRenderer {
   get planList() { return this.root.querySelector('[data-role="plan-list"]'); }
   get drawer() { return this.root.querySelector('[data-role="slot-drawer"]'); }
   get planningLayout() { return this.root.querySelector('[data-role="planning-layout"]'); }
+  get planningMain() { return this.root.querySelector('.plan-scheduling__planningMain'); }
   get dateGrid() { return this.root.querySelector('[data-role="date-grid"]'); }
   get workloadChart() { return this.root.querySelector('[data-role="workload-chart"]'); }
 }

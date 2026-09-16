@@ -469,6 +469,16 @@
   opacity: 1;
   transform: translate(-50%, 0); }
 
+.plan-scheduling__chartTooltip.is-positioned {
+  position: fixed;
+  right: auto;
+  bottom: auto;
+  transform: translateY(6px); }
+
+.plan-scheduling__chartColumn:hover .plan-scheduling__chartTooltip.is-positioned,
+.plan-scheduling__chartColumn:focus-within .plan-scheduling__chartTooltip.is-positioned {
+  transform: translateY(0); }
+
 .plan-scheduling__tooltipDate {
   display: block;
   margin-bottom: 8px;
@@ -654,6 +664,10 @@
   align-items: center;
   gap: 10px; }
 
+.plan-scheduling__moveSummary--selecting {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  align-items: stretch; }
+
 .plan-scheduling__moveSummary > div {
   display: grid;
   gap: 4px;
@@ -679,6 +693,13 @@
   padding: 9px 10px;
   border-radius: 6px;
   background: #edf3f7; }
+
+.plan-scheduling__moveSummary--selecting .plan-scheduling__moveGuidance {
+  display: block;
+  padding: 4px 0;
+  color: #536a7b;
+  background: transparent;
+  font-weight: 600; }
 
 .plan-scheduling__moveImpact {
   display: grid;
