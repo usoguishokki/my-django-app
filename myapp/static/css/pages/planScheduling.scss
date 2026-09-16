@@ -6,6 +6,7 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
+  box-sizing: border-box;
   height: 100%;
   min-height: 0;
   min-width: 0;
@@ -51,6 +52,7 @@
 
 .plan-scheduling__workspace {
   grid-row: 2;
+  box-sizing: border-box;
   min-height: 0;
   overflow: hidden;
 }
@@ -61,6 +63,7 @@
   grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   height: 100%;
+  box-sizing: border-box;
   min-height: 0;
   overflow: hidden;
   min-width: 0;
@@ -74,11 +77,13 @@
   gap: 8px;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
 }
 
 .plan-scheduling__chart,
 .plan-scheduling__matrix,
 .plan-scheduling__drawer {
+  box-sizing: border-box;
   min-width: 0;
   border: 1px solid var(--ps-border);
   border-radius: 10px;
@@ -161,8 +166,10 @@
 .plan-scheduling__chartColumn { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; align-items: end; justify-items: center; gap: 5px; width: 72px; max-width: 12vw; height: 100%; color: #536a7b; font-size: 11px; }
 .plan-scheduling__chartBar { align-self: end; display: flex; flex-direction: column-reverse; justify-content: flex-start; width: 44px; height: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 4px 4px 0 0; background: transparent; cursor: help; }
 .plan-scheduling__chartBar:focus-visible { outline: 3px solid rgba(31, 95, 153, .32); outline-offset: 3px; }
-.plan-scheduling__chartSegment { display: block; min-height: 0; }
+.plan-scheduling__chartSegment { display: block; position: relative; min-height: 0; transition: filter .12s ease, opacity .12s ease; }
 .plan-scheduling__chartSegment { background: var(--plan-scheduling-team-color); }
+.plan-scheduling__chart > [data-role="workload-chart"].has-chart-selection .plan-scheduling__chartSegment:not(.is-selected-chart-segment) { opacity: .58; }
+.plan-scheduling__chartSegment.is-selected-chart-segment { z-index: 1; filter: brightness(1.12) saturate(1.08); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .9); }
 
 .plan-scheduling__chartTooltip { position: absolute; z-index: 4; bottom: 28px; left: 50%; width: 190px; padding: 11px 12px; border: 1px solid #cbd7e0; border-radius: 8px; color: var(--ps-ink); background: white; box-shadow: 0 8px 24px rgba(29, 54, 77, .18); opacity: 0; pointer-events: none; transform: translate(-50%, 6px); transition: opacity .12s ease, transform .12s ease; }
 .plan-scheduling__chartColumn:hover .plan-scheduling__chartTooltip,

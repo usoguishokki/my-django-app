@@ -171,6 +171,9 @@ test('renderer exposes chart, matrix, drawer, and selection contracts', () => {
   assert.match(renderer, /data-action="cancel-move"/);
   assert.match(renderer, /renderDrawer/);
   assert.match(renderer, /moveContextTemplate/);
+  assert.match(renderer, /renderChartSelection/);
+  assert.match(renderer, /data-chart-date/);
+  assert.match(renderer, /data-chart-team/);
   assert.doesNotMatch(renderer, /previewTemplate|previewEmpty|destinationPrompt|data-role="preview"/);
   assert.doesNotMatch(renderer, /単位：分|工数（分）|plan-scheduling__yAxis/);
   assert.match(renderer, /基本工数/);
@@ -217,6 +220,64 @@ test('stacked bars use stable distinct A/B/C colors and contain no text labels',
   assert.equal(segments.length, 3);
   assert.ok(segments.every((match) => match[1] === ''));
   assert.doesNotMatch(html, /chartLegend/);
+});
+
+
+test('chart selection maps a matrix slot to its daily team segment only', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const renderer = new PlanSchedulingRenderer({});
+  const chart = {
+    dates: ['2026-09-16', '2026-09-17'].map((date) => ({
+      date, label: date,
+      teamWorkloads: [
+        { teamName: 'A班', workloadMinutes: 100, workloadLabel: '100分' },
+        { teamName: 'B班', workloadMinutes: 200, workloadLabel: '200分' },
+        { teamName: 'C班', workloadMinutes: 300, workloadLabel: '300分' },
+      ],
+    })),
+  };
+  const selected = { date: '2026-09-16', shift: { name: '2直' }, team: { name: 'B班' } };
+  const html = renderer.workloadChartTemplate(chart, selected);
+  const selectedSegments = [...html.matchAll(/plan-scheduling__chartSegment is-selected-chart-segment[^>]*data-chart-date="([^"]+)"[^>]*data-chart-team="([^"]+)"/g)];
+  assert.deepEqual(selectedSegments.map((match) => match.slice(1)), [['2026-09-16', 'B班']]);
+  assert.equal((html.match(/is-selected-chart-segment/g) || []).length, 1);
+
+  for (const teamName of ['A班', 'B班', 'C班']) {
+    const teamHtml = renderer.workloadChartTemplate(chart, {
+      date: '2026-09-16', shift: { name: '1直' }, team: { name: teamName },
+    });
+    assert.match(teamHtml, new RegExp(`is-selected-chart-segment[^>]*data-chart-date="2026-09-16"[^>]*data-chart-team="${teamName}"`));
+  }
+});
+
+
+test('chart selection replaces and clears using the authoritative selected slot', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const toggles = [];
+  const segments = [
+    ['2026-09-16', 'A班'], ['2026-09-16', 'B班'], ['2026-09-17', 'B班'],
+  ].map(([chartDate, chartTeam]) => ({
+    dataset: { chartDate, chartTeam },
+    classList: { toggle: (name, value) => toggles.push([chartDate, chartTeam, name, value]) },
+  }));
+  const chart = { classList: { toggle: (...args) => toggles.push(['chart', ...args]) } };
+  const renderer = new PlanSchedulingRenderer({
+    querySelector: (selector) => selector === '[data-role="workload-chart"]' ? chart : null,
+    querySelectorAll: () => segments,
+  });
+
+  renderer.renderChartSelection({ date: '2026-09-16', team: { name: 'B班' } });
+  assert.deepEqual(toggles.filter((entry) => entry.length === 4), [
+    ['2026-09-16', 'A班', 'is-selected-chart-segment', false],
+    ['2026-09-16', 'B班', 'is-selected-chart-segment', true],
+    ['2026-09-17', 'B班', 'is-selected-chart-segment', false],
+  ]);
+  toggles.length = 0;
+  renderer.renderChartSelection({ date: '2026-09-17', team: { name: 'B班' } });
+  assert.deepEqual(toggles.filter((entry) => entry.length === 4).map((entry) => entry[3]), [false, false, true]);
+  toggles.length = 0;
+  renderer.renderChartSelection(null);
+  assert.deepEqual(toggles.filter((entry) => entry.length === 4).map((entry) => entry[3]), [false, false, false]);
 });
 
 
@@ -368,8 +429,8 @@ test('controller supports Move, destination selection, and cancel without mutati
   controller.state = {
     plans: [plan()],
     dates: [{ slots: [
-      { ...slot('2026-09-15:1', 480), planIds: [10] },
-      { ...slot('2026-09-16:2', 360), planIds: [] },
+      { ...slot('2026-09-15:1', 480), date: '2026-09-15', team: { name: 'A班' }, planIds: [10] },
+      { ...slot('2026-09-16:2', 360), date: '2026-09-16', team: { name: 'B班' }, planIds: [] },
     ] }],
   };
   controller.interaction = previewPolicy.selectMatrixSlot(
@@ -394,6 +455,8 @@ test('controller supports Move, destination selection, and cancel without mutati
   assert.equal(controller.interaction.destinationSlotKey, '2026-09-16:2');
   assert.equal(controller.interaction.selectedSlotKey, '2026-09-15:1');
   assert.deepEqual(lastSelection.preview, { selectedPlan: 120 });
+  assert.equal(lastSelection.selectedSlot.key, '2026-09-15:1');
+  assert.deepEqual(lastSelection.selectedSlot.team, { name: 'A班' });
 
   controller.handleClick(eventFor('[data-action="cancel-move"]', {}));
   assert.equal(controller.interaction.mode, previewPolicy.PlanSchedulingMode.NORMAL);
@@ -403,10 +466,36 @@ test('controller supports Move, destination selection, and cancel without mutati
 });
 
 
+test('keyboard-generated slot activation supplies the same chart selection state', async () => {
+  const { PlanSchedulingController } = await importController();
+  let lastSelection = null;
+  const controller = new PlanSchedulingController({
+    root: {}, apiClient: {},
+    renderer: { renderSelection: (_state, selection) => { lastSelection = selection; } },
+    buildPreview: () => null, selectSlotPlans: previewPolicy.plansForSlot,
+  });
+  controller.state = {
+    plans: [],
+    dates: [{ slots: [{
+      ...slot('2026-09-16:2', 284), date: '2026-09-16', team: { name: 'B班' }, planIds: [],
+    }] }],
+  };
+  controller.handleClick({ target: { closest: (selector) => (
+    selector === '[data-slot-key]'
+      ? { disabled: false, dataset: { slotKey: '2026-09-16:2' } }
+      : null
+  ) } });
+  assert.equal(lastSelection.selectedSlot.date, '2026-09-16');
+  assert.deepEqual(lastSelection.selectedSlot.team, { name: 'B班' });
+});
+
+
 test('drawer close has a dedicated non-modal controller transition', async () => {
   const { PlanSchedulingController } = await importController();
+  let lastSelection = null;
   const controller = new PlanSchedulingController({
-    root: {}, apiClient: {}, renderer: { renderSelection: () => {} },
+    root: {}, apiClient: {},
+    renderer: { renderSelection: (_state, selection) => { lastSelection = selection; } },
     buildPreview: () => null, selectSlotPlans: previewPolicy.plansForSlot,
   });
   controller.state = { plans: [], dates: [] };
@@ -417,6 +506,7 @@ test('drawer close has a dedicated non-modal controller transition', async () =>
     selector === '[data-action="close-drawer"]' ? {} : null
   ) } });
   assert.deepEqual(controller.interaction, previewPolicy.initialInteractionState());
+  assert.equal(lastSelection.selectedSlot, undefined);
 });
 
 
@@ -453,4 +543,6 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.doesNotMatch(scss, /chartLegend|team-other/);
   assert.doesNotMatch(scss, /plan-scheduling__yAxis/);
   assert.match(scss, /\.plan-scheduling__planList[^}]*overflow-y:\s*auto/s);
+  assert.match(scss, /\.plan-scheduling__chartSegment\.is-selected-chart-segment/);
+  assert.match(scss, /has-chart-selection[\s\S]*opacity:\s*\.58/);
 });

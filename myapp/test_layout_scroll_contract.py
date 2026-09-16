@@ -38,6 +38,14 @@ class SharedLayoutScrollContractTests(TestCase):
         plan_list_rule = plan_scss.split(
             ".plan-scheduling__planList {", 1
         )[1].split("}", 1)[0]
+        page_rule = plan_scss.split(".plan-scheduling {", 1)[1].split("}", 1)[0]
+        planning_main_rule = plan_scss.split(
+            ".plan-scheduling__planningMain {", 1
+        )[1].split("}", 1)[0]
+        self.assertIn("box-sizing: border-box;", page_rule)
+        self.assertIn("height: 100%;", page_rule)
+        self.assertIn("overflow: hidden;", page_rule)
+        self.assertIn("overflow: hidden;", planning_main_rule)
         self.assertNotIn("max-height", plan_list_rule)
         self.assertIn("overflow-y: auto;", plan_list_rule)
         workspace_rule = plan_scss.split(

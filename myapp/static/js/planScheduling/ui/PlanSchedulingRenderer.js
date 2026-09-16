@@ -75,7 +75,10 @@ export class PlanSchedulingRenderer {
     this.feedback.textContent = state.dataQuality.hasErrors
       ? `データ確認事項が${state.dataQuality.issueCount}件あります。`
       : '';
-    this.workloadChart.innerHTML = this.workloadChartTemplate(state.workloadChart);
+    this.workloadChart.innerHTML = this.workloadChartTemplate(
+      state.workloadChart,
+      selection.selectedSlot,
+    );
     this.dateGrid.innerHTML = this.matrixDates(state)
       .map((day) => this.dateTemplate(day)).join('');
     this.workspace.hidden = false;
@@ -84,6 +87,7 @@ export class PlanSchedulingRenderer {
 
   renderSelection(_state, selection) {
     this.renderDrawer(selection);
+    this.renderChartSelection(selection.selectedSlot);
     const selectingDestination = selection.isMoving;
     this.root.querySelectorAll('[data-slot-key]').forEach((button) => {
       const isCurrent = button.dataset.slotKey === selection.plan?.current.slotKey;
@@ -94,11 +98,25 @@ export class PlanSchedulingRenderer {
       );
       button.classList.toggle('is-current-slot', isCurrent);
       button.classList.toggle('is-selected-slot', isSelectedSlot);
+      button.setAttribute('aria-pressed', isSelectedSlot ? 'true' : 'false');
       button.disabled = button.dataset.slotSelectable !== 'true' || (
         selectingDestination && (
           isCurrent || button.dataset.previewSelectable !== 'true'
         )
       );
+    });
+  }
+
+  renderChartSelection(selectedSlot) {
+    const selectedDate = selectedSlot?.date;
+    const selectedTeam = selectedSlot?.team?.name;
+    const hasSelection = Boolean(selectedDate && selectedTeam);
+    this.workloadChart.classList.toggle('has-chart-selection', hasSelection);
+    this.root.querySelectorAll('[data-chart-date][data-chart-team]').forEach((segment) => {
+      const isSelected = hasSelection &&
+        segment.dataset.chartDate === selectedDate &&
+        segment.dataset.chartTeam === selectedTeam;
+      segment.classList.toggle('is-selected-chart-segment', isSelected);
     });
   }
 
@@ -140,7 +158,7 @@ export class PlanSchedulingRenderer {
     </article>`;
   }
 
-  workloadChartTemplate(chart) {
+  workloadChartTemplate(chart, selectedSlot = null) {
     const chartDays = chart.dates.map(approvedChartDay);
     const maxTotal = Math.max(1, ...chartDays.map((day) =>
       day.totalWorkloadMinutes ?? day.teamWorkloads.reduce(
@@ -150,7 +168,9 @@ export class PlanSchedulingRenderer {
       const segments = day.teamWorkloads.map((item) => {
         const height = Number.isInteger(item.workloadMinutes)
           ? (item.workloadMinutes / maxTotal) * 100 : 0;
-        return `<span class="plan-scheduling__chartSegment" style="${teamColorDeclaration(item.teamName)};height:${height}%" aria-hidden="true"></span>`;
+        const isSelected = day.date === selectedSlot?.date &&
+          item.teamName === selectedSlot?.team?.name;
+        return `<span class="plan-scheduling__chartSegment${isSelected ? ' is-selected-chart-segment' : ''}" data-chart-date="${escapeHtml(day.date)}" data-chart-team="${escapeHtml(item.teamName)}" style="${teamColorDeclaration(item.teamName)};height:${height}%" aria-hidden="true"></span>`;
       }).join('');
       const tooltipId = `plan-workload-tooltip-${dayIndex}`;
       const rows = day.teamWorkloads.map((item) => `
@@ -194,7 +214,7 @@ export class PlanSchedulingRenderer {
       (slot.hasInvalidEffort ? '工数データに不備があります。' : '');
     return `<button type="button" class="plan-scheduling__slot${disabled ? ' is-invalid' : ''}"
       data-slot-key="${escapeHtml(slot.key)}" data-slot-selectable="${disabled ? 'false' : 'true'}"
-      data-preview-selectable="${!disabled && Number.isInteger(slot.workloadMinutes) ? 'true' : 'false'}" ${disabled ? 'disabled' : ''}>
+      data-preview-selectable="${!disabled && Number.isInteger(slot.workloadMinutes) ? 'true' : 'false'}" aria-pressed="false" ${disabled ? 'disabled' : ''}>
       <span>${escapeHtml(slot.team.name)}</span><strong>${escapeHtml(slot.workloadLabel)}</strong>
       ${issue ? `<small>${escapeHtml(issue)}</small>` : ''}
     </button>`;
