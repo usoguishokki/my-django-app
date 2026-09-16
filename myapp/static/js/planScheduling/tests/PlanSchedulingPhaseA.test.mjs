@@ -217,14 +217,16 @@ test('drawer Plan cards reuse detail-card content with an independent Move actio
 
   assert.match(html, /<article class="detail-card plan-scheduling__planCard/);
   assert.match(html, /detail-card__titleLine">成形機2号機_日常点検/);
-  assert.match(html, /detail-card__titleSub">14分_月_1\/週/);
+  assert.match(html, /detail-card__titleSub">14分　月　1\/週/);
   assert.match(html, /detail-card__detailItemDevice">対象部位/);
   assert.match(html, /detail-card__detailItemContents">点検内容/);
   assert.doesNotMatch(html, /点検内容はありません。/);
   assert.match(html, /ui-btn ui-btn--sm ui-btn--outline plan-scheduling__moveButton/);
+  assert.match(html, /<footer class="plan-scheduling__planCardActions">[\s\S]*data-action="move"[\s\S]*<\/footer>/);
   assert.match(html, /<button[^>]*data-action="move"[^>]*>移動<\/button>/);
   assert.doesNotMatch(html, /click-card__button/);
   assert.doesNotMatch(html, /<button[^>]*>[\s\S]*<button/);
+  assert.match(renderer.planTemplate(plan, 10), /plan-scheduling__planCard is-selected-plan/);
 
   const disabled = renderer.planTemplate({ ...plan, planId: 11, detailItems: [], isPreviewable: false }, null);
   assert.match(disabled, /点検内容はありません。/);
@@ -368,6 +370,137 @@ test('chart tooltip and total defensively exclude values outside A/B/C scope', a
   });
   assert.match(html, /600分/);
   assert.doesNotMatch(html, /連2_A|連2_B|常昼|999分/);
+});
+
+
+test('chart projection transfers workload by date and team using PreviewPolicy values', async () => {
+  const { buildChartPresentation } = await importRenderer();
+  const chart = {
+    dates: [
+      {
+        date: '2026-09-16', label: '9/16（水）',
+        teamWorkloads: [
+          { teamName: 'A班', workloadMinutes: 100, workloadLabel: '100分' },
+          { teamName: 'B班', workloadMinutes: 284, workloadLabel: '284分' },
+          { teamName: 'C班', workloadMinutes: 50, workloadLabel: '50分' },
+        ],
+      },
+      {
+        date: '2026-09-17', label: '9/17（木）',
+        teamWorkloads: [
+          { teamName: 'A班', workloadMinutes: 133, workloadLabel: '133分' },
+          { teamName: 'B班', workloadMinutes: 100, workloadLabel: '100分' },
+          { teamName: 'C班', workloadMinutes: 0, workloadLabel: '0分' },
+        ],
+      },
+    ],
+  };
+  const selection = {
+    selectedSlot: { date: '2026-09-16', team: { name: 'B班' } },
+    plan: { current: { date: '2026-09-16', team: { name: 'B班' } } },
+    destination: { date: '2026-09-17', team: { name: 'A班' } },
+    preview: { sourceBefore: 284, sourceAfter: 264, destinationBefore: 133, destinationAfter: 153 },
+  };
+  const presentation = buildChartPresentation(chart, selection);
+  const source = presentation.dates[0].teamWorkloads.find((item) => item.teamName === 'B班');
+  const destination = presentation.dates[1].teamWorkloads.find((item) => item.teamName === 'A班');
+
+  assert.equal(source.workloadMinutes, 284);
+  assert.equal(source.projectedWorkloadMinutes, 264);
+  assert.equal(source.change.kind, 'source');
+  assert.equal(destination.workloadMinutes, 133);
+  assert.equal(destination.projectedWorkloadMinutes, 153);
+  assert.equal(destination.change.kind, 'destination');
+  assert.equal(presentation.dates[0].projectedTotalWorkloadMinutes, 414);
+  assert.equal(presentation.dates[1].projectedTotalWorkloadMinutes, 253);
+  assert.equal(presentation.maxTotal, 434);
+});
+
+
+test('chart projection handles same-date/team and transfer edge cases', async () => {
+  const { buildChartPresentation } = await importRenderer();
+  const chart = {
+    dates: [
+      { date: '2026-09-16', label: '9/16', teamWorkloads: [
+        { teamName: 'A班', workloadMinutes: 100 }, { teamName: 'B班', workloadMinutes: 284 },
+      ] },
+      { date: '2026-09-17', label: '9/17', teamWorkloads: [
+        { teamName: 'A班', workloadMinutes: 20 }, { teamName: 'B班', workloadMinutes: 40 },
+      ] },
+    ],
+  };
+  const base = {
+    plan: { current: { date: '2026-09-16', team: { name: 'B班' } } },
+    preview: { sourceBefore: 284, sourceAfter: 264, destinationBefore: 100, destinationAfter: 120 },
+  };
+
+  const sameTeam = buildChartPresentation(chart, {
+    ...base, destination: { date: '2026-09-16', team: { name: 'B班' } },
+  });
+  assert.equal(sameTeam.projection, null);
+  assert.deepEqual(
+    sameTeam.dates[0].teamWorkloads.map((item) => item.projectedWorkloadMinutes),
+    [100, 284],
+  );
+
+  const redistributed = buildChartPresentation(chart, {
+    ...base, destination: { date: '2026-09-16', team: { name: 'A班' } },
+  });
+  assert.deepEqual(
+    redistributed.dates[0].teamWorkloads.map((item) => item.projectedWorkloadMinutes),
+    [120, 264],
+  );
+  assert.equal(redistributed.dates[0].projectedTotalWorkloadMinutes, 384);
+
+  const sameTeamOtherDate = buildChartPresentation(chart, {
+    ...base,
+    destination: { date: '2026-09-17', team: { name: 'B班' } },
+    preview: { ...base.preview, destinationBefore: 40, destinationAfter: 60 },
+  });
+  assert.equal(sameTeamOtherDate.dates[0].teamWorkloads[1].projectedWorkloadMinutes, 264);
+  assert.equal(sameTeamOtherDate.dates[1].teamWorkloads[1].projectedWorkloadMinutes, 60);
+});
+
+
+test('chart preview expands scale, renders transfer portions, and exposes tooltip deltas', async () => {
+  const { PlanSchedulingRenderer, buildChartPresentation } = await importRenderer();
+  const chart = {
+    dates: [
+      { date: '2026-09-16', label: '9/16（水）', teamWorkloads: [
+        { teamName: 'A班', workloadMinutes: 0, workloadLabel: '0分' },
+        { teamName: 'B班', workloadMinutes: 284, workloadLabel: '284分' },
+      ] },
+      { date: '2026-09-17', label: '9/17（木）', teamWorkloads: [
+        { teamName: 'A班', workloadMinutes: 280, workloadLabel: '280分' },
+        { teamName: 'B班', workloadMinutes: 0, workloadLabel: '0分' },
+      ] },
+    ],
+  };
+  const selection = {
+    selectedSlot: { date: '2026-09-16', team: { name: 'B班' } },
+    plan: { current: { date: '2026-09-16', team: { name: 'B班' } } },
+    destination: { date: '2026-09-17', team: { name: 'A班' } },
+    preview: { sourceBefore: 284, sourceAfter: 264, destinationBefore: 280, destinationAfter: 300 },
+  };
+  assert.equal(buildChartPresentation(chart, selection).maxTotal, 300);
+
+  const html = new PlanSchedulingRenderer({}).workloadChartTemplate(chart, selection);
+  assert.match(html, /has-chart-preview/);
+  assert.match(html, /is-preview-source/);
+  assert.match(html, /is-preview-removed/);
+  assert.match(html, /is-preview-destination/);
+  assert.match(html, /is-preview-added/);
+  assert.match(html, /284分 → 264分[\s\S]*-20分/);
+  assert.match(html, /280分 → 300分[\s\S]*\+20分/);
+  assert.match(html, /移動プレビュー後 264分/);
+  assert.match(html, /20分減少/);
+  assert.match(html, /20分増加/);
+
+  const authoritative = new PlanSchedulingRenderer({}).workloadChartTemplate(chart, {
+    selectedSlot: selection.selectedSlot,
+    preview: null,
+  });
+  assert.doesNotMatch(authoritative, /has-chart-preview|is-preview-source|is-preview-destination/);
 });
 
 
@@ -569,6 +702,7 @@ test('controller supports Move, destination selection, and cancel without mutati
   assert.equal(controller.interaction.movingPlanId, null);
   assert.equal(controller.interaction.destinationSlotKey, '');
   assert.equal(controller.interaction.selectedSlotKey, '2026-09-15:1');
+  assert.equal(lastSelection.preview, null);
 });
 
 
@@ -613,6 +747,7 @@ test('drawer close has a dedicated non-modal controller transition', async () =>
   ) } });
   assert.deepEqual(controller.interaction, previewPolicy.initialInteractionState());
   assert.equal(lastSelection.selectedSlot, undefined);
+  assert.equal(lastSelection.preview, null);
 });
 
 
@@ -663,5 +798,11 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__chartColumns[^}]*height:\s*100%/s);
   assert.match(scss, /\.plan-scheduling__chartColumns[^}]*box-sizing:\s*border-box/s);
   assert.match(scss, /\.plan-scheduling__dateGrid[^}]*overflow-x:\s*visible[^}]*overflow-y:\s*auto/s);
+  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer[^}]*clamp\(380px,\s*26vw,\s*440px\)/s);
+  assert.match(scss, /\.plan-scheduling__planCardActions[^}]*justify-content:\s*flex-end/s);
+  assert.match(scss, /\.plan-scheduling__chartPlot\.has-chart-preview/);
+  assert.match(scss, /\.is-preview-removed/);
+  assert.match(scss, /\.is-preview-added/);
+  assert.match(scss, /prefers-reduced-motion:\s*reduce/);
   assert.doesNotMatch(scss, /justify-content:\s*space-around/);
 });

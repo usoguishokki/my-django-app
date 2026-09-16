@@ -17,8 +17,7 @@
   background: #f4f7fa; }
 
 .plan-scheduling__dateControls,
-.plan-scheduling__moveSummary,
-.plan-scheduling__moveContextHeader {
+.plan-scheduling__moveSummary {
   display: flex;
   align-items: center; }
 
@@ -80,7 +79,7 @@
   min-width: 0; }
 
 .plan-scheduling__planningLayout.has-drawer {
-  grid-template-columns: minmax(300px, 340px) minmax(0, 1fr); }
+  grid-template-columns: clamp(380px, 26vw, 440px) minmax(0, 1fr); }
 
 .plan-scheduling__planningMain {
   height: 100%;
@@ -132,7 +131,7 @@
 .plan-scheduling__planList {
   display: grid;
   align-content: start;
-  gap: 8px;
+  gap: 12px;
   min-height: 0;
   overflow-y: auto; }
 
@@ -212,26 +211,54 @@
   cursor: pointer; }
 
 .plan-scheduling__planCard {
+  position: relative;
   min-width: 0; }
 
 .plan-scheduling__planCard .detail-card__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px; }
+  display: block;
+  padding: 11px 14px; }
 
 .plan-scheduling__planCard .detail-card__title {
   min-width: 0; }
 
+.plan-scheduling__planCard .detail-card__titleLine {
+  display: -webkit-box;
+  overflow: hidden;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  font-size: 14px;
+  line-height: 1.45; }
+
+.plan-scheduling__planCard .detail-card__titleSub {
+  margin-top: 6px;
+  color: #4b6071;
+  line-height: 1.4; }
+
 .plan-scheduling__planCard .detail-card__body {
-  gap: 10px; }
+  gap: 12px;
+  padding: 14px; }
+
+.plan-scheduling__planCard .detail-card__detailItems {
+  gap: 12px; }
+
+.plan-scheduling__planCardActions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 9px 12px 11px;
+  border-top: 1px solid #d8e0e8;
+  background: rgba(248, 250, 252, 0.72); }
 
 .plan-scheduling__moveButton {
   flex: 0 0 auto;
-  min-width: 72px;
+  min-width: 84px;
+  min-height: 38px;
+  padding-inline: 18px;
   color: var(--ps-blue);
-  border-color: #b9d1e5;
-  background: #f8fbfe; }
+  border-color: #a9c5db;
+  background: #fff; }
 
 .plan-scheduling__moveButton:not(:disabled):hover {
   color: #164b77;
@@ -242,6 +269,12 @@
 .plan-scheduling__moveButton:focus-visible {
   outline: 3px solid rgba(31, 95, 153, 0.28);
   outline-offset: 2px; }
+
+.plan-scheduling__moveButton:disabled {
+  border-color: #d5dde4;
+  color: #8a99a5;
+  background: #f3f5f7;
+  opacity: 1; }
 
 .plan-scheduling__slot:hover:not(:disabled) {
   border-color: var(--ps-blue); }
@@ -255,6 +288,22 @@
   border-color: var(--ps-blue);
   background: var(--ps-blue-soft);
   box-shadow: inset 4px 0 var(--ps-blue); }
+
+.plan-scheduling__planCard.is-selected-plan {
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 18px rgba(31, 95, 153, 0.12); }
+
+.plan-scheduling__planCard.is-selected-plan::before {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  inset: 0 auto 0 0;
+  width: 4px;
+  border-radius: 10px 0 0 10px;
+  background: var(--ps-blue); }
+
+.plan-scheduling__planCard.is-selected-plan .detail-card__header {
+  background: linear-gradient(to bottom, #eef5fa, #e8f1f8); }
 
 .plan-scheduling__slot.is-selected-slot {
   border-color: var(--ps-blue);
@@ -340,12 +389,12 @@
   display: block;
   position: relative;
   min-height: 0;
-  transition: filter .12s ease, opacity .12s ease; }
+  transition: height .18s ease, filter .12s ease, opacity .12s ease; }
 
 .plan-scheduling__chartSegment {
   background: var(--plan-scheduling-team-color); }
 
-.plan-scheduling__chart > [data-role="workload-chart"].has-chart-selection .plan-scheduling__chartSegment:not(.is-selected-chart-segment) {
+.plan-scheduling__chart > [data-role="workload-chart"].has-chart-selection .plan-scheduling__chartSegment:not(.is-selected-chart-segment):not(.is-preview-source):not(.is-preview-destination) {
   opacity: .35;
   filter: saturate(0.3); }
 
@@ -353,6 +402,35 @@
   z-index: 1;
   filter: brightness(1.12) saturate(1.08);
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9); }
+
+.plan-scheduling__chartPlot.has-chart-preview .plan-scheduling__chartSegment {
+  opacity: .28;
+  filter: saturate(0.25); }
+
+.plan-scheduling__chartPlot.has-chart-preview .plan-scheduling__chartSegment.is-preview-source,
+.plan-scheduling__chartPlot.has-chart-preview .plan-scheduling__chartSegment.is-preview-destination {
+  z-index: 2;
+  display: flex;
+  flex-direction: column-reverse;
+  opacity: 1;
+  filter: saturate(1);
+  background: transparent;
+  box-shadow: 0 0 0 2px rgba(24, 48, 68, 0.16); }
+
+.plan-scheduling__chartPortion {
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  background: var(--plan-scheduling-team-color);
+  transition: height .18s ease, opacity .18s ease; }
+
+.plan-scheduling__chartPortion.is-preview-removed {
+  opacity: .18;
+  background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0 3px, transparent 3px 6px); }
+
+.plan-scheduling__chartPortion.is-preview-added {
+  filter: brightness(1.28);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8); }
 
 .plan-scheduling__chartTooltip {
   position: absolute;
@@ -402,6 +480,24 @@
   height: 11px;
   border-radius: 2px;
   background: var(--plan-scheduling-team-color); }
+
+.plan-scheduling__tooltipPreview {
+  display: grid !important;
+  justify-items: end;
+  gap: 1px !important; }
+
+.plan-scheduling__tooltipPreview > span {
+  color: #4f6475;
+  font-size: 11px; }
+
+.plan-scheduling__tooltipPreview > strong {
+  font-size: 12px; }
+
+.plan-scheduling__tooltipRow.is-preview-source .plan-scheduling__tooltipPreview > strong {
+  color: #9a3412; }
+
+.plan-scheduling__tooltipRow.is-preview-destination .plan-scheduling__tooltipPreview > strong {
+  color: #166534; }
 
 .plan-scheduling__tooltipTotal {
   margin-top: 8px;
@@ -480,46 +576,33 @@
 
 .plan-scheduling__moveContext {
   display: grid;
-  gap: 12px;
-  padding: 14px;
-  border: 1px solid #c8d9e7;
-  border-radius: 9px;
-  background: linear-gradient(145deg, #f8fbfe, #eef6fb); }
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #bfd2e1;
+  border-radius: 10px;
+  background: #f7fafc;
+  box-shadow: 0 4px 14px rgba(24, 48, 68, 0.07); }
 
 .plan-scheduling__moveContextHeader {
-  justify-content: space-between;
-  gap: 10px; }
-
-.plan-scheduling__moveContextHeader > div {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   min-width: 0; }
 
-.plan-scheduling__moveContextHeader h2,
-.plan-scheduling__moveContextHeader p {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis; }
-
 .plan-scheduling__moveContextHeader h2 {
-  font-size: 16px; }
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  line-height: 1.4; }
 
 .plan-scheduling__moveContextHeader p {
   margin: 0;
   color: #667786;
   font-size: 12px; }
 
-.plan-scheduling__moveBadge {
-  width: fit-content;
-  padding: 2px 7px;
-  border-radius: 999px;
+.plan-scheduling__moveState {
   color: #1b5b8c;
-  background: #ddecf8;
-  font-size: 11px;
-  font-weight: 700; }
-
-.plan-scheduling__cancelMove {
-  flex: 0 0 auto; }
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em; }
 
 .plan-scheduling__moveCurrent {
   display: flex;
@@ -560,9 +643,7 @@
   display: grid;
   gap: 4px;
   min-width: 0;
-  padding: 9px 10px;
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.72); }
+  padding: 4px 2px; }
 
 .plan-scheduling__moveSummary strong {
   overflow-wrap: anywhere;
@@ -578,6 +659,11 @@
   color: #536a7b;
   font-size: 12px;
   line-height: 1.5; }
+
+.plan-scheduling__moveGuidance {
+  padding: 9px 10px;
+  border-radius: 6px;
+  background: #edf3f7; }
 
 .plan-scheduling__moveImpact {
   display: grid;
@@ -636,6 +722,21 @@
 .plan-scheduling__arithmetic .is-increase {
   color: #166534;
   background: #eaf7ed; }
+
+.plan-scheduling__moveActions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 2px; }
+
+.plan-scheduling__cancelMove {
+  min-height: 36px;
+  padding-inline: 14px;
+  color: #536a7b; }
+
+@media (prefers-reduced-motion: reduce) {
+  .plan-scheduling__chartSegment,
+  .plan-scheduling__chartPortion {
+    transition: none; } }
 
 @media (max-width: 900px) {
   .plan-scheduling {
