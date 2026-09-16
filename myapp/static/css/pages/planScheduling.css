@@ -85,12 +85,21 @@
   grid-template-columns: minmax(300px, 340px) minmax(0, 1fr); }
 
 .plan-scheduling__planningMain {
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-width: 0;
+  min-height: 0; }
+
+.plan-scheduling__planningCanvas {
+  --plan-date-column-width: 190px;
+  --plan-date-column-gap: 10px;
   display: grid;
   grid-template-rows: minmax(0, 35fr) minmax(0, 65fr);
   gap: 8px;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden; }
+  width: max-content;
+  min-width: 100%;
+  height: 100%;
+  min-height: 0; }
 
 .plan-scheduling__chart,
 .plan-scheduling__matrix,
@@ -109,7 +118,15 @@
   overflow: hidden; }
 
 .plan-scheduling__chart {
-  display: flex; }
+  display: flex;
+  width: 100%;
+  min-width: max-content; }
+
+.plan-scheduling__matrix {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  width: 100%;
+  min-width: max-content; }
 
 .plan-scheduling__planList {
   display: grid;
@@ -234,25 +251,28 @@
 .plan-scheduling__chart > [data-role="workload-chart"] {
   display: flex;
   flex: 1;
+  min-width: 0;
   min-height: 0; }
 
 .plan-scheduling__chartPlot {
   display: flex;
   flex: 1;
+  min-width: 0;
   min-height: 0;
-  overflow-x: auto;
+  overflow: visible;
   border-bottom: 1px solid var(--ps-border); }
 
 .plan-scheduling__chartColumns {
-  display: flex;
-  flex: 1;
-  align-items: flex-end;
-  justify-content: space-around;
-  gap: 16px;
-  min-width: 620px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--plan-date-column-width);
+  grid-template-rows: minmax(0, 1fr);
+  align-items: end;
+  gap: var(--plan-date-column-gap);
+  width: max-content;
+  min-width: 100%;
   min-height: 0;
-  padding: 12px 18px 0;
-  border-left: 1px solid var(--ps-border); }
+  padding: 12px 0 0; }
 
 .plan-scheduling__chartColumn {
   position: relative;
@@ -261,8 +281,7 @@
   align-items: end;
   justify-items: center;
   gap: 5px;
-  width: 72px;
-  max-width: 12vw;
+  min-width: 0;
   height: 100%;
   color: #536a7b;
   font-size: 11px; }
@@ -295,7 +314,8 @@
   background: var(--plan-scheduling-team-color); }
 
 .plan-scheduling__chart > [data-role="workload-chart"].has-chart-selection .plan-scheduling__chartSegment:not(.is-selected-chart-segment) {
-  opacity: .58; }
+  opacity: .35;
+  filter: saturate(0.3); }
 
 .plan-scheduling__chartSegment.is-selected-chart-segment {
   z-index: 1;
@@ -399,11 +419,14 @@
 
 .plan-scheduling__dateGrid {
   display: grid;
-  grid-auto-columns: minmax(190px, 1fr);
+  grid-auto-columns: var(--plan-date-column-width);
   grid-auto-flow: column;
-  gap: 10px;
+  gap: var(--plan-date-column-gap);
+  width: max-content;
+  min-width: 100%;
   min-height: 0;
-  overflow: auto;
+  overflow-x: visible;
+  overflow-y: auto;
   padding-bottom: 4px; }
 
 .plan-scheduling__dateColumn {

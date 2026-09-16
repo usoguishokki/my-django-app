@@ -175,7 +175,7 @@ export class PlanSchedulingRenderer {
       const tooltipId = `plan-workload-tooltip-${dayIndex}`;
       const rows = day.teamWorkloads.map((item) => `
         <div class="plan-scheduling__tooltipRow"><span><i style="${teamColorDeclaration(item.teamName)}"></i>${escapeHtml(item.teamName)}</span><strong>${escapeHtml(item.workloadLabel)}</strong></div>`).join('');
-      return `<div class="plan-scheduling__chartColumn"><strong>${escapeHtml(day.totalWorkloadLabel)}</strong><button type="button" class="plan-scheduling__chartBar" aria-label="${escapeHtml(day.label)}の工数詳細" aria-describedby="${tooltipId}">${segments}</button><span>${escapeHtml(day.label)}</span><div class="plan-scheduling__chartTooltip" id="${tooltipId}" role="tooltip"><strong class="plan-scheduling__tooltipDate">${escapeHtml(tooltipDateLabel(day.date, day.label))}</strong>${rows}<div class="plan-scheduling__tooltipTotal"><span>合計</span><strong>${escapeHtml(day.totalWorkloadLabel)}</strong></div></div></div>`;
+      return `<div class="plan-scheduling__chartColumn" data-plan-date="${escapeHtml(day.date)}"><strong>${escapeHtml(day.totalWorkloadLabel)}</strong><button type="button" class="plan-scheduling__chartBar" aria-label="${escapeHtml(day.label)}の工数詳細" aria-describedby="${tooltipId}">${segments}</button><span>${escapeHtml(day.label)}</span><div class="plan-scheduling__chartTooltip" id="${tooltipId}" role="tooltip"><strong class="plan-scheduling__tooltipDate">${escapeHtml(tooltipDateLabel(day.date, day.label))}</strong>${rows}<div class="plan-scheduling__tooltipTotal"><span>合計</span><strong>${escapeHtml(day.totalWorkloadLabel)}</strong></div></div></div>`;
     }).join('');
     return `<div class="plan-scheduling__chartPlot"><div class="plan-scheduling__chartColumns">${bars}</div></div>`;
   }
@@ -202,7 +202,7 @@ export class PlanSchedulingRenderer {
         <h4>${escapeHtml(shiftName)}</h4>
         <div class="plan-scheduling__slotList">${slots.map((slot) => this.slotTemplate(slot)).join('')}</div>
       </section>`).join('');
-    return `<article class="plan-scheduling__dateColumn">
+    return `<article class="plan-scheduling__dateColumn" data-plan-date="${escapeHtml(day.date)}">
       <header><h3>${escapeHtml(day.label)}</h3>${day.isReserveWeek ? '<span>予備週</span>' : ''}</header>
       ${shifts || '<p class="plan-scheduling__empty">勤務スロットなし</p>'}
     </article>`;

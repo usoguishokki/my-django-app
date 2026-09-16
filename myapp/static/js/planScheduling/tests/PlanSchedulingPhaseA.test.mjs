@@ -251,6 +251,25 @@ test('chart selection maps a matrix slot to its daily team segment only', async 
 });
 
 
+test('chart and matrix emit the same ordered date tracks', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const renderer = new PlanSchedulingRenderer({});
+  const dates = ['2026-09-14', '2026-09-15', '2026-09-16'];
+  const chartHtml = renderer.workloadChartTemplate({
+    dates: dates.map((date) => ({ date, label: date, teamWorkloads: [] })),
+  });
+  const matrixHtml = dates.map((date) => renderer.dateTemplate({
+    date, label: date, isReserveWeek: false, slots: [],
+  })).join('');
+  const chartDates = [...chartHtml.matchAll(/plan-scheduling__chartColumn" data-plan-date="([^"]+)"/g)]
+    .map((match) => match[1]);
+  const matrixDates = [...matrixHtml.matchAll(/plan-scheduling__dateColumn" data-plan-date="([^"]+)"/g)]
+    .map((match) => match[1]);
+  assert.deepEqual(chartDates, dates);
+  assert.deepEqual(matrixDates, dates);
+});
+
+
 test('chart selection replaces and clears using the authoritative selected slot', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
   const toggles = [];
@@ -335,6 +354,7 @@ test('drawer is absent before selection and old lower Plan stack is removed', ()
   assert.doesNotMatch(template, /plan-scheduling__(?:eyebrow|title|description|notice|weekLabel|preview)/);
   assert.doesNotMatch(template, /PLAN SCHEDULING|<h1[^>]*>計画調整<\/h1>|配布待ち計画の工数を、保全週日付直班で確認します。/);
   assert.doesNotMatch(template, /単位：分|計画の「移動」を選ぶと、移動先の工数変化を確認できます。/);
+  assert.match(template, /plan-scheduling__planningMain[\s\S]*data-role="planning-canvas"[\s\S]*data-role="workload-chart"[\s\S]*data-role="date-grid"/);
   assert.match(template, /data-role="workload-chart"/);
   assert.match(template, /data-role="date-grid"/);
 });
@@ -544,5 +564,13 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.doesNotMatch(scss, /plan-scheduling__yAxis/);
   assert.match(scss, /\.plan-scheduling__planList[^}]*overflow-y:\s*auto/s);
   assert.match(scss, /\.plan-scheduling__chartSegment\.is-selected-chart-segment/);
-  assert.match(scss, /has-chart-selection[\s\S]*opacity:\s*\.58/);
+  assert.match(scss, /has-chart-selection[\s\S]*opacity:\s*\.35/);
+  assert.match(scss, /has-chart-selection[\s\S]*filter:\s*saturate\(\.3\)/);
+  assert.match(scss, /\.plan-scheduling__planningMain[^}]*overflow-x:\s*auto[^}]*overflow-y:\s*hidden/s);
+  assert.match(scss, /\.plan-scheduling__planningCanvas[^}]*--plan-date-column-width:\s*190px/s);
+  assert.match(scss, /\.plan-scheduling__chartColumns[^}]*grid-auto-columns:\s*var\(--plan-date-column-width\)/s);
+  assert.match(scss, /\.plan-scheduling__dateGrid[^}]*grid-auto-columns:\s*var\(--plan-date-column-width\)/s);
+  assert.match(scss, /\.plan-scheduling__chartPlot[^}]*overflow:\s*visible/s);
+  assert.match(scss, /\.plan-scheduling__dateGrid[^}]*overflow-x:\s*visible[^}]*overflow-y:\s*auto/s);
+  assert.doesNotMatch(scss, /justify-content:\s*space-around/);
 });

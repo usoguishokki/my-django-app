@@ -66,10 +66,26 @@ class SharedLayoutScrollContractTests(TestCase):
         planning_main_rule = plan_scss.split(
             ".plan-scheduling__planningMain {", 1
         )[1].split("}", 1)[0]
+        planning_canvas_rule = plan_scss.split(
+            ".plan-scheduling__planningCanvas {", 1
+        )[1].split("}", 1)[0]
+        chart_plot_rule = plan_scss.split(
+            ".plan-scheduling__chartPlot {", 1
+        )[1].split("}", 1)[0]
+        date_grid_rule = plan_scss.split(
+            ".plan-scheduling__dateGrid {", 1
+        )[1].split("}", 1)[0]
         self.assertIn("box-sizing: border-box;", page_rule)
         self.assertIn("height: 100%;", page_rule)
         self.assertIn("overflow: hidden;", page_rule)
-        self.assertIn("overflow: hidden;", planning_main_rule)
+        self.assertIn("overflow-x: auto;", planning_main_rule)
+        self.assertIn("overflow-y: hidden;", planning_main_rule)
+        self.assertIn("--plan-date-column-width: 190px;", planning_canvas_rule)
+        self.assertIn("--plan-date-column-gap: 10px;", planning_canvas_rule)
+        self.assertIn(
+            "grid-template-rows: minmax(0, 35fr) minmax(0, 65fr);",
+            planning_canvas_rule,
+        )
         self.assertNotIn("max-height", plan_list_rule)
         self.assertIn("overflow-y: auto;", plan_list_rule)
         workspace_rule = plan_scss.split(
@@ -79,11 +95,14 @@ class SharedLayoutScrollContractTests(TestCase):
         self.assertIn("overflow: hidden;", workspace_rule)
         self.assertIn(".plan-scheduling__drawer {", plan_scss)
         self.assertIn("height: 100%;", plan_scss)
-        self.assertIn("grid-template-rows: minmax(0, 35fr) minmax(0, 65fr);", plan_scss)
         self.assertIn(".plan-scheduling__matrix,", plan_scss)
         self.assertIn("min-width: 0;", plan_scss)
         self.assertIn(".plan-scheduling__dateGrid {", plan_scss)
-        self.assertIn("overflow: auto;", plan_scss)
+        self.assertIn("grid-auto-columns: var(--plan-date-column-width);", date_grid_rule)
+        self.assertIn("overflow-x: visible;", date_grid_rule)
+        self.assertIn("overflow-y: auto;", date_grid_rule)
+        self.assertIn("overflow: visible;", chart_plot_rule)
+        self.assertNotIn("overflow-x: auto;", chart_plot_rule)
 
     def test_critical_pages_keep_their_layout_roots(self):
         expected_roots = {
