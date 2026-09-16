@@ -238,13 +238,6 @@
   overflow-x: auto;
   border-bottom: 1px solid var(--ps-border); }
 
-.plan-scheduling__yAxis {
-  align-self: center;
-  color: #667786;
-  font-size: 11px;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg); }
-
 .plan-scheduling__chartColumns {
   display: flex;
   flex: 1;

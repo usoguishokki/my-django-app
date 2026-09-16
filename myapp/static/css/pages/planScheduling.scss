@@ -157,7 +157,6 @@
 
 .plan-scheduling__chart > [data-role="workload-chart"] { display: flex; flex: 1; min-height: 0; }
 .plan-scheduling__chartPlot { display: flex; flex: 1; min-height: 0; overflow-x: auto; border-bottom: 1px solid var(--ps-border); }
-.plan-scheduling__yAxis { align-self: center; color: #667786; font-size: 11px; writing-mode: vertical-rl; transform: rotate(180deg); }
 .plan-scheduling__chartColumns { display: flex; flex: 1; align-items: flex-end; justify-content: space-around; gap: 16px; min-width: 620px; min-height: 0; padding: 12px 18px 0; border-left: 1px solid var(--ps-border); }
 .plan-scheduling__chartColumn { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; align-items: end; justify-items: center; gap: 5px; width: 72px; max-width: 12vw; height: 100%; color: #536a7b; font-size: 11px; }
 .plan-scheduling__chartBar { align-self: end; display: flex; flex-direction: column-reverse; justify-content: flex-start; width: 44px; height: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 4px 4px 0 0; background: transparent; cursor: help; }

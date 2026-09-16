@@ -172,6 +172,7 @@ test('renderer exposes chart, matrix, drawer, and selection contracts', () => {
   assert.match(renderer, /renderDrawer/);
   assert.match(renderer, /moveContextTemplate/);
   assert.doesNotMatch(renderer, /previewTemplate|previewEmpty|destinationPrompt|data-role="preview"/);
+  assert.doesNotMatch(renderer, /単位：分|工数（分）|plan-scheduling__yAxis/);
   assert.match(renderer, /基本工数/);
   assert.match(renderer, /必要人数/);
   assert.match(renderer, /計算工数/);
@@ -271,6 +272,8 @@ test('drawer is absent before selection and old lower Plan stack is removed', ()
   assert.doesNotMatch(template, /selected-slot-label|slot-summary/);
   assert.doesNotMatch(template, /plan-scheduling__legend/);
   assert.doesNotMatch(template, /plan-scheduling__(?:eyebrow|title|description|notice|weekLabel|preview)/);
+  assert.doesNotMatch(template, /PLAN SCHEDULING|<h1[^>]*>計画調整<\/h1>|配布待ち計画の工数を、保全週日付直班で確認します。/);
+  assert.doesNotMatch(template, /単位：分|計画の「移動」を選ぶと、移動先の工数変化を確認できます。/);
   assert.match(template, /data-role="workload-chart"/);
   assert.match(template, /data-role="date-grid"/);
 });
@@ -448,5 +451,6 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__chartBar[^}]*background:\s*transparent/s);
   assert.match(scss, /--plan-scheduling-team-color/);
   assert.doesNotMatch(scss, /chartLegend|team-other/);
+  assert.doesNotMatch(scss, /plan-scheduling__yAxis/);
   assert.match(scss, /\.plan-scheduling__planList[^}]*overflow-y:\s*auto/s);
 });
