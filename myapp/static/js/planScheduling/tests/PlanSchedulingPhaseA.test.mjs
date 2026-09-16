@@ -671,6 +671,60 @@ test('chart tooltip overlays the matrix top while horizontally clamped', async (
 });
 
 
+test('chart tooltip visibility is bar-owned and requires successful positioning', async () => {
+  const scss = readFileSync(
+    new URL('../../../../static/css/pages/planScheduling.scss', import.meta.url),
+    'utf8',
+  );
+  const css = readFileSync(
+    new URL('../../../../static/css/pages/planScheduling.css', import.meta.url),
+    'utf8',
+  );
+
+  for (const stylesheet of [scss, css]) {
+    assert.match(stylesheet, /\.plan-scheduling__chartTooltip\s*\{[^}]*position:\s*fixed[^}]*opacity:\s*0[^}]*pointer-events:\s*none/s);
+    assert.doesNotMatch(stylesheet, /\.plan-scheduling__chartColumn:(?:hover|focus-within)\s+\.plan-scheduling__chartTooltip/);
+    assert.doesNotMatch(stylesheet, /bottom:\s*28px/);
+    assert.match(stylesheet, /\.plan-scheduling__chartBar:hover\s*~\s*\.plan-scheduling__chartTooltip\.is-positioned[\s\S]*?opacity:\s*1/s);
+    assert.match(stylesheet, /\.plan-scheduling__chartBar:focus\s*~\s*\.plan-scheduling__chartTooltip\.is-positioned[\s\S]*?opacity:\s*1/s);
+  }
+
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const positioned = [];
+  const tooltip = {
+    classList: { add: (name) => positioned.push(name) },
+    style: {},
+    dataset: {},
+    getBoundingClientRect: () => ({ width: 190, height: 140 }),
+  };
+  const column = { querySelector: () => tooltip };
+  const chartBar = {
+    isConnected: true,
+    closest: (selector) => selector === '.plan-scheduling__chartBar' ? chartBar :
+      selector === '.plan-scheduling__chartColumn' ? column : null,
+    getBoundingClientRect: () => ({ left: 300, top: 200, width: 44, bottom: 260 }),
+  };
+  const matrix = { getBoundingClientRect: () => ({ left: 100, top: 450, right: 700, bottom: 900 }) };
+  const renderer = new PlanSchedulingRenderer({
+    querySelector: (selector) => selector === '.plan-scheduling__matrix' ? matrix :
+      selector === '.plan-scheduling__planningMain' ? { getBoundingClientRect: () => ({ left: 100, top: 100, right: 700, bottom: 500 }) } : null,
+  });
+
+  renderer.showChartTooltip({ target: column });
+  assert.equal(renderer.activeChartBar, null);
+  assert.deepEqual(positioned, []);
+
+  renderer.showChartTooltip({ target: chartBar });
+  assert.equal(renderer.activeChartBar, chartBar);
+  assert.deepEqual(positioned, ['is-positioned']);
+  assert.equal(tooltip.style.top, '450px');
+  assert.equal(tooltip.style.left, '227px');
+
+  renderer.hideChartTooltip({ target: chartBar, relatedTarget: null });
+  assert.equal(renderer.activeChartBar, null);
+});
+
+
 test('drawer header identifies and updates the exact selected slot', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
   const drawer = { hidden: true };
@@ -878,7 +932,7 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer[^}]*clamp\(380px,\s*26vw,\s*440px\)/s);
   assert.match(scss, /\.plan-scheduling__planCardActions[^}]*justify-content:\s*flex-end/s);
   assert.match(scss, /\.plan-scheduling__chartPlot\.has-chart-preview/);
-  assert.match(scss, /\.plan-scheduling__chartTooltip\.is-positioned[^}]*position:\s*fixed/s);
+  assert.match(scss, /\.plan-scheduling__chartTooltip\s*\{[^}]*position:\s*fixed/s);
   assert.match(scss, /\.is-preview-removed/);
   assert.match(scss, /\.is-preview-added/);
   assert.match(scss, /prefers-reduced-motion:\s*reduce/);

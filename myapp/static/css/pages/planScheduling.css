@@ -502,10 +502,8 @@
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8); }
 
 .plan-scheduling__chartTooltip {
-  position: absolute;
+  position: fixed;
   z-index: 4;
-  bottom: 28px;
-  left: 50%;
   width: 190px;
   padding: 11px 12px;
   border: 1px solid #cbd7e0;
@@ -515,22 +513,12 @@
   box-shadow: 0 8px 24px rgba(29, 54, 77, 0.18);
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, 6px);
+  transform: translateY(6px);
   transition: opacity .12s ease, transform .12s ease; }
 
-.plan-scheduling__chartColumn:hover .plan-scheduling__chartTooltip,
-.plan-scheduling__chartColumn:focus-within .plan-scheduling__chartTooltip {
+.plan-scheduling__chartBar:hover ~ .plan-scheduling__chartTooltip.is-positioned,
+.plan-scheduling__chartBar:focus ~ .plan-scheduling__chartTooltip.is-positioned {
   opacity: 1;
-  transform: translate(-50%, 0); }
-
-.plan-scheduling__chartTooltip.is-positioned {
-  position: fixed;
-  right: auto;
-  bottom: auto;
-  transform: translateY(6px); }
-
-.plan-scheduling__chartColumn:hover .plan-scheduling__chartTooltip.is-positioned,
-.plan-scheduling__chartColumn:focus-within .plan-scheduling__chartTooltip.is-positioned {
   transform: translateY(0); }
 
 .plan-scheduling__tooltipDate {

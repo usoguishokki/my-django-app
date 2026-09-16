@@ -222,7 +222,6 @@ export class PlanSchedulingRenderer {
     const tooltip = column?.querySelector('.plan-scheduling__chartTooltip');
     const bounds = this.planningMain?.getBoundingClientRect?.();
     if (!tooltip || !bounds || !matrix) return;
-    tooltip.classList.add('is-positioned');
     const placement = placeChartTooltip({
       horizontalAnchorRect: chartBar.getBoundingClientRect(),
       matrixRect: matrix.getBoundingClientRect(),
@@ -232,6 +231,7 @@ export class PlanSchedulingRenderer {
     tooltip.style.left = `${placement.left}px`;
     tooltip.style.top = `${placement.top}px`;
     tooltip.dataset.placement = placement.placement;
+    tooltip.classList.add('is-positioned');
   }
 
   renderLoading() {
