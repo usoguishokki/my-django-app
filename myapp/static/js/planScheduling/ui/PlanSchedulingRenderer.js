@@ -174,12 +174,12 @@ const tooltipDateLabel = (isoDate, fallback) => {
 
 const clamp = (value, minimum, maximum) => Math.min(Math.max(value, minimum), maximum);
 
-export const placeChartTooltip = ({ anchorRect, tooltipRect, boundsRect, safeMargin = 8 }) => {
+export const placeChartTooltip = ({ horizontalAnchorRect, chartRect, tooltipRect, boundsRect, safeMargin = 8 }) => {
   const minimumLeft = boundsRect.left + safeMargin;
   const maximumLeft = Math.max(minimumLeft, boundsRect.right - tooltipRect.width - safeMargin);
   const placement = 'below';
-  const preferredLeft = anchorRect.left + (anchorRect.width - tooltipRect.width) / 2;
-  const top = anchorRect.bottom + safeMargin;
+  const preferredLeft = horizontalAnchorRect.left + (horizontalAnchorRect.width - tooltipRect.width) / 2;
+  const top = chartRect.bottom + safeMargin;
   return {
     left: clamp(preferredLeft, minimumLeft, maximumLeft),
     top,
@@ -218,12 +218,14 @@ export class PlanSchedulingRenderer {
     const chartBar = this.activeChartBar;
     if (!chartBar?.isConnected) return;
     const column = chartBar.closest('.plan-scheduling__chartColumn');
+    const chart = chartBar.closest('.plan-scheduling__chart');
     const tooltip = column?.querySelector('.plan-scheduling__chartTooltip');
     const bounds = this.planningMain?.getBoundingClientRect?.();
-    if (!tooltip || !bounds) return;
+    if (!tooltip || !bounds || !chart) return;
     tooltip.classList.add('is-positioned');
     const placement = placeChartTooltip({
-      anchorRect: chartBar.getBoundingClientRect(),
+      horizontalAnchorRect: chartBar.getBoundingClientRect(),
+      chartRect: chart.getBoundingClientRect(),
       tooltipRect: tooltip.getBoundingClientRect(),
       boundsRect: bounds,
     });

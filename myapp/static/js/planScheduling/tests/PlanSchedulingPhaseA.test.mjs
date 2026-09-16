@@ -634,40 +634,41 @@ test('Move immediately opens the same preview component and progressively fills 
 });
 
 
-test('chart tooltip remains physically below its anchor while horizontally clamped', async () => {
+test('chart tooltip is anchored below the chart while horizontally clamped', async () => {
   const { placeChartTooltip } = await importRenderer();
   const boundsRect = { left: 100, top: 100, right: 700, bottom: 500 };
+  const chartRect = { left: 100, top: 100, right: 700, bottom: 400 };
   const tooltipRect = { width: 190, height: 140 };
 
   const normal = placeChartTooltip({
-    anchorRect: { left: 300, top: 200, width: 44, bottom: 260 }, tooltipRect, boundsRect,
+    horizontalAnchorRect: { left: 300, top: 200, width: 44, bottom: 260 }, chartRect, tooltipRect, boundsRect,
   });
   assert.equal(normal.left, 227);
-  assert.equal(normal.top >= 260 + 8, true);
+  assert.equal(normal.top, 408);
+  assert.equal(normal.top >= chartRect.bottom + 8, true);
 
-  const topCollision = placeChartTooltip({
-    anchorRect: { left: 300, top: 108, width: 44, bottom: 160 }, tooltipRect, boundsRect,
+  const shortBar = placeChartTooltip({
+    horizontalAnchorRect: { left: 300, top: 108, width: 44, bottom: 250 }, chartRect, tooltipRect, boundsRect,
   });
-  assert.equal(topCollision.left, 227);
-  assert.equal(topCollision.top >= 160 + 8, true);
+  assert.equal(shortBar.left, 227);
+  assert.equal(shortBar.top, 408);
+
+  const tallBar = placeChartTooltip({
+    horizontalAnchorRect: { left: 300, top: 108, width: 44, bottom: 390 }, chartRect, tooltipRect, boundsRect,
+  });
+  assert.equal(tallBar.top, 408);
 
   const leftCollision = placeChartTooltip({
-    anchorRect: { left: 90, top: 300, width: 44, bottom: 360 }, tooltipRect, boundsRect,
+    horizontalAnchorRect: { left: 90, top: 300, width: 44, bottom: 360 }, chartRect, tooltipRect, boundsRect,
   });
   assert.equal(leftCollision.left, 108);
-  assert.equal(leftCollision.top >= 360 + 8, true);
+  assert.equal(leftCollision.top >= chartRect.bottom + 8, true);
 
   const rightCollisionAfterHorizontalScroll = placeChartTooltip({
-    anchorRect: { left: 680, top: 200, width: 44, bottom: 260 }, tooltipRect, boundsRect,
+    horizontalAnchorRect: { left: 680, top: 200, width: 44, bottom: 260 }, chartRect, tooltipRect, boundsRect,
   });
   assert.equal(rightCollisionAfterHorizontalScroll.left, 502);
-  assert.equal(rightCollisionAfterHorizontalScroll.top >= 260 + 8, true);
-
-  const bottomCollision = placeChartTooltip({
-    anchorRect: { left: 300, top: 430, width: 44, bottom: 490 }, tooltipRect, boundsRect,
-  });
-  assert.equal(bottomCollision.left, 227);
-  assert.equal(bottomCollision.top >= 490 + 8, true);
+  assert.equal(rightCollisionAfterHorizontalScroll.top, 408);
 });
 
 
