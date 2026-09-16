@@ -239,6 +239,10 @@
   padding: 12px;
   overflow: hidden; }
 
+.plan-scheduling__planList[hidden],
+.plan-scheduling__movePreviewRegion[hidden] {
+  display: none; }
+
 .plan-scheduling__slot {
   display: grid;
   gap: 4px;

@@ -138,6 +138,8 @@
 .plan-scheduling__drawerContent { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; overflow: hidden; }
 .plan-scheduling__drawer .plan-scheduling__planList { flex: 1 1 auto; padding: 12px; }
 .plan-scheduling__movePreviewRegion { flex: 1 1 auto; min-height: 0; padding: 12px; overflow: hidden; }
+.plan-scheduling__planList[hidden],
+.plan-scheduling__movePreviewRegion[hidden] { display: none; }
 
 .plan-scheduling__slot {
   display: grid;

@@ -840,6 +840,7 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__dateForm[^}]*justify-content:\s*flex-start/s);
   assert.match(scss, /\.plan-scheduling__drawerContent[^}]*flex:\s*1\s+1\s+auto[^}]*min-height:\s*0/s);
   assert.match(scss, /\.plan-scheduling__movePreviewRegion[^}]*flex:\s*1\s+1\s+auto/s);
+  assert.match(scss, /\.plan-scheduling__planList\[hidden\][\s\S]*\.plan-scheduling__movePreviewRegion\[hidden\]\s*\{\s*display:\s*none/s);
   assert.match(scss, /\.plan-scheduling__weekButton[^}]*min-height:\s*38px[^}]*border-radius:\s*8px/s);
   assert.match(scss, /\.plan-scheduling__moveButton[^}]*min-height:\s*38px[^}]*border-radius:\s*8px/s);
   assert.match(scss, /\.plan-scheduling__cancelMove[^}]*min-height:\s*38px[^}]*border-radius:\s*8px/s);
