@@ -13,24 +13,13 @@
 
 {% block content %}
 <main class="plan-scheduling" data-role="plan-scheduling-root">
-  <header class="plan-scheduling__header">
-    <div>
-      <p class="plan-scheduling__eyebrow">PLAN SCHEDULING</p>
-      <h1 class="plan-scheduling__title">計画調整</h1>
-      <p class="plan-scheduling__description">配布待ち計画の工数を、保全週・日付・直・班で確認します。</p>
+  <form class="plan-scheduling__dateForm" data-role="week-form">
+    <label for="plan-scheduling-date">確認する日</label>
+    <div class="plan-scheduling__dateControls">
+      <input id="plan-scheduling-date" type="date" data-role="target-date">
+      <button type="submit" class="ui-btn ui-btn--outline">週を表示</button>
     </div>
-    <form class="plan-scheduling__dateForm" data-role="week-form">
-      <label for="plan-scheduling-date">確認する日</label>
-      <div class="plan-scheduling__dateControls">
-        <input id="plan-scheduling-date" type="date" data-role="target-date">
-        <button type="submit" class="ui-btn ui-btn--outline">週を表示</button>
-      </div>
-    </form>
-  </header>
-
-  <div class="plan-scheduling__notice" role="note">
-    閲覧・プレビュー専用です。計画データは変更されません。
-  </div>
+  </form>
 
   <div class="plan-scheduling__feedback" data-role="feedback" role="status" aria-live="polite"></div>
 
@@ -49,31 +38,15 @@
       </aside>
 
       <div class="plan-scheduling__planningMain">
-        <section class="plan-scheduling__chart" aria-labelledby="workload-chart-title">
-      <div class="plan-scheduling__sectionHeading">
-        <div>
-          <p class="plan-scheduling__weekLabel">WORKLOAD OVERVIEW</p>
-          <h2 id="workload-chart-title">日別計画工数</h2>
-        </div>
-      </div>
-      <div data-role="workload-chart"></div>
+        <section class="plan-scheduling__chart" aria-label="日別計画工数">
+          <div data-role="workload-chart"></div>
         </section>
 
-        <section class="plan-scheduling__matrix" aria-labelledby="matrix-title">
-      <div class="plan-scheduling__sectionHeading">
-        <div>
-          <p class="plan-scheduling__weekLabel" data-role="week-range"></p>
-          <h2 id="matrix-title">計画工数マトリクス</h2>
-        </div>
-      </div>
-      <div class="plan-scheduling__dateGrid" data-role="date-grid"></div>
+        <section class="plan-scheduling__matrix" aria-label="計画工数マトリクス">
+          <div class="plan-scheduling__dateGrid" data-role="date-grid"></div>
         </section>
       </div>
     </div>
-  </section>
-
-  <section class="plan-scheduling__preview" data-role="preview" aria-live="polite">
-    <p class="plan-scheduling__previewEmpty">計画の「移動」を選ぶと、移動先の工数変化を確認できます。</p>
   </section>
 </main>
 {% endblock %}

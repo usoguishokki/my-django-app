@@ -75,8 +75,6 @@ export class PlanSchedulingRenderer {
     this.feedback.textContent = state.dataQuality.hasErrors
       ? `データ確認事項が${state.dataQuality.issueCount}件あります。`
       : '';
-    this.root.querySelector('[data-role="week-range"]').textContent =
-      `${state.week.startDate} 〜 ${state.week.endDate}`;
     this.workloadChart.innerHTML = this.workloadChartTemplate(state.workloadChart);
     this.dateGrid.innerHTML = this.matrixDates(state)
       .map((day) => this.dateTemplate(day)).join('');
@@ -102,11 +100,6 @@ export class PlanSchedulingRenderer {
         )
       );
     });
-    this.preview.innerHTML = selection.preview
-      ? this.previewTemplate(selection)
-      : selectingDestination
-        ? `<div class="plan-scheduling__destinationPrompt"><strong>移動先を選択中</strong><span>計画マトリクスから別の有効なスロットを選択してください。</span><button type="button" class="ui-btn ui-btn--outline" data-action="cancel-move">キャンセル</button></div>`
-        : '<p class="plan-scheduling__previewEmpty">計画の「移動」を選ぶと、移動先の工数変化を確認できます。</p>';
   }
 
   renderDrawer(selection) {
@@ -123,9 +116,13 @@ export class PlanSchedulingRenderer {
       `${slot.shift.name}${slot.team.name}`;
     this.root.querySelector('[data-role="drawer-summary"]').textContent =
       `${slot.workloadLabel} / ${slot.planCount}件`;
-    this.planList.innerHTML = selection.slotPlans.length
+    const moveContext = selection.isMoving
+      ? this.moveContextTemplate(selection)
+      : '';
+    const plans = selection.slotPlans.length
       ? selection.slotPlans.map((plan) => this.planTemplate(plan, selection.plan?.planId)).join('')
       : '<p class="plan-scheduling__empty">このスロットに配布待ち計画はありません。</p>';
+    this.planList.innerHTML = `${moveContext}${plans}`;
   }
 
   planTemplate(plan, selectedPlanId = null) {
@@ -203,9 +200,12 @@ export class PlanSchedulingRenderer {
     </button>`;
   }
 
-  previewTemplate({ plan, destination, preview }) {
+  moveContextTemplate({ plan, destination, preview }) {
+    if (!preview) {
+      return `<section class="plan-scheduling__moveContext"><strong>移動先を選択中</strong><span>計画マトリクスから別の有効なスロットを選択してください。</span><button type="button" class="ui-btn ui-btn--outline" data-action="cancel-move">キャンセル</button></section>`;
+    }
     const current = plan.current;
-    return `<div class="plan-scheduling__previewHeader"><div><p>選択中の計画</p><h2>${escapeHtml(plan.inspectionNo)} · ${escapeHtml(plan.workName)}</h2></div><strong>${formatMinutes(preview.selectedPlan)}</strong></div>
+    return `<section class="plan-scheduling__moveContext"><div class="plan-scheduling__moveContextHeader"><div><p>選択中の計画</p><h2>${escapeHtml(plan.inspectionNo)} · ${escapeHtml(plan.workName)}</h2></div><strong>${formatMinutes(preview.selectedPlan)}</strong></div>
       <div class="plan-scheduling__moveSummary">
         <div><span>現在</span><strong>${escapeHtml(current.dateLabel)} / ${escapeHtml(current.shift.name)} / ${escapeHtml(current.team.name)}</strong></div>
         <span class="plan-scheduling__arrow" aria-hidden="true">→</span>
@@ -215,7 +215,7 @@ export class PlanSchedulingRenderer {
         <div><span>移動元スロット</span><strong>移動前 ${formatMinutes(preview.sourceBefore)} → 移動後 ${formatMinutes(preview.sourceAfter)}</strong></div>
         <div><span>移動先スロット</span><strong>移動前 ${formatMinutes(preview.destinationBefore)} → 移動後 ${formatMinutes(preview.destinationAfter)}</strong></div>
       </div>
-      <div class="plan-scheduling__previewFooter"><p class="plan-scheduling__readOnly">プレビューのみ。保存・更新は行われません。</p><button type="button" class="ui-btn ui-btn--outline" data-action="cancel-move">キャンセル</button></div>`;
+      <div class="plan-scheduling__moveContextFooter"><p class="plan-scheduling__readOnly">プレビューのみ。保存・更新は行われません。</p><button type="button" class="ui-btn ui-btn--outline" data-action="cancel-move">キャンセル</button></div></section>`;
   }
 
   get feedback() { return this.root.querySelector('[data-role="feedback"]'); }
@@ -225,5 +225,4 @@ export class PlanSchedulingRenderer {
   get planningLayout() { return this.root.querySelector('[data-role="planning-layout"]'); }
   get dateGrid() { return this.root.querySelector('[data-role="date-grid"]'); }
   get workloadChart() { return this.root.querySelector('[data-role="workload-chart"]'); }
-  get preview() { return this.root.querySelector('[data-role="preview"]'); }
 }

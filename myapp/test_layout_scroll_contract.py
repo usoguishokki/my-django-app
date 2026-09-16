@@ -43,17 +43,15 @@ class SharedLayoutScrollContractTests(TestCase):
         workspace_rule = plan_scss.split(
             ".plan-scheduling__workspace {", 1
         )[1].split("}", 1)[0]
-        self.assertNotIn("overflow", workspace_rule)
+        self.assertIn("min-height: 0;", workspace_rule)
+        self.assertIn("overflow: hidden;", workspace_rule)
         self.assertIn(".plan-scheduling__drawer {", plan_scss)
-        self.assertIn(
-            'max-height: unquote("min(720px, calc(100dvh - 32px))");',
-            plan_scss,
-        )
-        self.assertIn("max-height: min(720px, calc(100dvh - 32px));", plan_css)
+        self.assertIn("height: 100%;", plan_scss)
+        self.assertIn("grid-template-rows: minmax(0, 35fr) minmax(0, 65fr);", plan_scss)
         self.assertIn(".plan-scheduling__matrix,", plan_scss)
         self.assertIn("min-width: 0;", plan_scss)
         self.assertIn(".plan-scheduling__dateGrid {", plan_scss)
-        self.assertIn("overflow-x: auto;", plan_scss)
+        self.assertIn("overflow: auto;", plan_scss)
 
     def test_critical_pages_keep_their_layout_roots(self):
         expected_roots = {

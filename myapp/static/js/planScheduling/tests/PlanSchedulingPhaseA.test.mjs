@@ -170,6 +170,8 @@ test('renderer exposes chart, matrix, drawer, and selection contracts', () => {
   assert.match(renderer, /data-action="move"/);
   assert.match(renderer, /data-action="cancel-move"/);
   assert.match(renderer, /renderDrawer/);
+  assert.match(renderer, /moveContextTemplate/);
+  assert.doesNotMatch(renderer, /previewTemplate|previewEmpty|destinationPrompt|data-role="preview"/);
   assert.match(renderer, /基本工数/);
   assert.match(renderer, /必要人数/);
   assert.match(renderer, /計算工数/);
@@ -268,6 +270,38 @@ test('drawer is absent before selection and old lower Plan stack is removed', ()
   assert.doesNotMatch(template, /plan-scheduling__plans/);
   assert.doesNotMatch(template, /selected-slot-label|slot-summary/);
   assert.doesNotMatch(template, /plan-scheduling__legend/);
+  assert.doesNotMatch(template, /plan-scheduling__(?:eyebrow|title|description|notice|weekLabel|preview)/);
+  assert.match(template, /data-role="workload-chart"/);
+  assert.match(template, /data-role="date-grid"/);
+});
+
+
+test('Move context is rendered inside the selected drawer without a standalone preview region', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const drawer = { hidden: true };
+  const planList = { innerHTML: '' };
+  const elements = new Map([
+    ['[data-role="slot-drawer"]', drawer],
+    ['[data-role="planning-layout"]', { classList: { toggle: () => {} } }],
+    ['[data-role="plan-list"]', planList],
+    ['[data-role="drawer-date"]', { textContent: '' }],
+    ['[data-role="drawer-slot"]', { textContent: '' }],
+    ['[data-role="drawer-summary"]', { textContent: '' }],
+  ]);
+  const renderer = new PlanSchedulingRenderer({
+    querySelector: (selector) => elements.get(selector),
+  });
+  renderer.renderDrawer({
+    isMoving: true,
+    preview: { selectedPlan: 120, sourceBefore: 360, sourceAfter: 240, destinationBefore: 40, destinationAfter: 160 },
+    plan: { inspectionNo: 'CARD-10', workName: 'Seal check', current: { dateLabel: '9/16（水）', shift: { name: '1直' }, team: { name: 'A班' } } },
+    destination: { dateLabel: '9/17（木）', shift: { name: '2直' }, team: { name: 'B班' } },
+    selectedSlot: { date: '2026-09-16', dateLabel: '9/16（水）', shift: { name: '1直' }, team: { name: 'A班' }, workloadLabel: '360分', planCount: 1 },
+    slotPlans: [],
+  });
+  assert.equal(drawer.hidden, false);
+  assert.match(planList.innerHTML, /plan-scheduling__moveContext/);
+  assert.match(planList.innerHTML, /data-action="cancel-move"/);
 });
 
 
