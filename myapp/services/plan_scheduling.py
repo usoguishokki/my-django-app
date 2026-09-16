@@ -177,7 +177,7 @@ def _build_plan_items(plans, slots_by_pair):
             "machineName": getattr(control, "machine", "") or "",
             "workName": getattr(check, "wark_name", "") or "",
             "manHours": getattr(check, "man_hours", None),
-            "dayOfWeek": getattr(check, "day_of_week", "") or "",
+            "dayOfWeek": getattr(check, "day_of_week", ""),
             "interval": getattr(rule, "interval", None),
             "unit": getattr(rule, "unit", "") or "",
             "detailItems": build_inspection_detail_items(check),

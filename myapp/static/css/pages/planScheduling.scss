@@ -19,9 +19,7 @@
 
 .plan-scheduling__dateControls,
 .plan-scheduling__moveSummary,
-.plan-scheduling__arithmetic,
-.plan-scheduling__moveContextHeader,
-.plan-scheduling__moveContextFooter {
+.plan-scheduling__moveContextHeader {
   display: flex;
   align-items: center;
 }
@@ -248,11 +246,14 @@
 .plan-scheduling__moveContextHeader p { margin: 0; color: #667786; font-size: 12px; }
 .plan-scheduling__moveBadge { width: fit-content; padding: 2px 7px; border-radius: 999px; color: #1b5b8c; background: #ddecf8; font-size: 11px; font-weight: 700; }
 .plan-scheduling__cancelMove { flex: 0 0 auto; }
-.plan-scheduling__moveCurrent,
+.plan-scheduling__moveCurrent { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 10px; border-left: 3px solid var(--ps-blue); background: rgba(255, 255, 255, .7); }
+.plan-scheduling__moveCurrent > div,
 .plan-scheduling__moveSummary { display: grid; gap: 4px; }
-.plan-scheduling__moveCurrent { padding: 9px 10px; border-left: 3px solid var(--ps-blue); background: rgba(255, 255, 255, .7); }
 .plan-scheduling__moveCurrent span,
 .plan-scheduling__moveSummary span { color: #667786; font-size: 12px; }
+.plan-scheduling__moveCurrent small,
+.plan-scheduling__moveSummary small { color: #536a7b; font-size: 12px; font-weight: 700; }
+.plan-scheduling__moveWorkload { flex: 0 0 auto; color: var(--ps-blue); font-size: 15px; }
 .plan-scheduling__moveSummary { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px; }
 .plan-scheduling__moveSummary > div { display: grid; gap: 4px; min-width: 0; padding: 9px 10px; border-radius: 7px; background: rgba(255, 255, 255, .72); }
 .plan-scheduling__moveSummary strong { overflow-wrap: anywhere; font-size: 12px; }
@@ -261,12 +262,15 @@
 .plan-scheduling__readOnly { margin: 0; color: #536a7b; font-size: 12px; line-height: 1.5; }
 .plan-scheduling__moveImpact { display: grid; gap: 7px; }
 .plan-scheduling__moveImpact h3 { margin: 0; color: #334f64; font-size: 13px; }
-.plan-scheduling__arithmetic { display: grid; gap: 6px; margin: 0; }
-.plan-scheduling__arithmetic > div { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid rgba(113, 143, 165, .25); }
-.plan-scheduling__arithmetic dt { color: #536a7b; font-size: 12px; font-weight: 700; }
-.plan-scheduling__arithmetic dd { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; font-size: 12px; font-weight: 700; }
-.plan-scheduling__arithmetic dd > b { color: #7890a3; font-weight: 400; }
-.plan-scheduling__arithmetic dd > strong { margin-left: auto; padding: 2px 6px; border-radius: 999px; font-size: 11px; }
+.plan-scheduling__arithmetic { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
+.plan-scheduling__arithmetic th,
+.plan-scheduling__arithmetic td { padding: 7px 4px; border-top: 1px solid rgba(113, 143, 165, .25); text-align: right; white-space: nowrap; }
+.plan-scheduling__arithmetic thead th { padding-top: 0; border-top: 0; color: #667786; font-size: 10px; font-weight: 600; }
+.plan-scheduling__arithmetic thead th:first-child,
+.plan-scheduling__arithmetic tbody th { width: 54px; text-align: left; }
+.plan-scheduling__arithmetic tbody th { color: #536a7b; font-weight: 700; }
+.plan-scheduling__arithmetic td { color: #263f52; font-weight: 700; }
+.plan-scheduling__arithmetic td > strong { display: inline-block; min-width: 44px; padding: 2px 5px; border-radius: 999px; text-align: center; font-size: 11px; }
 .plan-scheduling__arithmetic .is-decrease { color: #9a3412; background: #fff0e8; }
 .plan-scheduling__arithmetic .is-increase { color: #166534; background: #eaf7ed; }
 
@@ -275,8 +279,7 @@
   .plan-scheduling__dateForm { align-items: flex-start; flex-direction: column; }
   .plan-scheduling__planningLayout.has-drawer { grid-template-columns: minmax(0, 1fr); }
   .plan-scheduling__drawer { position: absolute; z-index: 5; top: 0; left: 0; width: unquote("min(340px, calc(100% - 16px))"); max-height: 100%; }
-  .plan-scheduling__moveSummary,
-  .plan-scheduling__arithmetic { align-items: stretch; }
+  .plan-scheduling__moveSummary { align-items: stretch; }
   .plan-scheduling__moveSummary { grid-template-columns: 1fr; }
   .plan-scheduling__arrow { transform: rotate(90deg); align-self: center; }
 }

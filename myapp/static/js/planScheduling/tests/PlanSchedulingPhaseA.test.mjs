@@ -17,6 +17,17 @@ async function importRenderer() {
   ).replace(
     "import { formatMinutes } from '../domain/PlanSchedulingPreviewPolicy.js';",
     "const formatMinutes = (value) => Number.isInteger(value) ? `${value}分` : '集計不可';",
+  ).replace(
+    "import { labelForAttrValue } from '../../ui/formatters/labelFormatters.js';",
+    "const labelForAttrValue = (_attr, value) => ({ 0: '月', 1: '火', 2: '水', 3: '木', 4: '金', 5: '土', 6: '日' })[value] ?? String(value);",
+  ).replace(
+    "import { renderDetailItemsHTML } from '../../ui/renderers/detailItemsRenderer.js';",
+    `const renderDetailItemsHTML = (items = []) => Array.isArray(items) && items.length
+      ? '<div class="detail-card__detailItems">' + items.map((detail) =>
+          '<div class="detail-card__detailItem"><div class="detail-card__detailItemDevice">' + escapeHtml(detail?.applicableDevice || '') +
+          '</div><div class="detail-card__detailItemContents">' + escapeHtml(detail?.contents || '') + '</div></div>'
+        ).join('') + '</div>'
+      : '';`,
   );
   const dataUrl = `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
   return import(dataUrl);
@@ -177,7 +188,9 @@ test('renderer exposes chart, matrix, drawer, and selection contracts', () => {
   assert.doesNotMatch(renderer, /previewTemplate|previewEmpty|destinationPrompt|data-role="preview"/);
   assert.doesNotMatch(renderer, /単位：分|工数（分）|plan-scheduling__yAxis/);
   assert.match(renderer, /detail-card/);
-  assert.match(renderer, /detailItemsTemplate/);
+  assert.match(renderer, /renderDetailItemsHTML/);
+  assert.match(renderer, /\.\.\/\.\.\/ui\/renderers\/detailItemsRenderer\.js/);
+  assert.match(renderer, /labelForAttrValue/);
   assert.match(renderer, /formatPlanCardTitle/);
   assert.match(renderer, /formatPlanCardSubtitle/);
   assert.match(renderer, /formatDelta/);
@@ -193,7 +206,7 @@ test('drawer Plan cards reuse detail-card content with an independent Move actio
     machineName: '成形機2号機',
     workName: '日常点検',
     manHours: 14,
-    dayOfWeek: '月',
+    dayOfWeek: 0,
     interval: 1,
     unit: '週',
     detailItems: [{ applicableDevice: '対象部位', contents: '点検内容' }],
@@ -207,6 +220,7 @@ test('drawer Plan cards reuse detail-card content with an independent Move actio
   assert.match(html, /detail-card__titleSub">14分_月_1\/週/);
   assert.match(html, /detail-card__detailItemDevice">対象部位/);
   assert.match(html, /detail-card__detailItemContents">点検内容/);
+  assert.doesNotMatch(html, /点検内容はありません。/);
   assert.match(html, /ui-btn ui-btn--sm ui-btn--outline plan-scheduling__moveButton/);
   assert.match(html, /<button[^>]*data-action="move"[^>]*>移動<\/button>/);
   assert.doesNotMatch(html, /click-card__button/);
@@ -384,6 +398,8 @@ test('drawer is absent before selection and old lower Plan stack is removed', ()
   );
   assert.match(template, /data-role="slot-drawer"[^>]*hidden/);
   assert.match(template, /data-action="close-drawer"/);
+  assert.match(template, /css\/components\/drawer\/_drawer\.css/);
+  assert.match(template, /detail-cards detail-card-list plan-scheduling__planList/);
   assert.doesNotMatch(template, /plan-scheduling__plans/);
   assert.doesNotMatch(template, /selected-slot-label|slot-summary/);
   assert.doesNotMatch(template, /plan-scheduling__legend/);
@@ -429,12 +445,14 @@ test('move preview distinguishes destination selection from read-only workload i
   const { PlanSchedulingRenderer } = await importRenderer();
   const renderer = new PlanSchedulingRenderer({});
   const plan = {
-    inspectionNo: 'CARD-10', machineName: '成形機2号機', workName: '日常点検',
+    inspectionNo: 'CARD-10', machineName: '成形機2号機', workName: '日常点検', workMinutes: 14,
     current: { dateLabel: '9/16', shift: { name: '2直' }, team: { name: 'B班' } },
   };
   const selecting = renderer.moveContextTemplate({ plan, destination: null, preview: null });
   assert.match(selecting, /移動先を選択/);
-  assert.match(selecting, /9\/16 \/ 2直 \/ B班/);
+  assert.match(selecting, /9\/16/);
+  assert.match(selecting, /2直 \/ B班/);
+  assert.match(selecting, /14分/);
   assert.match(selecting, /data-action="cancel-move"/);
   assert.doesNotMatch(selecting, /保存|確認|confirm/i);
 

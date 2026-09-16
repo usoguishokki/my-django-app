@@ -16,6 +16,8 @@
  */
 
 import { formatMinutes } from '../domain/PlanSchedulingPreviewPolicy.js';
+import { labelForAttrValue } from '../../ui/formatters/labelFormatters.js';
+import { renderDetailItemsHTML } from '../../ui/renderers/detailItemsRenderer.js';
 
 const escapeHtml = (value) => String(value ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;')
@@ -38,22 +40,16 @@ const formatPlanCardTitle = (plan) => [
 
 const formatPlanCardSubtitle = (plan) => [
   Number.isFinite(plan.manHours) ? `${plan.manHours}分` : '',
-  plan.dayOfWeek || '',
+  plan.dayOfWeek !== '' && plan.dayOfWeek != null
+    ? labelForAttrValue('data-plan-week-of-day', plan.dayOfWeek)
+    : '',
   plan.interval != null && plan.interval !== '' && plan.unit
     ? `${plan.interval}/${plan.unit}`
     : '',
 ].filter(Boolean).join('_');
 
-const detailItemsTemplate = (detailItems) => {
-  if (!Array.isArray(detailItems) || detailItems.length === 0) {
-    return '<p class="detail-card__emptyMessage">点検内容はありません。</p>';
-  }
-  return `<div class="detail-card__detailItems">${detailItems.map((detail) => `
-    <div class="detail-card__detailItem">
-      <div class="detail-card__detailItemDevice">${escapeHtml(detail?.applicableDevice || '')}</div>
-      <div class="detail-card__detailItemContents">${escapeHtml(detail?.contents || '')}</div>
-    </div>`).join('')}</div>`;
-};
+const detailItemsTemplate = (detailItems) => renderDetailItemsHTML(detailItems) ||
+  '<p class="detail-card__emptyMessage">点検内容はありません。</p>';
 
 const formatDelta = (before, after) => {
   if (!Number.isInteger(before) || !Number.isInteger(after)) return '—';
@@ -256,22 +252,23 @@ export class PlanSchedulingRenderer {
     if (!preview) {
       return `<section class="plan-scheduling__moveContext plan-scheduling__moveContext--selecting">
         <header class="plan-scheduling__moveContextHeader"><div><span class="plan-scheduling__moveBadge">移動先を選択</span><h2>${escapeHtml(formatPlanCardTitle(plan))}</h2><p>${escapeHtml(plan.inspectionNo)}</p></div><button type="button" class="ui-btn ui-btn--sm ui-btn--ghost plan-scheduling__cancelMove" data-action="cancel-move">キャンセル</button></header>
-        <div class="plan-scheduling__moveCurrent"><span>現在</span><strong>${escapeHtml(plan.current.dateLabel)} / ${escapeHtml(plan.current.shift.name)} / ${escapeHtml(plan.current.team.name)}</strong></div>
-        <p class="plan-scheduling__moveGuidance">計画マトリクスから移動先の有効なスロットを選択してください。</p>
+        <div class="plan-scheduling__moveCurrent"><div><span>現在</span><strong>${escapeHtml(plan.current.dateLabel)}</strong><small>${escapeHtml(plan.current.shift.name)} / ${escapeHtml(plan.current.team.name)}</small></div><strong class="plan-scheduling__moveWorkload">${formatMinutes(plan.workMinutes)}</strong></div>
+        <p class="plan-scheduling__moveGuidance">マトリクスから移動先を選択してください</p>
       </section>`;
     }
     const current = plan.current;
     return `<section class="plan-scheduling__moveContext">
       <header class="plan-scheduling__moveContextHeader"><div><span class="plan-scheduling__moveBadge">移動プレビュー</span><h2>${escapeHtml(formatPlanCardTitle(plan))}</h2><p>${escapeHtml(plan.inspectionNo)}</p></div><button type="button" class="ui-btn ui-btn--sm ui-btn--ghost plan-scheduling__cancelMove" data-action="cancel-move">キャンセル</button></header>
       <div class="plan-scheduling__moveSummary">
-        <div><span>現在</span><strong>${escapeHtml(current.dateLabel)} / ${escapeHtml(current.shift.name)} / ${escapeHtml(current.team.name)}</strong></div>
+        <div><span>現在</span><strong>${escapeHtml(current.dateLabel)}</strong><small>${escapeHtml(current.shift.name)} / ${escapeHtml(current.team.name)}</small></div>
         <span class="plan-scheduling__arrow" aria-hidden="true">→</span>
-        <div><span>移動先</span><strong>${escapeHtml(destination.dateLabel)} / ${escapeHtml(destination.shift.name)} / ${escapeHtml(destination.team.name)}</strong></div>
+        <div><span>移動先</span><strong>${escapeHtml(destination.dateLabel)}</strong><small>${escapeHtml(destination.shift.name)} / ${escapeHtml(destination.team.name)}</small></div>
       </div>
-      <section class="plan-scheduling__moveImpact" aria-label="工数への影響"><h3>工数への影響</h3><dl class="plan-scheduling__arithmetic">
-        <div><dt>移動元</dt><dd><span>${formatMinutes(preview.sourceBefore)}</span><b>→</b><span>${formatMinutes(preview.sourceAfter)}</span><strong class="is-decrease">${formatDelta(preview.sourceBefore, preview.sourceAfter)}</strong></dd></div>
-        <div><dt>移動先</dt><dd><span>${formatMinutes(preview.destinationBefore)}</span><b>→</b><span>${formatMinutes(preview.destinationAfter)}</span><strong class="is-increase">${formatDelta(preview.destinationBefore, preview.destinationAfter)}</strong></dd></div>
-      </dl></section>
+      <section class="plan-scheduling__moveImpact" aria-label="工数への影響"><h3>工数への影響</h3><table class="plan-scheduling__arithmetic">
+        <thead><tr><th scope="col"></th><th scope="col">移動前</th><th scope="col">移動後</th><th scope="col">増減</th></tr></thead>
+        <tbody><tr><th scope="row">移動元</th><td>${formatMinutes(preview.sourceBefore)}</td><td>${formatMinutes(preview.sourceAfter)}</td><td><strong class="is-decrease">${formatDelta(preview.sourceBefore, preview.sourceAfter)}</strong></td></tr>
+        <tr><th scope="row">移動先</th><td>${formatMinutes(preview.destinationBefore)}</td><td>${formatMinutes(preview.destinationAfter)}</td><td><strong class="is-increase">${formatDelta(preview.destinationBefore, preview.destinationAfter)}</strong></td></tr></tbody>
+      </table></section>
       <p class="plan-scheduling__readOnly">プレビューのみ。保存・更新は行われません。</p>
     </section>`;
   }

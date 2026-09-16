@@ -18,9 +18,7 @@
 
 .plan-scheduling__dateControls,
 .plan-scheduling__moveSummary,
-.plan-scheduling__arithmetic,
-.plan-scheduling__moveContextHeader,
-.plan-scheduling__moveContextFooter {
+.plan-scheduling__moveContextHeader {
   display: flex;
   align-items: center; }
 
@@ -523,20 +521,35 @@
 .plan-scheduling__cancelMove {
   flex: 0 0 auto; }
 
-.plan-scheduling__moveCurrent,
-.plan-scheduling__moveSummary {
-  display: grid;
-  gap: 4px; }
-
 .plan-scheduling__moveCurrent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 9px 10px;
   border-left: 3px solid var(--ps-blue);
   background: rgba(255, 255, 255, 0.7); }
+
+.plan-scheduling__moveCurrent > div,
+.plan-scheduling__moveSummary {
+  display: grid;
+  gap: 4px; }
 
 .plan-scheduling__moveCurrent span,
 .plan-scheduling__moveSummary span {
   color: #667786;
   font-size: 12px; }
+
+.plan-scheduling__moveCurrent small,
+.plan-scheduling__moveSummary small {
+  color: #536a7b;
+  font-size: 12px;
+  font-weight: 700; }
+
+.plan-scheduling__moveWorkload {
+  flex: 0 0 auto;
+  color: var(--ps-blue);
+  font-size: 15px; }
 
 .plan-scheduling__moveSummary {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
@@ -576,40 +589,44 @@
   font-size: 13px; }
 
 .plan-scheduling__arithmetic {
-  display: grid;
-  gap: 6px;
-  margin: 0; }
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 12px; }
 
-.plan-scheduling__arithmetic > div {
-  display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
-  gap: 8px;
-  align-items: center;
-  padding: 8px 0;
-  border-top: 1px solid rgba(113, 143, 165, 0.25); }
+.plan-scheduling__arithmetic th,
+.plan-scheduling__arithmetic td {
+  padding: 7px 4px;
+  border-top: 1px solid rgba(113, 143, 165, 0.25);
+  text-align: right;
+  white-space: nowrap; }
 
-.plan-scheduling__arithmetic dt {
+.plan-scheduling__arithmetic thead th {
+  padding-top: 0;
+  border-top: 0;
+  color: #667786;
+  font-size: 10px;
+  font-weight: 600; }
+
+.plan-scheduling__arithmetic thead th:first-child,
+.plan-scheduling__arithmetic tbody th {
+  width: 54px;
+  text-align: left; }
+
+.plan-scheduling__arithmetic tbody th {
   color: #536a7b;
-  font-size: 12px;
   font-weight: 700; }
 
-.plan-scheduling__arithmetic dd {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  font-size: 12px;
+.plan-scheduling__arithmetic td {
+  color: #263f52;
   font-weight: 700; }
 
-.plan-scheduling__arithmetic dd > b {
-  color: #7890a3;
-  font-weight: 400; }
-
-.plan-scheduling__arithmetic dd > strong {
-  margin-left: auto;
-  padding: 2px 6px;
+.plan-scheduling__arithmetic td > strong {
+  display: inline-block;
+  min-width: 44px;
+  padding: 2px 5px;
   border-radius: 999px;
+  text-align: center;
   font-size: 11px; }
 
 .plan-scheduling__arithmetic .is-decrease {
@@ -636,8 +653,7 @@
     left: 0;
     width: min(340px, calc(100% - 16px));
     max-height: 100%; }
-  .plan-scheduling__moveSummary,
-  .plan-scheduling__arithmetic {
+  .plan-scheduling__moveSummary {
     align-items: stretch; }
   .plan-scheduling__moveSummary {
     grid-template-columns: 1fr; }

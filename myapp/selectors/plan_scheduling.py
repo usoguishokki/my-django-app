@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from django.db.models import Prefetch
+
 from myapp.domain.periods import get_fiscal_year_range
 from myapp.domain.plan_status import PlanStatus
-from myapp.models import Calendar_tb, Hozen_calendar_tb, Plan_tb
+from myapp.models import Calendar_tb, Db_details_tb, Hozen_calendar_tb, Plan_tb
 
 
 def select_maintenance_week(*, target_date):
@@ -64,7 +66,17 @@ def select_waiting_plans_for_maintenance_dates(
             "inspection_no__control_no__line_name",
             "inspection_no__control_no__line_name__organization",
         )
-        .prefetch_related("inspection_no__db_details")
+        .prefetch_related(
+            Prefetch(
+                "inspection_no__db_details",
+                queryset=Db_details_tb.objects.only(
+                    "id",
+                    "inspection_no_id",
+                    "applicable_device",
+                    "contents",
+                ).order_by("id"),
+            )
+        )
         .filter(
             status=PlanStatus.WAITING.value,
             p_date_id__in=maintenance_date_ids,

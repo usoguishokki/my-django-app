@@ -16,6 +16,7 @@ from myapp.domain.plan_scheduling import (
     resolve_distinct_shift,
 )
 from myapp.domain.plan_status import PlanStatus
+from myapp.models import Db_details_tb
 from myapp.presenters.plan_scheduling import present_minutes
 from myapp.selectors.plan_scheduling import (
     select_waiting_plans_for_maintenance_dates,
@@ -55,13 +56,13 @@ def make_plan(plan_id, day, team_id, *, team_name="A班", man_hours=60, people=2
     control = SimpleNamespace(machine="設備A")
     rule = SimpleNamespace(interval=1, unit="週")
     details = SimpleNamespace(all=lambda: [
-        SimpleNamespace(applicable_device="対象部位", contents="点検内容"),
+        Db_details_tb(applicable_device="対象部位", contents="点検内容"),
     ])
     check = SimpleNamespace(
         inspection_no=f"CARD-{plan_id}",
         wark_name="月例点検",
         man_hours=man_hours,
-        day_of_week="月",
+        day_of_week=0,
         required_person_count=people,
         control_no=control,
         rule=rule,
@@ -160,7 +161,10 @@ class PlanSchedulingSelectorTests(TestCase):
 
         self.assertEqual([], result)
         self.assertIn("inspection_no__rule", manager.select_related.call_args.args)
-        queryset.prefetch_related.assert_called_once_with("inspection_no__db_details")
+        queryset.prefetch_related.assert_called_once()
+        detail_prefetch = queryset.prefetch_related.call_args.args[0]
+        self.assertEqual("inspection_no__db_details", detail_prefetch.prefetch_through)
+        self.assertEqual(("id",), detail_prefetch.queryset.query.order_by)
         filters = prefetched.filter.call_args.kwargs
         self.assertEqual(PlanStatus.WAITING.value, filters["status"])
         self.assertEqual([10, 11], filters["p_date_id__in"])
@@ -219,13 +223,14 @@ class PlanSchedulingStateTests(TestCase):
         self.assertEqual(2, state["plans"][0]["requiredPersonCount"])
         self.assertEqual("設備A", state["plans"][0]["machineName"])
         self.assertEqual(60, state["plans"][0]["manHours"])
-        self.assertEqual("月", state["plans"][0]["dayOfWeek"])
+        self.assertEqual(0, state["plans"][0]["dayOfWeek"])
         self.assertEqual(1, state["plans"][0]["interval"])
         self.assertEqual("週", state["plans"][0]["unit"])
         self.assertEqual(
             [{"applicableDevice": "対象部位", "contents": "点検内容"}],
             state["plans"][0]["detailItems"],
         )
+        self.assertGreater(len(state["plans"][0]["detailItems"]), 0)
         self.assertEqual([10, 11], state["dates"][0]["slots"][0]["planIds"])
         self.assertEqual(2, state["dates"][0]["slots"][0]["planCount"])
         self.assertFalse(state["capabilities"]["canReschedule"])

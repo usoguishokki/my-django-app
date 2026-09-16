@@ -4,6 +4,7 @@
 {% block title %}計画調整{% endblock %}
 
 {% block extra_css %}
+<link href="{% static 'css/components/drawer/_drawer.css' %}" rel="stylesheet" type="text/css">
 <link href="{% static 'css/pages/planScheduling.css' %}" rel="stylesheet" type="text/css">
 {% endblock %}
 
@@ -34,7 +35,7 @@
           </div>
           <button type="button" class="plan-scheduling__drawerClose" data-action="close-drawer" aria-label="計画ドロワーを閉じる">×</button>
         </header>
-        <div class="plan-scheduling__planList" data-role="plan-list"></div>
+        <div class="detail-cards detail-card-list plan-scheduling__planList" data-role="plan-list"></div>
       </aside>
 
       <div class="plan-scheduling__planningMain">
