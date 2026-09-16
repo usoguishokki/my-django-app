@@ -535,11 +535,13 @@ test('drawer is absent before selection and old lower Plan stack is removed', ()
   assert.match(template, /data-role="slot-drawer"[^>]*hidden/);
   assert.match(template, /data-action="close-drawer"/);
   assert.match(template, /css\/components\/drawer\/_drawer\.css/);
+  assert.match(template, /plan-scheduling__weekButton/);
+  assert.match(template, /plan-scheduling__drawerContent[\s\S]*data-role="move-preview"[^>]*hidden[\s\S]*data-role="plan-list"/);
   assert.match(template, /detail-cards detail-card-list plan-scheduling__planList/);
   assert.doesNotMatch(template, /plan-scheduling__plans/);
   assert.doesNotMatch(template, /selected-slot-label|slot-summary/);
   assert.doesNotMatch(template, /plan-scheduling__legend/);
-  assert.doesNotMatch(template, /plan-scheduling__(?:eyebrow|title|description|notice|weekLabel|preview)/);
+  assert.doesNotMatch(template, /plan-scheduling__(?:eyebrow|title|description|notice|weekLabel)/);
   assert.doesNotMatch(template, /PLAN SCHEDULING|<h1[^>]*>計画調整<\/h1>|配布待ち計画の工数を、保全週日付直班で確認します。/);
   assert.doesNotMatch(template, /単位：分|計画の「移動」を選ぶと、移動先の工数変化を確認できます。/);
   assert.match(template, /plan-scheduling__planningMain[\s\S]*data-role="planning-canvas"[\s\S]*data-role="workload-chart"[\s\S]*data-role="date-grid"/);
@@ -548,14 +550,16 @@ test('drawer is absent before selection and old lower Plan stack is removed', ()
 });
 
 
-test('Move context is rendered inside the selected drawer without a standalone preview region', async () => {
+test('Move context occupies a fixed Drawer sibling region while cards hide and restore', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
   const drawer = { hidden: true };
-  const planList = { innerHTML: '' };
+  const planList = { innerHTML: '', hidden: false, scrollTop: 137 };
+  const movePreview = { innerHTML: '', hidden: true };
   const elements = new Map([
     ['[data-role="slot-drawer"]', drawer],
     ['[data-role="planning-layout"]', { classList: { toggle: () => {} } }],
     ['[data-role="plan-list"]', planList],
+    ['[data-role="move-preview"]', movePreview],
     ['[data-role="drawer-date"]', { textContent: '' }],
     ['[data-role="drawer-slot"]', { textContent: '' }],
     ['[data-role="drawer-summary"]', { textContent: '' }],
@@ -572,8 +576,21 @@ test('Move context is rendered inside the selected drawer without a standalone p
     slotPlans: [],
   });
   assert.equal(drawer.hidden, false);
-  assert.match(planList.innerHTML, /plan-scheduling__moveContext/);
-  assert.match(planList.innerHTML, /data-action="cancel-move"/);
+  assert.equal(planList.hidden, true);
+  assert.equal(movePreview.hidden, false);
+  assert.match(movePreview.innerHTML, /plan-scheduling__moveContext/);
+  assert.match(movePreview.innerHTML, /data-action="cancel-move"/);
+  assert.doesNotMatch(planList.innerHTML, /plan-scheduling__moveContext/);
+
+  planList.scrollTop = 0;
+  renderer.renderDrawer({
+    isMoving: false,
+    selectedSlot: { date: '2026-09-16', dateLabel: '9/16（水）', shift: { name: '1直' }, team: { name: 'A班' }, workloadLabel: '360分', planCount: 1 },
+    slotPlans: [], plan: null,
+  });
+  assert.equal(movePreview.hidden, true);
+  assert.equal(planList.hidden, false);
+  assert.equal(planList.scrollTop, 137);
 });
 
 
@@ -592,6 +609,7 @@ test('Move immediately opens the same preview component and progressively fills 
   assert.match(selecting, /マトリクスから移動先を選択してください/);
   assert.doesNotMatch(selecting, /工数への影響|284分|270分|-14分|133分|147分|\+14分/);
   assert.match(selecting, /data-action="cancel-move"/);
+  assert.match(selecting, /plan-scheduling__cancelButton/);
   assert.doesNotMatch(selecting, /保存|確認|confirm/i);
 
   const preview = renderer.moveContextTemplate({
@@ -653,6 +671,7 @@ test('drawer header identifies and updates the exact selected slot', async () =>
     ['[data-role="slot-drawer"]', drawer],
     ['[data-role="planning-layout"]', { classList: { toggle: (...args) => toggles.push(args) } }],
     ['[data-role="plan-list"]', planList],
+    ['[data-role="move-preview"]', { innerHTML: '', hidden: true }],
     ['[data-role="drawer-date"]', drawerDate],
     ['[data-role="drawer-slot"]', drawerSlot],
     ['[data-role="drawer-summary"]', drawerSummary],
@@ -818,6 +837,12 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.doesNotMatch(scss, /plan-scheduling__yAxis/);
   assert.match(scss, /\.plan-scheduling__planList[^}]*display:\s*flex[^}]*flex-direction:\s*column/s);
   assert.match(scss, /\.plan-scheduling__planList[^}]*overflow-y:\s*auto/s);
+  assert.match(scss, /\.plan-scheduling__dateForm[^}]*justify-content:\s*flex-start/s);
+  assert.match(scss, /\.plan-scheduling__drawerContent[^}]*flex:\s*1\s+1\s+auto[^}]*min-height:\s*0/s);
+  assert.match(scss, /\.plan-scheduling__movePreviewRegion[^}]*flex:\s*1\s+1\s+auto/s);
+  assert.match(scss, /\.plan-scheduling__weekButton[^}]*min-height:\s*38px[^}]*border-radius:\s*8px/s);
+  assert.match(scss, /\.plan-scheduling__moveButton[^}]*min-height:\s*38px[^}]*border-radius:\s*8px/s);
+  assert.match(scss, /\.plan-scheduling__cancelMove[^}]*min-height:\s*38px[^}]*border-radius:\s*8px/s);
   assert.doesNotMatch(scss, /\.plan-scheduling__planList\s*\{[^}]*display:\s*grid/s);
   assert.match(scss, /\.plan-scheduling__planCard[^}]*flex:\s*0\s+0\s+auto/s);
   assert.match(scss, /\.plan-scheduling__planCard[^}]*max-height:\s*270px/s);

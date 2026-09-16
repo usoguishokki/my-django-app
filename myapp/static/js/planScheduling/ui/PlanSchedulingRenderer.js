@@ -197,6 +197,8 @@ export class PlanSchedulingRenderer {
   constructor(root) {
     this.root = root;
     this.activeChartBar = null;
+    this.wasMoving = false;
+    this.planListScrollTop = 0;
     this.root?.addEventListener?.('pointerover', (event) => this.showChartTooltip(event));
     this.root?.addEventListener?.('pointerout', (event) => this.hideChartTooltip(event));
     this.root?.addEventListener?.('focusin', (event) => this.showChartTooltip(event));
@@ -303,6 +305,9 @@ export class PlanSchedulingRenderer {
     this.planningLayout.classList.toggle('has-drawer', Boolean(slot));
     if (!slot) {
       this.planList.innerHTML = '';
+      this.movePreview.innerHTML = '';
+      this.movePreview.hidden = true;
+      this.wasMoving = false;
       return;
     }
     this.root.querySelector('[data-role="drawer-date"]').textContent =
@@ -311,13 +316,20 @@ export class PlanSchedulingRenderer {
       `${slot.shift.name}${slot.team.name}`;
     this.root.querySelector('[data-role="drawer-summary"]').textContent =
       `${slot.workloadLabel} / ${slot.planCount}件`;
-    const moveContext = selection.isMoving
+    if (selection.isMoving && !this.wasMoving) this.planListScrollTop = this.planList.scrollTop;
+    this.movePreview.hidden = !selection.isMoving;
+    this.planList.hidden = selection.isMoving;
+    this.movePreview.innerHTML = selection.isMoving
       ? this.moveContextTemplate(selection)
       : '';
     const plans = selection.slotPlans.length
       ? selection.slotPlans.map((plan) => this.planTemplate(plan, selection.plan?.planId)).join('')
       : '<p class="plan-scheduling__empty">このスロットに配布待ち計画はありません。</p>';
-    this.planList.innerHTML = `${moveContext}${plans}`;
+    if (!selection.isMoving) {
+      this.planList.innerHTML = plans;
+      if (this.wasMoving) this.planList.scrollTop = this.planListScrollTop;
+    }
+    this.wasMoving = selection.isMoving;
   }
 
   planTemplate(plan, selectedPlanId = null) {
@@ -428,7 +440,7 @@ export class PlanSchedulingRenderer {
         <tr><th scope="row">移動先</th><td>${formatMinutes(preview.destinationBefore)}</td><td>${formatMinutes(preview.destinationAfter)}</td><td><strong class="is-increase">${formatDelta(preview.destinationBefore, preview.destinationAfter)}</strong></td></tr></tbody>
       </table></section>
       <p class="plan-scheduling__readOnly">プレビューのみ。保存・更新は行われません。</p>
-      <footer class="plan-scheduling__moveActions"><button type="button" class="ui-btn ui-btn--sm ui-btn--ghost plan-scheduling__cancelMove" data-action="cancel-move">キャンセル</button></footer>
+      <footer class="plan-scheduling__moveActions"><button type="button" class="ui-btn ui-btn--sm ui-btn--ghost plan-scheduling__cancelMove plan-scheduling__cancelButton" data-action="cancel-move">キャンセル</button></footer>
       </section>`;
   }
 
@@ -439,13 +451,14 @@ export class PlanSchedulingRenderer {
         <div><span>現在</span><strong>${escapeHtml(plan.current.dateLabel)}</strong><small>${escapeHtml(plan.current.shift.name)} / ${escapeHtml(plan.current.team.name)}</small></div>
         <div><span>移動先</span><strong class="plan-scheduling__moveGuidance">マトリクスから移動先を選択してください</strong></div>
       </div>
-      <footer class="plan-scheduling__moveActions"><button type="button" class="ui-btn ui-btn--sm ui-btn--ghost plan-scheduling__cancelMove" data-action="cancel-move">キャンセル</button></footer>
+      <footer class="plan-scheduling__moveActions"><button type="button" class="ui-btn ui-btn--sm ui-btn--ghost plan-scheduling__cancelMove plan-scheduling__cancelButton" data-action="cancel-move">キャンセル</button></footer>
     </section>`;
   }
 
   get feedback() { return this.root.querySelector('[data-role="feedback"]'); }
   get workspace() { return this.root.querySelector('[data-role="workspace"]'); }
   get planList() { return this.root.querySelector('[data-role="plan-list"]'); }
+  get movePreview() { return this.root.querySelector('[data-role="move-preview"]'); }
   get drawer() { return this.root.querySelector('[data-role="slot-drawer"]'); }
   get planningLayout() { return this.root.querySelector('[data-role="planning-layout"]'); }
   get planningMain() { return this.root.querySelector('.plan-scheduling__planningMain'); }

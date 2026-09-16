@@ -18,7 +18,7 @@
     <label for="plan-scheduling-date">確認する日</label>
     <div class="plan-scheduling__dateControls">
       <input id="plan-scheduling-date" type="date" data-role="target-date">
-      <button type="submit" class="ui-btn ui-btn--outline">週を表示</button>
+      <button type="submit" class="ui-btn ui-btn--outline plan-scheduling__weekButton">週を表示</button>
     </div>
   </form>
 
@@ -35,7 +35,10 @@
           </div>
           <button type="button" class="plan-scheduling__drawerClose" data-action="close-drawer" aria-label="計画ドロワーを閉じる">×</button>
         </header>
-        <div class="detail-cards detail-card-list plan-scheduling__planList" data-role="plan-list"></div>
+        <div class="plan-scheduling__drawerContent">
+          <div class="plan-scheduling__movePreviewRegion" data-role="move-preview" hidden></div>
+          <div class="detail-cards detail-card-list plan-scheduling__planList" data-role="plan-list"></div>
+        </div>
       </aside>
 
       <div class="plan-scheduling__planningMain">

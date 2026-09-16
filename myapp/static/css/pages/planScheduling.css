@@ -28,7 +28,7 @@
 .plan-scheduling__dateForm {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
   font-weight: 700; }
 
@@ -66,6 +66,35 @@
   box-sizing: border-box;
   min-height: 0;
   overflow: hidden; }
+
+.plan-scheduling__weekButton {
+  min-height: 38px;
+  padding-inline: 14px;
+  border-radius: 8px;
+  border-color: #c4d1dc;
+  color: #39566c;
+  background: #fff;
+  font-weight: 700;
+  transition: background .14s ease, border-color .14s ease, box-shadow .14s ease, transform .14s ease; }
+
+.plan-scheduling__weekButton:hover {
+  border-color: #91aabc;
+  background: #f4f8fb;
+  box-shadow: 0 1px 3px rgba(29, 54, 77, 0.1); }
+
+.plan-scheduling__weekButton:active {
+  transform: translateY(1px);
+  box-shadow: none; }
+
+.plan-scheduling__weekButton:focus-visible {
+  outline: 3px solid rgba(31, 95, 153, 0.28);
+  outline-offset: 2px; }
+
+.plan-scheduling__weekButton:disabled {
+  color: #8a99a5;
+  border-color: #d5dde4;
+  background: #f3f5f7;
+  box-shadow: none; }
 
 .plan-scheduling__planningLayout {
   position: relative;
@@ -193,8 +222,22 @@
   outline: 3px solid rgba(31, 95, 153, 0.28);
   outline-offset: 2px; }
 
+.plan-scheduling__drawerContent {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden; }
+
 .plan-scheduling__drawer .plan-scheduling__planList {
+  flex: 1 1 auto;
   padding: 12px; }
+
+.plan-scheduling__movePreviewRegion {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 12px;
+  overflow: hidden; }
 
 .plan-scheduling__slot {
   display: grid;
@@ -271,15 +314,22 @@
   min-width: 84px;
   min-height: 38px;
   padding-inline: 18px;
+  border-radius: 8px;
   color: var(--ps-blue);
   border-color: #a9c5db;
-  background: #fff; }
+  background: #fff;
+  font-weight: 700;
+  transition: background .14s ease, border-color .14s ease, box-shadow .14s ease, transform .14s ease; }
 
 .plan-scheduling__moveButton:not(:disabled):hover {
   color: #164b77;
   border-color: #7eaacb;
   background: #edf6fc;
   box-shadow: 0 2px 6px rgba(31, 95, 153, 0.12); }
+
+.plan-scheduling__moveButton:not(:disabled):active {
+  transform: translateY(1px);
+  box-shadow: none; }
 
 .plan-scheduling__moveButton:focus-visible {
   outline: 3px solid rgba(31, 95, 153, 0.28);
@@ -765,9 +815,33 @@
   padding-top: 2px; }
 
 .plan-scheduling__cancelMove {
-  min-height: 36px;
+  min-height: 38px;
   padding-inline: 14px;
-  color: #536a7b; }
+  border-radius: 8px;
+  color: #536a7b;
+  border-color: #c9d4dc;
+  background: #fff;
+  font-weight: 700;
+  transition: background .14s ease, border-color .14s ease, box-shadow .14s ease, transform .14s ease; }
+
+.plan-scheduling__cancelMove:hover {
+  border-color: #9babb7;
+  background: #f4f7f9;
+  box-shadow: 0 1px 3px rgba(29, 54, 77, 0.08); }
+
+.plan-scheduling__cancelMove:active {
+  transform: translateY(1px);
+  box-shadow: none; }
+
+.plan-scheduling__cancelMove:focus-visible {
+  outline: 3px solid rgba(31, 95, 153, 0.28);
+  outline-offset: 2px; }
+
+.plan-scheduling__cancelMove:disabled {
+  color: #8a99a5;
+  border-color: #d5dde4;
+  background: #f3f5f7;
+  box-shadow: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .plan-scheduling__chartSegment,
