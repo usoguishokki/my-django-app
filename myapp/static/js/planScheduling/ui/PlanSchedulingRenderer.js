@@ -180,12 +180,9 @@ export const placeChartTooltip = ({ anchorRect, tooltipRect, boundsRect, safeMar
   const maximumLeft = Math.max(minimumLeft, boundsRect.right - tooltipRect.width - safeMargin);
   const minimumTop = boundsRect.top + safeMargin;
   const maximumTop = Math.max(minimumTop, boundsRect.bottom - tooltipRect.height - safeMargin);
-  const preferredTop = anchorRect.top - tooltipRect.height - safeMargin;
-  const placement = preferredTop < minimumTop ? 'below' : 'above';
+  const placement = 'below';
   const preferredLeft = anchorRect.left + (anchorRect.width - tooltipRect.width) / 2;
-  const top = placement === 'above'
-    ? preferredTop
-    : anchorRect.bottom + safeMargin;
+  const top = anchorRect.bottom + safeMargin;
   return {
     left: clamp(preferredLeft, minimumLeft, maximumLeft),
     top: clamp(top, minimumTop, maximumTop),

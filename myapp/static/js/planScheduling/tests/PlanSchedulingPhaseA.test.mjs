@@ -493,6 +493,9 @@ test('chart preview expands scale, renders transfer portions, and exposes toolti
   assert.match(html, /is-preview-removed/);
   assert.match(html, /is-preview-destination/);
   assert.match(html, /is-preview-added/);
+  assert.match(html, /class="visually-hidden">20分減少/);
+  assert.match(html, /class="visually-hidden">20分増加/);
+  assert.doesNotMatch(html, /<strong[^>]*>20分(?:減少|増加)/);
   assert.match(html, /284分 → 264分[\s\S]*-20分/);
   assert.match(html, /280分 → 300分[\s\S]*\+20分/);
   assert.match(html, /移動プレビュー後 264分/);
@@ -536,6 +539,8 @@ test('drawer is absent before selection and old lower Plan stack is removed', ()
   assert.match(template, /data-action="close-drawer"/);
   assert.match(template, /css\/components\/drawer\/_drawer\.css/);
   assert.match(template, /plan-scheduling__weekButton/);
+  assert.match(template, /<label for="plan-scheduling-date">表示日<\/label>/);
+  assert.doesNotMatch(template, /<label for="plan-scheduling-date">確認する日<\/label>/);
   assert.match(template, /plan-scheduling__drawerContent[\s\S]*data-role="move-preview"[^>]*hidden[\s\S]*data-role="plan-list"/);
   assert.match(template, /detail-cards detail-card-list plan-scheduling__planList/);
   assert.doesNotMatch(template, /plan-scheduling__plans/);
@@ -637,9 +642,9 @@ test('chart tooltip placement remains within the planning bounds', async () => {
   const tooltipRect = { width: 190, height: 140 };
 
   const normal = placeChartTooltip({
-    anchorRect: { left: 300, top: 300, width: 44, bottom: 360 }, tooltipRect, boundsRect,
+    anchorRect: { left: 300, top: 200, width: 44, bottom: 260 }, tooltipRect, boundsRect,
   });
-  assert.deepEqual(normal, { left: 227, top: 152, placement: 'above' });
+  assert.deepEqual(normal, { left: 227, top: 268, placement: 'below' });
 
   const topCollision = placeChartTooltip({
     anchorRect: { left: 300, top: 108, width: 44, bottom: 160 }, tooltipRect, boundsRect,
@@ -652,10 +657,15 @@ test('chart tooltip placement remains within the planning bounds', async () => {
   assert.equal(leftCollision.left, 108);
 
   const rightCollisionAfterHorizontalScroll = placeChartTooltip({
-    anchorRect: { left: 680, top: 300, width: 44, bottom: 360 }, tooltipRect, boundsRect,
+    anchorRect: { left: 680, top: 200, width: 44, bottom: 260 }, tooltipRect, boundsRect,
   });
   assert.equal(rightCollisionAfterHorizontalScroll.left, 502);
-  assert.equal(rightCollisionAfterHorizontalScroll.top, 152);
+  assert.equal(rightCollisionAfterHorizontalScroll.top, 268);
+
+  const bottomCollision = placeChartTooltip({
+    anchorRect: { left: 300, top: 430, width: 44, bottom: 490 }, tooltipRect, boundsRect,
+  });
+  assert.deepEqual(bottomCollision, { left: 227, top: 352, placement: 'below' });
 });
 
 
