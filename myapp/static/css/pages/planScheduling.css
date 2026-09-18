@@ -168,9 +168,8 @@
   width: max-content;
   min-width: 100%;
   min-height: 30px;
-  padding: 6px 10px;
-  border: 1px solid #dce5ec;
-  border-radius: 7px;
+  padding: 6px 0;
+  border-block: 1px solid #dce5ec;
   color: #536a7b;
   background: #f9fbfc;
   font-size: 12px; }

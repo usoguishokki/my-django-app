@@ -97,6 +97,8 @@ class SharedLayoutScrollContractTests(TestCase):
         self.assertIn("grid-auto-columns: var(--plan-date-column-width);", maintenance_week_rule)
         self.assertIn("grid-auto-flow: column;", maintenance_week_rule)
         self.assertIn("gap: var(--plan-date-column-gap);", maintenance_week_rule)
+        self.assertIn("padding: 6px 0;", maintenance_week_rule)
+        self.assertIn("border-block: 1px solid #dce5ec;", maintenance_week_rule)
         self.assertNotIn("max-height", plan_list_rule)
         self.assertIn("overflow-y: auto;", plan_list_rule)
         workspace_rule = plan_scss.split(
