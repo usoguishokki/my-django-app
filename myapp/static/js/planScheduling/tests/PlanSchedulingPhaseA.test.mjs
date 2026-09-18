@@ -241,7 +241,7 @@ test('stacked bars use stable distinct A/B/C colors and contain no text labels',
   const { PlanSchedulingRenderer, TEAM_COLORS } = await importRenderer();
   assert.deepEqual(
     { ...TEAM_COLORS },
-    { 'A班': '#0072B2', 'B班': '#009E73', 'C班': '#D55E00' },
+    { 'A班': '#1C55C8', 'B班': '#00D614', 'C班': '#FFC715' },
   );
   const renderer = new PlanSchedulingRenderer({});
   const html = renderer.workloadChartTemplate({
@@ -259,9 +259,9 @@ test('stacked bars use stable distinct A/B/C colors and contain no text labels',
     }],
   });
   assert.match(html, /9月16日（水）/);
-  assert.match(html, /--plan-scheduling-team-color:#0072B2/);
-  assert.match(html, /--plan-scheduling-team-color:#009E73/);
-  assert.match(html, /--plan-scheduling-team-color:#D55E00/);
+  assert.match(html, /--plan-scheduling-team-color:#1C55C8/);
+  assert.match(html, /--plan-scheduling-team-color:#00D614/);
+  assert.match(html, /--plan-scheduling-team-color:#FFC715/);
   for (const color of Object.values(TEAM_COLORS)) {
     assert.equal([...html.matchAll(new RegExp(color, 'g'))].length, 2);
   }
@@ -274,7 +274,14 @@ test('stacked bars use stable distinct A/B/C colors and contain no text labels',
   const segments = [...html.matchAll(/<span class="plan-scheduling__chartSegment[^>]*>(.*?)<\/span>/g)];
   assert.equal(segments.length, 3);
   assert.ok(segments.every((match) => match[1] === ''));
-  assert.doesNotMatch(html, /chartLegend/);
+  const legend = renderer.chartLegendTemplate();
+  assert.match(legend, /plan-scheduling__chartLegend/);
+  assert.match(legend, /A班/);
+  assert.match(legend, /B班/);
+  assert.match(legend, /C班/);
+  assert.match(legend, /--plan-scheduling-team-color:#1C55C8/);
+  assert.match(legend, /--plan-scheduling-team-color:#00D614/);
+  assert.match(legend, /--plan-scheduling-team-color:#FFC715/);
 });
 
 
@@ -337,11 +344,13 @@ test('normal state rendering retains one date-aligned maintenance-week cell per 
   const { PlanSchedulingRenderer } = await importRenderer();
   const feedback = { textContent: '', classList: { remove: () => {} } };
   const dateGrid = { innerHTML: '' };
+  const chartLegend = { innerHTML: '' };
   const maintenanceWeek = { innerHTML: '' };
   const workspace = { hidden: true };
   const elements = new Map([
     ['[data-role="feedback"]', feedback],
     ['[data-role="date-grid"]', dateGrid],
+    ['[data-role="chart-legend"]', chartLegend],
     ['[data-role="maintenance-week"]', maintenanceWeek],
     ['[data-role="workspace"]', workspace],
   ]);
@@ -361,6 +370,7 @@ test('normal state rendering retains one date-aligned maintenance-week cell per 
   }, {});
 
   assert.equal(workspace.hidden, false);
+  assert.match(chartLegend.innerHTML, /A班[\s\S]*B班[\s\S]*C班/);
   assert.deepEqual(
     [...maintenanceWeek.innerHTML.matchAll(/data-plan-date="([^"]+)"/g)].map((match) => match[1]),
     ['2026-09-14', '2026-09-15'],
@@ -587,11 +597,11 @@ test('drawer is absent before selection and old lower Plan stack is removed', ()
   assert.match(template, /detail-cards detail-card-list plan-scheduling__planList/);
   assert.doesNotMatch(template, /plan-scheduling__plans/);
   assert.doesNotMatch(template, /selected-slot-label|slot-summary/);
-  assert.doesNotMatch(template, /plan-scheduling__legend/);
+  assert.match(template, /data-role="chart-legend"/);
   assert.match(template, /data-role="maintenance-week"/);
   assert.doesNotMatch(template, /PLAN SCHEDULING|<h1[^>]*>計画調整<\/h1>|配布待ち計画の工数を、保全週日付直班で確認します。/);
   assert.doesNotMatch(template, /単位：分|計画の「移動」を選ぶと、移動先の工数変化を確認できます。/);
-  assert.match(template, /plan-scheduling__chart[^>]*>[\s\S]*data-role="workload-chart"[\s\S]*data-role="maintenance-week"/);
+  assert.match(template, /plan-scheduling__chart[^>]*>[\s\S]*data-role="chart-legend"[\s\S]*data-role="workload-chart"[\s\S]*data-role="maintenance-week"/);
   assert.match(template, /plan-scheduling__planningMain[\s\S]*data-role="planning-canvas"[\s\S]*plan-scheduling__chart[\s\S]*data-role="date-grid"/);
   assert.match(template, /data-role="workload-chart"/);
   assert.match(template, /data-role="maintenance-week"/);
@@ -945,7 +955,9 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.doesNotMatch(scss, /#edf1f4/i);
   assert.match(scss, /\.plan-scheduling__chartBar[^}]*background:\s*transparent/s);
   assert.match(scss, /--plan-scheduling-team-color/);
-  assert.doesNotMatch(scss, /chartLegend|team-other/);
+  assert.match(scss, /\.plan-scheduling__chartLegend\s*\{[^}]*justify-self:\s*end/s);
+  assert.match(scss, /\.plan-scheduling__chartLegendSwatch\s*\{[^}]*background:\s*var\(--plan-scheduling-team-color\)/s);
+  assert.doesNotMatch(scss, /team-other/);
   assert.doesNotMatch(scss, /plan-scheduling__yAxis/);
   assert.match(scss, /\.plan-scheduling__planList[^}]*display:\s*flex[^}]*flex-direction:\s*column/s);
   assert.match(scss, /\.plan-scheduling__planList[^}]*overflow-y:\s*auto/s);
@@ -968,7 +980,9 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__planningMain[^}]*height:\s*100%/s);
   assert.match(scss, /\.plan-scheduling__planningCanvas[^}]*--plan-date-column-width:\s*190px/s);
   assert.match(scss, /\.plan-scheduling__planningCanvas[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/s);
-  assert.match(scss, /\.plan-scheduling__chart\s*\{[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)\s+auto/s);
+  assert.match(scss, /\.plan-scheduling__chart\s*\{[^}]*grid-template-rows:\s*auto\s+minmax\(0,\s*1fr\)\s+auto/s);
+  assert.match(scss, /\.plan-scheduling__chartLegend\s*\{[^}]*justify-self:\s*end/s);
+  assert.match(scss, /\.plan-scheduling__chartColumn\s*>\s*span\s*\{[^}]*width:\s*100%[^}]*text-align:\s*center/s);
   assert.match(scss, /\.plan-scheduling__maintenanceWeek[^}]*grid-auto-columns:\s*var\(--plan-date-column-width\)[^}]*grid-auto-flow:\s*column[^}]*gap:\s*var\(--plan-date-column-gap\)/s);
   assert.match(scss, /\.plan-scheduling__maintenanceWeek[^}]*padding:\s*6px\s+0[^}]*border-block:\s*1px\s+solid/s);
   assert.match(scss, /\.plan-scheduling__chartColumns[^}]*padding:\s*12px\s+0\s+0/s);

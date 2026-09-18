@@ -93,7 +93,7 @@ class SharedLayoutScrollContractTests(TestCase):
             "grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);",
             planning_canvas_rule,
         )
-        self.assertIn("grid-template-rows: minmax(0, 1fr) auto;", chart_rule)
+        self.assertIn("grid-template-rows: auto minmax(0, 1fr) auto;", chart_rule)
         self.assertIn("grid-auto-columns: var(--plan-date-column-width);", maintenance_week_rule)
         self.assertIn("grid-auto-flow: column;", maintenance_week_rule)
         self.assertIn("gap: var(--plan-date-column-gap);", maintenance_week_rule)

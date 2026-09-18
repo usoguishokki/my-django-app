@@ -25,9 +25,9 @@ const escapeHtml = (value) => String(value ?? '')
   .replaceAll("'", '&#039;');
 
 export const TEAM_COLORS = Object.freeze({
-  'A班': '#0072B2',
-  'B班': '#009E73',
-  'C班': '#D55E00',
+  'A班': '#1C55C8',
+  'B班': '#00D614',
+  'C班': '#FFC715',
 });
 
 const teamColorDeclaration = (teamName) =>
@@ -252,6 +252,7 @@ export class PlanSchedulingRenderer {
       : '';
     this.dateGrid.innerHTML = this.matrixDates(state)
       .map((day) => this.dateTemplate(day)).join('');
+    if (this.chartLegend) this.chartLegend.innerHTML = this.chartLegendTemplate();
     if (this.maintenanceWeek) {
       this.maintenanceWeek.innerHTML = this.maintenanceWeekTemplate(state.week, state.dates);
     }
@@ -383,6 +384,13 @@ export class PlanSchedulingRenderer {
     return `<div class="plan-scheduling__chartPlot${projection ? ' has-chart-preview' : ''}"><div class="plan-scheduling__chartColumns">${bars}</div></div>`;
   }
 
+  chartLegendTemplate() {
+    const items = Object.keys(TEAM_COLORS).map((teamName) =>
+      `<li class="plan-scheduling__chartLegendItem"><i class="plan-scheduling__chartLegendSwatch" style="${teamColorDeclaration(teamName)}"></i>${escapeHtml(teamName)}</li>`
+    ).join('');
+    return `<ul class="plan-scheduling__chartLegend" aria-label="班別">${items}</ul>`;
+  }
+
   maintenanceWeekTemplate(week, dates) {
     const label = week?.label || '';
     const cells = (dates || []).map((day) =>
@@ -471,6 +479,7 @@ export class PlanSchedulingRenderer {
   get planningMain() { return this.root.querySelector('.plan-scheduling__planningMain'); }
   get matrix() { return this.root.querySelector('.plan-scheduling__matrix'); }
   get maintenanceWeek() { return this.root.querySelector('[data-role="maintenance-week"]'); }
+  get chartLegend() { return this.root.querySelector('[data-role="chart-legend"]'); }
   get dateGrid() { return this.root.querySelector('[data-role="date-grid"]'); }
   get workloadChart() { return this.root.querySelector('[data-role="workload-chart"]'); }
 }
