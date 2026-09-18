@@ -83,6 +83,7 @@
 .plan-scheduling__planningCanvas {
   --plan-date-column-width: 190px;
   --plan-date-column-gap: 10px;
+  --plan-date-track: var(--plan-date-column-width);
   display: grid;
   grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
@@ -110,7 +111,7 @@
 .plan-scheduling__chartLegend { display: flex; align-items: center; justify-self: end; gap: 10px; margin: 0; padding: 0; color: #536a7b; font-size: 11px; list-style: none; }
 .plan-scheduling__chartLegendItem { display: inline-flex; align-items: center; gap: 4px; }
 .plan-scheduling__chartLegendSwatch { width: 10px; height: 10px; border: 1px solid rgba(24, 48, 68, .24); border-radius: 2px; background: var(--plan-scheduling-team-color); }
-.plan-scheduling__maintenanceWeek { display: grid; grid-auto-columns: var(--plan-date-column-width); grid-auto-flow: column; gap: var(--plan-date-column-gap); box-sizing: border-box; width: max-content; min-width: 100%; min-height: 30px; padding: 6px 0; border-block: 1px solid #dce5ec; color: #536a7b; background: #f9fbfc; font-size: 12px; }
+.plan-scheduling__maintenanceWeek { display: grid; grid-auto-columns: var(--plan-date-track); grid-auto-flow: column; gap: var(--plan-date-column-gap); box-sizing: border-box; width: max-content; min-width: 100%; min-height: 30px; padding: 6px 0; border-block: 1px solid #dce5ec; color: #536a7b; background: #f9fbfc; font-size: 12px; }
 .plan-scheduling__maintenanceWeekCell { min-width: 0; color: #39566c; font-weight: 700; text-align: center; }
 
 .plan-scheduling__planList {
@@ -226,7 +227,7 @@
 
 .plan-scheduling__chart > [data-role="workload-chart"] { display: flex; flex: 1; width: 100%; height: 100%; min-width: 0; min-height: 0; }
 .plan-scheduling__chartPlot { display: flex; flex: 1; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: visible; border-bottom: 1px solid var(--ps-border); }
-.plan-scheduling__chartColumns { box-sizing: border-box; display: grid; grid-auto-flow: column; grid-auto-columns: var(--plan-date-column-width); grid-template-rows: minmax(0, 1fr); align-items: end; gap: var(--plan-date-column-gap); width: max-content; height: 100%; min-width: 100%; min-height: 0; padding: 12px 0 0; }
+.plan-scheduling__chartColumns { box-sizing: border-box; display: grid; grid-auto-flow: column; grid-auto-columns: var(--plan-date-track); grid-template-rows: minmax(0, 1fr); align-items: end; gap: var(--plan-date-column-gap); width: max-content; height: 100%; min-width: 100%; min-height: 0; padding: 12px 0 0; }
 .plan-scheduling__chartColumn { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; align-items: end; justify-items: center; gap: 5px; min-width: 0; height: 100%; color: #536a7b; font-size: 11px; }
 .plan-scheduling__chartColumn > span { width: 100%; text-align: center; }
 .plan-scheduling__chartBar { align-self: end; display: flex; flex-direction: column-reverse; justify-content: flex-start; width: 44px; height: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 4px 4px 0 0; background: transparent; cursor: help; }
@@ -262,7 +263,7 @@
 
 .plan-scheduling__dateGrid {
   display: grid;
-  grid-auto-columns: var(--plan-date-column-width);
+  grid-auto-columns: var(--plan-date-track);
   grid-auto-flow: column;
   gap: var(--plan-date-column-gap);
   width: max-content;
@@ -345,6 +346,20 @@
 @media (prefers-reduced-motion: reduce) {
   .plan-scheduling__chartSegment,
   .plan-scheduling__chartPortion { transition: none; }
+}
+
+@media (min-width: 901px) {
+  .plan-scheduling__planningLayout.has-drawer .plan-scheduling__planningCanvas {
+    --plan-date-track: minmax(0, 1fr);
+    width: 100%;
+  }
+  .plan-scheduling__planningLayout.has-drawer .plan-scheduling__chartColumns,
+  .plan-scheduling__planningLayout.has-drawer .plan-scheduling__maintenanceWeek,
+  .plan-scheduling__planningLayout.has-drawer .plan-scheduling__dateGrid {
+    grid-template-columns: repeat(7, var(--plan-date-track));
+    width: 100%;
+  }
+  .plan-scheduling__planningLayout.has-drawer .plan-scheduling__dateColumn { min-width: 0; }
 }
 
 @media (max-width: 900px) {

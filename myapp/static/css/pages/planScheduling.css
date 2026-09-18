@@ -120,6 +120,7 @@
 .plan-scheduling__planningCanvas {
   --plan-date-column-width: 190px;
   --plan-date-column-gap: 10px;
+  --plan-date-track: var(--plan-date-column-width);
   display: grid;
   grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
@@ -184,7 +185,7 @@
 
 .plan-scheduling__maintenanceWeek {
   display: grid;
-  grid-auto-columns: var(--plan-date-column-width);
+  grid-auto-columns: var(--plan-date-track);
   grid-auto-flow: column;
   gap: var(--plan-date-column-gap);
   box-sizing: border-box;
@@ -460,7 +461,7 @@
   box-sizing: border-box;
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: var(--plan-date-column-width);
+  grid-auto-columns: var(--plan-date-track);
   grid-template-rows: minmax(0, 1fr);
   align-items: end;
   gap: var(--plan-date-column-gap);
@@ -632,7 +633,7 @@
 
 .plan-scheduling__dateGrid {
   display: grid;
-  grid-auto-columns: var(--plan-date-column-width);
+  grid-auto-columns: var(--plan-date-track);
   grid-auto-flow: column;
   gap: var(--plan-date-column-gap);
   width: max-content;
@@ -889,6 +890,18 @@
   .plan-scheduling__chartSegment,
   .plan-scheduling__chartPortion {
     transition: none; } }
+
+@media (min-width: 901px) {
+  .plan-scheduling__planningLayout.has-drawer .plan-scheduling__planningCanvas {
+    --plan-date-track: minmax(0, 1fr);
+    width: 100%; }
+  .plan-scheduling__planningLayout.has-drawer .plan-scheduling__chartColumns,
+  .plan-scheduling__planningLayout.has-drawer .plan-scheduling__maintenanceWeek,
+  .plan-scheduling__planningLayout.has-drawer .plan-scheduling__dateGrid {
+    grid-template-columns: repeat(7, var(--plan-date-track));
+    width: 100%; }
+  .plan-scheduling__planningLayout.has-drawer .plan-scheduling__dateColumn {
+    min-width: 0; } }
 
 @media (max-width: 900px) {
   .plan-scheduling {

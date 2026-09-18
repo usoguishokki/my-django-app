@@ -983,11 +983,13 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__chart\s*\{[^}]*grid-template-rows:\s*auto\s+minmax\(0,\s*1fr\)\s+auto/s);
   assert.match(scss, /\.plan-scheduling__chartLegend\s*\{[^}]*justify-self:\s*end/s);
   assert.match(scss, /\.plan-scheduling__chartColumn\s*>\s*span\s*\{[^}]*width:\s*100%[^}]*text-align:\s*center/s);
-  assert.match(scss, /\.plan-scheduling__maintenanceWeek[^}]*grid-auto-columns:\s*var\(--plan-date-column-width\)[^}]*grid-auto-flow:\s*column[^}]*gap:\s*var\(--plan-date-column-gap\)/s);
+  assert.match(scss, /\.plan-scheduling__maintenanceWeek[^}]*grid-auto-columns:\s*var\(--plan-date-track\)[^}]*grid-auto-flow:\s*column[^}]*gap:\s*var\(--plan-date-column-gap\)/s);
   assert.match(scss, /\.plan-scheduling__maintenanceWeek[^}]*padding:\s*6px\s+0[^}]*border-block:\s*1px\s+solid/s);
   assert.match(scss, /\.plan-scheduling__chartColumns[^}]*padding:\s*12px\s+0\s+0/s);
-  assert.match(scss, /\.plan-scheduling__chartColumns[^}]*grid-auto-columns:\s*var\(--plan-date-column-width\)/s);
-  assert.match(scss, /\.plan-scheduling__dateGrid[^}]*grid-auto-columns:\s*var\(--plan-date-column-width\)/s);
+  assert.match(scss, /\.plan-scheduling__chartColumns[^}]*grid-auto-columns:\s*var\(--plan-date-track\)/s);
+  assert.match(scss, /\.plan-scheduling__dateGrid[^}]*grid-auto-columns:\s*var\(--plan-date-track\)/s);
+  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__planningCanvas[^}]*--plan-date-track:\s*minmax\(0,\s*1fr\)[^}]*width:\s*100%/s);
+  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__chartColumns,[\s\S]*\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__maintenanceWeek,[\s\S]*\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__dateGrid\s*\{[^}]*grid-template-columns:\s*repeat\(7,\s*var\(--plan-date-track\)\)[^}]*width:\s*100%/s);
   assert.match(scss, /\.plan-scheduling__chartPlot[^}]*overflow:\s*visible/s);
   assert.match(scss, /\[data-role="workload-chart"\][^}]*height:\s*100%/s);
   assert.match(scss, /\.plan-scheduling__chartPlot[^}]*height:\s*100%/s);
