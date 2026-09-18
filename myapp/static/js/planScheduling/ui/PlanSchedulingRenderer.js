@@ -384,11 +384,11 @@ export class PlanSchedulingRenderer {
   }
 
   maintenanceWeekTemplate(week, dates) {
+    const label = week?.label || '';
     const cells = (dates || []).map((day) =>
-      `<span class="plan-scheduling__maintenanceWeekCell" data-plan-date="${escapeHtml(day.date)}"></span>`
+      `<span class="plan-scheduling__maintenanceWeekCell" data-plan-date="${escapeHtml(day.date)}">${escapeHtml(label)}</span>`
     ).join('');
-    const label = week?.label ? `保全週: ${week.label}` : '保全週情報なし';
-    return `${cells}<p class="plan-scheduling__maintenanceWeekLabel">${escapeHtml(label)}</p>`;
+    return cells;
   }
 
   matrixDates(state) {

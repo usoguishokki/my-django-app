@@ -329,7 +329,43 @@ test('chart and matrix emit the same ordered date tracks', async () => {
   assert.deepEqual(chartDates, dates);
   assert.deepEqual(matrixDates, dates);
   assert.deepEqual(maintenanceWeekDates, dates);
-  assert.match(maintenanceWeekHtml, /保全週: 9月3週目/);
+  assert.equal((maintenanceWeekHtml.match(/9月3週目/g) || []).length, dates.length);
+});
+
+
+test('normal state rendering retains one date-aligned maintenance-week cell per date', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const feedback = { textContent: '', classList: { remove: () => {} } };
+  const dateGrid = { innerHTML: '' };
+  const maintenanceWeek = { innerHTML: '' };
+  const workspace = { hidden: true };
+  const elements = new Map([
+    ['[data-role="feedback"]', feedback],
+    ['[data-role="date-grid"]', dateGrid],
+    ['[data-role="maintenance-week"]', maintenanceWeek],
+    ['[data-role="workspace"]', workspace],
+  ]);
+  const renderer = new PlanSchedulingRenderer({
+    querySelector: (selector) => elements.get(selector),
+    querySelectorAll: () => [],
+  });
+  renderer.renderSelection = () => {};
+  renderer.renderState({
+    dataQuality: { hasErrors: false, issueCount: 0 },
+    week: { label: '9月3週目' },
+    dates: [
+      { date: '2026-09-14', label: '9/14（月）', slots: [] },
+      { date: '2026-09-15', label: '9/15（火）', slots: [] },
+    ],
+    workloadChart: { shiftNames: [] },
+  }, {});
+
+  assert.equal(workspace.hidden, false);
+  assert.deepEqual(
+    [...maintenanceWeek.innerHTML.matchAll(/data-plan-date="([^"]+)"/g)].map((match) => match[1]),
+    ['2026-09-14', '2026-09-15'],
+  );
+  assert.equal((maintenanceWeek.innerHTML.match(/9月3週目/g) || []).length, 2);
 });
 
 
@@ -555,7 +591,8 @@ test('drawer is absent before selection and old lower Plan stack is removed', ()
   assert.match(template, /data-role="maintenance-week"/);
   assert.doesNotMatch(template, /PLAN SCHEDULING|<h1[^>]*>計画調整<\/h1>|配布待ち計画の工数を、保全週日付直班で確認します。/);
   assert.doesNotMatch(template, /単位：分|計画の「移動」を選ぶと、移動先の工数変化を確認できます。/);
-  assert.match(template, /plan-scheduling__planningMain[\s\S]*data-role="planning-canvas"[\s\S]*data-role="workload-chart"[\s\S]*data-role="maintenance-week"[\s\S]*data-role="date-grid"/);
+  assert.match(template, /plan-scheduling__chart[^>]*>[\s\S]*data-role="workload-chart"[\s\S]*data-role="maintenance-week"/);
+  assert.match(template, /plan-scheduling__planningMain[\s\S]*data-role="planning-canvas"[\s\S]*plan-scheduling__chart[\s\S]*data-role="date-grid"/);
   assert.match(template, /data-role="workload-chart"/);
   assert.match(template, /data-role="maintenance-week"/);
   assert.match(template, /data-role="date-grid"/);
@@ -931,7 +968,7 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__planningMain[^}]*height:\s*100%/s);
   assert.match(scss, /\.plan-scheduling__planningCanvas[^}]*--plan-date-column-width:\s*190px/s);
   assert.match(scss, /\.plan-scheduling__planningCanvas[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/s);
-  assert.match(scss, /\.plan-scheduling__chartRegion[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)\s+auto/s);
+  assert.match(scss, /\.plan-scheduling__chart\s*\{[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)\s+auto/s);
   assert.match(scss, /\.plan-scheduling__maintenanceWeek[^}]*grid-auto-columns:\s*var\(--plan-date-column-width\)[^}]*grid-auto-flow:\s*column[^}]*gap:\s*var\(--plan-date-column-gap\)/s);
   assert.match(scss, /\.plan-scheduling__chartColumns[^}]*grid-auto-columns:\s*var\(--plan-date-column-width\)/s);
   assert.match(scss, /\.plan-scheduling__dateGrid[^}]*grid-auto-columns:\s*var\(--plan-date-column-width\)/s);
