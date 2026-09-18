@@ -41,9 +41,9 @@ async function importController() {
   ).replace(
     /import \{[\s\S]*?\} from '\.\.\/domain\/PlanSchedulingPreviewPolicy\.js';/,
     `const PlanSchedulingMode = { NORMAL: 'normal', MOVING: 'moving' };
-     const initialInteractionState = () => ({ mode: 'normal', selectedSlotKey: '', movingPlanId: null, destinationSlotKey: '' });
-     const beginMove = (state, planId) => ({ ...state, mode: 'moving', movingPlanId: planId, destinationSlotKey: '' });
-     const cancelMove = (state) => ({ ...state, mode: 'normal', movingPlanId: null, destinationSlotKey: '' });
+     const initialInteractionState = () => ({ mode: 'normal', selectedSlotKey: '', movingPlanId: null, moveContext: null, destinationSlotKey: '' });
+     const beginMove = (state, planId, moveContext = null) => ({ ...state, mode: 'moving', movingPlanId: planId, moveContext, destinationSlotKey: '' });
+     const cancelMove = (state) => ({ ...state, mode: 'normal', movingPlanId: null, moveContext: null, destinationSlotKey: '' });
      const closeDrawer = initialInteractionState;
      const selectMatrixSlot = (state, key) => state.mode === 'moving'
        ? { ...state, destinationSlotKey: key }
@@ -337,6 +337,52 @@ test('chart and matrix emit the same ordered date tracks', async () => {
   assert.deepEqual(matrixDates, dates);
   assert.deepEqual(maintenanceWeekDates, dates);
   assert.equal((maintenanceWeekHtml.match(/9月3週目/g) || []).length, dates.length);
+});
+
+
+test('Move mode prepends an out-of-week source across every date track', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const renderer = new PlanSchedulingRenderer({});
+  const sourceSlot = {
+    key: '2026-09-14:1:A', date: '2026-09-14', dateLabel: '9/14（月）',
+    shift: { name: '1直' }, team: { name: 'A班' }, workloadMinutes: 120,
+    workloadLabel: '120分', isValid: true, dataQualityIssues: [],
+  };
+  const sourceChartDay = {
+    date: '2026-09-14', label: '9/14（月）', totalWorkloadMinutes: 120,
+    teamWorkloads: [{ teamName: 'A班', workloadMinutes: 120, workloadLabel: '120分' }],
+  };
+  const selection = {
+    isMoving: true, selectedSlot: sourceSlot, preview: null,
+    moveContext: { plan: { current: { date: sourceSlot.date, dateLabel: sourceSlot.dateLabel } }, sourceSlot, chartDay: sourceChartDay, weekLabel: '9月2週目' },
+  };
+  const destinationDays = ['2026-09-21', '2026-09-22'].map((date) => ({
+    date, label: date, slots: [],
+  }));
+  const matrixDates = renderer.matrixDates({
+    workloadChart: { shiftNames: ['1直'] }, dates: destinationDays,
+  }, selection);
+  const chartHtml = renderer.workloadChartTemplate({
+    dates: destinationDays.map((day) => ({ ...day, totalWorkloadMinutes: 0, teamWorkloads: [] })),
+  }, selection);
+  const maintenanceHtml = renderer.maintenanceWeekTemplate({ label: '9月3週目' }, matrixDates);
+
+  assert.deepEqual(matrixDates.map((day) => day.date), ['2026-09-14', '2026-09-21', '2026-09-22']);
+  assert.equal(matrixDates[0].isPinnedMoveSource, true);
+  assert.match(renderer.dateTemplate(matrixDates[0]), /移動元/);
+  assert.match(chartHtml, /chartColumn is-pinned-move-source" data-plan-date="2026-09-14"/);
+  assert.match(chartHtml, /移動元/);
+  assert.deepEqual(
+    [...maintenanceHtml.matchAll(/data-plan-date="([^"]+)"/g)].map((match) => match[1]),
+    ['2026-09-14', '2026-09-21', '2026-09-22'],
+  );
+  assert.match(maintenanceHtml, /9月2週目/);
+
+  const sourceInDisplayedWeek = renderer.matrixDates({
+    workloadChart: { shiftNames: ['1直'] },
+    dates: [{ date: sourceSlot.date, label: sourceSlot.dateLabel, slots: [sourceSlot] }],
+  }, selection);
+  assert.deepEqual(sourceInDisplayedWeek.map((day) => day.date), [sourceSlot.date]);
 });
 
 
@@ -880,6 +926,50 @@ test('controller supports Move, destination selection, and cancel without mutati
 });
 
 
+test('controller retains the authoritative move source when the displayed week changes', async () => {
+  const { PlanSchedulingController } = await importController();
+  const sourceSlot = {
+    ...slot('2026-09-14:1', 120), date: '2026-09-14', dateLabel: '9/14（月）',
+    team: { name: 'A班' }, planIds: [10],
+  };
+  const sourcePlan = plan({
+    current: { slotKey: sourceSlot.key, date: sourceSlot.date, dateLabel: sourceSlot.dateLabel },
+  });
+  const moveContext = {
+    plan: sourcePlan,
+    sourceSlot,
+    chartDay: { date: sourceSlot.date, label: sourceSlot.dateLabel, teamWorkloads: [] },
+    weekLabel: '9月2週目',
+  };
+  let renderedSelection = null;
+  const controller = new PlanSchedulingController({
+    root: {},
+    apiClient: {
+      fetchWeek: async () => ({
+        plans: [], dates: [{ slots: [] }], workloadChart: { dates: [], shiftNames: [] },
+      }),
+    },
+    renderer: {
+      renderLoading: () => {},
+      renderState: (_state, selection) => { renderedSelection = selection; },
+      renderError: (message) => { throw new Error(message); },
+    },
+    buildPreview: () => null,
+    selectSlotPlans: () => [],
+  });
+  controller.interaction = previewPolicy.beginMove(
+    previewPolicy.initialInteractionState(), sourcePlan.planId, moveContext,
+  );
+
+  await controller.load('2026-09-21');
+
+  assert.equal(controller.interaction.mode, previewPolicy.PlanSchedulingMode.MOVING);
+  assert.equal(controller.interaction.moveContext, moveContext);
+  assert.equal(renderedSelection.plan, sourcePlan);
+  assert.equal(renderedSelection.source, sourceSlot);
+});
+
+
 test('keyboard-generated slot activation supplies the same chart selection state', async () => {
   const { PlanSchedulingController } = await importController();
   let lastSelection = null;
@@ -990,6 +1080,10 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__dateGrid[^}]*grid-auto-columns:\s*var\(--plan-date-track\)/s);
   assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__planningCanvas[^}]*--plan-date-track:\s*minmax\(0,\s*1fr\)[^}]*width:\s*100%/s);
   assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__chartColumns,[\s\S]*\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__maintenanceWeek,[\s\S]*\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__dateGrid\s*\{[^}]*grid-template-columns:\s*repeat\(7,\s*var\(--plan-date-track\)\)[^}]*width:\s*100%/s);
+  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\.has-pinned-move-source\s+\.plan-scheduling__planningCanvas[^}]*--plan-date-track:\s*var\(--plan-date-column-width\)[^}]*width:\s*max-content/s);
+  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\.has-pinned-move-source\s+\.plan-scheduling__chartColumns,[\s\S]*\.plan-scheduling__planningLayout\.has-drawer\.has-pinned-move-source\s+\.plan-scheduling__maintenanceWeek,[\s\S]*\.plan-scheduling__planningLayout\.has-drawer\.has-pinned-move-source\s+\.plan-scheduling__dateGrid\s*\{[^}]*grid-template-columns:\s*repeat\(8,\s*var\(--plan-date-track\)\)[^}]*width:\s*max-content/s);
+  assert.match(scss, /\.plan-scheduling__chartColumn\.is-pinned-move-source/);
+  assert.match(scss, /\.plan-scheduling__dateColumn\.is-pinned-move-source/);
   assert.match(scss, /\.plan-scheduling__chartPlot[^}]*overflow:\s*visible/s);
   assert.match(scss, /\[data-role="workload-chart"\][^}]*height:\s*100%/s);
   assert.match(scss, /\.plan-scheduling__chartPlot[^}]*height:\s*100%/s);

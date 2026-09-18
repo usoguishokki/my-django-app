@@ -33,6 +33,11 @@ export const TEAM_COLORS = Object.freeze({
 const teamColorDeclaration = (teamName) =>
   `--plan-scheduling-team-color:${TEAM_COLORS[teamName]}`;
 
+const hasPinnedMoveSource = (dates, selection) => {
+  const sourceDate = selection?.isMoving && selection.moveContext?.sourceSlot?.date;
+  return Boolean(sourceDate && !dates.some((day) => day.date === sourceDate));
+};
+
 const formatPlanCardTitle = (plan) => [
   plan.machineName || plan.equipmentName,
   plan.workName,
@@ -250,17 +255,22 @@ export class PlanSchedulingRenderer {
     this.feedback.textContent = state.dataQuality.hasErrors
       ? `データ確認事項が${state.dataQuality.issueCount}件あります。`
       : '';
-    this.dateGrid.innerHTML = this.matrixDates(state)
+    const displayDates = this.matrixDates(state, selection);
+    this.dateGrid.innerHTML = displayDates
       .map((day) => this.dateTemplate(day)).join('');
     if (this.chartLegend) this.chartLegend.innerHTML = this.chartLegendTemplate();
     if (this.maintenanceWeek) {
-      this.maintenanceWeek.innerHTML = this.maintenanceWeekTemplate(state.week, state.dates);
+      this.maintenanceWeek.innerHTML = this.maintenanceWeekTemplate(state.week, displayDates);
     }
     this.workspace.hidden = false;
     this.renderSelection(state, selection);
   }
 
   renderSelection(state, selection) {
+    this.planningLayout.classList.toggle(
+      'has-pinned-move-source',
+      hasPinnedMoveSource(state.dates, selection),
+    );
     this.workloadChart.innerHTML = this.workloadChartTemplate(
       state.workloadChart,
       selection,
@@ -354,8 +364,9 @@ export class PlanSchedulingRenderer {
       Object.hasOwn(selection, 'selectedSlot') || Object.hasOwn(selection, 'preview')
     );
     const selectedSlot = isSelectionModel ? selection.selectedSlot : selection;
+    const displayChart = this.chartWithPinnedMoveSource(chart, selection);
     const { dates: chartDays, maxTotal, projection } = buildChartPresentation(
-      chart,
+      displayChart,
       isSelectionModel ? selection : { selectedSlot },
     );
     const bars = chartDays.map((day, dayIndex) => {
@@ -379,9 +390,15 @@ export class PlanSchedulingRenderer {
         `${day.label}の工数詳細`,
         ...affectedDescriptions,
       ].join('。');
-      return `<div class="plan-scheduling__chartColumn" data-plan-date="${escapeHtml(day.date)}"><strong>${escapeHtml(totalLabel)}</strong><button type="button" class="plan-scheduling__chartBar" aria-label="${escapeHtml(ariaLabel)}" aria-describedby="${tooltipId}">${segments}</button><span>${escapeHtml(day.label)}</span><div class="plan-scheduling__chartTooltip" id="${tooltipId}" role="tooltip"><strong class="plan-scheduling__tooltipDate">${escapeHtml(tooltipDateLabel(day.date, day.label))}</strong>${rows}<div class="plan-scheduling__tooltipTotal"><span>合計</span><strong>${escapeHtml(totalLabel)}</strong></div></div></div>`;
+      return `<div class="plan-scheduling__chartColumn${day.isPinnedMoveSource ? ' is-pinned-move-source' : ''}" data-plan-date="${escapeHtml(day.date)}"><strong>${escapeHtml(totalLabel)}</strong><button type="button" class="plan-scheduling__chartBar" aria-label="${escapeHtml(ariaLabel)}" aria-describedby="${tooltipId}">${segments}</button><span>${day.isPinnedMoveSource ? '<b class="plan-scheduling__moveSourceLabel">移動元</b>' : ''}${escapeHtml(day.label)}</span><div class="plan-scheduling__chartTooltip" id="${tooltipId}" role="tooltip"><strong class="plan-scheduling__tooltipDate">${escapeHtml(tooltipDateLabel(day.date, day.label))}</strong>${rows}<div class="plan-scheduling__tooltipTotal"><span>合計</span><strong>${escapeHtml(totalLabel)}</strong></div></div></div>`;
     }).join('');
     return `<div class="plan-scheduling__chartPlot${projection ? ' has-chart-preview' : ''}"><div class="plan-scheduling__chartColumns">${bars}</div></div>`;
+  }
+
+  chartWithPinnedMoveSource(chart, selection) {
+    const sourceDay = selection?.isMoving && selection.moveContext?.chartDay;
+    if (!sourceDay || !hasPinnedMoveSource(chart.dates, selection)) return chart;
+    return { ...chart, dates: [{ ...sourceDay, isPinnedMoveSource: true }, ...chart.dates] };
   }
 
   chartLegendTemplate() {
@@ -392,22 +409,31 @@ export class PlanSchedulingRenderer {
   }
 
   maintenanceWeekTemplate(week, dates) {
-    const label = week?.label || '';
     const cells = (dates || []).map((day) =>
-      `<span class="plan-scheduling__maintenanceWeekCell" data-plan-date="${escapeHtml(day.date)}">${escapeHtml(label)}</span>`
+      `<span class="plan-scheduling__maintenanceWeekCell${day.isPinnedMoveSource ? ' is-pinned-move-source' : ''}" data-plan-date="${escapeHtml(day.date)}">${escapeHtml(day.maintenanceWeekLabel || week?.label || '')}</span>`
     ).join('');
     return cells;
   }
 
-  matrixDates(state) {
+  matrixDates(state, selection = {}) {
     const shiftNames = new Set(state.workloadChart.shiftNames);
     const teamNames = new Set(Object.keys(TEAM_COLORS));
-    return state.dates.map((day) => ({
+    const dates = state.dates.map((day) => ({
       ...day,
       slots: day.slots.filter((slot) => (
         shiftNames.has(slot.shift.name) && teamNames.has(slot.team.name)
       )),
     }));
+    const source = selection.isMoving && selection.moveContext;
+    if (!hasPinnedMoveSource(dates, selection)) return dates;
+    return [{
+      date: source.sourceSlot.date,
+      label: source.sourceSlot.dateLabel || source.plan?.current?.dateLabel || sourceDate,
+      isReserveWeek: false,
+      isPinnedMoveSource: true,
+      maintenanceWeekLabel: source.weekLabel,
+      slots: [source.sourceSlot],
+    }, ...dates];
   }
 
   dateTemplate(day) {
@@ -421,8 +447,8 @@ export class PlanSchedulingRenderer {
         <h4>${escapeHtml(shiftName)}</h4>
         <div class="plan-scheduling__slotList">${slots.map((slot) => this.slotTemplate(slot)).join('')}</div>
       </section>`).join('');
-    return `<article class="plan-scheduling__dateColumn" data-plan-date="${escapeHtml(day.date)}">
-      <header><h3>${escapeHtml(day.label)}</h3>${day.isReserveWeek ? '<span>予備週</span>' : ''}</header>
+    return `<article class="plan-scheduling__dateColumn${day.isPinnedMoveSource ? ' is-pinned-move-source' : ''}" data-plan-date="${escapeHtml(day.date)}">
+      <header>${day.isPinnedMoveSource ? '<span class="plan-scheduling__moveSourceLabel">移動元</span>' : ''}<h3>${escapeHtml(day.label)}</h3>${day.isReserveWeek ? '<span>予備週</span>' : ''}</header>
       ${shifts || '<p class="plan-scheduling__empty">勤務スロットなし</p>'}
     </article>`;
   }

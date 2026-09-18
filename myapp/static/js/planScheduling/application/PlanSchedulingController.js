@@ -53,7 +53,9 @@ export class PlanSchedulingController {
     this.renderer.renderLoading();
     try {
       this.state = await this.apiClient.fetchWeek(targetDate);
-      this.interaction = initialInteractionState();
+      if (this.interaction.mode !== PlanSchedulingMode.MOVING) {
+        this.interaction = initialInteractionState();
+      }
       this.renderer.renderState(this.state, this.selection());
     } catch (error) {
       this.renderer.renderError(error.message);
@@ -83,9 +85,17 @@ export class PlanSchedulingController {
 
     const moveButton = event.target.closest('[data-action="move"]');
     if (moveButton && !moveButton.disabled) {
+      const selection = this.selection();
+      const sourceDate = selection.plan?.current.date;
       this.interaction = beginMove(
         this.interaction,
         Number(moveButton.dataset.planId),
+        {
+          plan: selection.plan,
+          sourceSlot: selection.source,
+          chartDay: this.state.workloadChart?.dates?.find((day) => day.date === sourceDate),
+          weekLabel: this.state.week?.label || '',
+        },
       );
       this.renderSelection();
       return;
@@ -106,22 +116,26 @@ export class PlanSchedulingController {
   }
 
   selection() {
+    const moveContext = this.interaction.moveContext;
     const plan = this.state?.plans.find(
       (item) => item.planId === this.interaction.movingPlanId,
-    );
+    ) || moveContext?.plan;
     const slots = this.state?.dates.flatMap((item) => item.slots) || [];
+    const source = slots.find((item) => item.key === plan?.current.slotKey) ||
+      moveContext?.sourceSlot;
     const selectedSlot = slots.find(
       (item) => item.key === this.interaction.selectedSlotKey,
-    );
+    ) || (this.interaction.mode === PlanSchedulingMode.MOVING ? source : undefined);
     const destination = slots.find(
       (item) => item.key === this.interaction.destinationSlotKey,
     );
-    const source = slots.find((item) => item.key === plan?.current.slotKey);
     return {
       plan,
       mode: this.interaction.mode,
       isMoving: this.interaction.mode === PlanSchedulingMode.MOVING,
+      moveContext,
       selectedSlot,
+      source,
       slotPlans: selectedSlot
         ? this.selectSlotPlans(this.state.plans, selectedSlot)
         : [],

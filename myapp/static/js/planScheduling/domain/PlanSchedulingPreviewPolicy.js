@@ -73,6 +73,7 @@ export function initialInteractionState() {
     mode: PlanSchedulingMode.NORMAL,
     selectedSlotKey: '',
     movingPlanId: null,
+    moveContext: null,
     destinationSlotKey: '',
   };
 }
@@ -88,12 +89,13 @@ export function selectMatrixSlot(interaction, slotKey) {
   };
 }
 
-export function beginMove(interaction, planId) {
+export function beginMove(interaction, planId, moveContext = null) {
   if (!Number.isInteger(planId)) return interaction;
   return {
     ...interaction,
     mode: PlanSchedulingMode.MOVING,
     movingPlanId: planId,
+    moveContext,
     destinationSlotKey: '',
   };
 }
@@ -103,6 +105,7 @@ export function cancelMove(interaction) {
     ...interaction,
     mode: PlanSchedulingMode.NORMAL,
     movingPlanId: null,
+    moveContext: null,
     destinationSlotKey: '',
   };
 }

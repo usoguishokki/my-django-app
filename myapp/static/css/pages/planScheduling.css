@@ -487,6 +487,16 @@
   width: 100%;
   text-align: center; }
 
+.plan-scheduling__chartColumn.is-pinned-move-source {
+  box-shadow: inset 0 0 0 1px #a9c5db;
+  background: #f7fafc; }
+
+.plan-scheduling__moveSourceLabel {
+  display: block;
+  color: var(--ps-blue);
+  font-size: 10px;
+  font-weight: 800; }
+
 .plan-scheduling__chartBar {
   align-self: end;
   display: flex;
@@ -891,6 +901,14 @@
   .plan-scheduling__chartPortion {
     transition: none; } }
 
+.plan-scheduling__dateColumn.is-pinned-move-source {
+  border-color: #a9c5db;
+  background: #f7fafc;
+  box-shadow: inset 3px 0 var(--ps-blue); }
+
+.plan-scheduling__dateColumn > header .plan-scheduling__moveSourceLabel {
+  margin-right: auto; }
+
 @media (min-width: 901px) {
   .plan-scheduling__planningLayout.has-drawer .plan-scheduling__planningCanvas {
     --plan-date-track: minmax(0, 1fr);
@@ -900,6 +918,14 @@
   .plan-scheduling__planningLayout.has-drawer .plan-scheduling__dateGrid {
     grid-template-columns: repeat(7, var(--plan-date-track));
     width: 100%; }
+  .plan-scheduling__planningLayout.has-drawer.has-pinned-move-source .plan-scheduling__planningCanvas {
+    --plan-date-track: var(--plan-date-column-width);
+    width: max-content; }
+  .plan-scheduling__planningLayout.has-drawer.has-pinned-move-source .plan-scheduling__chartColumns,
+  .plan-scheduling__planningLayout.has-drawer.has-pinned-move-source .plan-scheduling__maintenanceWeek,
+  .plan-scheduling__planningLayout.has-drawer.has-pinned-move-source .plan-scheduling__dateGrid {
+    grid-template-columns: repeat(8, var(--plan-date-track));
+    width: max-content; }
   .plan-scheduling__planningLayout.has-drawer .plan-scheduling__dateColumn {
     min-width: 0; } }
 
