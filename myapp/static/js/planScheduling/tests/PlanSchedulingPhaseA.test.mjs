@@ -41,13 +41,13 @@ async function importController() {
   ).replace(
     /import \{[\s\S]*?\} from '\.\.\/domain\/PlanSchedulingPreviewPolicy\.js';/,
     `const PlanSchedulingMode = { NORMAL: 'normal', MOVING: 'moving' };
-     const initialInteractionState = () => ({ mode: 'normal', selectedSlotKey: '', movingPlanId: null, moveContext: null, destinationSlotKey: '' });
+     const initialInteractionState = () => ({ mode: 'normal', selectedSlotKey: '', selectedSlotContext: null, movingPlanId: null, moveContext: null, destinationSlotKey: '' });
      const beginMove = (state, planId, moveContext = null) => ({ ...state, mode: 'moving', movingPlanId: planId, moveContext, destinationSlotKey: '' });
      const cancelMove = (state) => ({ ...state, mode: 'normal', movingPlanId: null, moveContext: null, destinationSlotKey: '' });
      const closeDrawer = initialInteractionState;
-     const selectMatrixSlot = (state, key) => state.mode === 'moving'
+     const selectMatrixSlot = (state, key, selectedSlotContext = null) => state.mode === 'moving'
        ? { ...state, destinationSlotKey: key }
-       : { ...state, selectedSlotKey: key, destinationSlotKey: '' };`,
+       : { ...state, selectedSlotKey: key, selectedSlotContext, destinationSlotKey: '' };`,
   );
   const dataUrl = `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
   return import(dataUrl);
@@ -906,6 +906,8 @@ test('controller supports Move, destination selection, and cancel without mutati
   assert.equal(controller.interaction.mode, previewPolicy.PlanSchedulingMode.MOVING);
   assert.equal(controller.interaction.movingPlanId, 10);
   assert.equal(controller.interaction.selectedSlotKey, '2026-09-15:1');
+  assert.equal(controller.interaction.moveContext.plan.planId, 10);
+  assert.equal(controller.interaction.moveContext.sourceSlot.key, '2026-09-15:1');
   assert.equal(lastSelection.preview, null);
 
   controller.handleClick(eventFor('[data-slot-key]', {
@@ -967,6 +969,103 @@ test('controller retains the authoritative move source when the displayed week c
   assert.equal(controller.interaction.moveContext, moveContext);
   assert.equal(renderedSelection.plan, sourcePlan);
   assert.equal(renderedSelection.source, sourceSlot);
+});
+
+
+test('week submit preserves the Drawer and pinned Move source through the live controller path', async () => {
+  const { PlanSchedulingController } = await importController();
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const sourceSlot = {
+    key: '2026-09-14:1:A', date: '2026-09-14', dateLabel: '9/14（月）',
+    shift: { name: '1直' }, team: { name: 'A班' }, workloadMinutes: 120,
+    workloadLabel: '120分', isValid: true, dataQualityIssues: [], planIds: [10],
+  };
+  const sourcePlan = plan({
+    current: { slotKey: sourceSlot.key, date: sourceSlot.date, dateLabel: sourceSlot.dateLabel },
+  });
+  const sourceWeek = {
+    plans: [sourcePlan],
+    dates: [{ date: sourceSlot.date, label: sourceSlot.dateLabel, slots: [sourceSlot] }],
+    week: { label: '9月2週目' },
+    workloadChart: {
+      shiftNames: ['1直'],
+      dates: [{
+        date: sourceSlot.date, label: sourceSlot.dateLabel, totalWorkloadMinutes: 120,
+        teamWorkloads: [{ teamName: 'A班', workloadMinutes: 120, workloadLabel: '120分' }],
+      }],
+    },
+  };
+  const destinationDates = Array.from({ length: 7 }, (_, index) => {
+    const date = `2026-09-${String(21 + index).padStart(2, '0')}`;
+    return { date, label: date, slots: [] };
+  });
+  const destinationWeek = {
+    plans: [], dates: destinationDates, week: { label: '9月3週目' },
+    workloadChart: {
+      shiftNames: ['1直'],
+      dates: destinationDates.map((day) => ({
+        ...day, totalWorkloadMinutes: 0, teamWorkloads: [],
+      })),
+    },
+  };
+  const view = new PlanSchedulingRenderer({});
+  const input = { value: '2026-09-21' };
+  let finalRender = null;
+  let lastSelection = null;
+  const controller = new PlanSchedulingController({
+    root: { querySelector: (selector) => selector === '[data-role="target-date"]' ? input : null },
+    apiClient: { fetchWeek: async () => destinationWeek },
+    renderer: {
+      renderLoading: () => {},
+      renderError: (message) => { throw new Error(message); },
+      renderSelection: (_state, selection) => { lastSelection = selection; },
+      renderState: (state, selection) => {
+        const displayDates = view.matrixDates(state, selection);
+        finalRender = {
+          selection,
+          drawerOpen: Boolean(selection.selectedSlot),
+          matrixDates: displayDates,
+          chartHtml: view.workloadChartTemplate(state.workloadChart, selection),
+          maintenanceHtml: view.maintenanceWeekTemplate(state.week, displayDates),
+        };
+      },
+    },
+    buildPreview: previewPolicy.buildWorkloadPreview,
+    selectSlotPlans: previewPolicy.plansForSlot,
+  });
+  controller.state = sourceWeek;
+  const eventFor = (selector, button) => ({
+    target: { closest: (query) => query === selector ? button : null },
+  });
+  controller.handleClick(eventFor('[data-slot-key]', {
+    disabled: false, dataset: { slotKey: sourceSlot.key },
+  }));
+  assert.equal(controller.interaction.selectedSlotContext.slot, sourceSlot);
+  assert.deepEqual(controller.interaction.selectedSlotContext.slotPlans, [sourcePlan]);
+  controller.handleClick(eventFor('[data-action="move"]', {
+    disabled: false, dataset: { planId: '10' },
+  }));
+  let prevented = false;
+  await controller.handleWeekSubmit({ preventDefault: () => { prevented = true; } });
+
+  assert.equal(prevented, true);
+  assert.equal(finalRender.drawerOpen, true);
+  assert.equal(finalRender.selection.moveContext.sourceSlot, sourceSlot);
+  assert.equal(finalRender.selection.selectedSlot, sourceSlot);
+  assert.deepEqual(finalRender.matrixDates.map((day) => day.date), [
+    sourceSlot.date, ...destinationDates.map((day) => day.date),
+  ]);
+  assert.match(finalRender.chartHtml, /chartColumn is-pinned-move-source" data-plan-date="2026-09-14"/);
+  assert.match(finalRender.chartHtml, /移動元/);
+  assert.deepEqual(
+    [...finalRender.maintenanceHtml.matchAll(/data-plan-date="([^"]+)"/g)].map((match) => match[1]),
+    [sourceSlot.date, ...destinationDates.map((day) => day.date)],
+  );
+
+  controller.handleClick(eventFor('[data-action="cancel-move"]', {}));
+  assert.equal(controller.interaction.moveContext, null);
+  assert.equal(lastSelection.selectedSlot, sourceSlot);
+  assert.deepEqual(lastSelection.slotPlans, [sourcePlan]);
 });
 
 

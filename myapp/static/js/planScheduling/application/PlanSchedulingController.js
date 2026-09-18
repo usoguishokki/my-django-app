@@ -53,9 +53,6 @@ export class PlanSchedulingController {
     this.renderer.renderLoading();
     try {
       this.state = await this.apiClient.fetchWeek(targetDate);
-      if (this.interaction.mode !== PlanSchedulingMode.MOVING) {
-        this.interaction = initialInteractionState();
-      }
       this.renderer.renderState(this.state, this.selection());
     } catch (error) {
       this.renderer.renderError(error.message);
@@ -65,7 +62,7 @@ export class PlanSchedulingController {
   handleWeekSubmit(event) {
     event.preventDefault();
     const value = this.root.querySelector('[data-role="target-date"]')?.value || '';
-    this.load(value);
+    return this.load(value);
   }
 
   handleClick(event) {
@@ -85,15 +82,18 @@ export class PlanSchedulingController {
 
     const moveButton = event.target.closest('[data-action="move"]');
     if (moveButton && !moveButton.disabled) {
-      const selection = this.selection();
-      const sourceDate = selection.plan?.current.date;
+      const planId = Number(moveButton.dataset.planId);
+      const plan = this.state.plans.find((item) => item.planId === planId);
+      const sourceSlot = this.state.dates.flatMap((day) => day.slots).find(
+        (slot) => slot.key === plan?.current.slotKey,
+      );
       this.interaction = beginMove(
         this.interaction,
-        Number(moveButton.dataset.planId),
+        planId,
         {
-          plan: selection.plan,
-          sourceSlot: selection.source,
-          chartDay: this.state.workloadChart?.dates?.find((day) => day.date === sourceDate),
+          plan,
+          sourceSlot,
+          chartDay: this.state.workloadChart?.dates?.find((day) => day.date === sourceSlot?.date),
           weekLabel: this.state.week?.label || '',
         },
       );
@@ -103,9 +103,16 @@ export class PlanSchedulingController {
 
     const slotButton = event.target.closest('[data-slot-key]');
     if (slotButton && !slotButton.disabled) {
+      const selectedSlot = this.state.dates.flatMap((day) => day.slots).find(
+        (slot) => slot.key === slotButton.dataset.slotKey,
+      );
       this.interaction = selectMatrixSlot(
         this.interaction,
         slotButton.dataset.slotKey,
+        selectedSlot ? {
+          slot: selectedSlot,
+          slotPlans: this.selectSlotPlans(this.state.plans, selectedSlot),
+        } : null,
       );
       this.renderSelection();
     }
@@ -123,9 +130,12 @@ export class PlanSchedulingController {
     const slots = this.state?.dates.flatMap((item) => item.slots) || [];
     const source = slots.find((item) => item.key === plan?.current.slotKey) ||
       moveContext?.sourceSlot;
-    const selectedSlot = slots.find(
+    const liveSelectedSlot = slots.find(
       (item) => item.key === this.interaction.selectedSlotKey,
-    ) || (this.interaction.mode === PlanSchedulingMode.MOVING ? source : undefined);
+    );
+    const selectedSlot = liveSelectedSlot ||
+      (this.interaction.mode === PlanSchedulingMode.MOVING ? source : undefined) ||
+      this.interaction.selectedSlotContext?.slot;
     const destination = slots.find(
       (item) => item.key === this.interaction.destinationSlotKey,
     );
@@ -136,9 +146,9 @@ export class PlanSchedulingController {
       moveContext,
       selectedSlot,
       source,
-      slotPlans: selectedSlot
-        ? this.selectSlotPlans(this.state.plans, selectedSlot)
-        : [],
+      slotPlans: liveSelectedSlot
+        ? this.selectSlotPlans(this.state.plans, liveSelectedSlot)
+        : this.interaction.selectedSlotContext?.slotPlans || [],
       destination,
       preview: this.buildPreview(plan, destination, source),
     };

@@ -72,19 +72,21 @@ export function initialInteractionState() {
   return {
     mode: PlanSchedulingMode.NORMAL,
     selectedSlotKey: '',
+    selectedSlotContext: null,
     movingPlanId: null,
     moveContext: null,
     destinationSlotKey: '',
   };
 }
 
-export function selectMatrixSlot(interaction, slotKey) {
+export function selectMatrixSlot(interaction, slotKey, selectedSlotContext = null) {
   if (interaction.mode === PlanSchedulingMode.MOVING) {
     return { ...interaction, destinationSlotKey: slotKey };
   }
   return {
     ...interaction,
     selectedSlotKey: slotKey,
+    selectedSlotContext,
     destinationSlotKey: '',
   };
 }
