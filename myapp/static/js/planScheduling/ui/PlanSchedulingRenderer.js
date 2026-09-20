@@ -260,7 +260,11 @@ export class PlanSchedulingRenderer {
       .map((day) => this.dateTemplate(day)).join('');
     if (this.chartLegend) this.chartLegend.innerHTML = this.chartLegendTemplate();
     if (this.maintenanceWeek) {
-      this.maintenanceWeek.innerHTML = this.maintenanceWeekTemplate(state.week, displayDates);
+      const chartDates = this.chartWithPinnedMoveSource(
+        state.workloadChart,
+        selection,
+      ).dates;
+      this.maintenanceWeek.innerHTML = this.maintenanceWeekTemplate(null, chartDates);
     }
     this.workspace.hidden = false;
     this.renderSelection(state, selection);
@@ -307,6 +311,17 @@ export class PlanSchedulingRenderer {
         segment.dataset.chartTeam === selectedTeam;
       segment.classList.toggle('is-selected-chart-segment', isSelected);
     });
+  }
+
+  scrollChartToDate(isoDate) {
+    const viewport = this.chartTimeline;
+    if (!viewport || !isoDate) return false;
+    const target = [...viewport.querySelectorAll(
+      '.plan-scheduling__chartColumn[data-plan-date]',
+    )].find((column) => column.dataset.planDate === isoDate);
+    if (!target) return false;
+    viewport.scrollTo({ left: Math.max(0, target.offsetLeft - 10), behavior: 'auto' });
+    return true;
   }
 
   renderDrawer(selection) {
@@ -505,6 +520,7 @@ export class PlanSchedulingRenderer {
   get planningMain() { return this.root.querySelector('.plan-scheduling__planningMain'); }
   get matrix() { return this.root.querySelector('.plan-scheduling__matrix'); }
   get maintenanceWeek() { return this.root.querySelector('[data-role="maintenance-week"]'); }
+  get chartTimeline() { return this.root.querySelector('[data-role="chart-timeline"]'); }
   get chartLegend() { return this.root.querySelector('[data-role="chart-legend"]'); }
   get dateGrid() { return this.root.querySelector('[data-role="date-grid"]'); }
   get workloadChart() { return this.root.querySelector('[data-role="workload-chart"]'); }

@@ -22,7 +22,15 @@ export class PlanSchedulingApiClient {
   async fetchWeek(targetDate) {
     const params = new URLSearchParams();
     if (targetDate) params.set('date', targetDate);
-    const response = await this.fetcher(`/api/plan-scheduling/week/?${params}`, {
+    return this.fetchState(`/api/plan-scheduling/week/?${params}`);
+  }
+
+  async fetchTimeline() {
+    return this.fetchState('/api/plan-scheduling/timeline/');
+  }
+
+  async fetchState(url) {
+    const response = await this.fetcher(url, {
       headers: { Accept: 'application/json' },
       credentials: 'same-origin',
     });

@@ -59,6 +59,28 @@ const previewPolicy = await importSource(
 );
 
 
+test('API client loads the read-only full Chart timeline endpoint', async () => {
+  const { PlanSchedulingApiClient } = await importSource(
+    '../application/PlanSchedulingApiClient.js',
+  );
+  let requestedUrl = null;
+  const client = new PlanSchedulingApiClient(async (url, options) => {
+    requestedUrl = url;
+    assert.equal(options.credentials, 'same-origin');
+    assert.equal(options.method, undefined);
+    return {
+      ok: true,
+      json: async () => ({ status: 'success', data: { workloadChart: { dates: [] } } }),
+    };
+  });
+
+  const state = await client.fetchTimeline();
+
+  assert.equal(requestedUrl, '/api/plan-scheduling/timeline/');
+  assert.deepEqual(state, { workloadChart: { dates: [] } });
+});
+
+
 function plan(overrides = {}) {
   return {
     planId: 10,
@@ -313,14 +335,15 @@ test('chart selection maps a matrix slot to its daily team segment only', async 
 });
 
 
-test('chart and matrix emit the same ordered date tracks', async () => {
+test('chart and maintenance tracks use full dates while matrix stays on its week', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
   const renderer = new PlanSchedulingRenderer({});
-  const dates = ['2026-09-14', '2026-09-15', '2026-09-16'];
+  const dates = ['2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17'];
+  const weekDates = dates.slice(1, 3);
   const chartHtml = renderer.workloadChartTemplate({
     dates: dates.map((date) => ({ date, label: date, teamWorkloads: [] })),
   });
-  const matrixHtml = dates.map((date) => renderer.dateTemplate({
+  const matrixHtml = weekDates.map((date) => renderer.dateTemplate({
     date, label: date, isReserveWeek: false, slots: [],
   })).join('');
   const maintenanceWeekHtml = renderer.maintenanceWeekTemplate(
@@ -334,7 +357,7 @@ test('chart and matrix emit the same ordered date tracks', async () => {
   const maintenanceWeekDates = [...maintenanceWeekHtml.matchAll(/plan-scheduling__maintenanceWeekCell" data-plan-date="([^"]+)"/g)]
     .map((match) => match[1]);
   assert.deepEqual(chartDates, dates);
-  assert.deepEqual(matrixDates, dates);
+  assert.deepEqual(matrixDates, weekDates);
   assert.deepEqual(maintenanceWeekDates, dates);
   assert.equal((maintenanceWeekHtml.match(/9月3週目/g) || []).length, dates.length);
 });
@@ -412,7 +435,13 @@ test('normal state rendering retains one date-aligned maintenance-week cell per 
       { date: '2026-09-14', label: '9/14（月）', slots: [] },
       { date: '2026-09-15', label: '9/15（火）', slots: [] },
     ],
-    workloadChart: { shiftNames: [] },
+    workloadChart: {
+      shiftNames: [],
+      dates: [
+        { date: '2026-09-14', maintenanceWeekLabel: '9月3週目' },
+        { date: '2026-09-15', maintenanceWeekLabel: '9月3週目' },
+      ],
+    },
   }, {});
 
   assert.equal(workspace.hidden, false);
@@ -422,6 +451,33 @@ test('normal state rendering retains one date-aligned maintenance-week cell per 
     ['2026-09-14', '2026-09-15'],
   );
   assert.equal((maintenanceWeek.innerHTML.match(/9月3週目/g) || []).length, 2);
+});
+
+
+test('chart scroll targets the stable ISO date identity near the viewport left edge', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const columns = [
+    { dataset: { planDate: '2026-09-14' }, offsetLeft: 0 },
+    { dataset: { planDate: '2026-09-21' }, offsetLeft: 1400 },
+  ];
+  let scrollOptions = null;
+  const viewport = {
+    querySelectorAll: (selector) => {
+      assert.equal(selector, '.plan-scheduling__chartColumn[data-plan-date]');
+      return columns;
+    },
+    scrollTo: (options) => { scrollOptions = options; },
+  };
+  const renderer = new PlanSchedulingRenderer({
+    querySelector: (selector) => selector === '[data-role="chart-timeline"]' ? viewport : null,
+    addEventListener: () => {},
+  });
+  const matrixWeek = ['2026-09-21', '2026-09-22'];
+
+  assert.equal(renderer.scrollChartToDate('2026-09-21'), true);
+  assert.deepEqual(scrollOptions, { left: 1390, behavior: 'auto' });
+  assert.equal(renderer.scrollChartToDate('2026-09-22'), false);
+  assert.deepEqual(matrixWeek, ['2026-09-21', '2026-09-22']);
 });
 
 
@@ -928,6 +984,50 @@ test('controller supports Move, destination selection, and cancel without mutati
 });
 
 
+test('initial load combines the full Chart timeline with the current Matrix week', async () => {
+  const { PlanSchedulingController } = await importController();
+  const input = { value: '' };
+  const form = { addEventListener: () => {} };
+  const weekChart = { shiftNames: [], dates: [{ date: '2026-09-14' }] };
+  const timelineChart = {
+    shiftNames: [],
+    dates: [{ date: '2026-02-09' }, { date: '2027-03-28' }],
+  };
+  let renderedState = null;
+  let scrolledDate = null;
+  const controller = new PlanSchedulingController({
+    root: {
+      addEventListener: () => {},
+      querySelector: (selector) => ({
+        '[data-role="week-form"]': form,
+        '[data-role="target-date"]': input,
+      })[selector] || null,
+    },
+    apiClient: {
+      fetchWeek: async () => ({
+        plans: [], dates: [{ date: '2026-09-14', slots: [] }],
+        workloadChart: weekChart, dataQuality: { hasErrors: false, issueCount: 0 },
+      }),
+      fetchTimeline: async () => ({ workloadChart: timelineChart }),
+    },
+    renderer: {
+      renderLoading: () => {},
+      renderError: (message) => { throw new Error(message); },
+      renderState: (state) => { renderedState = state; },
+      scrollChartToDate: (date) => { scrolledDate = date; },
+    },
+    buildPreview: () => null,
+    selectSlotPlans: () => [],
+  });
+
+  await controller.init();
+
+  assert.equal(renderedState.dates.length, 1);
+  assert.equal(renderedState.workloadChart, timelineChart);
+  assert.equal(scrolledDate, input.value);
+});
+
+
 test('controller retains the authoritative move source when the displayed week changes', async () => {
   const { PlanSchedulingController } = await importController();
   const sourceSlot = {
@@ -1008,10 +1108,19 @@ test('week submit preserves the Drawer and pinned Move source through the live c
       })),
     },
   };
+  const fullTimelineChart = {
+    shiftNames: ['1直'],
+    dates: [
+      sourceWeek.workloadChart.dates[0],
+      ...destinationWeek.workloadChart.dates,
+      { date: '2026-10-01', label: '10/1（木）', maintenanceWeekLabel: '10月1週目', totalWorkloadMinutes: 0, teamWorkloads: [] },
+    ],
+  };
   const view = new PlanSchedulingRenderer({});
   const input = { value: '2026-09-21' };
   let finalRender = null;
   let lastSelection = null;
+  let scrolledDate = null;
   const controller = new PlanSchedulingController({
     root: { querySelector: (selector) => selector === '[data-role="target-date"]' ? input : null },
     apiClient: { fetchWeek: async () => destinationWeek },
@@ -1019,14 +1128,16 @@ test('week submit preserves the Drawer and pinned Move source through the live c
       renderLoading: () => {},
       renderError: (message) => { throw new Error(message); },
       renderSelection: (_state, selection) => { lastSelection = selection; },
+      scrollChartToDate: (date) => { scrolledDate = date; },
       renderState: (state, selection) => {
         const displayDates = view.matrixDates(state, selection);
+        const chartDates = view.chartWithPinnedMoveSource(state.workloadChart, selection).dates;
         finalRender = {
           selection,
           drawerOpen: Boolean(selection.selectedSlot),
           matrixDates: displayDates,
           chartHtml: view.workloadChartTemplate(state.workloadChart, selection),
-          maintenanceHtml: view.maintenanceWeekTemplate(state.week, displayDates),
+          maintenanceHtml: view.maintenanceWeekTemplate(null, chartDates),
         };
       },
     },
@@ -1034,6 +1145,7 @@ test('week submit preserves the Drawer and pinned Move source through the live c
     selectSlotPlans: previewPolicy.plansForSlot,
   });
   controller.state = sourceWeek;
+  controller.timelineChart = fullTimelineChart;
   const eventFor = (selector, button) => ({
     target: { closest: (query) => query === selector ? button : null },
   });
@@ -1049,17 +1161,20 @@ test('week submit preserves the Drawer and pinned Move source through the live c
   await controller.handleWeekSubmit({ preventDefault: () => { prevented = true; } });
 
   assert.equal(prevented, true);
+  assert.equal(scrolledDate, '2026-09-21');
   assert.equal(finalRender.drawerOpen, true);
   assert.equal(finalRender.selection.moveContext.sourceSlot, sourceSlot);
   assert.equal(finalRender.selection.selectedSlot, sourceSlot);
   assert.deepEqual(finalRender.matrixDates.map((day) => day.date), [
     sourceSlot.date, ...destinationDates.map((day) => day.date),
   ]);
-  assert.match(finalRender.chartHtml, /chartColumn is-pinned-move-source" data-plan-date="2026-09-14"/);
-  assert.match(finalRender.chartHtml, /移動元/);
+  assert.match(finalRender.chartHtml, /data-plan-date="2026-10-01"/);
+  assert.equal(finalRender.matrixDates.some((day) => day.date === '2026-10-01'), false);
+  assert.doesNotMatch(finalRender.chartHtml, /chartColumn is-pinned-move-source/);
+  assert.equal((finalRender.chartHtml.match(/data-plan-date="2026-09-14"/g) || []).length, 1);
   assert.deepEqual(
     [...finalRender.maintenanceHtml.matchAll(/data-plan-date="([^"]+)"/g)].map((match) => match[1]),
-    [sourceSlot.date, ...destinationDates.map((day) => day.date)],
+    [sourceSlot.date, ...destinationDates.map((day) => day.date), '2026-10-01'],
   );
 
   controller.handleClick(eventFor('[data-action="cancel-move"]', {}));
@@ -1165,22 +1280,23 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__chartSegment\.is-selected-chart-segment/);
   assert.match(scss, /has-chart-selection[\s\S]*opacity:\s*\.35/);
   assert.match(scss, /has-chart-selection[\s\S]*filter:\s*saturate\(\.3\)/);
-  assert.match(scss, /\.plan-scheduling__planningMain[^}]*overflow-x:\s*auto[^}]*overflow-y:\s*hidden/s);
+  assert.match(scss, /\.plan-scheduling__planningMain[^}]*overflow-x:\s*hidden[^}]*overflow-y:\s*hidden/s);
   assert.match(scss, /\.plan-scheduling__planningMain[^}]*height:\s*100%/s);
   assert.match(scss, /\.plan-scheduling__planningCanvas[^}]*--plan-date-column-width:\s*190px/s);
   assert.match(scss, /\.plan-scheduling__planningCanvas[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/s);
-  assert.match(scss, /\.plan-scheduling__chart\s*\{[^}]*grid-template-rows:\s*auto\s+minmax\(0,\s*1fr\)\s+auto/s);
+  assert.match(scss, /\.plan-scheduling__chart\s*\{[^}]*grid-template-rows:\s*auto\s+minmax\(0,\s*1fr\)/s);
+  assert.match(scss, /\.plan-scheduling__chartTimeline[^}]*overflow-x:\s*auto[^}]*overflow-y:\s*hidden/s);
   assert.match(scss, /\.plan-scheduling__chartLegend\s*\{[^}]*justify-self:\s*end/s);
   assert.match(scss, /\.plan-scheduling__chartColumn\s*>\s*span\s*\{[^}]*width:\s*100%[^}]*text-align:\s*center/s);
-  assert.match(scss, /\.plan-scheduling__maintenanceWeek[^}]*grid-auto-columns:\s*var\(--plan-date-track\)[^}]*grid-auto-flow:\s*column[^}]*gap:\s*var\(--plan-date-column-gap\)/s);
+  assert.match(scss, /\.plan-scheduling__maintenanceWeek[^}]*grid-auto-columns:\s*var\(--plan-chart-date-track\)[^}]*grid-auto-flow:\s*column[^}]*gap:\s*var\(--plan-date-column-gap\)/s);
   assert.match(scss, /\.plan-scheduling__maintenanceWeek[^}]*padding:\s*6px\s+0[^}]*border-block:\s*1px\s+solid/s);
   assert.match(scss, /\.plan-scheduling__chartColumns[^}]*padding:\s*12px\s+0\s+0/s);
-  assert.match(scss, /\.plan-scheduling__chartColumns[^}]*grid-auto-columns:\s*var\(--plan-date-track\)/s);
-  assert.match(scss, /\.plan-scheduling__dateGrid[^}]*grid-auto-columns:\s*var\(--plan-date-track\)/s);
-  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__planningCanvas[^}]*--plan-date-track:\s*minmax\(0,\s*1fr\)[^}]*width:\s*100%/s);
-  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__chartColumns,[\s\S]*\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__maintenanceWeek,[\s\S]*\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__dateGrid\s*\{[^}]*grid-template-columns:\s*repeat\(7,\s*var\(--plan-date-track\)\)[^}]*width:\s*100%/s);
-  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\.has-pinned-move-source\s+\.plan-scheduling__planningCanvas[^}]*--plan-date-track:\s*var\(--plan-date-column-width\)[^}]*width:\s*max-content/s);
-  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\.has-pinned-move-source\s+\.plan-scheduling__chartColumns,[\s\S]*\.plan-scheduling__planningLayout\.has-drawer\.has-pinned-move-source\s+\.plan-scheduling__maintenanceWeek,[\s\S]*\.plan-scheduling__planningLayout\.has-drawer\.has-pinned-move-source\s+\.plan-scheduling__dateGrid\s*\{[^}]*grid-template-columns:\s*repeat\(8,\s*var\(--plan-date-track\)\)[^}]*width:\s*max-content/s);
+  assert.match(scss, /\.plan-scheduling__chartColumns[^}]*grid-auto-columns:\s*var\(--plan-chart-date-track\)/s);
+  assert.match(scss, /\.plan-scheduling__dateGrid[^}]*grid-auto-columns:\s*var\(--plan-matrix-date-track\)/s);
+  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__planningCanvas[^}]*--plan-matrix-date-track:\s*minmax\(0,\s*1fr\)[^}]*width:\s*100%/s);
+  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__dateGrid\s*\{[^}]*grid-template-columns:\s*repeat\(7,\s*var\(--plan-matrix-date-track\)\)[^}]*width:\s*100%/s);
+  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\.has-pinned-move-source\s+\.plan-scheduling__planningCanvas[^}]*--plan-matrix-date-track:\s*var\(--plan-date-column-width\)/s);
+  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\.has-pinned-move-source\s+\.plan-scheduling__dateGrid\s*\{[^}]*grid-template-columns:\s*repeat\(8,\s*var\(--plan-matrix-date-track\)\)[^}]*width:\s*max-content/s);
   assert.match(scss, /\.plan-scheduling__chartColumn\.is-pinned-move-source/);
   assert.match(scss, /\.plan-scheduling__dateColumn\.is-pinned-move-source/);
   assert.match(scss, /\.plan-scheduling__chartPlot[^}]*overflow:\s*visible/s);

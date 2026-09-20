@@ -7,7 +7,10 @@ from unittest.mock import MagicMock, patch
 from django.contrib.auth.models import AnonymousUser
 from django.test import RequestFactory
 
-from myapp.api.plan_scheduling import plan_scheduling_week_api
+from myapp.api.plan_scheduling import (
+    plan_scheduling_timeline_api,
+    plan_scheduling_week_api,
+)
 from myapp.domain.plan_scheduling import (
     calculate_work_minutes,
     get_fiscal_year,
@@ -19,9 +22,13 @@ from myapp.domain.plan_status import PlanStatus
 from myapp.models import Db_details_tb
 from myapp.presenters.plan_scheduling import present_minutes
 from myapp.selectors.plan_scheduling import (
+    select_all_maintenance_dates,
     select_waiting_plans_for_maintenance_dates,
 )
-from myapp.services.plan_scheduling import build_plan_scheduling_week_state
+from myapp.services.plan_scheduling import (
+    build_plan_scheduling_timeline_state,
+    build_plan_scheduling_week_state,
+)
 
 
 def make_day(day_id, value, *, alias="9月3週目", week=3):
@@ -147,6 +154,18 @@ class PlanSchedulingDomainTests(TestCase):
 
 
 class PlanSchedulingSelectorTests(TestCase):
+    def test_full_timeline_calendar_uses_all_dated_rows_in_stable_order(self):
+        manager = MagicMock()
+        ordered = [make_day(1, date(2026, 2, 9)), make_day(2, date(2026, 2, 10))]
+        manager.exclude.return_value.order_by.return_value = ordered
+
+        with patch("myapp.selectors.plan_scheduling.Hozen_calendar_tb.objects", manager):
+            result = select_all_maintenance_dates()
+
+        self.assertEqual(ordered, result)
+        manager.exclude.assert_called_once_with(h_date__isnull=True)
+        manager.exclude.return_value.order_by.assert_called_once_with("h_date", "h_id")
+
     def test_waiting_selector_applies_status_and_organization_scope(self):
         manager = MagicMock()
         queryset = manager.select_related.return_value
@@ -422,6 +441,43 @@ class PlanSchedulingStateTests(TestCase):
         self.assertTrue(state["dates"][0]["isReserveWeek"])
         self.assertEqual(0, state["dates"][0]["slots"][0]["workloadMinutes"])
 
+    def test_timeline_reuses_workload_aggregation_and_preserves_date_aliases(self):
+        first = make_day(1, date(2026, 2, 9), alias="2月2週目")
+        second = make_day(2, date(2027, 3, 28), alias="3月4週目")
+        calendars = [
+            make_calendar(1, first, 1, "A班", 1, "1直"),
+            make_calendar(2, second, 2, "B班", 2, "2直"),
+        ]
+        plans = [
+            make_plan(10, first, 1, man_hours=60),
+            make_plan(11, second, 2, team_name="B班", man_hours=30),
+        ]
+        with (
+            patch(
+                "myapp.services.plan_scheduling.select_all_maintenance_dates",
+                return_value=[first, second],
+            ),
+            patch(
+                "myapp.services.plan_scheduling.select_calendar_rows_for_maintenance_dates",
+                return_value=calendars,
+            ),
+            patch(
+                "myapp.services.plan_scheduling.select_waiting_plans_for_maintenance_dates",
+                return_value=plans,
+            ) as select_plans,
+        ):
+            state = build_plan_scheduling_timeline_state(organization_code="ORG1")
+
+        dates = state["workloadChart"]["dates"]
+        self.assertEqual(["2026-02-09", "2027-03-28"], [day["date"] for day in dates])
+        self.assertEqual(["2月2週目", "3月4週目"], [day["maintenanceWeekLabel"] for day in dates])
+        self.assertEqual([120, 60], [day["totalWorkloadMinutes"] for day in dates])
+        select_plans.assert_called_once_with(
+            maintenance_date_ids=[1, 2],
+            organization_code="ORG1",
+            include_details=False,
+        )
+
 
 class PlanSchedulingBoundaryTests(TestCase):
     def setUp(self):
@@ -450,6 +506,19 @@ class PlanSchedulingBoundaryTests(TestCase):
             target_date=date(2026, 9, 15),
             organization_code="ORG1",
         )
+
+    def test_timeline_api_is_read_only_and_passes_organization(self):
+        request = self.factory.get("/api/plan-scheduling/timeline/")
+        request.user = SimpleNamespace(is_authenticated=True)
+        request.organization_code = "ORG1"
+        with patch(
+            "myapp.api.plan_scheduling.build_plan_scheduling_timeline_state",
+            return_value={"workloadChart": {"dates": []}},
+        ) as build_state:
+            response = plan_scheduling_timeline_api(request)
+
+        self.assertEqual(200, response.status_code)
+        build_state.assert_called_once_with(organization_code="ORG1")
 
     def test_phase_a_backend_contains_no_mutation_calls(self):
         root = Path(__file__).resolve().parent

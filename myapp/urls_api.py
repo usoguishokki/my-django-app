@@ -59,10 +59,18 @@ from myapp.api.card_work.card_work import (
 from myapp.api.parts_search.parts_search import (
     parts_search_api,
 )
-from myapp.api.plan_scheduling import plan_scheduling_week_api
+from myapp.api.plan_scheduling import (
+    plan_scheduling_timeline_api,
+    plan_scheduling_week_api,
+)
 
 
 urlpatterns = [
+    path(
+        "plan-scheduling/timeline/",
+        plan_scheduling_timeline_api,
+        name="plan_scheduling_timeline_api",
+    ),
     path(
         "plan-scheduling/week/",
         plan_scheduling_week_api,

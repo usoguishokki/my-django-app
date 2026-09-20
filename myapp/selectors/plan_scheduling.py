@@ -30,6 +30,16 @@ def select_maintenance_week(*, target_date):
     )
 
 
+def select_all_maintenance_dates():
+    """Return every dated row in the authoritative maintenance calendar."""
+
+    return list(
+        Hozen_calendar_tb.objects
+        .exclude(h_date__isnull=True)
+        .order_by("h_date", "h_id")
+    )
+
+
 def select_calendar_rows_for_maintenance_dates(*, maintenance_date_ids):
     if not maintenance_date_ids:
         return []
@@ -51,11 +61,12 @@ def select_waiting_plans_for_maintenance_dates(
     *,
     maintenance_date_ids,
     organization_code,
+    include_details=True,
 ):
     if not maintenance_date_ids or not organization_code:
         return []
 
-    return list(
+    queryset = (
         Plan_tb.objects
         .select_related(
             "p_date",
@@ -66,7 +77,9 @@ def select_waiting_plans_for_maintenance_dates(
             "inspection_no__control_no__line_name",
             "inspection_no__control_no__line_name__organization",
         )
-        .prefetch_related(
+    )
+    if include_details:
+        queryset = queryset.prefetch_related(
             Prefetch(
                 "inspection_no__db_details",
                 queryset=Db_details_tb.objects.only(
@@ -77,7 +90,8 @@ def select_waiting_plans_for_maintenance_dates(
                 ).order_by("id"),
             )
         )
-        .filter(
+    return list(
+        queryset.filter(
             status=PlanStatus.WAITING.value,
             p_date_id__in=maintenance_date_ids,
             inspection_no__control_no__line_name__organization__organization=(

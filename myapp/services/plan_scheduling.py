@@ -19,6 +19,7 @@ from myapp.presenters.plan_scheduling import (
 )
 from myapp.presenters.inspection_detail_items import build_inspection_detail_items
 from myapp.selectors.plan_scheduling import (
+    select_all_maintenance_dates,
     select_calendar_rows_for_maintenance_dates,
     select_maintenance_week,
     select_waiting_plans_for_maintenance_dates,
@@ -91,6 +92,31 @@ def build_plan_scheduling_week_state(*, target_date: date, organization_code: st
     }
 
 
+def build_plan_scheduling_timeline_state(*, organization_code: str):
+    """Build the read-only workload timeline for the full maintenance calendar."""
+
+    if not organization_code:
+        raise ValueError("organization is required")
+
+    maintenance_days = select_all_maintenance_dates()
+    maintenance_date_ids = [day.h_id for day in maintenance_days]
+    calendar_rows = select_calendar_rows_for_maintenance_dates(
+        maintenance_date_ids=maintenance_date_ids,
+    )
+    plans = select_waiting_plans_for_maintenance_dates(
+        maintenance_date_ids=maintenance_date_ids,
+        organization_code=organization_code,
+        include_details=False,
+    )
+    slots_by_pair = _build_slots_by_pair(calendar_rows)
+    dates = _build_date_items(
+        maintenance_days=maintenance_days,
+        slots_by_pair=slots_by_pair,
+        slot_effort=_build_slot_effort(plans, slots_by_pair),
+    )
+    return {"workloadChart": _build_workload_chart(dates)}
+
+
 def _build_slots_by_pair(calendar_rows):
     grouped = defaultdict(list)
     for row in calendar_rows:
@@ -130,9 +156,7 @@ def _build_slots_by_pair(calendar_rows):
 
 
 def _build_plan_items(plans, slots_by_pair):
-    slot_effort = defaultdict(
-        lambda: {"minutes": 0, "hasInvalidEffort": False, "planIds": []}
-    )
+    slot_effort = _build_slot_effort(plans, slots_by_pair)
     items = []
 
     for plan in plans:
@@ -157,14 +181,6 @@ def _build_plan_items(plans, slots_by_pair):
         # preview universe.
         if slot is not None and slot["isValid"] and not slot["isDisplayed"]:
             continue
-
-        if slot is not None:
-            aggregate = slot_effort[slot["key"]]
-            aggregate["planIds"].append(plan.plan_id)
-            if effort.is_valid:
-                aggregate["minutes"] += effort.minutes
-            else:
-                aggregate["hasInvalidEffort"] = True
 
         control = getattr(check, "control_no", None)
         rule = getattr(check, "rule", None)
@@ -219,6 +235,35 @@ def _build_plan_items(plans, slots_by_pair):
     return items, slot_effort
 
 
+def _build_slot_effort(plans, slots_by_pair):
+    """Aggregate workload once for both week and full-timeline projections."""
+
+    slot_effort = defaultdict(
+        lambda: {"minutes": 0, "hasInvalidEffort": False, "planIds": []}
+    )
+    for plan in plans:
+        if plan.planned_affilation_id is None:
+            continue
+        slot = slots_by_pair.get((plan.p_date_id, plan.planned_affilation_id))
+        if slot is None or (slot["isValid"] and not slot["isDisplayed"]):
+            continue
+        effort = calculate_work_minutes(
+            man_hours=getattr(plan.inspection_no, "man_hours", None),
+            required_person_count=getattr(
+                plan.inspection_no,
+                "required_person_count",
+                None,
+            ),
+        )
+        aggregate = slot_effort[slot["key"]]
+        aggregate["planIds"].append(plan.plan_id)
+        if effort.is_valid:
+            aggregate["minutes"] += effort.minutes
+        else:
+            aggregate["hasInvalidEffort"] = True
+    return slot_effort
+
+
 def _build_date_items(*, maintenance_days, slots_by_pair, slot_effort):
     slots_by_date_id = defaultdict(list)
     for (date_id, _team_id), slot in slots_by_pair.items():
@@ -251,6 +296,7 @@ def _build_date_items(*, maintenance_days, slots_by_pair, slot_effort):
         date_items.append({
             "date": day.h_date.isoformat(),
             "label": present_date_label(day.h_date),
+            "maintenanceWeekLabel": day.date_alias or "",
             "isReserveWeek": day.h_week == 6,
             "slots": slots,
         })
@@ -297,6 +343,7 @@ def _build_workload_chart(dates):
         chart_dates.append({
             "date": day["date"],
             "label": day["label"],
+            "maintenanceWeekLabel": day.get("maintenanceWeekLabel", ""),
             "totalWorkloadMinutes": None if has_invalid else total,
             "totalWorkloadLabel": present_minutes(total, invalid=has_invalid),
             "hasInvalidEffort": has_invalid,

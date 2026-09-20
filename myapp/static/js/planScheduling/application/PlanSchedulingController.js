@@ -32,6 +32,7 @@ export class PlanSchedulingController {
     this.buildPreview = buildPreview;
     this.selectSlotPlans = selectSlotPlans;
     this.state = null;
+    this.timelineChart = null;
     this.interaction = initialInteractionState();
   }
 
@@ -46,14 +47,35 @@ export class PlanSchedulingController {
       .toISOString().slice(0, 10);
     const input = this.root.querySelector('[data-role="target-date"]');
     if (input) input.value = localToday;
-    await this.load(localToday);
+    await this.loadInitial(localToday);
+  }
+
+  async loadInitial(targetDate) {
+    this.renderer.renderLoading();
+    try {
+      const [weekState, timelineState] = await Promise.all([
+        this.apiClient.fetchWeek(targetDate),
+        this.apiClient.fetchTimeline(),
+      ]);
+      this.timelineChart = timelineState.workloadChart;
+      this.state = { ...weekState, workloadChart: this.timelineChart };
+      this.renderer.renderState(this.state, this.selection());
+      this.renderer.scrollChartToDate(targetDate);
+    } catch (error) {
+      this.renderer.renderError(error.message);
+    }
   }
 
   async load(targetDate) {
     this.renderer.renderLoading();
     try {
-      this.state = await this.apiClient.fetchWeek(targetDate);
+      const weekState = await this.apiClient.fetchWeek(targetDate);
+      this.state = {
+        ...weekState,
+        workloadChart: this.timelineChart || weekState.workloadChart,
+      };
       this.renderer.renderState(this.state, this.selection());
+      this.renderer.scrollChartToDate?.(targetDate);
     } catch (error) {
       this.renderer.renderError(error.message);
     }
