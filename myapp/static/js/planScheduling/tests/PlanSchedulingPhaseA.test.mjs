@@ -288,7 +288,10 @@ test('stacked bars use stable distinct A/B/C colors and contain no text labels',
     assert.equal([...html.matchAll(new RegExp(color, 'g'))].length, 2);
   }
   assert.match(html, /aria-describedby="plan-workload-tooltip-0"/);
+  assert.match(html, /data-plan-date="2026-09-16"/);
+  assert.match(html, /aria-label="[^"]*9\/16/);
   assert.match(html, /role="tooltip"/);
+  assert.doesNotMatch(html, /<\/button><span>9\/16/);
   assert.match(html, /A班[\s\S]*600分/);
   assert.match(html, /B班[\s\S]*800分/);
   assert.match(html, /C班[\s\S]*400分/);
@@ -446,7 +449,7 @@ test('final rendered DOM keeps all 413 Matrix tracks on the Chart timeline', asy
 });
 
 
-test('full Matrix uses timeline summaries while only the active week remains interactive', async () => {
+test('full Matrix exposes valid timeline summaries for on-demand week hydration', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
   const renderer = new PlanSchedulingRenderer({});
   const summarySlot = (date) => ({
@@ -463,9 +466,10 @@ test('full Matrix uses timeline summaries while only the active week remains int
     workloadChart: { shiftNames: ['1直'] },
   });
 
-  assert.equal(dates[0].slots[0].isTimelineReadOnly, true);
-  assert.equal(dates[1].slots[0].isTimelineReadOnly, false);
-  assert.match(renderer.slotTemplate(dates[0].slots[0]), /is-timeline-read-only[^>]*data-slot-selectable="false"[^>]*disabled/);
+  assert.equal(dates[0].slots[0].requiresWeekHydration, true);
+  assert.equal(dates[1].slots[0].requiresWeekHydration, false);
+  assert.match(renderer.slotTemplate(dates[0].slots[0]), /data-slot-date="2026-09-14"[^>]*data-slot-selectable="true"/);
+  assert.doesNotMatch(renderer.slotTemplate(dates[0].slots[0]), /disabled/);
   assert.match(renderer.slotTemplate(dates[1].slots[0]), /data-slot-selectable="true"/);
 });
 
@@ -1145,6 +1149,180 @@ test('controller supports Move, destination selection, and cancel without mutati
 });
 
 
+test('current-week slot selection reuses detailed state without another week request', async () => {
+  const { PlanSchedulingController } = await importController();
+  const selectedSlot = {
+    ...slot('2026-09-21:1', 240), date: '2026-09-21', dateLabel: '9/21',
+    shift: { name: '1直' }, team: { name: 'A班' }, planIds: [20], planCount: 1,
+  };
+  const selectedPlan = plan({ planId: 20, current: { slotKey: selectedSlot.key } });
+  let fetchCount = 0;
+  let renderedSelection = null;
+  const controller = new PlanSchedulingController({
+    root: {},
+    apiClient: { fetchWeek: async () => { fetchCount += 1; } },
+    renderer: {
+      renderSelection: (_state, selection) => { renderedSelection = selection; },
+    },
+    buildPreview: () => null,
+    selectSlotPlans: previewPolicy.plansForSlot,
+  });
+  controller.state = {
+    plans: [selectedPlan],
+    dates: [{ date: selectedSlot.date, slots: [selectedSlot] }],
+  };
+
+  await controller.handleClick({ target: { closest: (selector) => (
+    selector === '[data-slot-key]'
+      ? { disabled: false, dataset: { slotKey: selectedSlot.key, slotDate: selectedSlot.date } }
+      : null
+  ) } });
+
+  assert.equal(fetchCount, 0);
+  assert.equal(renderedSelection.selectedSlot, selectedSlot);
+  assert.deepEqual(renderedSelection.slotPlans, [selectedPlan]);
+});
+
+
+test('distant timeline slot hydrates its existing week, preserves scroll, and can start Move', async () => {
+  const { PlanSchedulingController } = await importController();
+  const currentDate = '2026-09-21';
+  const targetDate = '2027-02-15';
+  const targetSlot = {
+    ...slot(`${targetDate}:2`, 360), date: targetDate, dateLabel: '2/15',
+    shift: { name: '2直' }, team: { name: 'B班' }, planIds: [30], planCount: 1,
+    workloadLabel: '360分', dataQualityIssues: [],
+  };
+  const targetPlan = plan({
+    planId: 30,
+    current: {
+      slotKey: targetSlot.key, date: targetDate, dateLabel: targetSlot.dateLabel,
+      shift: targetSlot.shift, team: targetSlot.team,
+    },
+  });
+  const timelineDates = [
+    { date: currentDate, slots: [] },
+    { date: targetDate, slots: [{ ...targetSlot, planIds: [] }] },
+  ];
+  const timelineChart = {
+    shiftNames: ['2直'],
+    dates: timelineDates.map((day) => ({ date: day.date, label: day.date, teamWorkloads: [] })),
+  };
+  const weekState = {
+    plans: [targetPlan],
+    dates: [{ date: targetDate, label: targetDate, slots: [targetSlot] }],
+    week: { label: '2月3週目' },
+    workloadChart: { shiftNames: ['2直'], dates: [] },
+    dataQuality: { hasErrors: false, issueCount: 0 },
+  };
+  const requestedDates = [];
+  const viewport = { scrollLeft: 24680 };
+  let renderedState = null;
+  let renderedSelection = null;
+  let scrollCalls = 0;
+  const controller = new PlanSchedulingController({
+    root: {},
+    apiClient: {
+      fetchWeek: async (date) => {
+        requestedDates.push(date);
+        return weekState;
+      },
+    },
+    renderer: {
+      renderState: (state, selection) => {
+        renderedState = state;
+        renderedSelection = selection;
+      },
+      renderSelection: (_state, selection) => { renderedSelection = selection; },
+      scrollTimelineToDate: () => { scrollCalls += 1; },
+      planningMain: viewport,
+    },
+    buildPreview: previewPolicy.buildWorkloadPreview,
+    selectSlotPlans: previewPolicy.plansForSlot,
+  });
+  controller.timelineDates = timelineDates;
+  controller.timelineChart = timelineChart;
+  controller.state = {
+    plans: [],
+    dates: [{ date: currentDate, slots: [] }],
+    timelineDates,
+    workloadChart: timelineChart,
+  };
+
+  const eventFor = (selector, button) => ({
+    target: { closest: (query) => query === selector ? button : null },
+  });
+  await controller.handleClick(eventFor('[data-slot-key]', {
+    disabled: false,
+    dataset: { slotKey: targetSlot.key, slotDate: targetDate },
+  }));
+
+  assert.deepEqual(requestedDates, [targetDate]);
+  assert.equal(renderedState.timelineDates, timelineDates);
+  assert.equal(renderedState.workloadChart, timelineChart);
+  assert.equal(renderedSelection.selectedSlot, targetSlot);
+  assert.deepEqual(renderedSelection.slotPlans, [targetPlan]);
+  assert.equal(viewport.scrollLeft, 24680);
+  assert.equal(scrollCalls, 0);
+
+  controller.handleClick(eventFor('[data-action="move"]', {
+    disabled: false, dataset: { planId: '30' },
+  }));
+  assert.equal(controller.interaction.mode, previewPolicy.PlanSchedulingMode.MOVING);
+  assert.equal(controller.interaction.moveContext.sourceSlot, targetSlot);
+  assert.equal(renderedSelection.plan, targetPlan);
+});
+
+
+test('a stale distant-week response cannot replace a newer slot click', async () => {
+  const { PlanSchedulingController } = await importController();
+  const resolvers = new Map();
+  const makeWeek = (date) => {
+    const hydratedSlot = {
+      ...slot(`${date}:1`, 120), date, dateLabel: date,
+      shift: { name: '1直' }, team: { name: 'A班' }, planIds: [], planCount: 0,
+    };
+    return {
+      hydratedSlot,
+      state: {
+        plans: [], dates: [{ date, slots: [hydratedSlot] }],
+        workloadChart: { dates: [], shiftNames: ['1直'] },
+        dataQuality: { hasErrors: false, issueCount: 0 },
+      },
+    };
+  };
+  let renderedSelection = null;
+  const controller = new PlanSchedulingController({
+    root: {},
+    apiClient: { fetchWeek: (date) => new Promise((resolve) => resolvers.set(date, resolve)) },
+    renderer: {
+      renderState: (_state, selection) => { renderedSelection = selection; },
+    },
+    buildPreview: () => null,
+    selectSlotPlans: () => [],
+  });
+  controller.timelineDates = [];
+  controller.state = { plans: [], dates: [], workloadChart: { dates: [], shiftNames: [] } };
+  const first = makeWeek('2026-10-05');
+  const second = makeWeek('2027-01-11');
+  const click = (item) => controller.handleClick({ target: { closest: (selector) => (
+    selector === '[data-slot-key]'
+      ? { disabled: false, dataset: { slotKey: item.hydratedSlot.key, slotDate: item.hydratedSlot.date } }
+      : null
+  ) } });
+
+  const firstClick = click(first);
+  const secondClick = click(second);
+  resolvers.get(second.hydratedSlot.date)(second.state);
+  await secondClick;
+  resolvers.get(first.hydratedSlot.date)(first.state);
+  await firstClick;
+
+  assert.equal(renderedSelection.selectedSlot, second.hydratedSlot);
+  assert.equal(controller.state.dates[0].date, second.hydratedSlot.date);
+});
+
+
 test('initial load combines full shared timeline summaries with current week interaction state', async () => {
   const { PlanSchedulingController } = await importController();
   const input = { value: '' };
@@ -1459,7 +1637,8 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__chart\s*\{[^}]*grid-template-rows:\s*auto\s+minmax\(0,\s*1fr\)\s+auto/s);
   assert.doesNotMatch(scss, /\.plan-scheduling__chartTimeline\s*\{/);
   assert.match(scss, /\.plan-scheduling__chartLegend\s*\{[^}]*justify-self:\s*end/s);
-  assert.match(scss, /\.plan-scheduling__chartColumn\s*>\s*span\s*\{[^}]*width:\s*100%[^}]*text-align:\s*center/s);
+  assert.match(scss, /\.plan-scheduling__chartColumn\s*\{[^}]*grid-template-rows:\s*auto\s+minmax\(0,\s*1fr\)/s);
+  assert.doesNotMatch(scss, /\.plan-scheduling__chartColumn\s*>\s*span/);
   assert.match(scss, /\.plan-scheduling__maintenanceWeek[^}]*grid-auto-columns:\s*var\(--plan-date-track\)[^}]*grid-auto-flow:\s*column[^}]*gap:\s*var\(--plan-date-column-gap\)/s);
   assert.match(scss, /\.plan-scheduling__maintenanceWeek[^}]*padding:\s*6px\s+0[^}]*border-block:\s*1px\s+solid/s);
   assert.match(scss, /\.plan-scheduling__chartColumns[^}]*padding:\s*12px\s+0\s+0/s);

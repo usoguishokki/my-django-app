@@ -536,10 +536,6 @@
   cursor: not-allowed;
   opacity: .68; }
 
-.plan-scheduling__slot.is-timeline-read-only:disabled {
-  cursor: default;
-  opacity: 1; }
-
 .plan-scheduling__quality,
 .plan-scheduling__slot small {
   color: #a02d2d;
@@ -580,7 +576,7 @@
 .plan-scheduling__chartColumn {
   position: relative;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
   align-items: end;
   justify-items: center;
   gap: 5px;
@@ -588,10 +584,6 @@
   height: 100%;
   color: #536a7b;
   font-size: 11px; }
-
-.plan-scheduling__chartColumn > span {
-  width: 100%;
-  text-align: center; }
 
 .plan-scheduling__chartColumn.is-pinned-move-source {
   box-shadow: inset 0 0 0 1px #a9c5db;

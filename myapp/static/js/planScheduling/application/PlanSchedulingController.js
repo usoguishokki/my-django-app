@@ -34,6 +34,7 @@ export class PlanSchedulingController {
     this.state = null;
     this.timelineChart = null;
     this.timelineDates = null;
+    this.slotSelectionIntent = 0;
     this.interaction = initialInteractionState();
   }
 
@@ -60,11 +61,7 @@ export class PlanSchedulingController {
       ]);
       this.timelineChart = timelineState.workloadChart;
       this.timelineDates = timelineState.dates;
-      this.state = {
-        ...weekState,
-        timelineDates: this.timelineDates,
-        workloadChart: this.timelineChart,
-      };
+      this.state = this.withFullTimeline(weekState);
       this.renderer.renderState(this.state, this.selection());
       this.renderer.scrollTimelineToDate(targetDate);
     } catch (error) {
@@ -76,11 +73,7 @@ export class PlanSchedulingController {
     this.renderer.renderLoading();
     try {
       const weekState = await this.apiClient.fetchWeek(targetDate);
-      this.state = {
-        ...weekState,
-        timelineDates: this.timelineDates || weekState.dates,
-        workloadChart: this.timelineChart || weekState.workloadChart,
-      };
+      this.state = this.withFullTimeline(weekState);
       this.renderer.renderState(this.state, this.selection());
       this.renderer.scrollTimelineToDate?.(targetDate);
     } catch (error) {
@@ -132,19 +125,64 @@ export class PlanSchedulingController {
 
     const slotButton = event.target.closest('[data-slot-key]');
     if (slotButton && !slotButton.disabled) {
-      const selectedSlot = this.state.dates.flatMap((day) => day.slots).find(
-        (slot) => slot.key === slotButton.dataset.slotKey,
-      );
-      this.interaction = selectMatrixSlot(
-        this.interaction,
-        slotButton.dataset.slotKey,
-        selectedSlot ? {
-          slot: selectedSlot,
-          slotPlans: this.selectSlotPlans(this.state.plans, selectedSlot),
-        } : null,
-      );
+      return this.handleSlotClick(slotButton);
+    }
+  }
+
+  async handleSlotClick(slotButton) {
+    const slotKey = slotButton.dataset.slotKey;
+    const slotDate = slotButton.dataset.slotDate;
+    const intent = ++this.slotSelectionIntent;
+    let selectedSlot = this.findWeekSlot(slotKey);
+    let hydrated = false;
+
+    if (!selectedSlot && slotDate) {
+      try {
+        const weekState = await this.apiClient.fetchWeek(slotDate);
+        if (intent !== this.slotSelectionIntent) return;
+        this.state = this.withFullTimeline(weekState);
+        selectedSlot = this.findWeekSlot(slotKey);
+        hydrated = true;
+      } catch (error) {
+        if (intent === this.slotSelectionIntent) {
+          this.renderer.renderInteractionError?.(error.message);
+        }
+        return;
+      }
+    }
+
+    if (intent !== this.slotSelectionIntent || !selectedSlot) return;
+    this.selectSlot(selectedSlot);
+    if (hydrated) {
+      this.renderer.renderState(this.state, this.selection());
+    } else {
       this.renderSelection();
     }
+  }
+
+  findWeekSlot(slotKey) {
+    return this.state?.dates.flatMap((day) => day.slots).find(
+      (slot) => slot.key === slotKey,
+    );
+  }
+
+  selectSlot(selectedSlot) {
+    this.interaction = selectMatrixSlot(
+      this.interaction,
+      selectedSlot.key,
+      {
+        slot: selectedSlot,
+        slotPlans: this.selectSlotPlans(this.state.plans, selectedSlot),
+      },
+    );
+  }
+
+  withFullTimeline(weekState) {
+    return {
+      ...weekState,
+      timelineDates: this.timelineDates || weekState.dates,
+      workloadChart: this.timelineChart || weekState.workloadChart,
+    };
   }
 
   renderSelection() {

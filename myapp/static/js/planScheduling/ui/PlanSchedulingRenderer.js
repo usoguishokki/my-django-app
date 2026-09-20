@@ -255,6 +255,11 @@ export class PlanSchedulingRenderer {
     this.workspace.hidden = true;
   }
 
+  renderInteractionError(message) {
+    this.feedback.textContent = message;
+    this.feedback.classList.add('is-error');
+  }
+
   renderState(state, selection) {
     this.feedback.classList.remove('is-error');
     this.feedback.textContent = state.dataQuality.hasErrors
@@ -413,7 +418,10 @@ export class PlanSchedulingRenderer {
         `${day.label}の工数詳細`,
         ...affectedDescriptions,
       ].join('。');
-      return `<div class="plan-scheduling__chartColumn${day.isPinnedMoveSource ? ' is-pinned-move-source' : ''}" data-plan-date="${escapeHtml(day.date)}"><strong>${escapeHtml(totalLabel)}</strong><button type="button" class="plan-scheduling__chartBar" aria-label="${escapeHtml(ariaLabel)}" aria-describedby="${tooltipId}">${segments}</button><span>${day.isPinnedMoveSource ? '<b class="plan-scheduling__moveSourceLabel">移動元</b>' : ''}${escapeHtml(day.label)}</span><div class="plan-scheduling__chartTooltip" id="${tooltipId}" role="tooltip"><strong class="plan-scheduling__tooltipDate">${escapeHtml(tooltipDateLabel(day.date, day.label))}</strong>${rows}<div class="plan-scheduling__tooltipTotal"><span>合計</span><strong>${escapeHtml(totalLabel)}</strong></div></div></div>`;
+      const moveSourceLabel = day.isPinnedMoveSource
+        ? '<b class="plan-scheduling__moveSourceLabel">移動元</b>'
+        : '';
+      return `<div class="plan-scheduling__chartColumn${day.isPinnedMoveSource ? ' is-pinned-move-source' : ''}" data-plan-date="${escapeHtml(day.date)}"><strong>${escapeHtml(totalLabel)}${moveSourceLabel}</strong><button type="button" class="plan-scheduling__chartBar" aria-label="${escapeHtml(ariaLabel)}" aria-describedby="${tooltipId}">${segments}</button><div class="plan-scheduling__chartTooltip" id="${tooltipId}" role="tooltip"><strong class="plan-scheduling__tooltipDate">${escapeHtml(tooltipDateLabel(day.date, day.label))}</strong>${rows}<div class="plan-scheduling__tooltipTotal"><span>合計</span><strong>${escapeHtml(totalLabel)}</strong></div></div></div>`;
     }).join('');
     return `<div class="plan-scheduling__chartPlot${projection ? ' has-chart-preview' : ''}"><div class="plan-scheduling__chartColumns">${bars}</div></div>`;
   }
@@ -461,7 +469,7 @@ export class PlanSchedulingRenderer {
         isPinnedMoveSource: Boolean(sourceDate && day.date === sourceDate),
         slots: day.slots.filter((slot) => (
           shiftNames.has(slot.shift.name) && teamNames.has(slot.team.name)
-        )).map((slot) => ({ ...slot, isTimelineReadOnly: !weekDay })),
+        )).map((slot) => ({ ...slot, requiresWeekHydration: !weekDay })),
       };
     });
     const source = selection.isMoving && selection.moveContext;
@@ -494,11 +502,12 @@ export class PlanSchedulingRenderer {
   }
 
   slotTemplate(slot) {
-    const disabled = !slot.isValid || slot.isTimelineReadOnly;
+    const disabled = !slot.isValid;
     const issue = slot.dataQualityIssues[0]?.message ||
       (slot.hasInvalidEffort ? '工数データに不備があります。' : '');
-    return `<button type="button" class="plan-scheduling__slot${!slot.isValid ? ' is-invalid' : ''}${slot.isTimelineReadOnly ? ' is-timeline-read-only' : ''}"
-      data-slot-key="${escapeHtml(slot.key)}" data-slot-selectable="${disabled ? 'false' : 'true'}"
+    return `<button type="button" class="plan-scheduling__slot${!slot.isValid ? ' is-invalid' : ''}"
+      data-slot-key="${escapeHtml(slot.key)}" data-slot-date="${escapeHtml(slot.date)}" data-slot-selectable="${disabled ? 'false' : 'true'}"
+      data-requires-week-hydration="${slot.requiresWeekHydration ? 'true' : 'false'}"
       data-preview-selectable="${!disabled && Number.isInteger(slot.workloadMinutes) ? 'true' : 'false'}" aria-pressed="false" ${disabled ? 'disabled' : ''}>
       <span>${escapeHtml(slot.team.name)}</span><strong>${escapeHtml(slot.workloadLabel)}</strong>
       ${issue ? `<small>${escapeHtml(issue)}</small>` : ''}
