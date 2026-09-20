@@ -442,11 +442,20 @@ export class PlanSchedulingRenderer {
     const shiftNames = new Set(state.workloadChart.shiftNames);
     const teamNames = new Set(Object.keys(TEAM_COLORS));
     const weekDates = new Map(state.dates.map((day) => [day.date, day]));
-    const timelineDates = state.timelineDates || state.dates;
+    // The Chart is the authoritative full-date coordinate sequence.  Matrix
+    // summaries add slots to those same tracks; the selected week only adds
+    // interaction detail to its dates.
+    const timelineDates = new Map(
+      (state.timelineDates || []).map((day) => [day.date, day]),
+    );
+    const chartDates = state.workloadChart.dates?.length
+      ? state.workloadChart.dates
+      : (state.timelineDates || state.dates);
     const sourceDate = selection?.isMoving && selection.moveContext?.sourceSlot?.date;
-    const dates = timelineDates.map((timelineDay) => {
-      const weekDay = weekDates.get(timelineDay.date);
-      const day = weekDay || timelineDay;
+    const dates = chartDates.map((chartDay) => {
+      const timelineDay = timelineDates.get(chartDay.date);
+      const weekDay = weekDates.get(chartDay.date);
+      const day = weekDay || timelineDay || { ...chartDay, slots: [] };
       return {
         ...day,
         isPinnedMoveSource: Boolean(sourceDate && day.date === sourceDate),

@@ -368,6 +368,84 @@ test('chart, maintenance, and matrix tracks share the full ordered timeline', as
 });
 
 
+test('final rendered DOM keeps all 413 Matrix tracks on the Chart timeline', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const start = Date.UTC(2026, 1, 9);
+  const dates = Array.from({ length: 413 }, (_, index) => new Date(
+    start + index * 24 * 60 * 60 * 1000,
+  ).toISOString().slice(0, 10));
+  const selectedDate = '2026-09-21';
+  const selectedIndex = dates.indexOf(selectedDate);
+  assert.ok(selectedIndex > 0 && selectedIndex < dates.length - 1);
+  const timelineDates = dates.map((date) => ({
+    date,
+    label: date,
+    maintenanceWeekLabel: '保全週',
+    slots: [],
+  }));
+  const weekDates = timelineDates.slice(selectedIndex, selectedIndex + 7);
+  const feedback = { textContent: '', classList: { remove: () => {} } };
+  const dateGrid = { innerHTML: '' };
+  const chartLegend = { innerHTML: '' };
+  const maintenanceWeek = { innerHTML: '' };
+  const workloadChart = { innerHTML: '' };
+  const workspace = { hidden: true, setAttribute: () => {} };
+  const loadingSkeleton = { hidden: false };
+  const planningLayout = { hidden: true };
+  const elements = new Map([
+    ['[data-role="feedback"]', feedback],
+    ['[data-role="date-grid"]', dateGrid],
+    ['[data-role="chart-legend"]', chartLegend],
+    ['[data-role="maintenance-week"]', maintenanceWeek],
+    ['[data-role="workload-chart"]', workloadChart],
+    ['[data-role="workspace"]', workspace],
+    ['[data-role="loading-skeleton"]', loadingSkeleton],
+    ['[data-role="planning-layout"]', planningLayout],
+  ]);
+  const renderer = new PlanSchedulingRenderer({
+    querySelector: (selector) => elements.get(selector),
+    querySelectorAll: () => [],
+  });
+  renderer.renderSelection = (state, selection) => {
+    workloadChart.innerHTML = renderer.workloadChartTemplate(
+      state.workloadChart,
+      selection,
+    );
+  };
+  renderer.renderState({
+    dataQuality: { hasErrors: false, issueCount: 0 },
+    dates: weekDates,
+    timelineDates,
+    workloadChart: {
+      shiftNames: [],
+      dates: timelineDates.map((day) => ({
+        date: day.date,
+        label: day.label,
+        maintenanceWeekLabel: day.maintenanceWeekLabel,
+        teamWorkloads: [],
+      })),
+    },
+  }, {});
+
+  const renderedDates = (html, selector) => [...html.matchAll(
+    new RegExp(`${selector}[^>]*data-plan-date="([^"]+)"`, 'g'),
+  )].map((match) => match[1]);
+  const chartDates = renderedDates(workloadChart.innerHTML, 'plan-scheduling__chartColumn');
+  const maintenanceDates = renderedDates(maintenanceWeek.innerHTML, 'plan-scheduling__maintenanceWeekCell');
+  const matrixDates = renderedDates(dateGrid.innerHTML, 'plan-scheduling__dateColumn');
+  assert.equal(chartDates.length, 413);
+  assert.equal(maintenanceDates.length, 413);
+  assert.equal(matrixDates.length, 413);
+  assert.deepEqual(matrixDates, chartDates);
+  assert.deepEqual(maintenanceDates, chartDates);
+  for (const date of [dates[0], dates[Math.floor(dates.length / 2)], selectedDate, dates.at(-1)]) {
+    assert.ok(chartDates.includes(date));
+    assert.ok(maintenanceDates.includes(date));
+    assert.ok(matrixDates.includes(date));
+  }
+});
+
+
 test('full Matrix uses timeline summaries while only the active week remains interactive', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
   const renderer = new PlanSchedulingRenderer({});
