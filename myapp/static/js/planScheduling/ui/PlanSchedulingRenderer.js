@@ -179,6 +179,19 @@ const tooltipDateLabel = (isoDate, fallback) => {
 
 const clamp = (value, minimum, maximum) => Math.min(Math.max(value, minimum), maximum);
 
+export const deriveSelectedDatePinSide = ({
+  trackStart,
+  trackWidth,
+  scrollLeft,
+  viewportWidth,
+}) => {
+  const trackEnd = trackStart + trackWidth;
+  const viewportEnd = scrollLeft + viewportWidth;
+  if (trackEnd < scrollLeft) return 'left';
+  if (trackStart > viewportEnd) return 'right';
+  return 'normal';
+};
+
 export const placeChartTooltip = ({ horizontalAnchorRect, matrixRect, tooltipRect, boundsRect, safeMargin = 8 }) => {
   const minimumLeft = boundsRect.left + safeMargin;
   const maximumLeft = Math.max(minimumLeft, boundsRect.right - tooltipRect.width - safeMargin);
@@ -202,7 +215,10 @@ export class PlanSchedulingRenderer {
     this.root?.addEventListener?.('pointerout', (event) => this.hideChartTooltip(event));
     this.root?.addEventListener?.('focusin', (event) => this.showChartTooltip(event));
     this.root?.addEventListener?.('focusout', (event) => this.hideChartTooltip(event));
-    this.root?.addEventListener?.('scroll', () => this.positionActiveChartTooltip(), true);
+    this.root?.addEventListener?.('scroll', (event) => {
+      this.positionActiveChartTooltip();
+      if (event.target === this.planningMain) this.updateSelectedDatePin();
+    }, true);
   }
 
   showChartTooltip(event) {
@@ -260,6 +276,17 @@ export class PlanSchedulingRenderer {
     this.feedback.classList.add('is-error');
   }
 
+  renderSlotHydrationPending() {
+    if (this.drawer.hidden) return;
+    this.drawer.setAttribute?.('aria-busy', 'true');
+    this.root.querySelector('[data-role="drawer-date"]').textContent = '読み込み中';
+    this.root.querySelector('[data-role="drawer-slot"]').textContent = '';
+    this.root.querySelector('[data-role="drawer-summary"]').textContent = '';
+    this.movePreview.hidden = true;
+    this.planList.hidden = false;
+    this.planList.innerHTML = '<p class="plan-scheduling__empty">選択した週を読み込んでいます。</p>';
+  }
+
   renderState(state, selection) {
     this.feedback.classList.remove('is-error');
     this.feedback.textContent = state.dataQuality.hasErrors
@@ -311,6 +338,53 @@ export class PlanSchedulingRenderer {
         )
       );
     });
+    this.renderSelectedDateTracks(selection.selectedSlot?.date);
+  }
+
+  renderSelectedDateTracks(selectedDate) {
+    (this.root.querySelectorAll?.(
+      '.plan-scheduling__chartColumn[data-plan-date], ' +
+      '.plan-scheduling__maintenanceWeekCell[data-plan-date], ' +
+      '.plan-scheduling__dateColumn[data-plan-date]',
+    ) || []).forEach((track) => {
+      const isSelected = Boolean(selectedDate && track.dataset.planDate === selectedDate);
+      track.classList.toggle('is-selected-date', isSelected);
+      if (!isSelected) {
+        track.classList.remove('is-date-pinned-left', 'is-date-pinned-right');
+        track.style?.removeProperty('--plan-selected-date-offset');
+      }
+    });
+    this.updateSelectedDatePin();
+  }
+
+  updateSelectedDatePin() {
+    const viewport = this.planningMain;
+    const selectedChartTrack = this.root.querySelector(
+      '.plan-scheduling__chartColumn.is-selected-date[data-plan-date]',
+    );
+    // offsetLeft remains the logical timeline coordinate while the derived
+    // presentation offset keeps the real track visible at a viewport edge.
+    const side = viewport && selectedChartTrack
+      ? deriveSelectedDatePinSide({
+        trackStart: selectedChartTrack.offsetLeft,
+        trackWidth: selectedChartTrack.offsetWidth,
+        scrollLeft: viewport.scrollLeft,
+        viewportWidth: viewport.clientWidth,
+      })
+      : 'normal';
+    let offset = 0;
+    if (side === 'left') {
+      offset = viewport.scrollLeft - selectedChartTrack.offsetLeft;
+    } else if (side === 'right') {
+      offset = viewport.scrollLeft + viewport.clientWidth -
+        selectedChartTrack.offsetLeft - selectedChartTrack.offsetWidth;
+    }
+    (this.root.querySelectorAll?.('.is-selected-date[data-plan-date]') || []).forEach((track) => {
+      track.classList.toggle('is-date-pinned-left', side === 'left');
+      track.classList.toggle('is-date-pinned-right', side === 'right');
+      track.style?.setProperty('--plan-selected-date-offset', `${offset}px`);
+    });
+    return side;
   }
 
   renderChartSelection(selectedSlot) {
@@ -334,11 +408,13 @@ export class PlanSchedulingRenderer {
     )].find((column) => column.dataset.planDate === isoDate);
     if (!target) return false;
     viewport.scrollTo({ left: Math.max(0, target.offsetLeft - 10), behavior: 'auto' });
+    this.updateSelectedDatePin();
     return true;
   }
 
   renderDrawer(selection) {
     const slot = selection.selectedSlot;
+    this.drawer.setAttribute?.('aria-busy', 'false');
     this.drawer.hidden = !slot;
     this.planningLayout.classList.toggle('has-drawer', Boolean(slot));
     if (!slot) {

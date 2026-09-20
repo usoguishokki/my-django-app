@@ -603,6 +603,109 @@ test('shared timeline scroll targets stable ISO identity on the single planning 
 });
 
 
+test('selected date pin side derives from logical track and shared viewport geometry', async () => {
+  const { deriveSelectedDatePinSide } = await importRenderer();
+  const geometry = { trackStart: 600, trackWidth: 190, viewportWidth: 400 };
+  assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 500 }), 'normal');
+  assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 800 }), 'left');
+  assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 100 }), 'right');
+  assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 500 }), 'normal');
+});
+
+
+test('one shared scroll listener pins the same selected date across all three tracks', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const listeners = [];
+  const makeTrack = (kind, date, offsetLeft) => {
+    const classes = new Set();
+    const properties = new Map();
+    return {
+      kind,
+      dataset: { planDate: date },
+      offsetLeft,
+      offsetWidth: 190,
+      classList: {
+        toggle: (name, force) => force ? classes.add(name) : classes.delete(name),
+        remove: (...names) => names.forEach((name) => classes.delete(name)),
+        contains: (name) => classes.has(name),
+      },
+      style: {
+        setProperty: (name, value) => properties.set(name, value),
+        removeProperty: (name) => properties.delete(name),
+      },
+      classes,
+      properties,
+      interactiveButtonCount: kind === 'matrix' ? 1 : 0,
+    };
+  };
+  const selectedDate = '2026-10-04';
+  const otherDate = '2026-12-20';
+  const tracks = [
+    makeTrack('chart', selectedDate, 600),
+    makeTrack('maintenance', selectedDate, 600),
+    makeTrack('matrix', selectedDate, 600),
+    makeTrack('chart', otherDate, 1200),
+    makeTrack('maintenance', otherDate, 1200),
+    makeTrack('matrix', otherDate, 1200),
+  ];
+  const viewport = {
+    scrollLeft: 500,
+    clientWidth: 400,
+    querySelectorAll: () => tracks.filter((track) => track.kind === 'chart'),
+    scrollTo: ({ left }) => { viewport.scrollLeft = left; },
+  };
+  const root = {
+    addEventListener: (type, handler) => listeners.push({ type, handler }),
+    querySelectorAll: (selector) => selector.includes(',')
+      ? tracks
+      : tracks.filter((track) => track.classes.has('is-selected-date')),
+    querySelector: (selector) => {
+      if (selector === '.plan-scheduling__planningMain') return viewport;
+      if (selector.includes('.plan-scheduling__chartColumn.is-selected-date')) {
+        return tracks.find((track) => (
+          track.kind === 'chart' && track.classes.has('is-selected-date')
+        )) || null;
+      }
+      return null;
+    },
+  };
+  const renderer = new PlanSchedulingRenderer(root);
+  const scrollListeners = listeners.filter((item) => item.type === 'scroll');
+  assert.equal(scrollListeners.length, 1);
+
+  renderer.renderSelectedDateTracks(selectedDate);
+  assert.ok(tracks.slice(0, 3).every((track) => track.classes.has('is-selected-date')));
+  assert.ok(tracks.slice(0, 3).every((track) => !track.classes.has('is-date-pinned-left')));
+
+  viewport.scrollLeft = 800;
+  scrollListeners[0].handler({ target: viewport });
+  assert.ok(tracks.slice(0, 3).every((track) => track.classes.has('is-date-pinned-left')));
+  assert.ok(tracks.slice(0, 3).every((track) => track.properties.get('--plan-selected-date-offset') === '200px'));
+
+  viewport.scrollLeft = 100;
+  scrollListeners[0].handler({ target: viewport });
+  assert.ok(tracks.slice(0, 3).every((track) => track.classes.has('is-date-pinned-right')));
+  assert.ok(tracks.slice(0, 3).every((track) => track.properties.get('--plan-selected-date-offset') === '-290px'));
+
+  viewport.clientWidth = 200;
+  viewport.scrollLeft = 300;
+  scrollListeners[0].handler({ target: viewport });
+  assert.ok(tracks.slice(0, 3).every((track) => track.classes.has('is-date-pinned-right')));
+
+  viewport.clientWidth = 400;
+  assert.equal(renderer.scrollTimelineToDate(selectedDate), true);
+  assert.ok(tracks.slice(0, 3).every((track) => !track.classes.has('is-date-pinned-left')));
+  assert.ok(tracks.slice(0, 3).every((track) => !track.classes.has('is-date-pinned-right')));
+
+  renderer.renderSelectedDateTracks(otherDate);
+  assert.ok(tracks.slice(0, 3).every((track) => !track.classes.has('is-selected-date')));
+  assert.ok(tracks.slice(3).every((track) => track.classes.has('is-selected-date')));
+  assert.equal(tracks.filter((track) => track.kind === 'matrix').reduce(
+    (sum, track) => sum + track.interactiveButtonCount, 0,
+  ), 2);
+});
+
+
 test('loading state uses a local accessible skeleton instead of visible loading copy', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
   const attributes = new Map();
@@ -1274,6 +1377,97 @@ test('distant timeline slot hydrates its existing week, preserves scroll, and ca
 });
 
 
+test('distant hydration never presents the previous Drawer date as the new selection', async () => {
+  const { PlanSchedulingController } = await importController();
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const previousSlot = {
+    ...slot('2026-12-20:1', 120), date: '2026-12-20', dateLabel: '12/20',
+    shift: { name: '1直' }, team: { name: 'A班' }, planIds: [], planCount: 0,
+    workloadLabel: '120分', dataQualityIssues: [],
+  };
+  const targetSlot = {
+    ...slot('2026-10-04:2', 360), date: '2026-10-04', dateLabel: '10/4',
+    shift: { name: '2直' }, team: { name: 'B班' }, planIds: [40], planCount: 1,
+    workloadLabel: '360分', dataQualityIssues: [],
+  };
+  const targetPlan = plan({
+    planId: 40,
+    current: {
+      slotKey: targetSlot.key, date: targetSlot.date, dateLabel: targetSlot.dateLabel,
+      shift: targetSlot.shift, team: targetSlot.team,
+    },
+    dataQualityIssues: [],
+  });
+  const drawer = { hidden: false, setAttribute: () => {} };
+  const drawerDate = { textContent: '12/20' };
+  const drawerSlot = { textContent: '1直A班' };
+  const drawerSummary = { textContent: '120分 / 0件' };
+  const planList = { hidden: false, innerHTML: 'previous plans', scrollTop: 0 };
+  const movePreview = { hidden: true, innerHTML: '' };
+  const planningLayout = { classList: { toggle: () => {} } };
+  const elements = new Map([
+    ['[data-role="slot-drawer"]', drawer],
+    ['[data-role="drawer-date"]', drawerDate],
+    ['[data-role="drawer-slot"]', drawerSlot],
+    ['[data-role="drawer-summary"]', drawerSummary],
+    ['[data-role="plan-list"]', planList],
+    ['[data-role="move-preview"]', movePreview],
+    ['[data-role="planning-layout"]', planningLayout],
+  ]);
+  const view = new PlanSchedulingRenderer({
+    addEventListener: () => {},
+    querySelector: (selector) => elements.get(selector) || null,
+  });
+  let resolveWeek;
+  const weekPromise = new Promise((resolve) => { resolveWeek = resolve; });
+  const controller = new PlanSchedulingController({
+    root: {},
+    apiClient: { fetchWeek: () => weekPromise },
+    renderer: {
+      renderSlotHydrationPending: () => view.renderSlotHydrationPending(),
+      renderState: (_state, selection) => view.renderDrawer(selection),
+      renderSelection: (_state, selection) => view.renderDrawer(selection),
+      renderInteractionError: (message) => { throw new Error(message); },
+    },
+    buildPreview: () => null,
+    selectSlotPlans: previewPolicy.plansForSlot,
+  });
+  controller.state = {
+    plans: [],
+    dates: [{ date: previousSlot.date, slots: [previousSlot] }],
+    workloadChart: { dates: [], shiftNames: [] },
+  };
+  controller.interaction = previewPolicy.selectMatrixSlot(
+    previewPolicy.initialInteractionState(),
+    previousSlot.key,
+    { slot: previousSlot, slotPlans: [] },
+  );
+
+  const pendingSelection = controller.handleClick({ target: { closest: (selector) => (
+    selector === '[data-slot-key]'
+      ? { disabled: false, dataset: { slotKey: targetSlot.key, slotDate: targetSlot.date } }
+      : null
+  ) } });
+  assert.equal(drawer.hidden, false);
+  assert.equal(drawerDate.textContent, '読み込み中');
+  assert.notEqual(drawerDate.textContent, '12/20');
+  assert.doesNotMatch(planList.innerHTML, /previous plans/);
+
+  resolveWeek({
+    plans: [targetPlan],
+    dates: [{ date: targetSlot.date, slots: [targetSlot] }],
+    workloadChart: { dates: [], shiftNames: ['2直'] },
+    dataQuality: { hasErrors: false, issueCount: 0 },
+  });
+  await pendingSelection;
+
+  assert.match(drawerDate.textContent, /10.*4/);
+  assert.equal(drawerSlot.textContent, '2直B班');
+  assert.equal(drawerSummary.textContent, '360分 / 1件');
+  assert.match(planList.innerHTML, /data-plan-card-id="40"/);
+});
+
+
 test('a stale distant-week response cannot replace a newer slot click', async () => {
   const { PlanSchedulingController } = await importController();
   const resolvers = new Map();
@@ -1658,6 +1852,9 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__planCardActions[^}]*justify-content:\s*flex-end/s);
   assert.match(scss, /\.plan-scheduling__chartPlot\.has-chart-preview/);
   assert.match(scss, /\.plan-scheduling__chartTooltip\s*\{[^}]*position:\s*fixed/s);
+  assert.match(scss, /\.plan-scheduling__chartColumn\.is-selected-date,[\s\S]*\.plan-scheduling__maintenanceWeekCell\.is-selected-date,[\s\S]*\.plan-scheduling__dateColumn\.is-selected-date/s);
+  assert.match(scss, /\.is-date-pinned-left[\s\S]*transform:\s*translateX\(var\(--plan-selected-date-offset\)\)/s);
+  assert.match(scss, /\.is-date-pinned-right[\s\S]*transform:\s*translateX\(var\(--plan-selected-date-offset\)\)/s);
   assert.match(scss, /\.is-preview-removed/);
   assert.match(scss, /\.is-preview-added/);
   assert.match(scss, /prefers-reduced-motion:\s*reduce/);

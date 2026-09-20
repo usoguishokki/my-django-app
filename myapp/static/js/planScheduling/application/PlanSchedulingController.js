@@ -137,6 +137,7 @@ export class PlanSchedulingController {
     let hydrated = false;
 
     if (!selectedSlot && slotDate) {
+      this.renderer.renderSlotHydrationPending?.();
       try {
         const weekState = await this.apiClient.fetchWeek(slotDate);
         if (intent !== this.slotSelectionIntent) return;
@@ -145,13 +146,19 @@ export class PlanSchedulingController {
         hydrated = true;
       } catch (error) {
         if (intent === this.slotSelectionIntent) {
+          this.renderSelection();
           this.renderer.renderInteractionError?.(error.message);
         }
         return;
       }
     }
 
-    if (intent !== this.slotSelectionIntent || !selectedSlot) return;
+    if (intent !== this.slotSelectionIntent) return;
+    if (!selectedSlot) {
+      this.renderSelection();
+      this.renderer.renderInteractionError?.('選択した勤務スロットを読み込めませんでした。');
+      return;
+    }
     this.selectSlot(selectedSlot);
     if (hydrated) {
       this.renderer.renderState(this.state, this.selection());

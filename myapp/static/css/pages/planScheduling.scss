@@ -247,6 +247,24 @@
 .plan-scheduling__chartColumn { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); align-items: end; justify-items: center; gap: 5px; min-width: 0; height: 100%; color: #536a7b; font-size: 11px; }
 .plan-scheduling__chartColumn.is-pinned-move-source { box-shadow: inset 0 0 0 1px #a9c5db; background: #f7fafc; }
 .plan-scheduling__moveSourceLabel { display: block; color: var(--ps-blue); font-size: 10px; font-weight: 800; }
+.plan-scheduling__chartColumn.is-selected-date,
+.plan-scheduling__maintenanceWeekCell.is-selected-date,
+.plan-scheduling__dateColumn.is-selected-date { box-shadow: inset 0 0 0 2px rgba(31, 95, 153, .42); }
+.plan-scheduling__chartColumn.is-selected-date { background: #fff; }
+.plan-scheduling__maintenanceWeekCell.is-selected-date { background: #f9fbfc; }
+.plan-scheduling__dateColumn.is-selected-date { background: #f9fbfc; }
+.plan-scheduling__chartColumn.is-date-pinned-left,
+.plan-scheduling__chartColumn.is-date-pinned-right,
+.plan-scheduling__maintenanceWeekCell.is-date-pinned-left,
+.plan-scheduling__maintenanceWeekCell.is-date-pinned-right,
+.plan-scheduling__dateColumn.is-date-pinned-left,
+.plan-scheduling__dateColumn.is-date-pinned-right { position: relative; z-index: 3; transform: translateX(var(--plan-selected-date-offset)); }
+.plan-scheduling__chartColumn.is-date-pinned-left,
+.plan-scheduling__maintenanceWeekCell.is-date-pinned-left,
+.plan-scheduling__dateColumn.is-date-pinned-left { box-shadow: inset 0 0 0 2px rgba(31, 95, 153, .42), 8px 0 12px rgba(24, 48, 68, .14); }
+.plan-scheduling__chartColumn.is-date-pinned-right,
+.plan-scheduling__maintenanceWeekCell.is-date-pinned-right,
+.plan-scheduling__dateColumn.is-date-pinned-right { box-shadow: inset 0 0 0 2px rgba(31, 95, 153, .42), -8px 0 12px rgba(24, 48, 68, .14); }
 .plan-scheduling__chartBar { align-self: end; display: flex; flex-direction: column-reverse; justify-content: flex-start; width: 44px; height: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 4px 4px 0 0; background: transparent; cursor: help; }
 .plan-scheduling__chartBar:focus-visible { outline: 3px solid rgba(31, 95, 153, .32); outline-offset: 3px; }
 .plan-scheduling__chartSegment { display: block; position: relative; min-height: 0; transition: height .18s ease, filter .12s ease, opacity .12s ease; }
