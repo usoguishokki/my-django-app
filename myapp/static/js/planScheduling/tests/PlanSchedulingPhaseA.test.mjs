@@ -604,25 +604,126 @@ test('shared timeline scroll targets stable ISO identity on the single planning 
 
 
 test('selected date pin side derives from logical track and shared viewport geometry', async () => {
-  const { deriveSelectedDatePinSide } = await importRenderer();
+  const {
+    calculateSelectedDatePinOffset,
+    deriveSelectedDatePinSide,
+  } = await importRenderer();
   const geometry = { trackStart: 600, trackWidth: 190, viewportWidth: 400 };
   assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 500 }), 'normal');
   assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 800 }), 'left');
   assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 100 }), 'right');
   assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 500 }), 'normal');
+  assert.equal(calculateSelectedDatePinOffset({
+    side: 'left',
+    trackRect: { left: 12, right: 155 },
+    viewportRect: { left: 421, right: 1506 },
+  }), 409);
+  assert.equal(calculateSelectedDatePinOffset({
+    side: 'right',
+    trackRect: { left: 1600, right: 1743 },
+    viewportRect: { left: 421, right: 1506 },
+  }), -237);
+});
+
+
+test('Drawer geometry changes restore the selected ISO anchor after the new layout', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const animationFrames = [];
+  const selectedDate = '2026-10-04';
+  let logicalTrackStart = 48000;
+  let trackWidth = 190;
+  let viewportLeft = 12;
+  const viewport = {
+    scrollLeft: 46961,
+    clientWidth: 1494,
+    scrollWidth: 82612,
+    getBoundingClientRect: () => ({
+      left: viewportLeft,
+      right: viewportLeft + viewport.clientWidth,
+      width: viewport.clientWidth,
+    }),
+    querySelectorAll: () => [track],
+    scrollTo: ({ left }) => { viewport.scrollLeft = left; },
+  };
+  const track = {
+    dataset: { planDate: selectedDate },
+    offsetWidth: trackWidth,
+    classList: { contains: () => true },
+    style: { getPropertyValue: () => '' },
+    getBoundingClientRect: () => {
+      const left = viewportLeft + logicalTrackStart - viewport.scrollLeft;
+      return { left, right: left + trackWidth, width: trackWidth };
+    },
+  };
+  const root = {
+    ownerDocument: {
+      defaultView: {
+        requestAnimationFrame: (callback) => animationFrames.push(callback),
+      },
+    },
+    addEventListener: () => {},
+    querySelectorAll: () => [track],
+    querySelector: (selector) => (
+      selector === '.plan-scheduling__planningMain' ? viewport : null
+    ),
+  };
+  const renderer = new PlanSchedulingRenderer(root);
+  let pinRecalculations = 0;
+  renderer.updateSelectedDatePin = () => { pinRecalculations += 1; };
+
+  const openAnchor = renderer.captureTimelineAnchor(selectedDate);
+  const originalPosition = openAnchor.viewportPosition;
+  renderer.timelineLayoutRevision = 1;
+  renderer.restoreTimelineAnchorAfterLayout(openAnchor, 1);
+
+  viewportLeft = 421;
+  viewport.clientWidth = 1084;
+  viewport.scrollWidth = 63278;
+  logicalTrackStart = 36000;
+  trackWidth = 143;
+  animationFrames.shift()();
+
+  assert.notEqual(viewport.scrollLeft, 46961);
+  assert.equal(pinRecalculations, 1);
+  const openedRect = track.getBoundingClientRect();
+  const openedPosition = (
+    openedRect.left + (openedRect.width / 2) - viewportLeft
+  ) / viewport.clientWidth;
+  assert.ok(Math.abs(openedPosition - originalPosition) < 0.001);
+
+  const closeAnchor = renderer.captureTimelineAnchor(selectedDate);
+  const drawerScrollLeft = viewport.scrollLeft;
+  renderer.timelineLayoutRevision = 2;
+  renderer.restoreTimelineAnchorAfterLayout(closeAnchor, 2);
+  viewportLeft = 12;
+  viewport.clientWidth = 1494;
+  viewport.scrollWidth = 82612;
+  logicalTrackStart = 48000;
+  trackWidth = 190;
+  animationFrames.shift()();
+
+  assert.notEqual(viewport.scrollLeft, drawerScrollLeft);
+  assert.equal(pinRecalculations, 2);
+  const closedRect = track.getBoundingClientRect();
+  const closedPosition = (
+    closedRect.left + (closedRect.width / 2) - viewportLeft
+  ) / viewport.clientWidth;
+  assert.ok(Math.abs(closedPosition - closeAnchor.viewportPosition) < 0.001);
 });
 
 
 test('one shared scroll listener pins the same selected date across all three tracks', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
   const listeners = [];
-  const makeTrack = (kind, date, offsetLeft) => {
+  const makeTrack = (kind, date, logicalStart) => {
     const classes = new Set();
     const properties = new Map();
-    return {
+    const track = {
       kind,
       dataset: { planDate: date },
-      offsetLeft,
+      // The offset parent includes the Drawer column; logical geometry must
+      // instead be derived from planningMain's own visible boundary.
+      offsetLeft: logicalStart + 409,
       offsetWidth: 190,
       classList: {
         toggle: (name, force) => force ? classes.add(name) : classes.delete(name),
@@ -632,11 +733,20 @@ test('one shared scroll listener pins the same selected date across all three tr
       style: {
         setProperty: (name, value) => properties.set(name, value),
         removeProperty: (name) => properties.delete(name),
+        getPropertyValue: (name) => properties.get(name) || '',
       },
       classes,
       properties,
       interactiveButtonCount: kind === 'matrix' ? 1 : 0,
     };
+    track.getBoundingClientRect = () => {
+      const offset = Number.parseFloat(
+        properties.get('--plan-selected-date-offset'),
+      ) || 0;
+      const left = 421 + logicalStart - viewport.scrollLeft + offset;
+      return { left, right: left + 190, width: 190 };
+    };
+    return track;
   };
   const selectedDate = '2026-10-04';
   const otherDate = '2026-12-20';
@@ -651,6 +761,7 @@ test('one shared scroll listener pins the same selected date across all three tr
   const viewport = {
     scrollLeft: 500,
     clientWidth: 400,
+    getBoundingClientRect: () => ({ left: 421, right: 821, width: 400 }),
     querySelectorAll: () => tracks.filter((track) => track.kind === 'chart'),
     scrollTo: ({ left }) => { viewport.scrollLeft = left; },
   };
@@ -681,11 +792,13 @@ test('one shared scroll listener pins the same selected date across all three tr
   scrollListeners[0].handler({ target: viewport });
   assert.ok(tracks.slice(0, 3).every((track) => track.classes.has('is-date-pinned-left')));
   assert.ok(tracks.slice(0, 3).every((track) => track.properties.get('--plan-selected-date-offset') === '200px'));
+  assert.equal(tracks[0].getBoundingClientRect().left, 421);
 
   viewport.scrollLeft = 100;
   scrollListeners[0].handler({ target: viewport });
   assert.ok(tracks.slice(0, 3).every((track) => track.classes.has('is-date-pinned-right')));
   assert.ok(tracks.slice(0, 3).every((track) => track.properties.get('--plan-selected-date-offset') === '-290px'));
+  assert.equal(tracks[0].getBoundingClientRect().right, 821);
 
   viewport.clientWidth = 200;
   viewport.scrollLeft = 300;
