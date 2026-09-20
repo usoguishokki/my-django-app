@@ -72,9 +72,6 @@ class SharedLayoutScrollContractTests(TestCase):
         chart_rule = plan_scss.split(
             ".plan-scheduling__chart {", 1
         )[1].split("}", 1)[0]
-        chart_timeline_rule = plan_scss.split(
-            ".plan-scheduling__chartTimeline {", 1
-        )[1].split("}", 1)[0]
         matrix_rule = plan_scss.split(
             ".plan-scheduling__matrix { display", 1
         )[1].split("}", 1)[0]
@@ -90,22 +87,20 @@ class SharedLayoutScrollContractTests(TestCase):
         self.assertIn("box-sizing: border-box;", page_rule)
         self.assertIn("height: 100%;", page_rule)
         self.assertIn("overflow: hidden;", page_rule)
-        self.assertIn("overflow-x: hidden;", planning_main_rule)
+        self.assertIn("overflow-x: auto;", planning_main_rule)
         self.assertIn("overflow-y: hidden;", planning_main_rule)
         self.assertIn("height: 100%;", planning_main_rule)
         self.assertIn("--plan-date-column-width: 190px;", planning_canvas_rule)
         self.assertIn("--plan-date-column-gap: 10px;", planning_canvas_rule)
-        self.assertIn("--plan-chart-date-track: var(--plan-date-column-width);", planning_canvas_rule)
-        self.assertIn("--plan-matrix-date-track: var(--plan-date-column-width);", planning_canvas_rule)
+        self.assertIn("--plan-date-track: var(--plan-date-column-width);", planning_canvas_rule)
         self.assertIn(
             "grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);",
             planning_canvas_rule,
         )
-        self.assertIn("grid-template-rows: auto minmax(0, 1fr);", chart_rule)
-        self.assertIn("overflow-x: auto;", chart_timeline_rule)
-        self.assertIn("overflow-y: hidden;", chart_timeline_rule)
-        self.assertIn("overflow-x: auto;", matrix_rule)
-        self.assertIn("grid-auto-columns: var(--plan-chart-date-track);", maintenance_week_rule)
+        self.assertIn("grid-template-rows: auto minmax(0, 1fr) auto;", chart_rule)
+        self.assertNotIn("overflow-x: auto;", matrix_rule)
+        self.assertNotIn(".plan-scheduling__chartTimeline {", plan_scss)
+        self.assertIn("grid-auto-columns: var(--plan-date-track);", maintenance_week_rule)
         self.assertIn("grid-auto-flow: column;", maintenance_week_rule)
         self.assertIn("gap: var(--plan-date-column-gap);", maintenance_week_rule)
         self.assertIn("padding: 6px 0;", maintenance_week_rule)
@@ -122,14 +117,14 @@ class SharedLayoutScrollContractTests(TestCase):
         self.assertIn(".plan-scheduling__matrix,", plan_scss)
         self.assertIn("min-width: 0;", plan_scss)
         self.assertIn(".plan-scheduling__dateGrid {", plan_scss)
-        self.assertIn("grid-auto-columns: var(--plan-matrix-date-track);", date_grid_rule)
+        self.assertIn("grid-auto-columns: var(--plan-date-track);", date_grid_rule)
         self.assertIn("overflow-x: visible;", date_grid_rule)
         self.assertIn("overflow-y: auto;", date_grid_rule)
         self.assertIn("overflow: visible;", chart_plot_rule)
         self.assertNotIn("overflow-x: auto;", chart_plot_rule)
         self.assertIn("height: 100%;", chart_plot_rule)
         self.assertIn("height: 100%;", plan_scss.split(
-            '.plan-scheduling__chartTimeline > [data-role="workload-chart"] {', 1
+            '.plan-scheduling__chart > [data-role="workload-chart"] {', 1
         )[1].split("}", 1)[0])
         chart_columns_rule = plan_scss.split(
             ".plan-scheduling__chartColumns {", 1
@@ -139,9 +134,19 @@ class SharedLayoutScrollContractTests(TestCase):
         drawer_track_rule = plan_scss.split(
             ".plan-scheduling__planningLayout.has-drawer .plan-scheduling__planningCanvas {", 1
         )[1].split("}", 1)[0]
-        self.assertIn("--plan-matrix-date-track: minmax(0, 1fr);", drawer_track_rule)
-        self.assertIn("width: 100%;", drawer_track_rule)
-        self.assertIn("grid-template-columns: repeat(7, var(--plan-matrix-date-track));", plan_scss)
+        self.assertIn(
+            "--plan-date-track: max(90px, calc((100cqw - 82px) / 7));",
+            drawer_track_rule,
+        )
+        self.assertNotIn(
+            "grid-template-columns: repeat(7, var(--plan-date-track))",
+            plan_scss,
+        )
+        self.assertIn(
+            "grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);",
+            plan_scss.split(".plan-scheduling__skeletonCanvas {", 1)[1].split("}", 1)[0],
+        )
+        self.assertIn("animation: none;", plan_scss)
 
     def test_critical_pages_keep_their_layout_roots(self):
         expected_roots = {

@@ -70,14 +70,14 @@ test('API client loads the read-only full Chart timeline endpoint', async () => 
     assert.equal(options.method, undefined);
     return {
       ok: true,
-      json: async () => ({ status: 'success', data: { workloadChart: { dates: [] } } }),
+      json: async () => ({ status: 'success', data: { dates: [], workloadChart: { dates: [] } } }),
     };
   });
 
   const state = await client.fetchTimeline();
 
   assert.equal(requestedUrl, '/api/plan-scheduling/timeline/');
-  assert.deepEqual(state, { workloadChart: { dates: [] } });
+  assert.deepEqual(state, { dates: [], workloadChart: { dates: [] } });
 });
 
 
@@ -335,20 +335,25 @@ test('chart selection maps a matrix slot to its daily team segment only', async 
 });
 
 
-test('chart and maintenance tracks use full dates while matrix stays on its week', async () => {
+test('chart, maintenance, and matrix tracks share the full ordered timeline', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
   const renderer = new PlanSchedulingRenderer({});
   const dates = ['2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17'];
   const weekDates = dates.slice(1, 3);
+  const timelineDates = dates.map((date) => ({
+    date, label: date, maintenanceWeekLabel: '9月3週目', slots: [],
+  }));
   const chartHtml = renderer.workloadChartTemplate({
     dates: dates.map((date) => ({ date, label: date, teamWorkloads: [] })),
   });
-  const matrixHtml = weekDates.map((date) => renderer.dateTemplate({
-    date, label: date, isReserveWeek: false, slots: [],
-  })).join('');
+  const matrixHtml = renderer.matrixDates({
+    dates: weekDates.map((date) => ({ date, label: date, slots: [] })),
+    timelineDates,
+    workloadChart: { shiftNames: [] },
+  }).map((day) => renderer.dateTemplate(day)).join('');
   const maintenanceWeekHtml = renderer.maintenanceWeekTemplate(
     { label: '9月3週目' },
-    dates.map((date) => ({ date })),
+    timelineDates,
   );
   const chartDates = [...chartHtml.matchAll(/plan-scheduling__chartColumn" data-plan-date="([^"]+)"/g)]
     .map((match) => match[1]);
@@ -357,9 +362,33 @@ test('chart and maintenance tracks use full dates while matrix stays on its week
   const maintenanceWeekDates = [...maintenanceWeekHtml.matchAll(/plan-scheduling__maintenanceWeekCell" data-plan-date="([^"]+)"/g)]
     .map((match) => match[1]);
   assert.deepEqual(chartDates, dates);
-  assert.deepEqual(matrixDates, weekDates);
+  assert.deepEqual(matrixDates, dates);
   assert.deepEqual(maintenanceWeekDates, dates);
   assert.equal((maintenanceWeekHtml.match(/9月3週目/g) || []).length, dates.length);
+});
+
+
+test('full Matrix uses timeline summaries while only the active week remains interactive', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const renderer = new PlanSchedulingRenderer({});
+  const summarySlot = (date) => ({
+    key: `${date}:1:A`, date, shift: { name: '1直' }, team: { name: 'A班' },
+    workloadMinutes: 120, workloadLabel: '120分', isValid: true,
+    hasInvalidEffort: false, dataQualityIssues: [], planIds: [], planCount: 0,
+  });
+  const timelineDates = ['2026-09-14', '2026-09-21'].map((date) => ({
+    date, label: date, slots: [summarySlot(date)],
+  }));
+  const dates = renderer.matrixDates({
+    dates: [timelineDates[1]],
+    timelineDates,
+    workloadChart: { shiftNames: ['1直'] },
+  });
+
+  assert.equal(dates[0].slots[0].isTimelineReadOnly, true);
+  assert.equal(dates[1].slots[0].isTimelineReadOnly, false);
+  assert.match(renderer.slotTemplate(dates[0].slots[0]), /is-timeline-read-only[^>]*data-slot-selectable="false"[^>]*disabled/);
+  assert.match(renderer.slotTemplate(dates[1].slots[0]), /data-slot-selectable="true"/);
 });
 
 
@@ -415,13 +444,21 @@ test('normal state rendering retains one date-aligned maintenance-week cell per 
   const dateGrid = { innerHTML: '' };
   const chartLegend = { innerHTML: '' };
   const maintenanceWeek = { innerHTML: '' };
-  const workspace = { hidden: true };
+  const workspaceAttributes = new Map();
+  const workspace = {
+    hidden: true,
+    setAttribute: (name, value) => workspaceAttributes.set(name, value),
+  };
+  const loadingSkeleton = { hidden: false };
+  const planningLayout = { hidden: true };
   const elements = new Map([
     ['[data-role="feedback"]', feedback],
     ['[data-role="date-grid"]', dateGrid],
     ['[data-role="chart-legend"]', chartLegend],
     ['[data-role="maintenance-week"]', maintenanceWeek],
     ['[data-role="workspace"]', workspace],
+    ['[data-role="loading-skeleton"]', loadingSkeleton],
+    ['[data-role="planning-layout"]', planningLayout],
   ]);
   const renderer = new PlanSchedulingRenderer({
     querySelector: (selector) => elements.get(selector),
@@ -445,6 +482,9 @@ test('normal state rendering retains one date-aligned maintenance-week cell per 
   }, {});
 
   assert.equal(workspace.hidden, false);
+  assert.equal(workspaceAttributes.get('aria-busy'), 'false');
+  assert.equal(loadingSkeleton.hidden, true);
+  assert.equal(planningLayout.hidden, false);
   assert.match(chartLegend.innerHTML, /A班[\s\S]*B班[\s\S]*C班/);
   assert.deepEqual(
     [...maintenanceWeek.innerHTML.matchAll(/data-plan-date="([^"]+)"/g)].map((match) => match[1]),
@@ -454,7 +494,7 @@ test('normal state rendering retains one date-aligned maintenance-week cell per 
 });
 
 
-test('chart scroll targets the stable ISO date identity near the viewport left edge', async () => {
+test('shared timeline scroll targets stable ISO identity on the single planning viewport', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
   const columns = [
     { dataset: { planDate: '2026-09-14' }, offsetLeft: 0 },
@@ -469,15 +509,58 @@ test('chart scroll targets the stable ISO date identity near the viewport left e
     scrollTo: (options) => { scrollOptions = options; },
   };
   const renderer = new PlanSchedulingRenderer({
-    querySelector: (selector) => selector === '[data-role="chart-timeline"]' ? viewport : null,
+    querySelector: (selector) => selector === '.plan-scheduling__planningMain' ? viewport : null,
     addEventListener: () => {},
   });
   const matrixWeek = ['2026-09-21', '2026-09-22'];
 
-  assert.equal(renderer.scrollChartToDate('2026-09-21'), true);
+  assert.equal(renderer.scrollTimelineToDate('2026-09-21'), true);
   assert.deepEqual(scrollOptions, { left: 1390, behavior: 'auto' });
-  assert.equal(renderer.scrollChartToDate('2026-09-22'), false);
+  assert.equal(renderer.scrollTimelineToDate('2026-09-22'), false);
   assert.deepEqual(matrixWeek, ['2026-09-21', '2026-09-22']);
+});
+
+
+test('loading state uses a local accessible skeleton instead of visible loading copy', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const attributes = new Map();
+  const feedback = {
+    textContent: 'old',
+    classList: { remove: () => {} },
+  };
+  const workspace = {
+    hidden: true,
+    setAttribute: (name, value) => attributes.set(name, value),
+  };
+  const skeleton = { hidden: true };
+  const layout = { hidden: false };
+  const renderer = new PlanSchedulingRenderer({
+    addEventListener: () => {},
+    querySelector: (selector) => ({
+      '[data-role="feedback"]': feedback,
+      '[data-role="workspace"]': workspace,
+      '[data-role="loading-skeleton"]': skeleton,
+      '[data-role="planning-layout"]': layout,
+    })[selector] || null,
+  });
+
+  renderer.renderLoading();
+
+  assert.equal(feedback.textContent, '');
+  assert.equal(workspace.hidden, false);
+  assert.equal(attributes.get('aria-busy'), 'true');
+  assert.equal(skeleton.hidden, false);
+  assert.equal(layout.hidden, true);
+
+  const template = readFileSync(
+    new URL('../../../../templates/planScheduling/plan_scheduling.html', import.meta.url),
+    'utf8',
+  );
+  assert.match(template, /data-role="loading-skeleton"[^>]*role="status"[^>]*aria-live="polite"/);
+  assert.match(template, /plan-scheduling__loadingA11y">読み込み中</);
+  assert.match(template, /予定を準備しています/);
+  assert.doesNotMatch(template, /data-role="chart-timeline"/);
+  assert.match(template, /plan-scheduling__planningMain[\s\S]*data-role="workload-chart"[\s\S]*data-role="maintenance-week"[\s\S]*data-role="date-grid"/);
 });
 
 
@@ -984,7 +1067,7 @@ test('controller supports Move, destination selection, and cancel without mutati
 });
 
 
-test('initial load combines the full Chart timeline with the current Matrix week', async () => {
+test('initial load combines full shared timeline summaries with current week interaction state', async () => {
   const { PlanSchedulingController } = await importController();
   const input = { value: '' };
   const form = { addEventListener: () => {} };
@@ -993,6 +1076,10 @@ test('initial load combines the full Chart timeline with the current Matrix week
     shiftNames: [],
     dates: [{ date: '2026-02-09' }, { date: '2027-03-28' }],
   };
+  const timelineDates = [
+    { date: '2026-02-09', slots: [] },
+    { date: '2027-03-28', slots: [] },
+  ];
   let renderedState = null;
   let scrolledDate = null;
   const controller = new PlanSchedulingController({
@@ -1008,13 +1095,13 @@ test('initial load combines the full Chart timeline with the current Matrix week
         plans: [], dates: [{ date: '2026-09-14', slots: [] }],
         workloadChart: weekChart, dataQuality: { hasErrors: false, issueCount: 0 },
       }),
-      fetchTimeline: async () => ({ workloadChart: timelineChart }),
+      fetchTimeline: async () => ({ dates: timelineDates, workloadChart: timelineChart }),
     },
     renderer: {
       renderLoading: () => {},
       renderError: (message) => { throw new Error(message); },
       renderState: (state) => { renderedState = state; },
-      scrollChartToDate: (date) => { scrolledDate = date; },
+      scrollTimelineToDate: (date) => { scrolledDate = date; },
     },
     buildPreview: () => null,
     selectSlotPlans: () => [],
@@ -1024,6 +1111,7 @@ test('initial load combines the full Chart timeline with the current Matrix week
 
   assert.equal(renderedState.dates.length, 1);
   assert.equal(renderedState.workloadChart, timelineChart);
+  assert.equal(renderedState.timelineDates, timelineDates);
   assert.equal(scrolledDate, input.value);
 });
 
@@ -1116,6 +1204,11 @@ test('week submit preserves the Drawer and pinned Move source through the live c
       { date: '2026-10-01', label: '10/1（木）', maintenanceWeekLabel: '10月1週目', totalWorkloadMinutes: 0, teamWorkloads: [] },
     ],
   };
+  const fullTimelineDates = [
+    sourceWeek.dates[0],
+    ...destinationDates,
+    { date: '2026-10-01', label: '10/1（木）', maintenanceWeekLabel: '10月1週目', slots: [] },
+  ];
   const view = new PlanSchedulingRenderer({});
   const input = { value: '2026-09-21' };
   let finalRender = null;
@@ -1128,7 +1221,7 @@ test('week submit preserves the Drawer and pinned Move source through the live c
       renderLoading: () => {},
       renderError: (message) => { throw new Error(message); },
       renderSelection: (_state, selection) => { lastSelection = selection; },
-      scrollChartToDate: (date) => { scrolledDate = date; },
+      scrollTimelineToDate: (date) => { scrolledDate = date; },
       renderState: (state, selection) => {
         const displayDates = view.matrixDates(state, selection);
         const chartDates = view.chartWithPinnedMoveSource(state.workloadChart, selection).dates;
@@ -1146,6 +1239,7 @@ test('week submit preserves the Drawer and pinned Move source through the live c
   });
   controller.state = sourceWeek;
   controller.timelineChart = fullTimelineChart;
+  controller.timelineDates = fullTimelineDates;
   const eventFor = (selector, button) => ({
     target: { closest: (query) => query === selector ? button : null },
   });
@@ -1166,10 +1260,10 @@ test('week submit preserves the Drawer and pinned Move source through the live c
   assert.equal(finalRender.selection.moveContext.sourceSlot, sourceSlot);
   assert.equal(finalRender.selection.selectedSlot, sourceSlot);
   assert.deepEqual(finalRender.matrixDates.map((day) => day.date), [
-    sourceSlot.date, ...destinationDates.map((day) => day.date),
+    sourceSlot.date, ...destinationDates.map((day) => day.date), '2026-10-01',
   ]);
   assert.match(finalRender.chartHtml, /data-plan-date="2026-10-01"/);
-  assert.equal(finalRender.matrixDates.some((day) => day.date === '2026-10-01'), false);
+  assert.equal(finalRender.matrixDates.some((day) => day.date === '2026-10-01'), true);
   assert.doesNotMatch(finalRender.chartHtml, /chartColumn is-pinned-move-source/);
   assert.equal((finalRender.chartHtml.match(/data-plan-date="2026-09-14"/g) || []).length, 1);
   assert.deepEqual(
@@ -1280,23 +1374,21 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__chartSegment\.is-selected-chart-segment/);
   assert.match(scss, /has-chart-selection[\s\S]*opacity:\s*\.35/);
   assert.match(scss, /has-chart-selection[\s\S]*filter:\s*saturate\(\.3\)/);
-  assert.match(scss, /\.plan-scheduling__planningMain[^}]*overflow-x:\s*hidden[^}]*overflow-y:\s*hidden/s);
+  assert.match(scss, /\.plan-scheduling__planningMain[^}]*overflow-x:\s*auto[^}]*overflow-y:\s*hidden/s);
   assert.match(scss, /\.plan-scheduling__planningMain[^}]*height:\s*100%/s);
   assert.match(scss, /\.plan-scheduling__planningCanvas[^}]*--plan-date-column-width:\s*190px/s);
   assert.match(scss, /\.plan-scheduling__planningCanvas[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/s);
-  assert.match(scss, /\.plan-scheduling__chart\s*\{[^}]*grid-template-rows:\s*auto\s+minmax\(0,\s*1fr\)/s);
-  assert.match(scss, /\.plan-scheduling__chartTimeline[^}]*overflow-x:\s*auto[^}]*overflow-y:\s*hidden/s);
+  assert.match(scss, /\.plan-scheduling__chart\s*\{[^}]*grid-template-rows:\s*auto\s+minmax\(0,\s*1fr\)\s+auto/s);
+  assert.doesNotMatch(scss, /\.plan-scheduling__chartTimeline\s*\{/);
   assert.match(scss, /\.plan-scheduling__chartLegend\s*\{[^}]*justify-self:\s*end/s);
   assert.match(scss, /\.plan-scheduling__chartColumn\s*>\s*span\s*\{[^}]*width:\s*100%[^}]*text-align:\s*center/s);
-  assert.match(scss, /\.plan-scheduling__maintenanceWeek[^}]*grid-auto-columns:\s*var\(--plan-chart-date-track\)[^}]*grid-auto-flow:\s*column[^}]*gap:\s*var\(--plan-date-column-gap\)/s);
+  assert.match(scss, /\.plan-scheduling__maintenanceWeek[^}]*grid-auto-columns:\s*var\(--plan-date-track\)[^}]*grid-auto-flow:\s*column[^}]*gap:\s*var\(--plan-date-column-gap\)/s);
   assert.match(scss, /\.plan-scheduling__maintenanceWeek[^}]*padding:\s*6px\s+0[^}]*border-block:\s*1px\s+solid/s);
   assert.match(scss, /\.plan-scheduling__chartColumns[^}]*padding:\s*12px\s+0\s+0/s);
-  assert.match(scss, /\.plan-scheduling__chartColumns[^}]*grid-auto-columns:\s*var\(--plan-chart-date-track\)/s);
-  assert.match(scss, /\.plan-scheduling__dateGrid[^}]*grid-auto-columns:\s*var\(--plan-matrix-date-track\)/s);
-  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__planningCanvas[^}]*--plan-matrix-date-track:\s*minmax\(0,\s*1fr\)[^}]*width:\s*100%/s);
-  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__dateGrid\s*\{[^}]*grid-template-columns:\s*repeat\(7,\s*var\(--plan-matrix-date-track\)\)[^}]*width:\s*100%/s);
-  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\.has-pinned-move-source\s+\.plan-scheduling__planningCanvas[^}]*--plan-matrix-date-track:\s*var\(--plan-date-column-width\)/s);
-  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\.has-pinned-move-source\s+\.plan-scheduling__dateGrid\s*\{[^}]*grid-template-columns:\s*repeat\(8,\s*var\(--plan-matrix-date-track\)\)[^}]*width:\s*max-content/s);
+  assert.match(scss, /\.plan-scheduling__chartColumns[^}]*grid-auto-columns:\s*var\(--plan-date-track\)/s);
+  assert.match(scss, /\.plan-scheduling__dateGrid[^}]*grid-auto-columns:\s*var\(--plan-date-track\)/s);
+  assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer\s+\.plan-scheduling__planningCanvas[^}]*--plan-date-track:\s*max\(90px,\s*calc\(\(100cqw\s*-\s*82px\)\s*\/\s*7\)\)/s);
+  assert.doesNotMatch(scss, /grid-template-columns:\s*repeat\((?:7|8),\s*var\(--plan-date-track\)\)/s);
   assert.match(scss, /\.plan-scheduling__chartColumn\.is-pinned-move-source/);
   assert.match(scss, /\.plan-scheduling__dateColumn\.is-pinned-move-source/);
   assert.match(scss, /\.plan-scheduling__chartPlot[^}]*overflow:\s*visible/s);
@@ -1312,5 +1404,7 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.is-preview-removed/);
   assert.match(scss, /\.is-preview-added/);
   assert.match(scss, /prefers-reduced-motion:\s*reduce/);
+  assert.match(scss, /prefers-reduced-motion:[\s\S]*\.plan-scheduling__skeletonMatrix i[^}]*animation:\s*none/s);
+  assert.match(scss, /\.plan-scheduling__skeletonCanvas[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/s);
   assert.doesNotMatch(scss, /justify-content:\s*space-around/);
 });

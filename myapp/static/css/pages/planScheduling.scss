@@ -53,6 +53,21 @@
   min-height: 0;
   overflow: hidden;
 }
+.plan-scheduling__loadingSkeleton { position: relative; height: 100%; min-height: 0; }
+.plan-scheduling__loadingSkeleton[hidden] { display: none; }
+.plan-scheduling__loadingA11y { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.plan-scheduling__loadingSkeleton > p { position: absolute; z-index: 1; top: 12px; left: 50%; margin: 0; padding: 5px 10px; border-radius: 999px; color: #667786; background: rgba(255, 255, 255, .9); font-size: 12px; transform: translateX(-50%); }
+.plan-scheduling__skeletonCanvas { display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; height: 100%; min-height: 0; }
+.plan-scheduling__skeletonPanel { box-sizing: border-box; min-height: 0; padding: 10px; overflow: hidden; border: 1px solid var(--ps-border); border-radius: 10px; background: #fff; box-shadow: 0 3px 12px rgba(29, 54, 77, .06); }
+.plan-scheduling__skeletonLegend { width: 150px; height: 10px; margin-left: auto; border-radius: 5px; background: #e7edf2; }
+.plan-scheduling__skeletonBars { display: grid; grid-template-columns: repeat(7, minmax(90px, 1fr)); align-items: end; gap: 10px; height: calc(100% - 46px); margin-top: 8px; }
+.plan-scheduling__skeletonBars i { display: block; width: 44px; height: 55%; margin-inline: auto; border-radius: 5px 5px 0 0; background: #dfe7ed; }
+.plan-scheduling__skeletonBars i:nth-child(2n) { height: 38%; }
+.plan-scheduling__skeletonBars i:nth-child(3n) { height: 72%; }
+.plan-scheduling__skeletonDates { height: 28px; border-block: 1px solid #dce5ec; background: repeating-linear-gradient(90deg, #edf2f5 0 80px, transparent 80px 100px); }
+.plan-scheduling__skeletonMatrix { display: grid; grid-template-columns: repeat(7, minmax(90px, 1fr)); gap: 10px; }
+.plan-scheduling__skeletonMatrix i { display: block; min-height: 0; border: 1px solid #e1e8ed; border-radius: 8px; background: linear-gradient(110deg, #f3f6f8 30%, #e7edf2 48%, #f3f6f8 66%); background-size: 250% 100%; animation: plan-scheduling-skeleton-shimmer 1.8s ease-in-out infinite; }
+@keyframes plan-scheduling-skeleton-shimmer { to { background-position-x: -250%; } }
 .plan-scheduling__weekButton { min-height: 38px; padding-inline: 14px; border-radius: 8px; border-color: #c4d1dc; color: #39566c; background: #fff; font-weight: 700; transition: background .14s ease, border-color .14s ease, box-shadow .14s ease, transform .14s ease; }
 .plan-scheduling__weekButton:hover { border-color: #91aabc; background: #f4f8fb; box-shadow: 0 1px 3px rgba(29, 54, 77, .10); }
 .plan-scheduling__weekButton:active { transform: translateY(1px); box-shadow: none; }
@@ -75,21 +90,21 @@
 }
 .plan-scheduling__planningMain {
   height: 100%;
-  overflow-x: hidden;
+  overflow-x: auto;
   overflow-y: hidden;
   min-width: 0;
   min-height: 0;
+  container-type: inline-size;
 }
 .plan-scheduling__planningCanvas {
   --plan-date-column-width: 190px;
   --plan-date-column-gap: 10px;
-  --plan-chart-date-track: var(--plan-date-column-width);
-  --plan-matrix-date-track: var(--plan-date-column-width);
+  --plan-date-track: var(--plan-date-column-width);
   display: grid;
   grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
-  width: 100%;
-  min-width: 0;
+  width: max-content;
+  min-width: 100%;
   height: 100%;
   min-height: 0;
 }
@@ -107,13 +122,12 @@
 
 .plan-scheduling__chart,
 .plan-scheduling__matrix { min-height: 0; padding: 10px; }
-.plan-scheduling__chart { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 6px; width: 100%; height: 100%; min-width: 0; overflow: hidden; }
-.plan-scheduling__matrix { display: grid; grid-template-rows: minmax(0, 1fr); width: 100%; height: 100%; min-width: 0; overflow-x: auto; overflow-y: hidden; }
+.plan-scheduling__chart { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 6px; width: max-content; min-width: 100%; height: 100%; overflow: hidden; }
+.plan-scheduling__matrix { display: grid; grid-template-rows: minmax(0, 1fr); width: max-content; min-width: 100%; height: 100%; overflow: hidden; }
 .plan-scheduling__chartLegend { display: flex; align-items: center; justify-self: end; gap: 10px; margin: 0; padding: 0; color: #536a7b; font-size: 11px; list-style: none; }
 .plan-scheduling__chartLegendItem { display: inline-flex; align-items: center; gap: 4px; }
 .plan-scheduling__chartLegendSwatch { width: 10px; height: 10px; border: 1px solid rgba(24, 48, 68, .24); border-radius: 2px; background: var(--plan-scheduling-team-color); }
-.plan-scheduling__chartTimeline { display: grid; grid-template-rows: minmax(0, 1fr) auto; width: 100%; min-width: 0; min-height: 0; overflow-x: auto; overflow-y: hidden; }
-.plan-scheduling__maintenanceWeek { display: grid; grid-auto-columns: var(--plan-chart-date-track); grid-auto-flow: column; gap: var(--plan-date-column-gap); box-sizing: border-box; width: max-content; min-width: 100%; min-height: 30px; padding: 6px 0; border-block: 1px solid #dce5ec; color: #536a7b; background: #f9fbfc; font-size: 12px; }
+.plan-scheduling__maintenanceWeek { display: grid; grid-auto-columns: var(--plan-date-track); grid-auto-flow: column; gap: var(--plan-date-column-gap); box-sizing: border-box; width: max-content; min-width: 100%; min-height: 30px; padding: 6px 0; border-block: 1px solid #dce5ec; color: #536a7b; background: #f9fbfc; font-size: 12px; }
 .plan-scheduling__maintenanceWeekCell { min-width: 0; color: #39566c; font-weight: 700; text-align: center; }
 
 .plan-scheduling__planList {
@@ -224,12 +238,13 @@
 }
 
 .plan-scheduling__slot:disabled { cursor: not-allowed; opacity: .68; }
+.plan-scheduling__slot.is-timeline-read-only:disabled { cursor: default; opacity: 1; }
 .plan-scheduling__quality,
 .plan-scheduling__slot small { color: #a02d2d; font-size: 12px; }
 
-.plan-scheduling__chartTimeline > [data-role="workload-chart"] { display: flex; flex: 1; width: 100%; height: 100%; min-width: 0; min-height: 0; }
+.plan-scheduling__chart > [data-role="workload-chart"] { display: flex; flex: 1; width: 100%; height: 100%; min-width: 0; min-height: 0; }
 .plan-scheduling__chartPlot { display: flex; flex: 1; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: visible; border-bottom: 1px solid var(--ps-border); }
-.plan-scheduling__chartColumns { box-sizing: border-box; display: grid; grid-auto-flow: column; grid-auto-columns: var(--plan-chart-date-track); grid-template-rows: minmax(0, 1fr); align-items: end; gap: var(--plan-date-column-gap); width: max-content; height: 100%; min-width: 100%; min-height: 0; padding: 12px 0 0; }
+.plan-scheduling__chartColumns { box-sizing: border-box; display: grid; grid-auto-flow: column; grid-auto-columns: var(--plan-date-track); grid-template-rows: minmax(0, 1fr); align-items: end; gap: var(--plan-date-column-gap); width: max-content; height: 100%; min-width: 100%; min-height: 0; padding: 12px 0 0; }
 .plan-scheduling__chartColumn { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; align-items: end; justify-items: center; gap: 5px; min-width: 0; height: 100%; color: #536a7b; font-size: 11px; }
 .plan-scheduling__chartColumn > span { width: 100%; text-align: center; }
 .plan-scheduling__chartColumn.is-pinned-move-source { box-shadow: inset 0 0 0 1px #a9c5db; background: #f7fafc; }
@@ -238,7 +253,7 @@
 .plan-scheduling__chartBar:focus-visible { outline: 3px solid rgba(31, 95, 153, .32); outline-offset: 3px; }
 .plan-scheduling__chartSegment { display: block; position: relative; min-height: 0; transition: height .18s ease, filter .12s ease, opacity .12s ease; }
 .plan-scheduling__chartSegment { background: var(--plan-scheduling-team-color); }
-.plan-scheduling__chartTimeline > [data-role="workload-chart"].has-chart-selection .plan-scheduling__chartSegment:not(.is-selected-chart-segment):not(.is-preview-source):not(.is-preview-destination) { opacity: .35; filter: saturate(.3); }
+.plan-scheduling__chart > [data-role="workload-chart"].has-chart-selection .plan-scheduling__chartSegment:not(.is-selected-chart-segment):not(.is-preview-source):not(.is-preview-destination) { opacity: .35; filter: saturate(.3); }
 .plan-scheduling__chartSegment.is-selected-chart-segment { z-index: 1; filter: brightness(1.12) saturate(1.08); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .9); }
 .plan-scheduling__chartPlot.has-chart-preview .plan-scheduling__chartSegment { opacity: .28; filter: saturate(.25); }
 .plan-scheduling__chartPlot.has-chart-preview .plan-scheduling__chartSegment.is-preview-source,
@@ -267,7 +282,7 @@
 
 .plan-scheduling__dateGrid {
   display: grid;
-  grid-auto-columns: var(--plan-matrix-date-track);
+  grid-auto-columns: var(--plan-date-track);
   grid-auto-flow: column;
   gap: var(--plan-date-column-gap);
   width: max-content;
@@ -350,25 +365,14 @@
 @media (prefers-reduced-motion: reduce) {
   .plan-scheduling__chartSegment,
   .plan-scheduling__chartPortion { transition: none; }
+  .plan-scheduling__skeletonMatrix i { animation: none; }
 }
 .plan-scheduling__dateColumn.is-pinned-move-source { border-color: #a9c5db; background: #f7fafc; box-shadow: inset 3px 0 var(--ps-blue); }
 .plan-scheduling__dateColumn > header .plan-scheduling__moveSourceLabel { margin-right: auto; }
 
 @media (min-width: 901px) {
   .plan-scheduling__planningLayout.has-drawer .plan-scheduling__planningCanvas {
-    --plan-matrix-date-track: minmax(0, 1fr);
-    width: 100%;
-  }
-  .plan-scheduling__planningLayout.has-drawer .plan-scheduling__dateGrid {
-    grid-template-columns: repeat(7, var(--plan-matrix-date-track));
-    width: 100%;
-  }
-  .plan-scheduling__planningLayout.has-drawer.has-pinned-move-source .plan-scheduling__planningCanvas {
-    --plan-matrix-date-track: var(--plan-date-column-width);
-  }
-  .plan-scheduling__planningLayout.has-drawer.has-pinned-move-source .plan-scheduling__dateGrid {
-    grid-template-columns: repeat(8, var(--plan-matrix-date-track));
-    width: max-content;
+    --plan-date-track: max(90px, calc((100cqw - 82px) / 7));
   }
   .plan-scheduling__planningLayout.has-drawer .plan-scheduling__dateColumn { min-width: 0; }
 }

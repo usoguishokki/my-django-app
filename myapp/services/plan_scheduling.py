@@ -114,7 +114,10 @@ def build_plan_scheduling_timeline_state(*, organization_code: str):
         slots_by_pair=slots_by_pair,
         slot_effort=_build_slot_effort(plans, slots_by_pair),
     )
-    return {"workloadChart": _build_workload_chart(dates)}
+    return {
+        "dates": dates,
+        "workloadChart": _build_workload_chart(dates),
+    }
 
 
 def _build_slots_by_pair(calendar_rows):

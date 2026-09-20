@@ -240,13 +240,18 @@ export class PlanSchedulingRenderer {
   }
 
   renderLoading() {
-    this.feedback.textContent = '読み込み中…';
-    this.workspace.hidden = true;
+    this.feedback.classList.remove('is-error');
+    this.feedback.textContent = '';
+    this.workspace.hidden = false;
+    this.workspace.setAttribute?.('aria-busy', 'true');
+    if (this.loadingSkeleton) this.loadingSkeleton.hidden = false;
+    if (this.planningLayout) this.planningLayout.hidden = true;
   }
 
   renderError(message) {
     this.feedback.textContent = message;
     this.feedback.classList.add('is-error');
+    if (this.loadingSkeleton) this.loadingSkeleton.hidden = true;
     this.workspace.hidden = true;
   }
 
@@ -266,6 +271,9 @@ export class PlanSchedulingRenderer {
       ).dates;
       this.maintenanceWeek.innerHTML = this.maintenanceWeekTemplate(null, chartDates);
     }
+    this.workspace.setAttribute?.('aria-busy', 'false');
+    if (this.loadingSkeleton) this.loadingSkeleton.hidden = true;
+    if (this.planningLayout) this.planningLayout.hidden = false;
     this.workspace.hidden = false;
     this.renderSelection(state, selection);
   }
@@ -313,8 +321,8 @@ export class PlanSchedulingRenderer {
     });
   }
 
-  scrollChartToDate(isoDate) {
-    const viewport = this.chartTimeline;
+  scrollTimelineToDate(isoDate) {
+    const viewport = this.planningMain;
     if (!viewport || !isoDate) return false;
     const target = [...viewport.querySelectorAll(
       '.plan-scheduling__chartColumn[data-plan-date]',
@@ -433,12 +441,20 @@ export class PlanSchedulingRenderer {
   matrixDates(state, selection = {}) {
     const shiftNames = new Set(state.workloadChart.shiftNames);
     const teamNames = new Set(Object.keys(TEAM_COLORS));
-    const dates = state.dates.map((day) => ({
-      ...day,
-      slots: day.slots.filter((slot) => (
-        shiftNames.has(slot.shift.name) && teamNames.has(slot.team.name)
-      )),
-    }));
+    const weekDates = new Map(state.dates.map((day) => [day.date, day]));
+    const timelineDates = state.timelineDates || state.dates;
+    const sourceDate = selection?.isMoving && selection.moveContext?.sourceSlot?.date;
+    const dates = timelineDates.map((timelineDay) => {
+      const weekDay = weekDates.get(timelineDay.date);
+      const day = weekDay || timelineDay;
+      return {
+        ...day,
+        isPinnedMoveSource: Boolean(sourceDate && day.date === sourceDate),
+        slots: day.slots.filter((slot) => (
+          shiftNames.has(slot.shift.name) && teamNames.has(slot.team.name)
+        )).map((slot) => ({ ...slot, isTimelineReadOnly: !weekDay })),
+      };
+    });
     const source = selection.isMoving && selection.moveContext;
     if (!hasPinnedMoveSource(dates, selection)) return dates;
     return [{
@@ -469,10 +485,10 @@ export class PlanSchedulingRenderer {
   }
 
   slotTemplate(slot) {
-    const disabled = !slot.isValid;
+    const disabled = !slot.isValid || slot.isTimelineReadOnly;
     const issue = slot.dataQualityIssues[0]?.message ||
       (slot.hasInvalidEffort ? '工数データに不備があります。' : '');
-    return `<button type="button" class="plan-scheduling__slot${disabled ? ' is-invalid' : ''}"
+    return `<button type="button" class="plan-scheduling__slot${!slot.isValid ? ' is-invalid' : ''}${slot.isTimelineReadOnly ? ' is-timeline-read-only' : ''}"
       data-slot-key="${escapeHtml(slot.key)}" data-slot-selectable="${disabled ? 'false' : 'true'}"
       data-preview-selectable="${!disabled && Number.isInteger(slot.workloadMinutes) ? 'true' : 'false'}" aria-pressed="false" ${disabled ? 'disabled' : ''}>
       <span>${escapeHtml(slot.team.name)}</span><strong>${escapeHtml(slot.workloadLabel)}</strong>
@@ -513,6 +529,7 @@ export class PlanSchedulingRenderer {
 
   get feedback() { return this.root.querySelector('[data-role="feedback"]'); }
   get workspace() { return this.root.querySelector('[data-role="workspace"]'); }
+  get loadingSkeleton() { return this.root.querySelector('[data-role="loading-skeleton"]'); }
   get planList() { return this.root.querySelector('[data-role="plan-list"]'); }
   get movePreview() { return this.root.querySelector('[data-role="move-preview"]'); }
   get drawer() { return this.root.querySelector('[data-role="slot-drawer"]'); }
@@ -520,7 +537,6 @@ export class PlanSchedulingRenderer {
   get planningMain() { return this.root.querySelector('.plan-scheduling__planningMain'); }
   get matrix() { return this.root.querySelector('.plan-scheduling__matrix'); }
   get maintenanceWeek() { return this.root.querySelector('[data-role="maintenance-week"]'); }
-  get chartTimeline() { return this.root.querySelector('[data-role="chart-timeline"]'); }
   get chartLegend() { return this.root.querySelector('[data-role="chart-legend"]'); }
   get dateGrid() { return this.root.querySelector('[data-role="date-grid"]'); }
   get workloadChart() { return this.root.querySelector('[data-role="workload-chart"]'); }

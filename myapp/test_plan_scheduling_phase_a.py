@@ -469,6 +469,10 @@ class PlanSchedulingStateTests(TestCase):
             state = build_plan_scheduling_timeline_state(organization_code="ORG1")
 
         dates = state["workloadChart"]["dates"]
+        self.assertEqual(
+            ["2026-02-09", "2027-03-28"],
+            [day["date"] for day in state["dates"]],
+        )
         self.assertEqual(["2026-02-09", "2027-03-28"], [day["date"] for day in dates])
         self.assertEqual(["2月2週目", "3月4週目"], [day["maintenanceWeekLabel"] for day in dates])
         self.assertEqual([120, 60], [day["totalWorkloadMinutes"] for day in dates])

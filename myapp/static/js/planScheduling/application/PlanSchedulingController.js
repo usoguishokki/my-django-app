@@ -33,6 +33,7 @@ export class PlanSchedulingController {
     this.selectSlotPlans = selectSlotPlans;
     this.state = null;
     this.timelineChart = null;
+    this.timelineDates = null;
     this.interaction = initialInteractionState();
   }
 
@@ -58,9 +59,14 @@ export class PlanSchedulingController {
         this.apiClient.fetchTimeline(),
       ]);
       this.timelineChart = timelineState.workloadChart;
-      this.state = { ...weekState, workloadChart: this.timelineChart };
+      this.timelineDates = timelineState.dates;
+      this.state = {
+        ...weekState,
+        timelineDates: this.timelineDates,
+        workloadChart: this.timelineChart,
+      };
       this.renderer.renderState(this.state, this.selection());
-      this.renderer.scrollChartToDate(targetDate);
+      this.renderer.scrollTimelineToDate(targetDate);
     } catch (error) {
       this.renderer.renderError(error.message);
     }
@@ -72,10 +78,11 @@ export class PlanSchedulingController {
       const weekState = await this.apiClient.fetchWeek(targetDate);
       this.state = {
         ...weekState,
+        timelineDates: this.timelineDates || weekState.dates,
         workloadChart: this.timelineChart || weekState.workloadChart,
       };
       this.renderer.renderState(this.state, this.selection());
-      this.renderer.scrollChartToDate?.(targetDate);
+      this.renderer.scrollTimelineToDate?.(targetDate);
     } catch (error) {
       this.renderer.renderError(error.message);
     }
