@@ -35,6 +35,14 @@ async function importRenderer() {
 
 
 async function importController() {
+  const projectionSource = readFileSync(
+    new URL('../domain/PlanSchedulingFilterProjection.js', import.meta.url),
+    'utf8',
+  ).replace(
+    "import { formatMinutes } from './PlanSchedulingPreviewPolicy.js';",
+    "const formatMinutes = (value) => Number.isInteger(value) ? `${value}分` : '集計不可';",
+  );
+  const projectionUrl = `data:text/javascript;base64,${Buffer.from(projectionSource).toString('base64')}`;
   const source = readFileSync(
     new URL('../application/PlanSchedulingController.js', import.meta.url),
     'utf8',
@@ -48,6 +56,22 @@ async function importController() {
      const selectMatrixSlot = (state, key, selectedSlotContext = null) => state.mode === 'moving'
        ? { ...state, destinationSlotKey: key }
        : { ...state, selectedSlotKey: key, selectedSlotContext, destinationSlotKey: '' };`,
+  ).replace(
+    "'../domain/PlanSchedulingFilterProjection.js'",
+    `'${projectionUrl}'`,
+  );
+  const dataUrl = `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
+  return import(dataUrl);
+}
+
+
+async function importFilterProjection() {
+  const source = readFileSync(
+    new URL('../domain/PlanSchedulingFilterProjection.js', import.meta.url),
+    'utf8',
+  ).replace(
+    "import { formatMinutes } from './PlanSchedulingPreviewPolicy.js';",
+    "const formatMinutes = (value) => Number.isInteger(value) ? `${value}分` : '集計不可';",
   );
   const dataUrl = `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
   return import(dataUrl);
@@ -2092,4 +2116,290 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /prefers-reduced-motion:[\s\S]*\.plan-scheduling__skeletonMatrix i[^}]*animation:\s*none/s);
   assert.match(scss, /\.plan-scheduling__skeletonCanvas[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/s);
   assert.doesNotMatch(scss, /justify-content:\s*space-around/);
+});
+
+
+function filterFixture() {
+  const teams = ['A班', 'B班', 'C班'].map((name, index) => ({ id: index + 1, name }));
+  const shifts = ['1直', '2直', '3直', '休日'];
+  const makeDay = (date, label, values) => ({
+    date,
+    label,
+    maintenanceWeekLabel: 'W38',
+    slots: values.map(([shiftIndex, teamIndex, minutes]) => ({
+      key: `${date}:${shiftIndex + 1}:${teamIndex + 1}`,
+      date,
+      shift: { id: shiftIndex + 1, name: shifts[shiftIndex] },
+      team: teams[teamIndex],
+      workloadMinutes: minutes,
+      workloadLabel: `${minutes}分`,
+      hasInvalidEffort: false,
+      planIds: [],
+    })),
+  });
+  const timelineDates = [
+    makeDay('2026-09-21', '9/21（月）', [[0, 0, 10], [1, 1, 20], [1, 2, 30]]),
+    makeDay('2026-09-22', '9/22（火）', [[1, 0, 40], [2, 2, 50]]),
+    makeDay('2026-09-23', '9/23（水）', [[0, 1, 60]]),
+    makeDay('2026-09-26', '9/26（土）', [[3, 0, 70]]),
+  ];
+  return {
+    dates: timelineDates.slice(0, 2),
+    timelineDates,
+    plans: [],
+    workloadChart: {
+      shiftNames: shifts,
+      teams,
+      dates: timelineDates.map((day) => ({
+        date: day.date,
+        label: day.label,
+        maintenanceWeekLabel: day.maintenanceWeekLabel,
+        teamWorkloads: [],
+      })),
+    },
+  };
+}
+
+
+test('filter projection applies category OR and cross-category AND without mutating timeline state', async () => {
+  const { projectPlanSchedulingState } = await importFilterProjection();
+  const source = filterFixture();
+  const snapshot = structuredClone(source);
+
+  const defaultView = projectPlanSchedulingState(source, {});
+  assert.equal(defaultView, source);
+  assert.deepEqual(defaultView.timelineDates.map((day) => day.date), source.timelineDates.map((day) => day.date));
+
+  const weekdayView = projectPlanSchedulingState(source, { weekdays: ['月', '火'] });
+  assert.deepEqual(weekdayView.timelineDates.map((day) => day.date), ['2026-09-21', '2026-09-22']);
+
+  const shiftView = projectPlanSchedulingState(source, { shifts: ['1直', '3直'] });
+  assert.deepEqual(
+    shiftView.timelineDates.flatMap((day) => day.slots.map((slot) => slot.shift.name)),
+    ['1直', '3直', '1直'],
+  );
+
+  const teamView = projectPlanSchedulingState(source, { teams: ['A班', 'C班'] });
+  assert.deepEqual(teamView.workloadChart.teams.map((team) => team.name), ['A班', 'C班']);
+  assert.deepEqual(
+    teamView.timelineDates.flatMap((day) => day.slots.map((slot) => slot.team.name)),
+    ['A班', 'C班', 'A班', 'C班', 'A班'],
+  );
+  assert.equal(teamView.workloadChart.dates[0].totalWorkloadMinutes, 40);
+
+  const combined = projectPlanSchedulingState(source, {
+    weekdays: ['月', '火'], shifts: ['2直'], teams: ['A班', 'B班'],
+  });
+  assert.deepEqual(combined.timelineDates.map((day) => day.date), ['2026-09-21', '2026-09-22']);
+  assert.deepEqual(
+    combined.timelineDates.flatMap((day) => day.slots.map((slot) => [slot.date, slot.shift.name, slot.team.name])),
+    [['2026-09-21', '2直', 'B班'], ['2026-09-22', '2直', 'A班']],
+  );
+  assert.deepEqual(
+    combined.workloadChart.dates.map((day) => day.totalWorkloadMinutes),
+    combined.timelineDates.map((day) => day.slots.reduce((total, slot) => total + slot.workloadMinutes, 0)),
+  );
+  assert.deepEqual(source, snapshot);
+});
+
+
+test('filter projection chooses the next surviving logical date, then the previous date', async () => {
+  const { nextFilteredDate } = await importFilterProjection();
+  const source = filterFixture().timelineDates;
+  assert.equal(nextFilteredDate(source, [source[3]], '2026-09-22'), '2026-09-26');
+  assert.equal(nextFilteredDate(source, [source[0]], '2026-09-22'), '2026-09-21');
+  assert.equal(nextFilteredDate(source, [], '2026-09-22'), '');
+});
+
+
+test('renderer filter draft is explicit, discardable, and reports the applied count', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const attributes = new Map();
+  const classes = [];
+  const button = {
+    classList: { toggle: (...args) => classes.push(args) },
+    setAttribute: (name, value) => attributes.set(name, value),
+  };
+  const badge = { textContent: '', hidden: true };
+  const popover = { hidden: true };
+  const inputs = [
+    { dataset: { filterCategory: 'weekdays' }, value: '月', checked: false },
+    { dataset: { filterCategory: 'weekdays' }, value: '火', checked: false },
+    { dataset: { filterCategory: 'shifts' }, value: '1直', checked: false },
+    { dataset: { filterCategory: 'teams' }, value: 'A班', checked: false },
+  ];
+  const root = {
+    querySelector: (selector) => ({
+      '[data-action="toggle-filter"]': button,
+      '[data-role="filter-count"]': badge,
+      '[data-role="filter-popover"]': popover,
+    })[selector] || null,
+    querySelectorAll: (selector) => selector === '[data-filter-category]' ? inputs : [],
+  };
+  const renderer = new PlanSchedulingRenderer(root);
+  renderer.renderFilterState({ weekdays: ['月', '火'], shifts: ['1直'], teams: ['A班'] });
+  assert.equal(badge.textContent, '4');
+  assert.equal(badge.hidden, false);
+  assert.deepEqual(classes.at(-1), ['is-active', true]);
+
+  renderer.openFilterPopover({ weekdays: ['月'], shifts: [], teams: ['A班'] });
+  inputs[1].checked = true;
+  assert.deepEqual(renderer.readFilterDraft(), { weekdays: ['月', '火'], shifts: [], teams: ['A班'] });
+  renderer.closeFilterPopover();
+  renderer.openFilterPopover({ weekdays: ['月'], shifts: [], teams: ['A班'] });
+  assert.equal(inputs[1].checked, false);
+  renderer.clearFilterDraft();
+  assert.deepEqual(renderer.readFilterDraft(), { weekdays: [], shifts: [], teams: [] });
+  assert.equal(attributes.get('aria-expanded'), 'true');
+});
+
+
+test('filtered chart legend keeps only active teams while reusing configured team colors', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const renderer = new PlanSchedulingRenderer({ querySelector: () => null });
+  const legend = renderer.chartLegendTemplate({ teams: [{ name: 'A班' }, { name: 'C班' }] });
+  assert.match(legend, /A班/);
+  assert.doesNotMatch(legend, /B班/);
+  assert.match(legend, /C班/);
+  assert.match(legend, /#1C55C8/);
+  assert.match(legend, /#FFC715/);
+});
+
+
+test('filter controls remain outside the shared scrolling timeline and expose local empty-state recovery', () => {
+  const template = readFileSync(
+    new URL('../../../../templates/planScheduling/plan_scheduling.html', import.meta.url),
+    'utf8',
+  );
+  const scss = readFileSync(
+    new URL('../../../../static/css/pages/planScheduling.scss', import.meta.url),
+    'utf8',
+  );
+  assert.equal((template.match(/data-action="toggle-filter"/g) || []).length, 1);
+  assert.equal((template.match(/data-filter-category="weekdays"/g) || []).length, 7);
+  assert.equal((template.match(/data-filter-category="shifts"/g) || []).length, 4);
+  assert.equal((template.match(/data-filter-category="teams"/g) || []).length, 3);
+  assert.match(template, /aria-expanded="false"[^>]*aria-controls="plan-scheduling-filter-popover"/);
+  assert.match(template, /data-action="apply-filters"/);
+  assert.match(template, /data-action="clear-filter-draft"/);
+  assert.match(template, /data-role="filter-empty"[\s\S]*data-action="clear-applied-filters"/);
+  assert.match(scss, /\.plan-scheduling__filterControl\s*\{[^}]*position:\s*relative/s);
+  assert.match(scss, /\.plan-scheduling__filterPopover\s*\{[^}]*position:\s*absolute[^}]*z-index:\s*8/s);
+  assert.doesNotMatch(scss, /\.plan-scheduling__filterPopover\s*\{[^}]*position:\s*fixed/s);
+});
+
+
+test('controller preserves surviving selection, clears excluded selection, and restores a logical filter anchor', async () => {
+  const { PlanSchedulingController } = await importController();
+  const source = filterFixture();
+  const selectedSlot = source.dates[0].slots[0];
+  const restored = [];
+  let closed = 0;
+  let lastState = null;
+  const renderer = {
+    captureTimelineAnchor: (date) => ({ date, viewportRatio: 0.4 }),
+    restoreTimelineAnchorAfterRender: (anchor) => restored.push({ ...anchor }),
+    renderState: (state) => { lastState = state; },
+    renderFilterState: () => {},
+    renderFilterEmptyState: () => {},
+    closeFilterPopover: () => { closed += 1; },
+  };
+  const controller = new PlanSchedulingController({
+    root: {}, apiClient: {}, renderer,
+    buildPreview: () => null, selectSlotPlans: () => [],
+  });
+  controller.state = source;
+  controller.interaction = {
+    ...controller.interaction,
+    selectedSlotKey: selectedSlot.key,
+    selectedSlotContext: { slot: selectedSlot, slotPlans: [] },
+  };
+  controller.refreshViewState();
+
+  assert.equal(controller.applyFilter({ weekdays: ['月'], shifts: ['1直'], teams: ['A班'] }), true);
+  assert.equal(controller.selection().selectedSlot.key, selectedSlot.key);
+  assert.deepEqual(restored.at(-1), { date: '2026-09-21', viewportRatio: 0.4 });
+  assert.equal(lastState.timelineDates.length, 1);
+
+  assert.equal(controller.applyFilter({ weekdays: ['火'] }), true);
+  assert.equal(controller.selection().selectedSlot, undefined);
+  assert.deepEqual(restored.at(-1), { date: '2026-09-22', viewportRatio: 0.4 });
+  assert.equal(closed, 2);
+});
+
+
+test('controller blocks filter changes during Move mode and keeps the applied projection unchanged', async () => {
+  const { PlanSchedulingController } = await importController();
+  let message = '';
+  const controller = new PlanSchedulingController({
+    root: {}, apiClient: {},
+    renderer: { renderInteractionError: (value) => { message = value; } },
+    buildPreview: () => null, selectSlotPlans: () => [],
+  });
+  controller.state = filterFixture();
+  controller.refreshViewState();
+  const priorView = controller.viewState;
+  controller.interaction = { ...controller.interaction, mode: 'moving' };
+
+  assert.equal(controller.applyFilter({ teams: ['A班'] }), false);
+  assert.deepEqual(controller.activeFilter, { weekdays: [], shifts: [], teams: [] });
+  assert.equal(controller.viewState, priorView);
+  assert.equal(message, '移動中はフィルターを変更できません');
+});
+
+
+test('Escape and outside click close an open filter draft without applying it', async () => {
+  const { PlanSchedulingController } = await importController();
+  const insideTarget = {};
+  let open = true;
+  let closes = 0;
+  const control = { contains: (target) => target === insideTarget };
+  const controller = new PlanSchedulingController({
+    root: { querySelector: () => control }, apiClient: {},
+    renderer: {
+      isFilterOpen: () => open,
+      closeFilterPopover: () => { open = false; closes += 1; },
+    },
+    buildPreview: () => null, selectSlotPlans: () => [],
+  });
+  controller.activeFilter = { weekdays: ['月'], shifts: [], teams: [] };
+
+  controller.handleDocumentClick({ target: insideTarget });
+  assert.equal(closes, 0);
+  controller.handleDocumentClick({ target: {} });
+  assert.equal(closes, 1);
+  assert.deepEqual(controller.activeFilter, { weekdays: ['月'], shifts: [], teams: [] });
+
+  open = true;
+  controller.handleDocumentKeydown({ key: 'Escape' });
+  assert.equal(closes, 2);
+  assert.deepEqual(controller.activeFilter, { weekdays: ['月'], shifts: [], teams: [] });
+});
+
+
+test('week navigation targets the first filtered date in the requested week and reports no surviving date', async () => {
+  const { PlanSchedulingController } = await importController();
+  const scrolled = [];
+  const messages = [];
+  const controller = new PlanSchedulingController({
+    root: {}, apiClient: {},
+    renderer: {
+      scrollTimelineToDate: (date) => { scrolled.push(date); return true; },
+      renderInteractionError: (message) => messages.push(message),
+    },
+    buildPreview: () => null, selectSlotPlans: () => [],
+  });
+  controller.state = filterFixture();
+  controller.activeFilter = { weekdays: ['月'], shifts: [], teams: [] };
+  controller.refreshViewState();
+
+  assert.equal(controller.scrollToRequestedWeekDate('2026-09-22', {
+    dates: [{ date: '2026-09-21' }, { date: '2026-09-22' }],
+  }), true);
+  assert.deepEqual(scrolled, ['2026-09-21']);
+
+  assert.equal(controller.scrollToRequestedWeekDate('2026-09-26', {
+    dates: [{ date: '2026-09-26' }],
+  }), false);
+  assert.equal(messages.at(-1), 'この週には条件に一致する日付がありません');
 });

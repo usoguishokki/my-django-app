@@ -1,3 +1,4 @@
+@charset "UTF-8";
 .plan-scheduling {
   --ps-blue: #1f5f99;
   --ps-blue-soft: #eaf3fb;
@@ -41,6 +42,145 @@
   border: 1px solid var(--ps-border);
   border-radius: 6px;
   background: white; }
+
+.plan-scheduling__filterControl {
+  position: relative; }
+
+.plan-scheduling__filterButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding-inline: 13px;
+  border-radius: 8px;
+  border-color: #c4d1dc;
+  color: #39566c;
+  background: #fff;
+  font-weight: 700; }
+
+.plan-scheduling__filterButton.is-active {
+  border-color: var(--ps-blue);
+  color: var(--ps-blue);
+  background: var(--ps-blue-soft); }
+
+.plan-scheduling__filterButton:focus-visible,
+.plan-scheduling__filterClose:focus-visible,
+.plan-scheduling__filterChoices input:focus-visible + span {
+  outline: 3px solid rgba(31, 95, 153, 0.28);
+  outline-offset: 2px; }
+
+.plan-scheduling__filterBadge {
+  min-width: 20px;
+  box-sizing: border-box;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--ps-blue);
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center; }
+
+.plan-scheduling__filterPopover {
+  position: absolute;
+  z-index: 8;
+  top: calc(100% + 7px);
+  left: 0;
+  width: min(340px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 14px;
+  border: 1px solid #cbd7e0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(24, 48, 68, 0.2); }
+
+.plan-scheduling__filterPopover[hidden] {
+  display: none; }
+
+.plan-scheduling__filterPopover header,
+.plan-scheduling__filterPopover footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px; }
+
+.plan-scheduling__filterPopover header {
+  margin-bottom: 12px; }
+
+.plan-scheduling__filterPopover footer {
+  justify-content: flex-end;
+  margin-top: 14px; }
+
+.plan-scheduling__filterClose {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: #536a7b;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer; }
+
+.plan-scheduling__filterClose:hover {
+  background: #edf3f7; }
+
+.plan-scheduling__filterPopover fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0; }
+
+.plan-scheduling__filterPopover fieldset + fieldset {
+  margin-top: 12px; }
+
+.plan-scheduling__filterPopover legend {
+  margin-bottom: 6px;
+  color: #39566c;
+  font-size: 12px;
+  font-weight: 800; }
+
+.plan-scheduling__filterChoices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px; }
+
+.plan-scheduling__filterChoices label {
+  position: relative;
+  cursor: pointer; }
+
+.plan-scheduling__filterChoices input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0; }
+
+.plan-scheduling__filterChoices span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #cbd7e0;
+  border-radius: 999px;
+  color: #536a7b;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700; }
+
+.plan-scheduling__filterChoices input:checked + span {
+  border-color: var(--ps-blue);
+  color: var(--ps-blue);
+  background: var(--ps-blue-soft);
+  box-shadow: inset 0 0 0 1px var(--ps-blue); }
+
+.plan-scheduling__filterChoices input:checked + span::before {
+  content: '✓';
+  margin-right: 4px; }
+
+.plan-scheduling__filterClear,
+.plan-scheduling__filterApply {
+  min-height: 34px;
+  padding-inline: 12px; }
 
 .plan-scheduling__feedback {
   padding: 10px 14px;
@@ -206,6 +346,29 @@
   min-height: 0;
   overflow: hidden;
   min-width: 0; }
+
+.plan-scheduling__filterEmpty {
+  position: absolute;
+  z-index: 4;
+  inset: 50% auto auto 50%;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  min-width: 250px;
+  padding: 22px;
+  border: 1px solid var(--ps-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 24px rgba(29, 54, 77, 0.14);
+  transform: translate(-50%, -50%); }
+
+.plan-scheduling__filterEmpty[hidden] {
+  display: none; }
+
+.plan-scheduling__filterEmpty p {
+  margin: 0;
+  color: #536a7b;
+  font-weight: 700; }
 
 .plan-scheduling__planningLayout.has-drawer {
   grid-template-columns: clamp(380px, 26vw, 440px) minmax(0, 1fr); }
@@ -1065,6 +1228,9 @@
   .plan-scheduling__dateForm {
     align-items: flex-start;
     flex-direction: column; }
+  .plan-scheduling__filterPopover {
+    left: 50%;
+    transform: translateX(-50%); }
   .plan-scheduling__planningLayout.has-drawer {
     grid-template-columns: minmax(0, 1fr); }
   .plan-scheduling__drawer {

@@ -356,7 +356,9 @@ export class PlanSchedulingRenderer {
     const displayDates = this.matrixDates(state, selection);
     this.dateGrid.innerHTML = displayDates
       .map((day) => this.dateTemplate(day)).join('');
-    if (this.chartLegend) this.chartLegend.innerHTML = this.chartLegendTemplate();
+    if (this.chartLegend) {
+      this.chartLegend.innerHTML = this.chartLegendTemplate(state.workloadChart);
+    }
     if (this.maintenanceWeek) {
       const chartDates = this.chartWithPinnedMoveSource(
         state.workloadChart,
@@ -527,6 +529,10 @@ export class PlanSchedulingRenderer {
     else restore();
   }
 
+  restoreTimelineAnchorAfterRender(anchor) {
+    this.restoreTimelineAnchorAfterLayout(anchor, this.timelineLayoutRevision);
+  }
+
   updateSelectedDatePin() {
     const viewport = this.planningMain;
     const geometry = this.selectedDateGeometry;
@@ -677,11 +683,73 @@ export class PlanSchedulingRenderer {
     return { ...chart, dates: [{ ...sourceDay, isPinnedMoveSource: true }, ...chart.dates] };
   }
 
-  chartLegendTemplate() {
-    const items = Object.keys(TEAM_COLORS).map((teamName) =>
+  chartLegendTemplate(chart = {}) {
+    const configuredTeams = (chart.teams || [])
+      .map((team) => team.name)
+      .filter((teamName) => Object.hasOwn(TEAM_COLORS, teamName));
+    const teamNames = configuredTeams.length ? configuredTeams : Object.keys(TEAM_COLORS);
+    const items = teamNames.map((teamName) =>
       `<li class="plan-scheduling__chartLegendItem"><i class="plan-scheduling__chartLegendSwatch" style="${teamColorDeclaration(teamName)}"></i>${escapeHtml(teamName)}</li>`
     ).join('');
     return `<ul class="plan-scheduling__chartLegend" aria-label="班別">${items}</ul>`;
+  }
+
+  renderFilterState(filter = {}) {
+    const count = ['weekdays', 'shifts', 'teams'].reduce(
+      (total, category) => total + (filter[category]?.length || 0),
+      0,
+    );
+    if (this.filterButton) {
+      this.filterButton.classList.toggle('is-active', count > 0);
+      this.filterButton.setAttribute('aria-label', count
+        ? `フィルター、${count}件の条件を適用中`
+        : 'フィルター');
+    }
+    if (this.filterBadge) {
+      this.filterBadge.textContent = String(count);
+      this.filterBadge.hidden = count === 0;
+    }
+  }
+
+  openFilterPopover(filter = {}) {
+    const selectedByCategory = new Map(
+      ['weekdays', 'shifts', 'teams'].map((category) => [
+        category,
+        new Set(filter[category] || []),
+      ]),
+    );
+    this.filterInputs.forEach((input) => {
+      input.checked = selectedByCategory.get(input.dataset.filterCategory)?.has(input.value) || false;
+    });
+    this.filterPopover.hidden = false;
+    this.filterButton?.setAttribute('aria-expanded', 'true');
+  }
+
+  closeFilterPopover() {
+    if (this.filterPopover) this.filterPopover.hidden = true;
+    this.filterButton?.setAttribute('aria-expanded', 'false');
+  }
+
+  isFilterOpen() {
+    return Boolean(this.filterPopover && !this.filterPopover.hidden);
+  }
+
+  readFilterDraft() {
+    const filter = { weekdays: [], shifts: [], teams: [] };
+    this.filterInputs.forEach((input) => {
+      if (input.checked && filter[input.dataset.filterCategory]) {
+        filter[input.dataset.filterCategory].push(input.value);
+      }
+    });
+    return filter;
+  }
+
+  clearFilterDraft() {
+    this.filterInputs.forEach((input) => { input.checked = false; });
+  }
+
+  renderFilterEmptyState(isVisible) {
+    if (this.filterEmptyState) this.filterEmptyState.hidden = !isVisible;
   }
 
   maintenanceWeekTemplate(week, dates) {
@@ -803,4 +871,9 @@ export class PlanSchedulingRenderer {
   get chartLegend() { return this.root.querySelector('[data-role="chart-legend"]'); }
   get dateGrid() { return this.root.querySelector('[data-role="date-grid"]'); }
   get workloadChart() { return this.root.querySelector('[data-role="workload-chart"]'); }
+  get filterButton() { return this.root.querySelector('[data-action="toggle-filter"]'); }
+  get filterBadge() { return this.root.querySelector('[data-role="filter-count"]'); }
+  get filterPopover() { return this.root.querySelector('[data-role="filter-popover"]'); }
+  get filterEmptyState() { return this.root.querySelector('[data-role="filter-empty"]'); }
+  get filterInputs() { return [...(this.root.querySelectorAll?.('[data-filter-category]') || [])]; }
 }

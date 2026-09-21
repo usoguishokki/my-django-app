@@ -18,6 +18,47 @@
     <label for="plan-scheduling-date">表示日</label>
     <div class="plan-scheduling__dateControls">
       <input id="plan-scheduling-date" type="date" data-role="target-date">
+      <div class="plan-scheduling__filterControl" data-role="filter-control">
+        <button type="button" class="ui-btn ui-btn--outline plan-scheduling__filterButton" data-action="toggle-filter" aria-expanded="false" aria-controls="plan-scheduling-filter-popover">
+          <span>フィルター</span><span class="plan-scheduling__filterBadge" data-role="filter-count" hidden>0</span>
+        </button>
+        <section id="plan-scheduling-filter-popover" class="plan-scheduling__filterPopover" data-role="filter-popover" aria-label="表示フィルター" hidden>
+          <header><strong>フィルター</strong><button type="button" class="plan-scheduling__filterClose" data-action="close-filter" aria-label="フィルターを閉じる">×</button></header>
+          <fieldset>
+            <legend>曜日</legend>
+            <div class="plan-scheduling__filterChoices">
+              <label><input type="checkbox" value="月" data-filter-category="weekdays"><span>月</span></label>
+              <label><input type="checkbox" value="火" data-filter-category="weekdays"><span>火</span></label>
+              <label><input type="checkbox" value="水" data-filter-category="weekdays"><span>水</span></label>
+              <label><input type="checkbox" value="木" data-filter-category="weekdays"><span>木</span></label>
+              <label><input type="checkbox" value="金" data-filter-category="weekdays"><span>金</span></label>
+              <label><input type="checkbox" value="土" data-filter-category="weekdays"><span>土</span></label>
+              <label><input type="checkbox" value="日" data-filter-category="weekdays"><span>日</span></label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>直</legend>
+            <div class="plan-scheduling__filterChoices">
+              <label><input type="checkbox" value="1直" data-filter-category="shifts"><span>1直</span></label>
+              <label><input type="checkbox" value="2直" data-filter-category="shifts"><span>2直</span></label>
+              <label><input type="checkbox" value="3直" data-filter-category="shifts"><span>3直</span></label>
+              <label><input type="checkbox" value="休日" data-filter-category="shifts"><span>休日</span></label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>班</legend>
+            <div class="plan-scheduling__filterChoices">
+              <label><input type="checkbox" value="A班" data-filter-category="teams"><span>A班</span></label>
+              <label><input type="checkbox" value="B班" data-filter-category="teams"><span>B班</span></label>
+              <label><input type="checkbox" value="C班" data-filter-category="teams"><span>C班</span></label>
+            </div>
+          </fieldset>
+          <footer>
+            <button type="button" class="ui-btn ui-btn--ghost plan-scheduling__filterClear" data-action="clear-filter-draft">すべてクリア</button>
+            <button type="button" class="ui-btn ui-btn--outline plan-scheduling__filterApply" data-action="apply-filters">適用</button>
+          </footer>
+        </section>
+      </div>
       <button type="submit" class="ui-btn ui-btn--outline plan-scheduling__weekButton">週を表示</button>
     </div>
   </form>
@@ -70,6 +111,10 @@
         </div>
       </div>
       <div class="plan-scheduling__chartLegendViewport" data-role="chart-legend"></div>
+      <div class="plan-scheduling__filterEmpty" data-role="filter-empty" hidden>
+        <p>条件に一致する予定がありません</p>
+        <button type="button" class="ui-btn ui-btn--outline" data-action="clear-applied-filters">フィルターをクリア</button>
+      </div>
     </div>
   </section>
 </main>
