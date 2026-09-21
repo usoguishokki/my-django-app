@@ -15,9 +15,7 @@
 {% block content %}
 <main class="plan-scheduling" data-role="plan-scheduling-root">
   <form class="plan-scheduling__dateForm" data-role="week-form">
-    <label for="plan-scheduling-date">表示日</label>
     <div class="plan-scheduling__dateControls">
-      <input id="plan-scheduling-date" type="date" data-role="target-date">
       <div class="plan-scheduling__filterControl" data-role="filter-control">
         <button type="button" class="ui-btn plan-scheduling__controlButton plan-scheduling__controlButton--secondary plan-scheduling__filterButton" data-action="toggle-filter" aria-expanded="false" aria-controls="plan-scheduling-filter-popover">
           <span>フィルター</span><span class="plan-scheduling__filterBadge" data-role="filter-count" hidden>0</span>
@@ -58,6 +56,10 @@
             <button type="button" class="ui-btn plan-scheduling__controlButton plan-scheduling__controlButton--primary plan-scheduling__filterApply" data-action="apply-filters">適用</button>
           </footer>
         </section>
+      </div>
+      <div class="plan-scheduling__dateInputControl">
+        <label for="plan-scheduling-date">表示日</label>
+        <input id="plan-scheduling-date" type="date" data-role="target-date">
       </div>
       <button type="submit" class="ui-btn plan-scheduling__controlButton plan-scheduling__controlButton--primary plan-scheduling__weekButton">週を表示</button>
     </div>

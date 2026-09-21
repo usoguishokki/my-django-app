@@ -29,9 +29,13 @@
 }
 
 .plan-scheduling__dateForm { display: flex; align-items: center; justify-content: flex-start; gap: 8px; font-weight: 700; }
-.plan-scheduling__dateControls { gap: 8px; }
-.plan-scheduling__dateControls input {
-  min-height: 36px;
+.plan-scheduling__dateControls { flex-wrap: wrap; gap: 8px; }
+.plan-scheduling__dateInputControl { display: inline-flex; align-items: center; gap: 6px; }
+.plan-scheduling__dateInputControl label { color: #39566c; font-size: 13px; white-space: nowrap; }
+.plan-scheduling__dateInputControl input {
+  height: 38px;
+  min-height: 38px;
+  box-sizing: border-box;
   padding: 0 10px;
   border: 1px solid var(--ps-border);
   border-radius: 6px;
@@ -245,11 +249,7 @@
 .plan-scheduling__planCard:hover .detail-card__body,
 .plan-scheduling__planCard:focus-within .detail-card__body { overflow-y: auto; }
 .plan-scheduling__planCardActions { display: flex; justify-content: flex-end; padding: 9px 12px 11px; border-top: 1px solid #d8e0e8; background: rgba(248, 250, 252, .72); }
-.plan-scheduling__moveButton { flex: 0 0 auto; min-width: 84px; min-height: 38px; padding-inline: 18px; border-radius: 8px; color: var(--ps-blue); border-color: #a9c5db; background: #fff; font-weight: 700; transition: background .14s ease, border-color .14s ease, box-shadow .14s ease, transform .14s ease; }
-.plan-scheduling__moveButton:not(:disabled):hover { color: #164b77; border-color: #7eaacb; background: #edf6fc; box-shadow: 0 2px 6px rgba(31, 95, 153, .12); }
-.plan-scheduling__moveButton:not(:disabled):active { transform: translateY(1px); box-shadow: none; }
-.plan-scheduling__moveButton:focus-visible { outline: 3px solid rgba(31, 95, 153, .28); outline-offset: 2px; }
-.plan-scheduling__moveButton:disabled { border-color: #d5dde4; color: #8a99a5; background: #f3f5f7; opacity: 1; }
+.plan-scheduling__moveButton { flex: 0 0 auto; min-width: 84px; }
 
 .plan-scheduling__slot:hover:not(:disabled) { border-color: var(--ps-blue); }
 .plan-scheduling__slot:focus-visible { outline: 3px solid rgba(31, 95, 153, .28); outline-offset: 2px; }

@@ -634,7 +634,7 @@ export class PlanSchedulingRenderer {
         </div>
       </header>
       <div class="detail-card__body">${detailItemsTemplate(plan.detailItems)}${issues ? `<div class="plan-scheduling__qualityGroup"><strong>データ確認</strong>${issues}</div>` : ''}</div>
-      <footer class="plan-scheduling__planCardActions"><button type="button" class="ui-btn ui-btn--sm ui-btn--outline plan-scheduling__moveButton" data-action="move" data-plan-id="${plan.planId}" ${plan.isPreviewable ? '' : 'disabled'}>移動</button></footer>
+      <footer class="plan-scheduling__planCardActions"><button type="button" class="ui-btn plan-scheduling__controlButton plan-scheduling__controlButton--primary plan-scheduling__moveButton" data-action="move" data-plan-id="${plan.planId}" ${plan.isPreviewable ? '' : 'disabled'}>移動</button></footer>
     </article>`;
   }
 

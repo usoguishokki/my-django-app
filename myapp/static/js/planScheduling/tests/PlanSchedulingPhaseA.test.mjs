@@ -270,7 +270,7 @@ test('drawer Plan cards reuse detail-card content with an independent Move actio
   assert.match(html, /detail-card__detailItemDevice">対象部位/);
   assert.match(html, /detail-card__detailItemContents">点検内容/);
   assert.doesNotMatch(html, /点検内容はありません。/);
-  assert.match(html, /ui-btn ui-btn--sm ui-btn--outline plan-scheduling__moveButton/);
+  assert.match(html, /ui-btn plan-scheduling__controlButton plan-scheduling__controlButton--primary plan-scheduling__moveButton/);
   assert.match(html, /<footer class="plan-scheduling__planCardActions">[\s\S]*data-action="move"[\s\S]*<\/footer>/);
   assert.match(html, /<button[^>]*data-action="move"[^>]*>移動<\/button>/);
   assert.doesNotMatch(html, /click-card__button/);
@@ -2068,7 +2068,7 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__movePreviewRegion[^}]*flex:\s*1\s+1\s+auto/s);
   assert.match(scss, /\.plan-scheduling__planList\[hidden\][\s\S]*\.plan-scheduling__movePreviewRegion\[hidden\]\s*\{\s*display:\s*none/s);
   assert.match(scss, /\.plan-scheduling__controlButton\s*\{[^}]*min-height:\s*38px[^}]*border-radius:\s*8px/s);
-  assert.match(scss, /\.plan-scheduling__moveButton[^}]*min-height:\s*38px[^}]*border-radius:\s*8px/s);
+  assert.match(scss, /\.plan-scheduling__moveButton\s*\{[^}]*min-width:\s*84px/s);
   assert.match(scss, /\.plan-scheduling__cancelMove[^}]*min-height:\s*38px[^}]*border-radius:\s*8px/s);
   assert.doesNotMatch(scss, /\.plan-scheduling__planList\s*\{[^}]*display:\s*grid/s);
   assert.match(scss, /\.plan-scheduling__planCard[^}]*flex:\s*0\s+0\s+auto/s);
@@ -2287,9 +2287,13 @@ test('filter controls remain outside the shared scrolling timeline and expose lo
   assert.match(template, /data-action="clear-filter-draft"/);
   assert.match(template, /data-role="filter-empty"[\s\S]*data-action="clear-applied-filters"/);
   const filterPosition = template.indexOf('data-action="toggle-filter"');
+  const dateGroupPosition = template.indexOf('plan-scheduling__dateInputControl');
+  const dateInputPosition = template.indexOf('data-role="target-date"');
   const weekPosition = template.indexOf('plan-scheduling__weekButton');
-  assert.ok(filterPosition > template.indexOf('data-role="target-date"'));
-  assert.ok(weekPosition > filterPosition);
+  assert.ok(filterPosition < dateGroupPosition);
+  assert.ok(dateGroupPosition < weekPosition);
+  assert.ok(dateInputPosition > dateGroupPosition);
+  assert.match(template, /<label for="plan-scheduling-date">表示日<\/label>\s*<input id="plan-scheduling-date"[^>]*data-role="target-date">/);
   assert.match(template, /controlButton--secondary plan-scheduling__filterButton/);
   assert.match(template, /controlButton--primary plan-scheduling__weekButton/);
   assert.match(template, /controlButton--secondary plan-scheduling__filterClear/);
@@ -2301,6 +2305,8 @@ test('filter controls remain outside the shared scrolling timeline and expose lo
   assert.match(scss, /\.plan-scheduling__controlButton:hover|\.plan-scheduling__controlButton--primary:hover/s);
   assert.match(scss, /\.plan-scheduling__controlButton:active\s*\{[^}]*transform:\s*translateY\(1px\)/s);
   assert.match(scss, /\.plan-scheduling__controlButton:disabled\s*\{[^}]*cursor:\s*not-allowed/s);
+  assert.match(scss, /\.plan-scheduling__moveButton\s*\{\s*flex:\s*0\s+0\s+auto;\s*min-width:\s*84px;\s*\}/s);
+  assert.doesNotMatch(scss, /\.plan-scheduling__moveButton:(?:hover|focus-visible|active|disabled)/);
   assert.match(scss, /\.plan-scheduling__filterPopover footer\s*\{[^}]*border-top:\s*1px solid/s);
   assert.doesNotMatch(scss, /(^|\n)\.ui-btn\b/m);
 });
