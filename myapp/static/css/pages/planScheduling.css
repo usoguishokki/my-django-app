@@ -37,6 +37,45 @@
   flex-wrap: wrap;
   gap: 8px; }
 
+.plan-scheduling__viewModeControl {
+  display: inline-flex;
+  margin-right: 4px;
+  padding: 2px;
+  border: 1px solid #b8c8d4;
+  border-radius: 9px;
+  background: #edf3f7; }
+
+.plan-scheduling__viewModeButton {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  color: #536a7b;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color .14s ease, background .14s ease, box-shadow .14s ease; }
+
+.plan-scheduling__viewModeButton:hover {
+  color: #29475e;
+  background: rgba(255, 255, 255, 0.65); }
+
+.plan-scheduling__viewModeButton.is-active {
+  color: var(--ps-blue);
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(24, 48, 68, 0.16), inset 0 -2px var(--ps-blue); }
+
+.plan-scheduling__viewModeButton:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 3px solid rgba(31, 95, 153, 0.32);
+  outline-offset: 2px; }
+
+.plan-scheduling__viewModeButton:active {
+  transform: translateY(1px); }
+
 .plan-scheduling__dateInputControl {
   display: inline-flex;
   align-items: center;
@@ -438,6 +477,9 @@
   height: 100%;
   min-height: 0; }
 
+.plan-scheduling__planningCanvas.is-maintenance-week-view {
+  --plan-date-track: 260px; }
+
 .plan-scheduling__chart,
 .plan-scheduling__matrix,
 .plan-scheduling__drawer {
@@ -516,6 +558,9 @@
   color: #536a7b;
   background: #f9fbfc;
   font-size: 12px; }
+
+.plan-scheduling__maintenanceWeek[hidden] {
+  display: none; }
 
 .plan-scheduling__maintenanceWeekCell {
   min-width: 0;
@@ -622,6 +667,15 @@
 
 .plan-scheduling__slot {
   cursor: pointer; }
+
+.plan-scheduling__weeklySlot {
+  cursor: default; }
+
+.plan-scheduling__weeklySlot > strong {
+  grid-column: 2; }
+
+.plan-scheduling__weeklySlot.is-holiday > strong {
+  grid-column: 1 / -1; }
 
 .plan-scheduling__planCard {
   position: relative;
@@ -1223,6 +1277,33 @@
     transition: none; }
   .plan-scheduling__skeletonMatrix i {
     animation: none; } }
+
+.plan-scheduling__maintenanceWeekColumn > header {
+  gap: 10px; }
+
+.plan-scheduling__weekDrilldown {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border: 1px solid #b8c8d4;
+  border-radius: 6px;
+  color: var(--ps-blue);
+  background: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .12s ease, border-color .12s ease, box-shadow .12s ease; }
+
+.plan-scheduling__weekDrilldown:hover {
+  border-color: #7f9bb0;
+  background: #edf6fc; }
+
+.plan-scheduling__weekDrilldown:focus-visible {
+  outline: 3px solid rgba(31, 95, 153, 0.32);
+  outline-offset: 2px; }
+
+.plan-scheduling__weekDrilldown:active {
+  transform: translateY(1px); }
 
 .plan-scheduling__dateColumn.is-pinned-move-source {
   border-color: #a9c5db;

@@ -43,6 +43,17 @@ async function importController() {
     "const formatMinutes = (value) => Number.isInteger(value) ? `${value}分` : '集計不可';",
   );
   const projectionUrl = `data:text/javascript;base64,${Buffer.from(projectionSource).toString('base64')}`;
+  const maintenanceWeekSource = readFileSync(
+    new URL('../domain/PlanSchedulingMaintenanceWeekProjection.js', import.meta.url),
+    'utf8',
+  ).replace(
+    "import { formatMinutes } from './PlanSchedulingPreviewPolicy.js';",
+    "const formatMinutes = (value) => Number.isInteger(value) ? `${value}分` : '集計不可';",
+  ).replace(
+    "'./PlanSchedulingFilterProjection.js'",
+    `'${projectionUrl}'`,
+  );
+  const maintenanceWeekUrl = `data:text/javascript;base64,${Buffer.from(maintenanceWeekSource).toString('base64')}`;
   const source = readFileSync(
     new URL('../application/PlanSchedulingController.js', import.meta.url),
     'utf8',
@@ -59,6 +70,9 @@ async function importController() {
   ).replace(
     "'../domain/PlanSchedulingFilterProjection.js'",
     `'${projectionUrl}'`,
+  ).replace(
+    "'../domain/PlanSchedulingMaintenanceWeekProjection.js'",
+    `'${maintenanceWeekUrl}'`,
   );
   const dataUrl = `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
   return import(dataUrl);
@@ -72,6 +86,30 @@ async function importFilterProjection() {
   ).replace(
     "import { formatMinutes } from './PlanSchedulingPreviewPolicy.js';",
     "const formatMinutes = (value) => Number.isInteger(value) ? `${value}分` : '集計不可';",
+  );
+  const dataUrl = `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
+  return import(dataUrl);
+}
+
+
+async function importMaintenanceWeekProjection() {
+  const filterSource = readFileSync(
+    new URL('../domain/PlanSchedulingFilterProjection.js', import.meta.url),
+    'utf8',
+  ).replace(
+    "import { formatMinutes } from './PlanSchedulingPreviewPolicy.js';",
+    "const formatMinutes = (value) => Number.isInteger(value) ? `${value}分` : '集計不可';",
+  );
+  const filterUrl = `data:text/javascript;base64,${Buffer.from(filterSource).toString('base64')}`;
+  const source = readFileSync(
+    new URL('../domain/PlanSchedulingMaintenanceWeekProjection.js', import.meta.url),
+    'utf8',
+  ).replace(
+    "import { formatMinutes } from './PlanSchedulingPreviewPolicy.js';",
+    "const formatMinutes = (value) => Number.isInteger(value) ? `${value}分` : '集計不可';",
+  ).replace(
+    "'./PlanSchedulingFilterProjection.js'",
+    `'${filterUrl}'`,
   );
   const dataUrl = `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
   return import(dataUrl);
@@ -2161,6 +2199,54 @@ function filterFixture() {
 }
 
 
+function maintenanceWeekFixture() {
+  const teams = ['A班', 'B班', 'C班'].map((name, index) => ({ id: index + 1, name }));
+  const shifts = ['1直', '2直', '3直', '休日'];
+  const makeDay = (date, weekdayLabel, maintenanceWeekLabel, values) => ({
+    date,
+    label: weekdayLabel,
+    maintenanceWeekLabel,
+    slots: values.map(([shiftIndex, teamIndex, minutes]) => ({
+      key: `${date}:${shiftIndex + 1}:${teamIndex + 1}`,
+      date,
+      shift: { id: shiftIndex + 1, name: shifts[shiftIndex] },
+      team: teams[teamIndex],
+      workloadMinutes: minutes,
+      workloadLabel: `${minutes}分`,
+      hasInvalidEffort: false,
+      planIds: [],
+    })),
+  });
+  const timelineDates = [
+    makeDay('2026-09-21', '9/21（月）', '9月4週目', [
+      [0, 0, 10], [0, 1, 20], [3, 0, 5], [3, 1, 7],
+    ]),
+    makeDay('2026-09-22', '9/22（火）', '9月4週目', [
+      [1, 0, 30], [2, 2, 40], [3, 2, 11],
+    ]),
+    makeDay('2026-09-28', '9/28（月）', '10月1週目', [[0, 0, 50]]),
+    makeDay('2027-09-20', '9/20（月）', '9月4週目', [[0, 0, 60]]),
+  ];
+  return {
+    week: { label: '9月4週目' },
+    dates: timelineDates.slice(0, 2),
+    timelineDates,
+    plans: [],
+    dataQuality: { hasErrors: false, issueCount: 0 },
+    workloadChart: {
+      shiftNames: shifts,
+      teams,
+      dates: timelineDates.map((day) => ({
+        date: day.date,
+        label: day.label,
+        maintenanceWeekLabel: day.maintenanceWeekLabel,
+        teamWorkloads: [],
+      })),
+    },
+  };
+}
+
+
 test('filter projection applies category OR and cross-category AND without mutating timeline state', async () => {
   const { projectPlanSchedulingState } = await importFilterProjection();
   const source = filterFixture();
@@ -2425,4 +2511,289 @@ test('week navigation targets the first filtered date in the requested week and 
     dates: [{ date: '2026-09-26' }],
   }), false);
   assert.equal(messages.at(-1), 'この週には条件に一致する日付がありません');
+});
+
+
+test('maintenance-week projection uses stable contiguous calendar identity and canonical ordering', async () => {
+  const {
+    groupCanonicalMaintenanceWeeks,
+    maintenanceWeekForDate,
+    projectMaintenanceWeeks,
+  } = await importMaintenanceWeekProjection();
+  const source = maintenanceWeekFixture();
+  const snapshot = structuredClone(source);
+  const canonical = groupCanonicalMaintenanceWeeks(source.timelineDates);
+
+  assert.deepEqual(canonical.map((week) => week.key), [
+    '2026-09-21', '2026-09-28', '2027-09-20',
+  ]);
+  assert.equal(canonical[0].label, canonical[2].label);
+  assert.notEqual(canonical[0].key, canonical[2].key);
+  assert.equal(maintenanceWeekForDate(canonical, '2026-09-22').key, '2026-09-21');
+
+  const projected = projectMaintenanceWeeks(source);
+  assert.equal(projected.viewMode, 'maintenanceWeek');
+  assert.deepEqual(
+    projected.timelineDates.map((week) => week.key),
+    projected.workloadChart.dates.map((week) => week.date),
+  );
+  assert.deepEqual(source, snapshot);
+});
+
+
+test('weekly Chart and Matrix share filters while Holiday remains one teamless Matrix aggregate', async () => {
+  const { projectMaintenanceWeeks } = await importMaintenanceWeekProjection();
+  const source = maintenanceWeekFixture();
+  const projected = projectMaintenanceWeeks(source, { teams: ['A班'] });
+  const firstWeek = projected.timelineDates[0];
+  const chartDay = projected.workloadChart.dates[0];
+  const holidaySlots = firstWeek.slots.filter((slot) => slot.shiftName === '休日');
+  const ordinarySlots = firstWeek.slots.filter((slot) => slot.shiftName !== '休日');
+
+  assert.deepEqual(projected.workloadChart.teams.map((team) => team.name), ['A班']);
+  assert.equal(chartDay.teamWorkloads[0].workloadMinutes, 45);
+  assert.equal(chartDay.totalWorkloadMinutes, 45);
+  assert.ok(ordinarySlots.every((slot) => slot.teamName === 'A班'));
+  assert.equal(holidaySlots.length, 1);
+  assert.equal(holidaySlots[0].teamName, '');
+  assert.equal(holidaySlots[0].workloadMinutes, 23);
+
+  const holidayOnly = projectMaintenanceWeeks(source, {
+    shifts: ['休日'], teams: ['A班'],
+  });
+  assert.equal(holidayOnly.timelineDates[0].slots.length, 1);
+  assert.equal(holidayOnly.timelineDates[0].slots[0].workloadMinutes, 23);
+  assert.equal(holidayOnly.workloadChart.dates[0].teamWorkloads[0].workloadMinutes, 5);
+});
+
+
+test('weekly projection applies weekday, shift, and team filters before aggregation', async () => {
+  const { projectMaintenanceWeeks } = await importMaintenanceWeekProjection();
+  const source = maintenanceWeekFixture();
+  const projected = projectMaintenanceWeeks(source, {
+    weekdays: ['火'], shifts: ['2直'], teams: ['A班', 'B班'],
+  });
+
+  assert.deepEqual(projected.timelineDates.map((week) => week.key), ['2026-09-21']);
+  assert.deepEqual(projected.timelineDates[0].visibleDates, ['2026-09-22']);
+  assert.deepEqual(
+    projected.timelineDates[0].slots.map((slot) => [slot.shiftName, slot.teamName]),
+    [['2直', 'A班'], ['2直', 'B班']],
+  );
+  assert.equal(projected.workloadChart.dates[0].totalWorkloadMinutes, 30);
+});
+
+
+test('weekly renderer provides aggregate tooltip identity and accessible Day drilldown only', async () => {
+  const { projectMaintenanceWeeks } = await importMaintenanceWeekProjection();
+  const { PlanSchedulingRenderer, buildChartPresentation } = await importRenderer();
+  const projected = projectMaintenanceWeeks(maintenanceWeekFixture(), { teams: ['A班'] });
+  const renderer = new PlanSchedulingRenderer({ querySelector: () => null });
+  const week = projected.timelineDates[0];
+  const matrixHtml = renderer.maintenanceWeekColumnTemplate(week);
+  const chartHtml = renderer.workloadChartTemplate(projected.workloadChart);
+
+  assert.match(matrixHtml, /data-action="drilldown-week"/);
+  assert.match(matrixHtml, /aria-label="9月4週目を日表示で開く"/);
+  assert.doesNotMatch(matrixHtml, /data-slot-key=/);
+  assert.equal((matrixHtml.match(/<h4>休日<\/h4>/g) || []).length, 1);
+  assert.match(chartHtml, /9月4週目の工数詳細/);
+  assert.match(chartHtml, /plan-scheduling__tooltipDate">9月4週目/);
+  assert.equal(
+    buildChartPresentation(projected.workloadChart).maxTotal,
+    Math.max(...projected.workloadChart.dates.map((day) => day.totalWorkloadMinutes)),
+  );
+});
+
+
+test('weekly render uses one shared week sequence and omits the redundant maintenance row', async () => {
+  const { projectMaintenanceWeeks } = await importMaintenanceWeekProjection();
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const projected = projectMaintenanceWeeks(maintenanceWeekFixture());
+  const feedback = { textContent: '', classList: { remove: () => {} } };
+  const dateGrid = { innerHTML: '' };
+  const chartLegend = { innerHTML: '' };
+  const maintenanceWeek = { innerHTML: 'old', hidden: false };
+  const workloadChart = { innerHTML: '' };
+  const planningCanvasClasses = [];
+  const elements = new Map([
+    ['[data-role="feedback"]', feedback],
+    ['[data-role="date-grid"]', dateGrid],
+    ['[data-role="chart-legend"]', chartLegend],
+    ['[data-role="maintenance-week"]', maintenanceWeek],
+    ['[data-role="workload-chart"]', workloadChart],
+    ['[data-role="workspace"]', { hidden: true, setAttribute: () => {} }],
+    ['[data-role="loading-skeleton"]', { hidden: false }],
+    ['[data-role="planning-layout"]', { hidden: true }],
+    ['[data-role="planning-canvas"]', {
+      classList: { toggle: (...args) => planningCanvasClasses.push(args) },
+    }],
+  ]);
+  const renderer = new PlanSchedulingRenderer({
+    querySelector: (selector) => elements.get(selector) || null,
+    querySelectorAll: () => [],
+  });
+  renderer.renderSelection = (state, selection) => {
+    workloadChart.innerHTML = renderer.workloadChartTemplate(state.workloadChart, selection);
+  };
+
+  renderer.renderState(projected, {});
+  const renderedDates = (html, selector) => [...html.matchAll(
+    new RegExp(`${selector}[^>]*data-plan-date="([^"]+)"`, 'g'),
+  )].map((match) => match[1]);
+  assert.deepEqual(
+    renderedDates(workloadChart.innerHTML, 'plan-scheduling__chartColumn'),
+    projected.timelineDates.map((week) => week.key),
+  );
+  assert.deepEqual(
+    renderedDates(dateGrid.innerHTML, 'plan-scheduling__maintenanceWeekColumn'),
+    projected.timelineDates.map((week) => week.key),
+  );
+  assert.equal(maintenanceWeek.hidden, true);
+  assert.equal(maintenanceWeek.innerHTML, '');
+  assert.deepEqual(planningCanvasClasses.at(-1), ['is-maintenance-week-view', true]);
+});
+
+
+test('display-mode control is accessible, precedes navigation, and updates the navigation label', async () => {
+  const template = readFileSync(
+    new URL('../../../../templates/planScheduling/plan_scheduling.html', import.meta.url),
+    'utf8',
+  );
+  const scss = readFileSync(
+    new URL('../../../../static/css/pages/planScheduling.scss', import.meta.url),
+    'utf8',
+  );
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const toggles = [];
+  const pressed = [];
+  const buttons = ['day', 'maintenanceWeek'].map((viewMode) => ({
+    dataset: { viewMode },
+    classList: { toggle: (name, value) => toggles.push([viewMode, name, value]) },
+    setAttribute: (name, value) => pressed.push([viewMode, name, value]),
+  }));
+  const weekButton = { textContent: '' };
+  const renderer = new PlanSchedulingRenderer({
+    querySelector: (selector) => selector === '.plan-scheduling__weekButton' ? weekButton : null,
+    querySelectorAll: (selector) => selector === '[data-action="set-view-mode"]' ? buttons : [],
+  });
+
+  renderer.renderViewMode('maintenanceWeek');
+  assert.equal(weekButton.textContent, '保全週を表示');
+  assert.deepEqual(toggles.filter((item) => item[1] === 'is-active'), [
+    ['day', 'is-active', false], ['maintenanceWeek', 'is-active', true],
+  ]);
+  assert.deepEqual(pressed.map((item) => item[2]), ['false', 'true']);
+  renderer.renderViewMode('day');
+  assert.equal(weekButton.textContent, '週を表示');
+
+  const modePosition = template.indexOf('plan-scheduling__viewModeControl');
+  const datePosition = template.indexOf('plan-scheduling__dateInputControl');
+  assert.ok(modePosition >= 0 && modePosition < datePosition);
+  assert.equal((template.match(/data-action="set-view-mode"/g) || []).length, 2);
+  assert.match(template, /data-view-mode="day" aria-pressed="true"/);
+  assert.match(template, /data-view-mode="maintenanceWeek" aria-pressed="false"/);
+  assert.match(scss, /\.plan-scheduling__planningCanvas\.is-maintenance-week-view\s*\{[^}]*--plan-date-track:\s*260px/s);
+  assert.match(scss, /\.plan-scheduling__maintenanceWeek\[hidden\]\s*\{\s*display:\s*none/s);
+});
+
+
+test('controller switches modes locally, closes Day selection, preserves filters, and restores logical anchors', async () => {
+  const { PlanSchedulingController } = await importController();
+  const source = maintenanceWeekFixture();
+  const restored = [];
+  let rendered = null;
+  let anchorDate = '2026-09-22';
+  const renderer = {
+    captureTimelineAnchor: (preferred) => ({
+      date: preferred || anchorDate,
+      viewportPosition: 120,
+    }),
+    restoreTimelineAnchorAfterRender: (anchor) => restored.push(anchor),
+    renderState: (state) => { rendered = state; },
+    renderFilterState: () => {},
+    renderFilterEmptyState: () => {},
+  };
+  const controller = new PlanSchedulingController({
+    root: {}, apiClient: {}, renderer,
+    buildPreview: () => null, selectSlotPlans: () => [],
+  });
+  controller.state = source;
+  controller.activeFilter = { weekdays: ['月', '火'], shifts: [], teams: ['A班'] };
+  controller.interaction = {
+    ...controller.interaction,
+    selectedSlotKey: source.dates[1].slots[0].key,
+    selectedSlotContext: { slot: source.dates[1].slots[0], slotPlans: [] },
+  };
+  controller.refreshViewState();
+
+  assert.equal(controller.viewMode, 'day');
+  assert.equal(controller.changeViewMode('maintenanceWeek'), true);
+  assert.equal(controller.viewMode, 'maintenanceWeek');
+  assert.equal(controller.selection().selectedSlot, undefined);
+  assert.equal(rendered.viewMode, 'maintenanceWeek');
+  assert.equal(restored.at(-1).date, '2026-09-21');
+  assert.deepEqual(controller.activeFilter, {
+    weekdays: ['月', '火'], shifts: [], teams: ['A班'],
+  });
+
+  anchorDate = '2026-09-21';
+  assert.equal(controller.changeViewMode('day'), true);
+  assert.equal(controller.viewMode, 'day');
+  assert.equal(restored.at(-1).date, '2026-09-21');
+});
+
+
+test('Move blocks mode changes and maintenance-week navigation uses stable week keys', async () => {
+  const { PlanSchedulingController } = await importController();
+  const messages = [];
+  const scrolled = [];
+  const renderer = {
+    renderInteractionError: (message) => messages.push(message),
+    scrollTimelineToDate: (date) => { scrolled.push(date); return true; },
+  };
+  const controller = new PlanSchedulingController({
+    root: {}, apiClient: {}, renderer,
+    buildPreview: () => null, selectSlotPlans: () => [],
+  });
+  controller.state = maintenanceWeekFixture();
+  controller.refreshViewState();
+  controller.interaction = { ...controller.interaction, mode: 'moving' };
+
+  assert.equal(controller.changeViewMode('maintenanceWeek'), false);
+  assert.equal(controller.viewMode, 'day');
+  assert.equal(messages.at(-1), '移動中は表示を切り替えられません');
+
+  controller.interaction = { ...controller.interaction, mode: 'normal' };
+  controller.viewMode = 'maintenanceWeek';
+  controller.refreshViewState();
+  assert.equal(controller.navigateToMaintenanceWeek('2026-09-22'), true);
+  assert.deepEqual(scrolled, ['2026-09-21']);
+
+  controller.activeFilter = { weekdays: ['火'], shifts: [], teams: [] };
+  controller.refreshViewState();
+  assert.equal(controller.navigateToMaintenanceWeek('2026-09-28'), false);
+  assert.equal(messages.at(-1), 'この保全週には条件に一致する日付がありません');
+});
+
+
+test('weekly drilldown preserves filters and reuses the existing Day load path', async () => {
+  const { PlanSchedulingController } = await importController();
+  const controller = new PlanSchedulingController({
+    root: {}, apiClient: {}, renderer: {},
+    buildPreview: () => null, selectSlotPlans: () => [],
+  });
+  controller.state = maintenanceWeekFixture();
+  controller.activeFilter = { weekdays: ['火'], shifts: ['2直'], teams: ['A班'] };
+  controller.viewMode = 'maintenanceWeek';
+  controller.refreshViewState();
+  let loadedDate = '';
+  controller.load = (date) => { loadedDate = date; return Promise.resolve(); };
+
+  await controller.drillDownToDay('2026-09-21');
+  assert.equal(controller.viewMode, 'day');
+  assert.equal(loadedDate, '2026-09-22');
+  assert.deepEqual(controller.activeFilter, {
+    weekdays: ['火'], shifts: ['2直'], teams: ['A班'],
+  });
 });

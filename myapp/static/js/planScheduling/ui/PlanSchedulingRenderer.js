@@ -353,19 +353,28 @@ export class PlanSchedulingRenderer {
     this.feedback.textContent = state.dataQuality.hasErrors
       ? `データ確認事項が${state.dataQuality.issueCount}件あります。`
       : '';
-    const displayDates = this.matrixDates(state, selection);
+    const isMaintenanceWeek = state.viewMode === 'maintenanceWeek';
+    this.planningCanvas?.classList.toggle('is-maintenance-week-view', isMaintenanceWeek);
+    const displayDates = isMaintenanceWeek
+      ? state.timelineDates
+      : this.matrixDates(state, selection);
     this.dateGrid.innerHTML = displayDates
-      .map((day) => this.dateTemplate(day)).join('');
+      .map((day) => isMaintenanceWeek
+        ? this.maintenanceWeekColumnTemplate(day)
+        : this.dateTemplate(day)).join('');
     if (this.chartLegend) {
       this.chartLegend.innerHTML = this.chartLegendTemplate(state.workloadChart);
     }
     if (this.maintenanceWeek) {
-      const chartDates = this.chartWithPinnedMoveSource(
-        state.workloadChart,
-        selection,
-      ).dates;
-      this.maintenanceWeek.innerHTML = this.maintenanceWeekTemplate(null, chartDates);
+      this.maintenanceWeek.hidden = isMaintenanceWeek;
+      this.maintenanceWeek.innerHTML = isMaintenanceWeek
+        ? ''
+        : this.maintenanceWeekTemplate(
+          null,
+          this.chartWithPinnedMoveSource(state.workloadChart, selection).dates,
+        );
     }
+    this.renderViewMode(state.viewMode || 'day');
     this.workspace.setAttribute?.('aria-busy', 'false');
     if (this.loadingSkeleton) this.loadingSkeleton.hidden = true;
     if (this.planningLayout) this.planningLayout.hidden = false;
@@ -665,6 +674,9 @@ export class PlanSchedulingRenderer {
         const delta = item.change.after - item.change.before;
         return `${item.teamName} 移動プレビュー後 ${formatMinutes(item.change.after)}、${formatMinutes(Math.abs(delta))}${delta < 0 ? '減少' : '増加'}`;
       });
+      const tooltipIdentityLabel = day.isMaintenanceWeek
+        ? day.label
+        : tooltipDateLabel(day.date, day.label);
       const ariaLabel = [
         `${day.label}の工数詳細`,
         ...affectedDescriptions,
@@ -672,7 +684,7 @@ export class PlanSchedulingRenderer {
       const moveSourceLabel = day.isPinnedMoveSource
         ? '<b class="plan-scheduling__moveSourceLabel">移動元</b>'
         : '';
-      return `<div class="plan-scheduling__chartColumn${day.isPinnedMoveSource ? ' is-pinned-move-source' : ''}" data-plan-date="${escapeHtml(day.date)}"><strong>${escapeHtml(totalLabel)}${moveSourceLabel}</strong><button type="button" class="plan-scheduling__chartBar" aria-label="${escapeHtml(ariaLabel)}" aria-describedby="${tooltipId}">${segments}</button><div class="plan-scheduling__chartTooltip" id="${tooltipId}" role="tooltip"><strong class="plan-scheduling__tooltipDate">${escapeHtml(tooltipDateLabel(day.date, day.label))}</strong>${rows}<div class="plan-scheduling__tooltipTotal"><span>合計</span><strong>${escapeHtml(totalLabel)}</strong></div></div></div>`;
+      return `<div class="plan-scheduling__chartColumn${day.isPinnedMoveSource ? ' is-pinned-move-source' : ''}" data-plan-date="${escapeHtml(day.date)}"><strong>${escapeHtml(totalLabel)}${moveSourceLabel}</strong><button type="button" class="plan-scheduling__chartBar" aria-label="${escapeHtml(ariaLabel)}" aria-describedby="${tooltipId}">${segments}</button><div class="plan-scheduling__chartTooltip" id="${tooltipId}" role="tooltip"><strong class="plan-scheduling__tooltipDate">${escapeHtml(tooltipIdentityLabel)}</strong>${rows}<div class="plan-scheduling__tooltipTotal"><span>合計</span><strong>${escapeHtml(totalLabel)}</strong></div></div></div>`;
     }).join('');
     return `<div class="plan-scheduling__chartPlot${projection ? ' has-chart-preview' : ''}"><div class="plan-scheduling__chartColumns">${bars}</div></div>`;
   }
@@ -708,6 +720,19 @@ export class PlanSchedulingRenderer {
     if (this.filterBadge) {
       this.filterBadge.textContent = String(count);
       this.filterBadge.hidden = count === 0;
+    }
+  }
+
+  renderViewMode(viewMode) {
+    this.viewModeButtons.forEach((button) => {
+      const isActive = button.dataset.viewMode === viewMode;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+    if (this.weekButton) {
+      this.weekButton.textContent = viewMode === 'maintenanceWeek'
+        ? '保全週を表示'
+        : '週を表示';
     }
   }
 
@@ -757,6 +782,30 @@ export class PlanSchedulingRenderer {
       `<span class="plan-scheduling__maintenanceWeekCell${day.isPinnedMoveSource ? ' is-pinned-move-source' : ''}" data-plan-date="${escapeHtml(day.date)}">${escapeHtml(day.maintenanceWeekLabel || week?.label || '')}</span>`
     ).join('');
     return cells;
+  }
+
+  maintenanceWeekColumnTemplate(week) {
+    const grouped = week.slots.reduce((map, slot) => {
+      map.set(slot.shiftName, [...(map.get(slot.shiftName) || []), slot]);
+      return map;
+    }, new Map());
+    const shifts = [...grouped.entries()].map(([shiftName, slots]) => `
+      <section class="plan-scheduling__shiftGroup">
+        <h4>${escapeHtml(shiftName)}</h4>
+        <div class="plan-scheduling__slotList">${slots.map((slot) => {
+          const issue = slot.hasInvalidEffort
+            ? '<small>工数データに不備があります。</small>'
+            : '';
+          const team = slot.isHolidayAggregate
+            ? ''
+            : `<span>${escapeHtml(slot.teamName)}</span>`;
+          return `<div class="plan-scheduling__slot plan-scheduling__weeklySlot${slot.isHolidayAggregate ? ' is-holiday' : ''}${slot.hasInvalidEffort ? ' is-invalid' : ''}">${team}<strong>${escapeHtml(slot.workloadLabel)}</strong>${issue}</div>`;
+        }).join('')}</div>
+      </section>`).join('');
+    return `<article class="plan-scheduling__dateColumn plan-scheduling__maintenanceWeekColumn" data-plan-date="${escapeHtml(week.key)}">
+      <header><h3>${escapeHtml(week.label)}</h3><button type="button" class="plan-scheduling__weekDrilldown" data-action="drilldown-week" data-week-key="${escapeHtml(week.key)}" aria-label="${escapeHtml(week.label)}を日表示で開く">日表示へ</button></header>
+      ${shifts || '<p class="plan-scheduling__empty">勤務スロットなし</p>'}
+    </article>`;
   }
 
   matrixDates(state, selection = {}) {
@@ -866,6 +915,7 @@ export class PlanSchedulingRenderer {
   get drawer() { return this.root.querySelector('[data-role="slot-drawer"]'); }
   get planningLayout() { return this.root.querySelector('[data-role="planning-layout"]'); }
   get planningMain() { return this.root.querySelector('.plan-scheduling__planningMain'); }
+  get planningCanvas() { return this.root.querySelector('[data-role="planning-canvas"]'); }
   get matrix() { return this.root.querySelector('.plan-scheduling__matrix'); }
   get maintenanceWeek() { return this.root.querySelector('[data-role="maintenance-week"]'); }
   get chartLegend() { return this.root.querySelector('[data-role="chart-legend"]'); }
@@ -876,4 +926,6 @@ export class PlanSchedulingRenderer {
   get filterPopover() { return this.root.querySelector('[data-role="filter-popover"]'); }
   get filterEmptyState() { return this.root.querySelector('[data-role="filter-empty"]'); }
   get filterInputs() { return [...(this.root.querySelectorAll?.('[data-filter-category]') || [])]; }
+  get viewModeButtons() { return [...(this.root.querySelectorAll?.('[data-action="set-view-mode"]') || [])]; }
+  get weekButton() { return this.root.querySelector('.plan-scheduling__weekButton'); }
 }

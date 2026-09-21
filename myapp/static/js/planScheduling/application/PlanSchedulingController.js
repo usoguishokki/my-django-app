@@ -31,6 +31,13 @@ import {
   planSchedulingFilterCount,
   projectPlanSchedulingState,
 } from '../domain/PlanSchedulingFilterProjection.js';
+import {
+  PLAN_SCHEDULING_VIEW_MODE,
+  groupCanonicalMaintenanceWeeks,
+  maintenanceWeekByKey,
+  maintenanceWeekForDate,
+  projectMaintenanceWeeks,
+} from '../domain/PlanSchedulingMaintenanceWeekProjection.js';
 
 export class PlanSchedulingController {
   constructor({ root, apiClient, renderer, buildPreview, selectSlotPlans }) {
@@ -44,6 +51,7 @@ export class PlanSchedulingController {
     this.timelineDates = null;
     this.viewState = null;
     this.activeFilter = emptyPlanSchedulingFilter();
+    this.viewMode = PLAN_SCHEDULING_VIEW_MODE.DAY;
     this.slotSelectionIntent = 0;
     this.interaction = initialInteractionState();
   }
@@ -108,10 +116,23 @@ export class PlanSchedulingController {
   handleWeekSubmit(event) {
     event.preventDefault();
     const value = this.root.querySelector('[data-role="target-date"]')?.value || '';
+    if (this.viewMode === PLAN_SCHEDULING_VIEW_MODE.MAINTENANCE_WEEK) {
+      return this.navigateToMaintenanceWeek(value);
+    }
     return this.load(value);
   }
 
   handleClick(event) {
+    const viewModeButton = event.target.closest('[data-action="set-view-mode"]');
+    if (viewModeButton) {
+      return this.changeViewMode(viewModeButton.dataset.viewMode);
+    }
+
+    const drilldownButton = event.target.closest('[data-action="drilldown-week"]');
+    if (drilldownButton) {
+      return this.drillDownToDay(drilldownButton.dataset.weekKey);
+    }
+
     const filterToggle = event.target.closest('[data-action="toggle-filter"]');
     if (filterToggle) {
       if (this.renderer.isFilterOpen?.()) this.renderer.closeFilterPopover?.();
@@ -245,7 +266,12 @@ export class PlanSchedulingController {
   }
 
   refreshViewState() {
-    this.viewState = projectPlanSchedulingState(this.state, this.activeFilter);
+    this.viewState = this.viewMode === PLAN_SCHEDULING_VIEW_MODE.MAINTENANCE_WEEK
+      ? projectMaintenanceWeeks(this.state, this.activeFilter)
+      : {
+        ...projectPlanSchedulingState(this.state, this.activeFilter),
+        viewMode: PLAN_SCHEDULING_VIEW_MODE.DAY,
+      };
     return this.viewState;
   }
 
@@ -282,8 +308,11 @@ export class PlanSchedulingController {
     if (!anchor?.date || this.viewState.timelineDates.some((day) => day.date === anchor.date)) {
       return;
     }
+    const sourceDates = this.viewMode === PLAN_SCHEDULING_VIEW_MODE.MAINTENANCE_WEEK
+      ? groupCanonicalMaintenanceWeeks(this.state.timelineDates)
+      : this.state.timelineDates;
     anchor.date = nextFilteredDate(
-      this.state.timelineDates,
+      sourceDates,
       this.viewState.timelineDates,
       anchor.date,
     );
@@ -312,6 +341,69 @@ export class PlanSchedulingController {
       this.renderer.renderInteractionError?.('この週には条件に一致する日付がありません');
     }
     return false;
+  }
+
+  changeViewMode(nextMode) {
+    if (!this.state) return false;
+    if (!Object.values(PLAN_SCHEDULING_VIEW_MODE).includes(nextMode) || nextMode === this.viewMode) {
+      return false;
+    }
+    if (this.interaction.mode === PlanSchedulingMode.MOVING) {
+      this.renderer.renderInteractionError?.('移動中は表示を切り替えられません');
+      return false;
+    }
+    const anchor = this.renderer.captureTimelineAnchor?.(
+      this.viewMode === PLAN_SCHEDULING_VIEW_MODE.DAY
+        ? this.selection().selectedSlot?.date
+        : undefined,
+    );
+    let targetDate = anchor?.date || '';
+    if (nextMode === PLAN_SCHEDULING_VIEW_MODE.MAINTENANCE_WEEK) {
+      this.slotSelectionIntent += 1;
+      this.interaction = closeDrawer(this.interaction);
+      const projectedWeeks = projectMaintenanceWeeks(this.state, this.activeFilter).timelineDates;
+      targetDate = maintenanceWeekForDate(projectedWeeks, targetDate)?.key ||
+        projectedWeeks[0]?.key || '';
+    } else {
+      const currentWeek = maintenanceWeekByKey(this.viewState?.timelineDates, targetDate);
+      targetDate = currentWeek?.firstVisibleDate || '';
+    }
+    this.viewMode = nextMode;
+    this.refreshViewState();
+    this.renderState();
+    if (targetDate) {
+      this.restoreFilterAnchor({
+        ...anchor,
+        date: targetDate,
+        viewportPosition: anchor?.viewportPosition ?? 0,
+      });
+    }
+    return true;
+  }
+
+  navigateToMaintenanceWeek(targetDate) {
+    if (!this.state) return false;
+    const canonicalWeeks = groupCanonicalMaintenanceWeeks(this.state?.timelineDates || []);
+    const targetWeek = maintenanceWeekForDate(canonicalWeeks, targetDate);
+    const visibleWeek = maintenanceWeekByKey(this.viewState?.timelineDates, targetWeek?.key);
+    if (!visibleWeek) {
+      this.renderer.renderInteractionError?.('この保全週には条件に一致する日付がありません');
+      return false;
+    }
+    return this.renderer.scrollTimelineToDate?.(visibleWeek.key) !== false;
+  }
+
+  drillDownToDay(weekKey) {
+    if (this.interaction.mode === PlanSchedulingMode.MOVING) {
+      this.renderer.renderInteractionError?.('移動中は表示を切り替えられません');
+      return false;
+    }
+    const week = maintenanceWeekByKey(this.viewState?.timelineDates, weekKey);
+    if (!week?.firstVisibleDate) return false;
+    this.viewMode = PLAN_SCHEDULING_VIEW_MODE.DAY;
+    this.interaction = closeDrawer(this.interaction);
+    this.slotSelectionIntent += 1;
+    return this.load(week.firstVisibleDate);
   }
 
   handleDocumentClick(event) {

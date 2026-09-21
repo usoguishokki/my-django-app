@@ -16,6 +16,10 @@
 <main class="plan-scheduling" data-role="plan-scheduling-root">
   <form class="plan-scheduling__dateForm" data-role="week-form">
     <div class="plan-scheduling__dateControls">
+      <div class="plan-scheduling__viewModeControl" role="group" aria-label="表示単位">
+        <button type="button" class="plan-scheduling__viewModeButton is-active" data-action="set-view-mode" data-view-mode="day" aria-pressed="true">日表示</button>
+        <button type="button" class="plan-scheduling__viewModeButton" data-action="set-view-mode" data-view-mode="maintenanceWeek" aria-pressed="false">保全週表示</button>
+      </div>
       <div class="plan-scheduling__dateInputControl">
         <label for="plan-scheduling-date">表示日</label>
         <input id="plan-scheduling-date" type="date" data-role="target-date">
