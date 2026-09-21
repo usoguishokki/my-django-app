@@ -2290,8 +2290,8 @@ test('filter controls remain outside the shared scrolling timeline and expose lo
   const dateGroupPosition = template.indexOf('plan-scheduling__dateInputControl');
   const dateInputPosition = template.indexOf('data-role="target-date"');
   const weekPosition = template.indexOf('plan-scheduling__weekButton');
-  assert.ok(filterPosition < dateGroupPosition);
   assert.ok(dateGroupPosition < weekPosition);
+  assert.ok(weekPosition < filterPosition);
   assert.ok(dateInputPosition > dateGroupPosition);
   assert.match(template, /<label for="plan-scheduling-date">表示日<\/label>\s*<input id="plan-scheduling-date"[^>]*data-role="target-date">/);
   assert.match(template, /controlButton--secondary plan-scheduling__filterButton/);
