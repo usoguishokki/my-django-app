@@ -72,6 +72,9 @@ class SharedLayoutScrollContractTests(TestCase):
         chart_rule = plan_scss.split(
             ".plan-scheduling__chart {", 1
         )[1].split("}", 1)[0]
+        legend_viewport_rule = plan_scss.split(
+            ".plan-scheduling__chartLegendViewport {", 1
+        )[1].split("}", 1)[0]
         matrix_rule = plan_scss.split(
             ".plan-scheduling__matrix { display", 1
         )[1].split("}", 1)[0]
@@ -97,7 +100,12 @@ class SharedLayoutScrollContractTests(TestCase):
             "grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);",
             planning_canvas_rule,
         )
-        self.assertIn("grid-template-rows: auto minmax(0, 1fr) auto;", chart_rule)
+        self.assertIn("grid-template-rows: minmax(0, 1fr) auto;", chart_rule)
+        self.assertIn("position: absolute;", legend_viewport_rule)
+        self.assertIn("right: 11px;", legend_viewport_rule)
+        self.assertIn("width: max-content;", legend_viewport_rule)
+        self.assertIn("pointer-events: none;", legend_viewport_rule)
+        self.assertIn(".plan-scheduling__chartLegendViewport", plan_css)
         self.assertNotIn("overflow-x: auto;", matrix_rule)
         self.assertNotIn(".plan-scheduling__chartTimeline {", plan_scss)
         self.assertIn("grid-auto-columns: var(--plan-date-track);", maintenance_week_rule)

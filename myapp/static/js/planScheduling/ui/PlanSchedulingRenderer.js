@@ -187,8 +187,8 @@ export const deriveSelectedDatePinSide = ({
 }) => {
   const trackEnd = trackStart + trackWidth;
   const viewportEnd = scrollLeft + viewportWidth;
-  if (trackEnd < scrollLeft) return 'left';
-  if (trackStart > viewportEnd) return 'right';
+  if (trackStart <= scrollLeft) return 'left';
+  if (trackEnd >= viewportEnd) return 'right';
   return 'normal';
 };
 

@@ -610,7 +610,11 @@ test('selected date pin side derives from logical track and shared viewport geom
   } = await importRenderer();
   const geometry = { trackStart: 600, trackWidth: 190, viewportWidth: 400 };
   assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 500 }), 'normal');
+  assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 600 }), 'left');
+  assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 600.125 }), 'left');
   assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 800 }), 'left');
+  assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 390 }), 'right');
+  assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 389.875 }), 'right');
   assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 100 }), 'right');
   assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 500 }), 'normal');
   assert.equal(calculateSelectedDatePinOffset({
@@ -788,17 +792,42 @@ test('one shared scroll listener pins the same selected date across all three tr
   assert.ok(tracks.slice(0, 3).every((track) => track.classes.has('is-selected-date')));
   assert.ok(tracks.slice(0, 3).every((track) => !track.classes.has('is-date-pinned-left')));
 
+  viewport.scrollLeft = 600.25;
+  scrollListeners[0].handler({ target: viewport });
+  assert.ok(tracks.slice(0, 3).every((track) => track.classes.has('is-date-pinned-left')));
+  assert.equal(tracks[0].getBoundingClientRect().left, 421);
+
   viewport.scrollLeft = 800;
   scrollListeners[0].handler({ target: viewport });
   assert.ok(tracks.slice(0, 3).every((track) => track.classes.has('is-date-pinned-left')));
   assert.ok(tracks.slice(0, 3).every((track) => track.properties.get('--plan-selected-date-offset') === '200px'));
   assert.equal(tracks[0].getBoundingClientRect().left, 421);
 
+  viewport.scrollLeft = 850.125;
+  scrollListeners[0].handler({ target: viewport });
+  assert.ok(tracks.slice(0, 3).every((track) => track.classes.has('is-date-pinned-left')));
+  assert.equal(tracks[0].getBoundingClientRect().left, 421);
+
+  viewport.scrollLeft = 599.875;
+  scrollListeners[0].handler({ target: viewport });
+  assert.ok(tracks.slice(0, 3).every((track) => !track.classes.has('is-date-pinned-left')));
+  assert.equal(tracks[0].getBoundingClientRect().left, 421.125);
+
+  viewport.scrollLeft = 389.75;
+  scrollListeners[0].handler({ target: viewport });
+  assert.ok(tracks.slice(0, 3).every((track) => track.classes.has('is-date-pinned-right')));
+  assert.equal(tracks[0].getBoundingClientRect().right, 821);
+
   viewport.scrollLeft = 100;
   scrollListeners[0].handler({ target: viewport });
   assert.ok(tracks.slice(0, 3).every((track) => track.classes.has('is-date-pinned-right')));
   assert.ok(tracks.slice(0, 3).every((track) => track.properties.get('--plan-selected-date-offset') === '-290px'));
   assert.equal(tracks[0].getBoundingClientRect().right, 821);
+
+  viewport.scrollLeft = 390.125;
+  scrollListeners[0].handler({ target: viewport });
+  assert.ok(tracks.slice(0, 3).every((track) => !track.classes.has('is-date-pinned-right')));
+  assert.equal(tracks[0].getBoundingClientRect().right, 820.875);
 
   viewport.clientWidth = 200;
   viewport.scrollLeft = 300;
@@ -1070,6 +1099,9 @@ test('drawer is absent before selection and old lower Plan stack is removed', ()
     new URL('../../../../templates/planScheduling/plan_scheduling.html', import.meta.url),
     'utf8',
   );
+  const chartMarkup = template.split(
+    '<section class="plan-scheduling__chart"',
+  )[1].split('</section>', 1)[0];
   assert.match(template, /data-role="slot-drawer"[^>]*hidden/);
   assert.match(template, /data-action="close-drawer"/);
   assert.match(template, /css\/components\/drawer\/_drawer\.css/);
@@ -1081,14 +1113,44 @@ test('drawer is absent before selection and old lower Plan stack is removed', ()
   assert.doesNotMatch(template, /plan-scheduling__plans/);
   assert.doesNotMatch(template, /selected-slot-label|slot-summary/);
   assert.match(template, /data-role="chart-legend"/);
+  assert.equal((template.match(/data-role="chart-legend"/g) || []).length, 1);
   assert.match(template, /data-role="maintenance-week"/);
   assert.doesNotMatch(template, /PLAN SCHEDULING|<h1[^>]*>計画調整<\/h1>|配布待ち計画の工数を、保全週日付直班で確認します。/);
   assert.doesNotMatch(template, /単位：分|計画の「移動」を選ぶと、移動先の工数変化を確認できます。/);
-  assert.match(template, /plan-scheduling__chart[^>]*>[\s\S]*data-role="chart-legend"[\s\S]*data-role="workload-chart"[\s\S]*data-role="maintenance-week"/);
+  assert.doesNotMatch(chartMarkup, /data-role="chart-legend"/);
+  assert.match(template, /plan-scheduling__matrix[\s\S]*?<\/section>\s*<\/div>\s*<\/div>\s*<div class="plan-scheduling__chartLegendViewport" data-role="chart-legend"><\/div>/);
   assert.match(template, /plan-scheduling__planningMain[\s\S]*data-role="planning-canvas"[\s\S]*plan-scheduling__chart[\s\S]*data-role="date-grid"/);
   assert.match(template, /data-role="workload-chart"/);
   assert.match(template, /data-role="maintenance-week"/);
   assert.match(template, /data-role="date-grid"/);
+});
+
+
+test('chart legend is a compact planning-viewport overlay outside the full timeline', () => {
+  const template = readFileSync(
+    new URL('../../../../templates/planScheduling/plan_scheduling.html', import.meta.url),
+    'utf8',
+  );
+  const scss = readFileSync(
+    new URL('../../../../static/css/pages/planScheduling.scss', import.meta.url),
+    'utf8',
+  );
+  const chartMarkup = template.split(
+    '<section class="plan-scheduling__chart"',
+  )[1].split('</section>', 1)[0];
+  const overlayRule = scss.split(
+    '.plan-scheduling__chartLegendViewport {',
+  )[1].split('}', 1)[0];
+
+  assert.equal((template.match(/data-role="chart-legend"/g) || []).length, 1);
+  assert.doesNotMatch(chartMarkup, /data-role="chart-legend"/);
+  assert.match(template, /plan-scheduling__matrix[\s\S]*?<\/section>\s*<\/div>\s*<\/div>\s*<div class="plan-scheduling__chartLegendViewport"/);
+  assert.match(overlayRule, /position:\s*absolute/);
+  assert.match(overlayRule, /right:\s*11px/);
+  assert.match(overlayRule, /width:\s*max-content/);
+  assert.match(overlayRule, /pointer-events:\s*none/);
+  assert.doesNotMatch(overlayRule, /transform|82\d{3}px/);
+  assert.match(scss, /\.plan-scheduling__chartTooltip\s*\{[^}]*z-index:\s*4/s);
 });
 
 
@@ -1916,7 +1978,7 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.doesNotMatch(scss, /#edf1f4/i);
   assert.match(scss, /\.plan-scheduling__chartBar[^}]*background:\s*transparent/s);
   assert.match(scss, /--plan-scheduling-team-color/);
-  assert.match(scss, /\.plan-scheduling__chartLegend\s*\{[^}]*justify-self:\s*end/s);
+  assert.match(scss, /\.plan-scheduling__chartLegendViewport\s*\{[^}]*position:\s*absolute[^}]*z-index:\s*3[^}]*right:\s*11px[^}]*width:\s*max-content[^}]*pointer-events:\s*none/s);
   assert.match(scss, /\.plan-scheduling__chartLegendSwatch\s*\{[^}]*background:\s*var\(--plan-scheduling-team-color\)/s);
   assert.doesNotMatch(scss, /team-other/);
   assert.doesNotMatch(scss, /plan-scheduling__yAxis/);
@@ -1941,9 +2003,9 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__planningMain[^}]*height:\s*100%/s);
   assert.match(scss, /\.plan-scheduling__planningCanvas[^}]*--plan-date-column-width:\s*190px/s);
   assert.match(scss, /\.plan-scheduling__planningCanvas[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/s);
-  assert.match(scss, /\.plan-scheduling__chart\s*\{[^}]*grid-template-rows:\s*auto\s+minmax\(0,\s*1fr\)\s+auto/s);
+  assert.match(scss, /\.plan-scheduling__chart\s*\{[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)\s+auto[^}]*padding-top:\s*30px/s);
   assert.doesNotMatch(scss, /\.plan-scheduling__chartTimeline\s*\{/);
-  assert.match(scss, /\.plan-scheduling__chartLegend\s*\{[^}]*justify-self:\s*end/s);
+  assert.doesNotMatch(scss, /\.plan-scheduling__chartLegend\s*\{[^}]*width:\s*(?:100%|max-content)/s);
   assert.match(scss, /\.plan-scheduling__chartColumn\s*\{[^}]*grid-template-rows:\s*auto\s+minmax\(0,\s*1fr\)/s);
   assert.doesNotMatch(scss, /\.plan-scheduling__chartColumn\s*>\s*span/);
   assert.match(scss, /\.plan-scheduling__maintenanceWeek[^}]*grid-auto-columns:\s*var\(--plan-date-track\)[^}]*grid-auto-flow:\s*column[^}]*gap:\s*var\(--plan-date-column-gap\)/s);
