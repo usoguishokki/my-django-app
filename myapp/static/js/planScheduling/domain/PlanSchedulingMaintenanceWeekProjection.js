@@ -20,6 +20,8 @@ export const PLAN_SCHEDULING_VIEW_MODE = Object.freeze({
 });
 
 const HOLIDAY_SHIFT = '休日';
+const FISCAL_START_LABEL = '4月1週目';
+const FISCAL_END_LABEL = '3月4週目';
 
 const aggregateSlots = (slots) => {
   const hasInvalidEffort = slots.some((slot) => (
@@ -55,6 +57,32 @@ export const groupCanonicalMaintenanceWeeks = (dates = []) => {
     current.dates.push(day);
   });
   return groups;
+};
+
+const fiscalStartYearForDate = (isoDate) => {
+  const [year, month] = String(isoDate || '').split('-').map(Number);
+  if (!year || !month) return null;
+  return month >= 4 ? year : year - 1;
+};
+
+const groupContainsMonth = (group, year, month) => (group.dates || []).some((day) => {
+  const [dateYear, dateMonth] = String(day.date || '').split('-').map(Number);
+  return dateYear === year && dateMonth === month;
+});
+
+export const maintenanceWeeksForFiscalRange = (groups = [], anchorDate) => {
+  const fiscalStartYear = fiscalStartYearForDate(anchorDate);
+  if (!fiscalStartYear) return [];
+  const startIndex = groups.findIndex((group) => (
+    group.label === FISCAL_START_LABEL && groupContainsMonth(group, fiscalStartYear, 4)
+  ));
+  const endIndex = groups.findIndex((group, index) => (
+    index >= startIndex &&
+    group.label === FISCAL_END_LABEL &&
+    groupContainsMonth(group, fiscalStartYear + 1, 3)
+  ));
+  if (startIndex < 0 || endIndex < startIndex) return [];
+  return groups.slice(startIndex, endIndex + 1);
 };
 
 const configuredNames = (values, fallback) => values?.length ? values : fallback;
@@ -108,36 +136,53 @@ const matrixSlotsForWeek = (
 ) => {
   const slots = contributingDates.flatMap((day) => day.slots || []);
   const holidaySlots = holidayDates.flatMap((day) => day.slots || []);
-  return shiftNames.flatMap((shiftName) => {
-    if (shiftName === HOLIDAY_SHIFT) {
-      const allowedHolidaySlots = holidaySlots.filter((slot) => (
-        slot.shift?.name === HOLIDAY_SHIFT && allowedTeams.has(slot.team?.name)
-      ));
-      return [{
-        key: `${group.key}:holiday`,
-        shiftName,
-        teamName: '',
-        isHolidayAggregate: true,
-        ...aggregateSlots(allowedHolidaySlots),
-      }];
+  const shiftOrder = new Map(shiftNames.map((name, index) => [name, index]));
+  const teamOrder = new Map(teamNames.map((name, index) => [name, index]));
+  const actualPairs = new Map();
+  slots.forEach((slot) => {
+    const shiftName = slot.shift?.name;
+    const teamName = slot.team?.name;
+    if (shiftName === HOLIDAY_SHIFT || !shiftOrder.has(shiftName) || !teamOrder.has(teamName)) {
+      return;
     }
-    return teamNames.map((teamName) => ({
+    const key = `${shiftName}\u0000${teamName}`;
+    if (!actualPairs.has(key)) actualPairs.set(key, { shiftName, teamName, slots: [] });
+    actualPairs.get(key).slots.push(slot);
+  });
+  const weeklySlots = [...actualPairs.values()]
+    .sort((left, right) => (
+      shiftOrder.get(left.shiftName) - shiftOrder.get(right.shiftName) ||
+      teamOrder.get(left.teamName) - teamOrder.get(right.teamName)
+    ))
+    .map(({ shiftName, teamName, slots: pairSlots }) => ({
       key: `${group.key}:${shiftName}:${teamName}`,
       shiftName,
       teamName,
       isHolidayAggregate: false,
-      ...aggregateSlots(slots.filter((slot) => (
-        slot.shift?.name === shiftName && slot.team?.name === teamName
-      ))),
+      ...aggregateSlots(pairSlots),
     }));
-  });
+  if (!shiftOrder.has(HOLIDAY_SHIFT)) return weeklySlots;
+  const allowedHolidaySlots = holidaySlots.filter((slot) => (
+    slot.shift?.name === HOLIDAY_SHIFT && allowedTeams.has(slot.team?.name)
+  ));
+  if (!allowedHolidaySlots.length) return weeklySlots;
+  return [...weeklySlots, {
+    key: `${group.key}:holiday`,
+    shiftName: HOLIDAY_SHIFT,
+    teamName: '',
+    isHolidayAggregate: true,
+    ...aggregateSlots(allowedHolidaySlots),
+  }];
 };
 
-export const projectMaintenanceWeeks = (state, activeFilter = {}) => {
+export const projectMaintenanceWeeks = (state, activeFilter = {}, anchorDate = '') => {
   if (!state) return state;
   const filter = normalizePlanSchedulingFilter(activeFilter);
   const canonicalDates = state.timelineDates || state.dates || [];
-  const groups = groupCanonicalMaintenanceWeeks(canonicalDates);
+  const canonicalGroups = groupCanonicalMaintenanceWeeks(canonicalDates);
+  const groups = anchorDate
+    ? maintenanceWeeksForFiscalRange(canonicalGroups, anchorDate)
+    : canonicalGroups;
   const dayProjection = projectPlanSchedulingState(state, filter);
   const projectedDatesByDate = new Map(
     (dayProjection.timelineDates || []).map((day) => [day.date, day]),

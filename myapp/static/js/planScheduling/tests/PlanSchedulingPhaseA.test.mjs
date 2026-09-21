@@ -2219,16 +2219,19 @@ function maintenanceWeekFixture() {
   });
   const timelineDates = [
     makeDay('2026-09-21', '9/21（月）', '9月4週目', [
-      [0, 0, 10], [0, 1, 20], [3, 0, 5], [3, 1, 7],
+      [0, 1, 20], [1, 2, 0], [2, 0, 10],
     ]),
     makeDay('2026-09-22', '9/22（火）', '9月4週目', [
-      [1, 0, 30], [2, 2, 40], [3, 2, 11],
+      [0, 1, 40], [1, 2, 50], [2, 0, 30],
+    ]),
+    makeDay('2026-09-26', '9/26（土）', '9月4週目', [
+      [3, 0, 5], [3, 1, 7], [3, 2, 11],
     ]),
     makeDay('2026-09-28', '9/28（月）', '10月1週目', [[0, 0, 50]]),
     makeDay('2027-09-20', '9/20（月）', '9月4週目', [[0, 0, 60]]),
   ];
   return {
-    week: { label: '9月4週目' },
+    week: { label: '9月4週目', startDate: '2026-09-21' },
     dates: timelineDates.slice(0, 2),
     timelineDates,
     plans: [],
@@ -2236,6 +2239,40 @@ function maintenanceWeekFixture() {
     workloadChart: {
       shiftNames: shifts,
       teams,
+      dates: timelineDates.map((day) => ({
+        date: day.date,
+        label: day.label,
+        maintenanceWeekLabel: day.maintenanceWeekLabel,
+        teamWorkloads: [],
+      })),
+    },
+  };
+}
+
+
+function fiscalMaintenanceWeekFixture() {
+  const source = maintenanceWeekFixture();
+  const emptyDay = (date, maintenanceWeekLabel) => ({
+    date,
+    label: date,
+    maintenanceWeekLabel,
+    slots: [],
+  });
+  const sourceDays = source.timelineDates.filter((day) => day.date.startsWith('2026-'));
+  const timelineDates = [
+    emptyDay('2026-03-23', '3月4週目'),
+    emptyDay('2026-04-01', '4月1週目'),
+    emptyDay('2026-04-28', '4月連休'),
+    ...sourceDays,
+    emptyDay('2027-03-22', '3月4週目'),
+    emptyDay('2027-03-29', '4月1週目'),
+    emptyDay('2027-09-20', '9月4週目'),
+  ];
+  return {
+    ...source,
+    timelineDates,
+    workloadChart: {
+      ...source.workloadChart,
       dates: timelineDates.map((day) => ({
         date: day.date,
         label: day.label,
@@ -2541,6 +2578,67 @@ test('maintenance-week projection uses stable contiguous calendar identity and c
 });
 
 
+test('weekly Matrix emits only actual Calendar-derived pairs and retains actual zero workload', async () => {
+  const { projectMaintenanceWeeks } = await importMaintenanceWeekProjection();
+  const source = maintenanceWeekFixture();
+  const projected = projectMaintenanceWeeks(source);
+  const firstWeek = projected.timelineDates[0];
+
+  assert.deepEqual(
+    firstWeek.slots.map((slot) => [slot.shiftName, slot.teamName, slot.workloadMinutes]),
+    [
+      ['1直', 'B班', 60],
+      ['2直', 'C班', 50],
+      ['3直', 'A班', 40],
+      ['休日', '', 23],
+    ],
+  );
+  assert.ok(!firstWeek.slots.some((slot) => slot.shiftName === '1直' && slot.teamName === 'A班'));
+  assert.ok(!firstWeek.slots.some((slot) => slot.shiftName === '2直' && slot.teamName === 'B班'));
+
+  const mondayOnly = projectMaintenanceWeeks(source, { weekdays: ['月'] });
+  const actualZero = mondayOnly.timelineDates[0].slots.find((slot) => (
+    slot.shiftName === '2直' && slot.teamName === 'C班'
+  ));
+  assert.ok(actualZero);
+  assert.equal(actualZero.workloadMinutes, 0);
+  assert.ok(!mondayOnly.timelineDates[0].slots.some((slot) => (
+    slot.shiftName === '1直' && slot.teamName === 'A班'
+  )));
+});
+
+
+test('maintenance-week fiscal range is inclusive from April week 1 through March week 4', async () => {
+  const {
+    groupCanonicalMaintenanceWeeks,
+    maintenanceWeeksForFiscalRange,
+    projectMaintenanceWeeks,
+  } = await importMaintenanceWeekProjection();
+  const source = fiscalMaintenanceWeekFixture();
+  const canonical = groupCanonicalMaintenanceWeeks(source.timelineDates);
+  const aprilAnchor = maintenanceWeeksForFiscalRange(canonical, '2026-09-21');
+  const marchAnchor = maintenanceWeeksForFiscalRange(canonical, '2027-02-10');
+
+  for (const weeks of [aprilAnchor, marchAnchor]) {
+    assert.equal(weeks[0].label, '4月1週目');
+    assert.equal(weeks[0].key, '2026-04-01');
+    assert.equal(weeks.at(-1).label, '3月4週目');
+    assert.equal(weeks.at(-1).key, '2027-03-22');
+    assert.ok(weeks.some((week) => week.label === '4月連休'));
+    assert.ok(!weeks.some((week) => week.key === '2026-03-23'));
+    assert.ok(!weeks.some((week) => week.key === '2027-03-29'));
+  }
+
+  const projected = projectMaintenanceWeeks(source, {}, '2026-09-21');
+  assert.deepEqual(
+    projected.timelineDates.map((week) => week.key),
+    projected.workloadChart.dates.map((week) => week.date),
+  );
+  assert.equal(projected.timelineDates[0].label, '4月1週目');
+  assert.equal(projected.timelineDates.at(-1).label, '3月4週目');
+});
+
+
 test('weekly Chart and Matrix share filters while Holiday remains one teamless Matrix aggregate', async () => {
   const { projectMaintenanceWeeks } = await importMaintenanceWeekProjection();
   const source = maintenanceWeekFixture();
@@ -2571,16 +2669,16 @@ test('weekly projection applies weekday, shift, and team filters before aggregat
   const { projectMaintenanceWeeks } = await importMaintenanceWeekProjection();
   const source = maintenanceWeekFixture();
   const projected = projectMaintenanceWeeks(source, {
-    weekdays: ['火'], shifts: ['2直'], teams: ['A班', 'B班'],
+    weekdays: ['火'], shifts: ['2直'], teams: ['A班', 'C班'],
   });
 
   assert.deepEqual(projected.timelineDates.map((week) => week.key), ['2026-09-21']);
   assert.deepEqual(projected.timelineDates[0].visibleDates, ['2026-09-22']);
   assert.deepEqual(
     projected.timelineDates[0].slots.map((slot) => [slot.shiftName, slot.teamName]),
-    [['2直', 'A班'], ['2直', 'B班']],
+    [['2直', 'C班']],
   );
-  assert.equal(projected.workloadChart.dates[0].totalWorkloadMinutes, 30);
+  assert.equal(projected.workloadChart.dates[0].totalWorkloadMinutes, 50);
 });
 
 
@@ -2596,7 +2694,8 @@ test('weekly renderer provides aggregate tooltip identity and accessible Day dri
   assert.match(matrixHtml, /data-action="drilldown-week"/);
   assert.match(matrixHtml, /aria-label="9月4週目を日表示で開く"/);
   assert.doesNotMatch(matrixHtml, /data-slot-key=/);
-  assert.equal((matrixHtml.match(/<h4>休日<\/h4>/g) || []).length, 1);
+  assert.equal((matrixHtml.match(/plan-scheduling__weeklyShift">休日/g) || []).length, 1);
+  assert.doesNotMatch(matrixHtml, /plan-scheduling__shiftGroup/);
   assert.match(chartHtml, /9月4週目の工数詳細/);
   assert.match(chartHtml, /plan-scheduling__tooltipDate">9月4週目/);
   assert.equal(
@@ -2700,7 +2799,7 @@ test('display-mode control is accessible, precedes navigation, and updates the n
 
 test('controller switches modes locally, closes Day selection, preserves filters, and restores logical anchors', async () => {
   const { PlanSchedulingController } = await importController();
-  const source = maintenanceWeekFixture();
+  const source = fiscalMaintenanceWeekFixture();
   const restored = [];
   let rendered = null;
   let anchorDate = '2026-09-22';
@@ -2751,12 +2850,15 @@ test('Move blocks mode changes and maintenance-week navigation uses stable week 
   const renderer = {
     renderInteractionError: (message) => messages.push(message),
     scrollTimelineToDate: (date) => { scrolled.push(date); return true; },
+    renderState: () => {},
+    renderFilterState: () => {},
+    renderFilterEmptyState: () => {},
   };
   const controller = new PlanSchedulingController({
     root: {}, apiClient: {}, renderer,
     buildPreview: () => null, selectSlotPlans: () => [],
   });
-  controller.state = maintenanceWeekFixture();
+  controller.state = fiscalMaintenanceWeekFixture();
   controller.refreshViewState();
   controller.interaction = { ...controller.interaction, mode: 'moving' };
 
@@ -2783,7 +2885,7 @@ test('weekly drilldown preserves filters and reuses the existing Day load path',
     root: {}, apiClient: {}, renderer: {},
     buildPreview: () => null, selectSlotPlans: () => [],
   });
-  controller.state = maintenanceWeekFixture();
+  controller.state = fiscalMaintenanceWeekFixture();
   controller.activeFilter = { weekdays: ['火'], shifts: ['2直'], teams: ['A班'] };
   controller.viewMode = 'maintenanceWeek';
   controller.refreshViewState();

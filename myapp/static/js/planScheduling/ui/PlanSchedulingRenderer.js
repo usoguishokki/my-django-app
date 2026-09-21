@@ -785,26 +785,18 @@ export class PlanSchedulingRenderer {
   }
 
   maintenanceWeekColumnTemplate(week) {
-    const grouped = week.slots.reduce((map, slot) => {
-      map.set(slot.shiftName, [...(map.get(slot.shiftName) || []), slot]);
-      return map;
-    }, new Map());
-    const shifts = [...grouped.entries()].map(([shiftName, slots]) => `
-      <section class="plan-scheduling__shiftGroup">
-        <h4>${escapeHtml(shiftName)}</h4>
-        <div class="plan-scheduling__slotList">${slots.map((slot) => {
-          const issue = slot.hasInvalidEffort
-            ? '<small>工数データに不備があります。</small>'
-            : '';
-          const team = slot.isHolidayAggregate
-            ? ''
-            : `<span>${escapeHtml(slot.teamName)}</span>`;
-          return `<div class="plan-scheduling__slot plan-scheduling__weeklySlot${slot.isHolidayAggregate ? ' is-holiday' : ''}${slot.hasInvalidEffort ? ' is-invalid' : ''}">${team}<strong>${escapeHtml(slot.workloadLabel)}</strong>${issue}</div>`;
-        }).join('')}</div>
-      </section>`).join('');
+    const slots = week.slots.map((slot) => {
+      const issue = slot.hasInvalidEffort
+        ? '<small>工数データに不備があります。</small>'
+        : '';
+      const team = slot.isHolidayAggregate
+        ? ''
+        : `<span class="plan-scheduling__weeklyTeam">${escapeHtml(slot.teamName)}</span>`;
+      return `<div class="plan-scheduling__slot plan-scheduling__weeklySlot${slot.isHolidayAggregate ? ' is-holiday' : ''}${slot.hasInvalidEffort ? ' is-invalid' : ''}"><span class="plan-scheduling__weeklyShift">${escapeHtml(slot.shiftName)}</span>${team}<strong>${escapeHtml(slot.workloadLabel)}</strong>${issue}</div>`;
+    }).join('');
     return `<article class="plan-scheduling__dateColumn plan-scheduling__maintenanceWeekColumn" data-plan-date="${escapeHtml(week.key)}">
       <header><h3>${escapeHtml(week.label)}</h3><button type="button" class="plan-scheduling__weekDrilldown" data-action="drilldown-week" data-week-key="${escapeHtml(week.key)}" aria-label="${escapeHtml(week.label)}を日表示で開く">日表示へ</button></header>
-      ${shifts || '<p class="plan-scheduling__empty">勤務スロットなし</p>'}
+      ${slots ? `<div class="plan-scheduling__slotList">${slots}</div>` : '<p class="plan-scheduling__empty">勤務スロットなし</p>'}
     </article>`;
   }
 

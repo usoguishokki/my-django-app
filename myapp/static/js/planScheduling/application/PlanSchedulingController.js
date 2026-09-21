@@ -36,6 +36,7 @@ import {
   groupCanonicalMaintenanceWeeks,
   maintenanceWeekByKey,
   maintenanceWeekForDate,
+  maintenanceWeeksForFiscalRange,
   projectMaintenanceWeeks,
 } from '../domain/PlanSchedulingMaintenanceWeekProjection.js';
 
@@ -52,6 +53,7 @@ export class PlanSchedulingController {
     this.viewState = null;
     this.activeFilter = emptyPlanSchedulingFilter();
     this.viewMode = PLAN_SCHEDULING_VIEW_MODE.DAY;
+    this.maintenanceWeekAnchorDate = '';
     this.slotSelectionIntent = 0;
     this.interaction = initialInteractionState();
   }
@@ -267,7 +269,11 @@ export class PlanSchedulingController {
 
   refreshViewState() {
     this.viewState = this.viewMode === PLAN_SCHEDULING_VIEW_MODE.MAINTENANCE_WEEK
-      ? projectMaintenanceWeeks(this.state, this.activeFilter)
+      ? projectMaintenanceWeeks(
+        this.state,
+        this.activeFilter,
+        this.maintenanceWeekAnchorDate || this.state?.week?.startDate,
+      )
       : {
         ...projectPlanSchedulingState(this.state, this.activeFilter),
         viewMode: PLAN_SCHEDULING_VIEW_MODE.DAY,
@@ -309,7 +315,10 @@ export class PlanSchedulingController {
       return;
     }
     const sourceDates = this.viewMode === PLAN_SCHEDULING_VIEW_MODE.MAINTENANCE_WEEK
-      ? groupCanonicalMaintenanceWeeks(this.state.timelineDates)
+      ? maintenanceWeeksForFiscalRange(
+        groupCanonicalMaintenanceWeeks(this.state.timelineDates),
+        this.maintenanceWeekAnchorDate || this.state?.week?.startDate,
+      )
       : this.state.timelineDates;
     anchor.date = nextFilteredDate(
       sourceDates,
@@ -357,19 +366,21 @@ export class PlanSchedulingController {
         ? this.selection().selectedSlot?.date
         : undefined,
     );
-    let targetDate = anchor?.date || '';
+    let targetDate = anchor?.date || this.state?.week?.startDate || '';
     if (nextMode === PLAN_SCHEDULING_VIEW_MODE.MAINTENANCE_WEEK) {
       this.slotSelectionIntent += 1;
       this.interaction = closeDrawer(this.interaction);
-      const projectedWeeks = projectMaintenanceWeeks(this.state, this.activeFilter).timelineDates;
-      targetDate = maintenanceWeekForDate(projectedWeeks, targetDate)?.key ||
-        projectedWeeks[0]?.key || '';
+      this.maintenanceWeekAnchorDate = targetDate;
     } else {
       const currentWeek = maintenanceWeekByKey(this.viewState?.timelineDates, targetDate);
       targetDate = currentWeek?.firstVisibleDate || '';
     }
     this.viewMode = nextMode;
     this.refreshViewState();
+    if (nextMode === PLAN_SCHEDULING_VIEW_MODE.MAINTENANCE_WEEK) {
+      targetDate = maintenanceWeekForDate(this.viewState.timelineDates, targetDate)?.key ||
+        this.viewState.timelineDates[0]?.key || '';
+    }
     this.renderState();
     if (targetDate) {
       this.restoreFilterAnchor({
@@ -385,11 +396,15 @@ export class PlanSchedulingController {
     if (!this.state) return false;
     const canonicalWeeks = groupCanonicalMaintenanceWeeks(this.state?.timelineDates || []);
     const targetWeek = maintenanceWeekForDate(canonicalWeeks, targetDate);
-    const visibleWeek = maintenanceWeekByKey(this.viewState?.timelineDates, targetWeek?.key);
+    const projectedState = projectMaintenanceWeeks(this.state, this.activeFilter, targetDate);
+    const visibleWeek = maintenanceWeekByKey(projectedState?.timelineDates, targetWeek?.key);
     if (!visibleWeek) {
       this.renderer.renderInteractionError?.('この保全週には条件に一致する日付がありません');
       return false;
     }
+    this.maintenanceWeekAnchorDate = targetDate;
+    this.viewState = projectedState;
+    this.renderState();
     return this.renderer.scrollTimelineToDate?.(visibleWeek.key) !== false;
   }
 

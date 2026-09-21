@@ -220,9 +220,11 @@
 }
 
 .plan-scheduling__slot { cursor: pointer; }
-.plan-scheduling__weeklySlot { cursor: default; }
-.plan-scheduling__weeklySlot > strong { grid-column: 2; }
-.plan-scheduling__weeklySlot.is-holiday > strong { grid-column: 1 / -1; }
+.plan-scheduling__weeklySlot { grid-template-columns: 1fr auto; cursor: default; }
+.plan-scheduling__weeklySlot > strong,
+.plan-scheduling__weeklySlot > small { grid-column: 1 / -1; }
+.plan-scheduling__weeklyShift { font-weight: 700; }
+.plan-scheduling__weeklyTeam { color: #536a7b; text-align: right; }
 .plan-scheduling__planCard {
   position: relative;
   display: flex;
