@@ -19,7 +19,7 @@
     <div class="plan-scheduling__dateControls">
       <input id="plan-scheduling-date" type="date" data-role="target-date">
       <div class="plan-scheduling__filterControl" data-role="filter-control">
-        <button type="button" class="ui-btn ui-btn--outline plan-scheduling__filterButton" data-action="toggle-filter" aria-expanded="false" aria-controls="plan-scheduling-filter-popover">
+        <button type="button" class="ui-btn plan-scheduling__controlButton plan-scheduling__controlButton--secondary plan-scheduling__filterButton" data-action="toggle-filter" aria-expanded="false" aria-controls="plan-scheduling-filter-popover">
           <span>フィルター</span><span class="plan-scheduling__filterBadge" data-role="filter-count" hidden>0</span>
         </button>
         <section id="plan-scheduling-filter-popover" class="plan-scheduling__filterPopover" data-role="filter-popover" aria-label="表示フィルター" hidden>
@@ -54,12 +54,12 @@
             </div>
           </fieldset>
           <footer>
-            <button type="button" class="ui-btn ui-btn--ghost plan-scheduling__filterClear" data-action="clear-filter-draft">すべてクリア</button>
-            <button type="button" class="ui-btn ui-btn--outline plan-scheduling__filterApply" data-action="apply-filters">適用</button>
+            <button type="button" class="ui-btn plan-scheduling__controlButton plan-scheduling__controlButton--secondary plan-scheduling__filterClear" data-action="clear-filter-draft">すべてクリア</button>
+            <button type="button" class="ui-btn plan-scheduling__controlButton plan-scheduling__controlButton--primary plan-scheduling__filterApply" data-action="apply-filters">適用</button>
           </footer>
         </section>
       </div>
-      <button type="submit" class="ui-btn ui-btn--outline plan-scheduling__weekButton">週を表示</button>
+      <button type="submit" class="ui-btn plan-scheduling__controlButton plan-scheduling__controlButton--primary plan-scheduling__weekButton">週を表示</button>
     </div>
   </form>
 

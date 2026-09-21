@@ -2067,7 +2067,7 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__drawerContent[^}]*flex:\s*1\s+1\s+auto[^}]*min-height:\s*0/s);
   assert.match(scss, /\.plan-scheduling__movePreviewRegion[^}]*flex:\s*1\s+1\s+auto/s);
   assert.match(scss, /\.plan-scheduling__planList\[hidden\][\s\S]*\.plan-scheduling__movePreviewRegion\[hidden\]\s*\{\s*display:\s*none/s);
-  assert.match(scss, /\.plan-scheduling__weekButton[^}]*min-height:\s*38px[^}]*border-radius:\s*8px/s);
+  assert.match(scss, /\.plan-scheduling__controlButton\s*\{[^}]*min-height:\s*38px[^}]*border-radius:\s*8px/s);
   assert.match(scss, /\.plan-scheduling__moveButton[^}]*min-height:\s*38px[^}]*border-radius:\s*8px/s);
   assert.match(scss, /\.plan-scheduling__cancelMove[^}]*min-height:\s*38px[^}]*border-radius:\s*8px/s);
   assert.doesNotMatch(scss, /\.plan-scheduling__planList\s*\{[^}]*display:\s*grid/s);
@@ -2276,6 +2276,9 @@ test('filter controls remain outside the shared scrolling timeline and expose lo
     'utf8',
   );
   assert.equal((template.match(/data-action="toggle-filter"/g) || []).length, 1);
+  assert.equal((template.match(/plan-scheduling__controlButton /g) || []).length, 4);
+  assert.equal((template.match(/plan-scheduling__controlButton--primary/g) || []).length, 2);
+  assert.equal((template.match(/plan-scheduling__controlButton--secondary/g) || []).length, 2);
   assert.equal((template.match(/data-filter-category="weekdays"/g) || []).length, 7);
   assert.equal((template.match(/data-filter-category="shifts"/g) || []).length, 4);
   assert.equal((template.match(/data-filter-category="teams"/g) || []).length, 3);
@@ -2283,9 +2286,23 @@ test('filter controls remain outside the shared scrolling timeline and expose lo
   assert.match(template, /data-action="apply-filters"/);
   assert.match(template, /data-action="clear-filter-draft"/);
   assert.match(template, /data-role="filter-empty"[\s\S]*data-action="clear-applied-filters"/);
+  const filterPosition = template.indexOf('data-action="toggle-filter"');
+  const weekPosition = template.indexOf('plan-scheduling__weekButton');
+  assert.ok(filterPosition > template.indexOf('data-role="target-date"'));
+  assert.ok(weekPosition > filterPosition);
+  assert.match(template, /controlButton--secondary plan-scheduling__filterButton/);
+  assert.match(template, /controlButton--primary plan-scheduling__weekButton/);
+  assert.match(template, /controlButton--secondary plan-scheduling__filterClear/);
+  assert.match(template, /controlButton--primary plan-scheduling__filterApply/);
   assert.match(scss, /\.plan-scheduling__filterControl\s*\{[^}]*position:\s*relative/s);
   assert.match(scss, /\.plan-scheduling__filterPopover\s*\{[^}]*position:\s*absolute[^}]*z-index:\s*8/s);
   assert.doesNotMatch(scss, /\.plan-scheduling__filterPopover\s*\{[^}]*position:\s*fixed/s);
+  assert.match(scss, /\.plan-scheduling__controlButton:focus-visible,[\s\S]*outline:\s*3px solid rgba\(31, 95, 153, \.32\)/s);
+  assert.match(scss, /\.plan-scheduling__controlButton:hover|\.plan-scheduling__controlButton--primary:hover/s);
+  assert.match(scss, /\.plan-scheduling__controlButton:active\s*\{[^}]*transform:\s*translateY\(1px\)/s);
+  assert.match(scss, /\.plan-scheduling__controlButton:disabled\s*\{[^}]*cursor:\s*not-allowed/s);
+  assert.match(scss, /\.plan-scheduling__filterPopover footer\s*\{[^}]*border-top:\s*1px solid/s);
+  assert.doesNotMatch(scss, /(^|\n)\.ui-btn\b/m);
 });
 
 
