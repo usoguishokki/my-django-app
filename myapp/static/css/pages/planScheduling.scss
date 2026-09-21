@@ -124,7 +124,7 @@
 .plan-scheduling__matrix { min-height: 0; padding: 10px; }
 .plan-scheduling__chart { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 6px; width: max-content; min-width: 100%; height: 100%; padding-top: 30px; overflow: hidden; }
 .plan-scheduling__matrix { display: grid; grid-template-rows: minmax(0, 1fr); width: max-content; min-width: 100%; height: 100%; overflow: hidden; }
-.plan-scheduling__chartLegendViewport { position: absolute; z-index: 3; top: 11px; right: 11px; width: max-content; pointer-events: none; }
+.plan-scheduling [data-role="chart-legend"] { position: absolute; z-index: 3; top: 11px; right: 11px; width: max-content; height: auto; pointer-events: none; }
 .plan-scheduling__chartLegend { display: flex; align-items: center; gap: 10px; margin: 0; padding: 0; color: #536a7b; font-size: 11px; list-style: none; }
 .plan-scheduling__chartLegendItem { display: inline-flex; align-items: center; gap: 4px; }
 .plan-scheduling__chartLegendSwatch { width: 10px; height: 10px; border: 1px solid rgba(24, 48, 68, .24); border-radius: 2px; background: var(--plan-scheduling-team-color); }

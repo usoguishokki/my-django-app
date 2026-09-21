@@ -206,15 +206,16 @@ export const calculateTimelineAnchorScrollLeft = ({
 
 export const calculateSelectedDatePinOffset = ({
   side,
-  trackRect,
-  viewportRect,
-  currentOffset = 0,
+  trackStart,
+  trackWidth,
+  scrollLeft,
+  viewportWidth,
 }) => {
   if (side === 'left') {
-    return currentOffset + viewportRect.left - trackRect.left;
+    return scrollLeft - trackStart;
   }
   if (side === 'right') {
-    return currentOffset + viewportRect.right - trackRect.right;
+    return scrollLeft + viewportWidth - trackStart - trackWidth;
   }
   return 0;
 };
@@ -250,14 +251,35 @@ export class PlanSchedulingRenderer {
     this.wasMoving = false;
     this.planListScrollTop = 0;
     this.timelineLayoutRevision = 0;
+    this.timelineScrollFramePending = false;
+    this.selectedDateTracks = [];
+    this.selectedDateGeometry = null;
     this.root?.addEventListener?.('pointerover', (event) => this.showChartTooltip(event));
     this.root?.addEventListener?.('pointerout', (event) => this.hideChartTooltip(event));
     this.root?.addEventListener?.('focusin', (event) => this.showChartTooltip(event));
     this.root?.addEventListener?.('focusout', (event) => this.hideChartTooltip(event));
     this.root?.addEventListener?.('scroll', (event) => {
-      this.positionActiveChartTooltip();
-      if (event.target === this.planningMain) this.updateSelectedDatePin();
+      if (event.target === this.planningMain) {
+        this.scheduleTimelineScrollPresentation();
+      } else {
+        this.positionActiveChartTooltip();
+      }
     }, true);
+  }
+
+  scheduleTimelineScrollPresentation() {
+    if (this.timelineScrollFramePending) return;
+    this.timelineScrollFramePending = true;
+    const view = this.root?.ownerDocument?.defaultView;
+    const requestFrame = view?.requestAnimationFrame?.bind(view) ||
+      globalThis.requestAnimationFrame?.bind(globalThis);
+    const update = () => {
+      this.timelineScrollFramePending = false;
+      this.positionActiveChartTooltip();
+      this.updateSelectedDatePin();
+    };
+    if (requestFrame) requestFrame(update);
+    else update();
   }
 
   showChartTooltip(event) {
@@ -393,6 +415,7 @@ export class PlanSchedulingRenderer {
   }
 
   renderSelectedDateTracks(selectedDate, { deferPin = false } = {}) {
+    this.selectedDateTracks = [];
     (this.root.querySelectorAll?.(
       '.plan-scheduling__chartColumn[data-plan-date], ' +
       '.plan-scheduling__maintenanceWeekCell[data-plan-date], ' +
@@ -400,12 +423,18 @@ export class PlanSchedulingRenderer {
     ) || []).forEach((track) => {
       const isSelected = Boolean(selectedDate && track.dataset.planDate === selectedDate);
       track.classList.toggle('is-selected-date', isSelected);
-      if (!isSelected) {
+      if (isSelected) {
+        this.selectedDateTracks.push(track);
+      } else {
         track.classList.remove('is-date-pinned-left', 'is-date-pinned-right');
         track.style?.removeProperty('--plan-selected-date-offset');
       }
     });
-    if (!deferPin) this.updateSelectedDatePin();
+    this.selectedDateGeometry = null;
+    if (!deferPin) {
+      this.refreshSelectedDateGeometry();
+      this.updateSelectedDatePin();
+    }
   }
 
   captureTimelineAnchor(preferredDate) {
@@ -474,6 +503,16 @@ export class PlanSchedulingRenderer {
     });
   }
 
+  refreshSelectedDateGeometry() {
+    const selectedChartTrack = this.root.querySelector(
+      '.plan-scheduling__chartColumn.is-selected-date[data-plan-date]',
+    );
+    this.selectedDateGeometry = selectedChartTrack
+      ? this.timelineTrackGeometry(selectedChartTrack)
+      : null;
+    return this.selectedDateGeometry;
+  }
+
   restoreTimelineAnchorAfterLayout(anchor, layoutRevision) {
     const view = this.root?.ownerDocument?.defaultView;
     const requestFrame = view?.requestAnimationFrame?.bind(view) ||
@@ -481,6 +520,7 @@ export class PlanSchedulingRenderer {
     const restore = () => {
       if (layoutRevision !== this.timelineLayoutRevision) return;
       this.restoreTimelineAnchor(anchor);
+      this.refreshSelectedDateGeometry();
       this.updateSelectedDatePin();
     };
     if (requestFrame) requestFrame(restore);
@@ -489,36 +529,24 @@ export class PlanSchedulingRenderer {
 
   updateSelectedDatePin() {
     const viewport = this.planningMain;
-    const selectedChartTrack = this.root.querySelector(
-      '.plan-scheduling__chartColumn.is-selected-date[data-plan-date]',
-    );
-    const geometry = viewport && selectedChartTrack
-      ? this.timelineTrackGeometry(selectedChartTrack, viewport)
-      : null;
-    // The logical coordinate removes any existing presentation transform;
-    // the shared page-space offset then pins all three real tracks together.
-    const side = geometry
-      ? deriveSelectedDatePinSide({
-        trackStart: geometry.trackStart,
-        trackWidth: geometry.trackWidth,
-        scrollLeft: viewport.scrollLeft,
-        viewportWidth: viewport.clientWidth,
-      })
-      : 'normal';
-    const trackRect = selectedChartTrack?.getBoundingClientRect?.();
-    const viewportRect = viewport?.getBoundingClientRect?.();
-    const currentOffset = Number.parseFloat(
-      selectedChartTrack?.style?.getPropertyValue?.('--plan-selected-date-offset'),
-    ) || 0;
-    const offset = side !== 'normal' && trackRect && viewportRect
-      ? calculateSelectedDatePinOffset({
-        side,
-        trackRect,
-        viewportRect,
-        currentOffset,
-      })
-      : 0;
-    (this.root.querySelectorAll?.('.is-selected-date[data-plan-date]') || []).forEach((track) => {
+    const geometry = this.selectedDateGeometry;
+    if (!viewport || !geometry) return 'normal';
+    const scrollLeft = viewport.scrollLeft;
+    const viewportWidth = viewport.clientWidth;
+    const side = deriveSelectedDatePinSide({
+      trackStart: geometry.trackStart,
+      trackWidth: geometry.trackWidth,
+      scrollLeft,
+      viewportWidth,
+    });
+    const offset = calculateSelectedDatePinOffset({
+      side,
+      trackStart: geometry.trackStart,
+      trackWidth: geometry.trackWidth,
+      scrollLeft,
+      viewportWidth,
+    });
+    this.selectedDateTracks.forEach((track) => {
       track.classList.toggle('is-date-pinned-left', side === 'left');
       track.classList.toggle('is-date-pinned-right', side === 'right');
       track.style?.setProperty('--plan-selected-date-offset', `${offset}px`);

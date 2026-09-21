@@ -619,14 +619,18 @@ test('selected date pin side derives from logical track and shared viewport geom
   assert.equal(deriveSelectedDatePinSide({ ...geometry, scrollLeft: 500 }), 'normal');
   assert.equal(calculateSelectedDatePinOffset({
     side: 'left',
-    trackRect: { left: 12, right: 155 },
-    viewportRect: { left: 421, right: 1506 },
-  }), 409);
+    trackStart: 600,
+    trackWidth: 190,
+    scrollLeft: 800,
+    viewportWidth: 400,
+  }), 200);
   assert.equal(calculateSelectedDatePinOffset({
     side: 'right',
-    trackRect: { left: 1600, right: 1743 },
-    viewportRect: { left: 421, right: 1506 },
-  }), -237);
+    trackStart: 600,
+    trackWidth: 190,
+    scrollLeft: 100,
+    viewportWidth: 400,
+  }), -290);
 });
 
 
@@ -741,9 +745,11 @@ test('one shared scroll listener pins the same selected date across all three tr
       },
       classes,
       properties,
+      rectReads: 0,
       interactiveButtonCount: kind === 'matrix' ? 1 : 0,
     };
     track.getBoundingClientRect = () => {
+      track.rectReads += 1;
       const offset = Number.parseFloat(
         properties.get('--plan-selected-date-offset'),
       ) || 0;
@@ -765,15 +771,23 @@ test('one shared scroll listener pins the same selected date across all three tr
   const viewport = {
     scrollLeft: 500,
     clientWidth: 400,
-    getBoundingClientRect: () => ({ left: 421, right: 821, width: 400 }),
+    rectReads: 0,
+    getBoundingClientRect: () => {
+      viewport.rectReads += 1;
+      return { left: 421, right: 821, width: 400 };
+    },
     querySelectorAll: () => tracks.filter((track) => track.kind === 'chart'),
     scrollTo: ({ left }) => { viewport.scrollLeft = left; },
   };
+  let trackCollectionQueries = 0;
   const root = {
     addEventListener: (type, handler) => listeners.push({ type, handler }),
-    querySelectorAll: (selector) => selector.includes(',')
-      ? tracks
-      : tracks.filter((track) => track.classes.has('is-selected-date')),
+    querySelectorAll: (selector) => {
+      trackCollectionQueries += 1;
+      return selector.includes(',')
+        ? tracks
+        : tracks.filter((track) => track.classes.has('is-selected-date'));
+    },
     querySelector: (selector) => {
       if (selector === '.plan-scheduling__planningMain') return viewport;
       if (selector.includes('.plan-scheduling__chartColumn.is-selected-date')) {
@@ -791,9 +805,15 @@ test('one shared scroll listener pins the same selected date across all three tr
   renderer.renderSelectedDateTracks(selectedDate);
   assert.ok(tracks.slice(0, 3).every((track) => track.classes.has('is-selected-date')));
   assert.ok(tracks.slice(0, 3).every((track) => !track.classes.has('is-date-pinned-left')));
+  tracks.forEach((track) => { track.rectReads = 0; });
+  viewport.rectReads = 0;
+  trackCollectionQueries = 0;
 
   viewport.scrollLeft = 600.25;
   scrollListeners[0].handler({ target: viewport });
+  assert.equal(tracks.reduce((total, track) => total + track.rectReads, 0), 0);
+  assert.equal(viewport.rectReads, 0);
+  assert.equal(trackCollectionQueries, 0);
   assert.ok(tracks.slice(0, 3).every((track) => track.classes.has('is-date-pinned-left')));
   assert.equal(tracks[0].getBoundingClientRect().left, 421);
 
@@ -845,6 +865,40 @@ test('one shared scroll listener pins the same selected date across all three tr
   assert.equal(tracks.filter((track) => track.kind === 'matrix').reduce(
     (sum, track) => sum + track.interactiveButtonCount, 0,
   ), 2);
+});
+
+
+test('shared timeline scroll coalesces presentation work into one animation frame', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const listeners = [];
+  const frames = [];
+  const viewport = {};
+  const root = {
+    ownerDocument: {
+      defaultView: {
+        requestAnimationFrame: (callback) => frames.push(callback),
+      },
+    },
+    addEventListener: (type, handler) => listeners.push({ type, handler }),
+    querySelector: (selector) => (
+      selector === '.plan-scheduling__planningMain' ? viewport : null
+    ),
+  };
+  const renderer = new PlanSchedulingRenderer(root);
+  let pinUpdates = 0;
+  let tooltipUpdates = 0;
+  renderer.updateSelectedDatePin = () => { pinUpdates += 1; };
+  renderer.positionActiveChartTooltip = () => { tooltipUpdates += 1; };
+  const scrollHandler = listeners.find((item) => item.type === 'scroll').handler;
+
+  scrollHandler({ target: viewport });
+  scrollHandler({ target: viewport });
+
+  assert.equal(frames.length, 1);
+  assert.equal(pinUpdates, 0);
+  frames.shift()();
+  assert.equal(pinUpdates, 1);
+  assert.equal(tooltipUpdates, 1);
 });
 
 
@@ -1139,7 +1193,7 @@ test('chart legend is a compact planning-viewport overlay outside the full timel
     '<section class="plan-scheduling__chart"',
   )[1].split('</section>', 1)[0];
   const overlayRule = scss.split(
-    '.plan-scheduling__chartLegendViewport {',
+    '.plan-scheduling [data-role="chart-legend"] {',
   )[1].split('}', 1)[0];
 
   assert.equal((template.match(/data-role="chart-legend"/g) || []).length, 1);
@@ -1148,6 +1202,7 @@ test('chart legend is a compact planning-viewport overlay outside the full timel
   assert.match(overlayRule, /position:\s*absolute/);
   assert.match(overlayRule, /right:\s*11px/);
   assert.match(overlayRule, /width:\s*max-content/);
+  assert.match(overlayRule, /height:\s*auto/);
   assert.match(overlayRule, /pointer-events:\s*none/);
   assert.doesNotMatch(overlayRule, /transform|82\d{3}px/);
   assert.match(scss, /\.plan-scheduling__chartTooltip\s*\{[^}]*z-index:\s*4/s);
@@ -1978,7 +2033,7 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.doesNotMatch(scss, /#edf1f4/i);
   assert.match(scss, /\.plan-scheduling__chartBar[^}]*background:\s*transparent/s);
   assert.match(scss, /--plan-scheduling-team-color/);
-  assert.match(scss, /\.plan-scheduling__chartLegendViewport\s*\{[^}]*position:\s*absolute[^}]*z-index:\s*3[^}]*right:\s*11px[^}]*width:\s*max-content[^}]*pointer-events:\s*none/s);
+  assert.match(scss, /\.plan-scheduling \[data-role="chart-legend"\]\s*\{[^}]*position:\s*absolute[^}]*z-index:\s*3[^}]*right:\s*11px[^}]*width:\s*max-content[^}]*height:\s*auto[^}]*pointer-events:\s*none/s);
   assert.match(scss, /\.plan-scheduling__chartLegendSwatch\s*\{[^}]*background:\s*var\(--plan-scheduling-team-color\)/s);
   assert.doesNotMatch(scss, /team-other/);
   assert.doesNotMatch(scss, /plan-scheduling__yAxis/);
@@ -2022,6 +2077,7 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.match(scss, /\.plan-scheduling__chartPlot[^}]*height:\s*100%/s);
   assert.match(scss, /\.plan-scheduling__chartColumns[^}]*height:\s*100%/s);
   assert.match(scss, /\.plan-scheduling__chartColumns[^}]*box-sizing:\s*border-box/s);
+  assert.match(scss, /\.plan-scheduling__chartBar\s*\{[^}]*height:\s*100%/s);
   assert.match(scss, /\.plan-scheduling__dateGrid[^}]*overflow-x:\s*visible[^}]*overflow-y:\s*auto/s);
   assert.match(scss, /\.plan-scheduling__planningLayout\.has-drawer[^}]*clamp\(380px,\s*26vw,\s*440px\)/s);
   assert.match(scss, /\.plan-scheduling__planCardActions[^}]*justify-content:\s*flex-end/s);

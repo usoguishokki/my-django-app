@@ -263,12 +263,13 @@
   height: 100%;
   overflow: hidden; }
 
-.plan-scheduling__chartLegendViewport {
+.plan-scheduling [data-role="chart-legend"] {
   position: absolute;
   z-index: 3;
   top: 11px;
   right: 11px;
   width: max-content;
+  height: auto;
   pointer-events: none; }
 
 .plan-scheduling__chartLegend {
