@@ -24,6 +24,9 @@ const escapeHtml = (value) => String(value ?? '')
   .replaceAll('>', '&gt;').replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;');
 
+export const formatMaintenanceWeekLabel = (label) =>
+  String(label ?? '').replace(/^(\d{1,2}月\d+週)目$/, '$1');
+
 export const TEAM_COLORS = Object.freeze({
   'A班': '#1C55C8',
   'B班': '#00D614',
@@ -743,11 +746,14 @@ export class PlanSchedulingRenderer {
         const delta = item.change.after - item.change.before;
         return `${item.shiftName} 移動プレビュー後 ${formatMinutes(item.change.after)}、${formatMinutes(Math.abs(delta))}${delta < 0 ? '減少' : '増加'}`;
       });
+      const chartIdentityLabel = day.isMaintenanceWeek
+        ? formatMaintenanceWeekLabel(day.label)
+        : day.label;
       const tooltipIdentityLabel = day.isMaintenanceWeek
-        ? day.label
+        ? chartIdentityLabel
         : tooltipDateLabel(day.date, day.label);
       const ariaLabel = [
-        `${day.label}の直別工数`,
+        `${chartIdentityLabel}の直別工数`,
         ...day.shiftWorkloads.map((item) => `${item.shiftName} ${item.workloadLabel}`),
         `合計 ${totalLabel}`,
         ...affectedDescriptions,
@@ -849,14 +855,14 @@ export class PlanSchedulingRenderer {
 
   maintenanceWeekTemplate(week, dates) {
     const cells = (dates || []).map((day) =>
-      `<span class="plan-scheduling__maintenanceWeekCell${day.isPinnedMoveSource ? ' is-pinned-move-source' : ''}" data-plan-date="${escapeHtml(day.date)}">${escapeHtml(day.maintenanceWeekLabel || week?.label || '')}</span>`
+      `<span class="plan-scheduling__maintenanceWeekCell${day.isPinnedMoveSource ? ' is-pinned-move-source' : ''}" data-plan-date="${escapeHtml(day.date)}">${escapeHtml(formatMaintenanceWeekLabel(day.maintenanceWeekLabel || week?.label || ''))}</span>`
     ).join('');
     return cells;
   }
 
   maintenanceWeekOverviewTemplate(weeks = []) {
     const labels = weeks.map((week) => (
-      `<span class="plan-scheduling__weekOverviewLabel" data-plan-date="${escapeHtml(week.key || week.date)}">${escapeHtml(week.label || week.maintenanceWeekLabel || '')}</span>`
+      `<span class="plan-scheduling__weekOverviewLabel" data-plan-date="${escapeHtml(week.key || week.date)}">${escapeHtml(formatMaintenanceWeekLabel(week.label || week.maintenanceWeekLabel || ''))}</span>`
     )).join('');
     return `<div class="plan-scheduling__weekOverviewLabels" aria-label="保全週">${labels}</div>`;
   }
@@ -873,7 +879,7 @@ export class PlanSchedulingRenderer {
     );
     const labels = groupCells(
       'plan-scheduling__overviewGroupCell',
-      (group) => group.label,
+      (group) => formatMaintenanceWeekLabel(group.label),
     );
     return `<div class="plan-scheduling__dayOverviewGroups">
       <div class="plan-scheduling__overviewGroupRow plan-scheduling__overviewGroupRow--range" aria-label="表示日付範囲">${ranges}</div>
@@ -891,8 +897,9 @@ export class PlanSchedulingRenderer {
         : `<span class="plan-scheduling__weeklyTeam">${escapeHtml(slot.teamName)}</span>`;
       return `<div class="plan-scheduling__slot plan-scheduling__weeklySlot${slot.isHolidayAggregate ? ' is-holiday' : ''}${slot.hasInvalidEffort ? ' is-invalid' : ''}"><span class="plan-scheduling__weeklyShift">${escapeHtml(slot.shiftName)}</span>${team}<strong>${escapeHtml(slot.workloadLabel)}</strong>${issue}</div>`;
     }).join('');
+    const displayLabel = formatMaintenanceWeekLabel(week.label);
     return `<article class="plan-scheduling__dateColumn plan-scheduling__maintenanceWeekColumn" data-plan-date="${escapeHtml(week.key)}">
-      <header><h3>${escapeHtml(week.label)}</h3><button type="button" class="plan-scheduling__weekDrilldown" data-action="drilldown-week" data-week-key="${escapeHtml(week.key)}" aria-label="${escapeHtml(week.label)}を日表示で開く">日表示へ</button></header>
+      <header><h3>${escapeHtml(displayLabel)}</h3><button type="button" class="plan-scheduling__weekDrilldown" data-action="drilldown-week" data-week-key="${escapeHtml(week.key)}" aria-label="${escapeHtml(displayLabel)}を日表示で開く">日表示へ</button></header>
       ${slots ? `<div class="plan-scheduling__slotList">${slots}</div>` : '<p class="plan-scheduling__empty">勤務スロットなし</p>'}
     </article>`;
   }

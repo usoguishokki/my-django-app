@@ -430,7 +430,7 @@ test('chart, maintenance, and matrix tracks share the full ordered timeline', as
   assert.deepEqual(chartDates, dates);
   assert.deepEqual(matrixDates, dates);
   assert.deepEqual(maintenanceWeekDates, dates);
-  assert.equal((maintenanceWeekHtml.match(/9月3週目/g) || []).length, dates.length);
+  assert.equal((maintenanceWeekHtml.match(/9月3週/g) || []).length, dates.length);
 });
 
 
@@ -573,7 +573,7 @@ test('Move mode prepends an out-of-week source across every date track', async (
     [...maintenanceHtml.matchAll(/data-plan-date="([^"]+)"/g)].map((match) => match[1]),
     ['2026-09-14', '2026-09-21', '2026-09-22'],
   );
-  assert.match(maintenanceHtml, /9月2週目/);
+  assert.match(maintenanceHtml, /9月2週/);
 
   const sourceInDisplayedWeek = renderer.matrixDates({
     workloadChart: { shiftNames: ['1直'] },
@@ -635,7 +635,7 @@ test('normal state rendering retains one date-aligned maintenance-week cell per 
     [...maintenanceWeek.innerHTML.matchAll(/data-plan-date="([^"]+)"/g)].map((match) => match[1]),
     ['2026-09-14', '2026-09-15'],
   );
-  assert.equal((maintenanceWeek.innerHTML.match(/9月3週目/g) || []).length, 2);
+  assert.equal((maintenanceWeek.innerHTML.match(/9月3週/g) || []).length, 2);
 });
 
 
@@ -2837,6 +2837,33 @@ test('weekly projection applies weekday, shift, and team filters before aggregat
 });
 
 
+test('maintenance-week labels remove only the numbered terminal marker at presentation time', async () => {
+  const { PlanSchedulingRenderer, formatMaintenanceWeekLabel } = await importRenderer();
+  const renderer = new PlanSchedulingRenderer({});
+  const sourceWeek = { key: '2026-11-02', label: '11月1週目' };
+
+  assert.equal(formatMaintenanceWeekLabel('11月1週目'), '11月1週');
+  assert.equal(formatMaintenanceWeekLabel('10月4週目'), '10月4週');
+  assert.equal(formatMaintenanceWeekLabel('3月4週目'), '3月4週');
+  assert.equal(formatMaintenanceWeekLabel('4月連休'), '4月連休');
+  assert.equal(formatMaintenanceWeekLabel('予備週'), '予備週');
+  assert.match(
+    renderer.dayOverviewGroupsTemplate([{
+      label: sourceWeek.label,
+      firstVisibleDate: '2026-11-02',
+      lastVisibleDate: '2026-11-08',
+      spanLength: 7,
+    }]),
+    />11月1週<\/span>/,
+  );
+  assert.match(
+    renderer.maintenanceWeekOverviewTemplate([sourceWeek]),
+    />11月1週<\/span>/,
+  );
+  assert.equal(sourceWeek.label, '11月1週目');
+});
+
+
 test('weekly renderer provides aggregate tooltip identity and accessible Day drilldown only', async () => {
   const { projectMaintenanceWeeks } = await importMaintenanceWeekProjection();
   const { PlanSchedulingRenderer, buildChartPresentation } = await importRenderer();
@@ -2847,12 +2874,12 @@ test('weekly renderer provides aggregate tooltip identity and accessible Day dri
   const chartHtml = renderer.workloadChartTemplate(projected.workloadChart);
 
   assert.match(matrixHtml, /data-action="drilldown-week"/);
-  assert.match(matrixHtml, /aria-label="9月4週目を日表示で開く"/);
+  assert.match(matrixHtml, /aria-label="9月4週を日表示で開く"/);
   assert.doesNotMatch(matrixHtml, /data-slot-key=/);
   assert.equal((matrixHtml.match(/plan-scheduling__weeklyShift">休日/g) || []).length, 1);
   assert.doesNotMatch(matrixHtml, /plan-scheduling__shiftGroup/);
-  assert.match(chartHtml, /9月4週目の直別工数/);
-  assert.match(chartHtml, /plan-scheduling__tooltipDate">9月4週目/);
+  assert.match(chartHtml, /9月4週の直別工数/);
+  assert.match(chartHtml, /plan-scheduling__tooltipDate">9月4週/);
   assert.equal(
     buildChartPresentation(projected.workloadChart).maxTotal,
     Math.max(...projected.workloadChart.dates.map((day) => day.totalWorkloadMinutes)),
@@ -2955,7 +2982,8 @@ test('weekly Overview renders one authoritative label track aligned with Chart w
   assert.equal((maintenanceWeek.innerHTML.match(/plan-scheduling__weekOverviewLabels/g) || []).length, 1);
   assert.deepEqual(labelWeeks, chartWeeks);
   assert.deepEqual(labelWeeks, projected.timelineDates.map((week) => week.key));
-  projected.timelineDates.forEach((week) => assert.match(maintenanceWeek.innerHTML, new RegExp(`>${week.label}<`)));
+  assert.match(maintenanceWeek.innerHTML, />9月4週<\/span>/);
+  assert.match(maintenanceWeek.innerHTML, />10月1週<\/span>/);
   assert.deepEqual(
     maintenanceClasses.find(([className]) => className === 'is-week-overview-labels'),
     ['is-week-overview-labels', true],
@@ -3201,8 +3229,8 @@ test('renderer omits Matrix controls in overview while retaining Day maintenance
   assert.match(maintenanceWeek.innerHTML, /plan-scheduling__dayOverviewGroups/);
   assert.match(maintenanceWeek.innerHTML, /9月21日\(月\)～9月26日\(土\)/);
   assert.match(maintenanceWeek.innerHTML, /style="--plan-overview-group-span:3"/);
-  assert.match(maintenanceWeek.innerHTML, />9月4週目<\/span>/);
-  assert.match(maintenanceWeek.innerHTML, />10月1週目<\/span>/);
+  assert.match(maintenanceWeek.innerHTML, />9月4週<\/span>/);
+  assert.match(maintenanceWeek.innerHTML, />10月1週<\/span>/);
   assert.doesNotMatch(maintenanceWeek.innerHTML, /plan-scheduling__maintenanceWeekCell/);
   assert.deepEqual(maintenanceClasses.at(-1), ['is-day-overview-groups', true]);
   assert.deepEqual(canvasClasses.find(([name]) => name === 'is-chart-overview'), [
