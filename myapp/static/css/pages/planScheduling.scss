@@ -36,8 +36,9 @@
 .plan-scheduling__viewModeButton.is-active { color: var(--ps-blue); background: #fff; box-shadow: 0 1px 4px rgba(24, 48, 68, .16), inset 0 -2px var(--ps-blue); }
 .plan-scheduling__viewModeButton:focus-visible { position: relative; z-index: 1; outline: 3px solid rgba(31, 95, 153, .32); outline-offset: 2px; }
 .plan-scheduling__viewModeButton:active { transform: translateY(1px); }
+.plan-scheduling__dateNavigationGroup { display: inline-flex; align-items: center; gap: 8px; }
+.plan-scheduling__dateNavigationGroup[hidden] { display: none; }
 .plan-scheduling__dateInputControl { display: inline-flex; align-items: center; gap: 6px; }
-.plan-scheduling__dateInputControl[hidden] { display: none; }
 .plan-scheduling__dateInputControl label { color: #39566c; font-size: 13px; white-space: nowrap; }
 .plan-scheduling__dateInputControl input {
   height: 38px;

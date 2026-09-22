@@ -75,13 +75,18 @@
 .plan-scheduling__viewModeButton:active {
   transform: translateY(1px); }
 
+.plan-scheduling__dateNavigationGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px; }
+
+.plan-scheduling__dateNavigationGroup[hidden] {
+  display: none; }
+
 .plan-scheduling__dateInputControl {
   display: inline-flex;
   align-items: center;
   gap: 6px; }
-
-.plan-scheduling__dateInputControl[hidden] {
-  display: none; }
 
 .plan-scheduling__dateInputControl label {
   color: #39566c;
