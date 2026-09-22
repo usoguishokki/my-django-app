@@ -56,6 +56,8 @@ The Chart is a presentation projection of those same filtered slots. In both Day
 
 Matrix visibility is an independent frontend presentation state. With the Matrix visible, Plan Scheduling retains the detailed Chart/Matrix layout and interactions. With it hidden, the same filtered Chart projection is rendered as a compact, horizontally scrollable overview; no alternate data source or business aggregation is introduced. Switching visibility preserves the logical date/week anchor rather than a raw pixel scroll position.
 
+Day Overview keeps one Chart bar per visible day. Its contextual rows group the filtered visible date sequence by stable maintenance-calendar group identity, showing each group's actual visible first/last dates and authoritative `date_alias` label. This grouping is presentation context only and does not aggregate daily Chart workload into weekly bars.
+
 ## Maintenance-week projection
 
 The accepted frontend pipeline is:

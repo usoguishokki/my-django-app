@@ -188,13 +188,18 @@ const tooltipWorkloadTemplate = (item) => {
   return `<span class="plan-scheduling__tooltipPreview"><span>${formatMinutes(item.change.before)} → ${formatMinutes(item.change.after)}</span><strong>${formatDelta(item.change.before, item.change.after)}</strong></span>`;
 };
 
-const tooltipDateLabel = (isoDate, fallback) => {
+const japaneseDateLabel = (isoDate, fallback, openParenthesis, closeParenthesis) => {
   const [year, month, day] = String(isoDate || '').split('-').map(Number);
   if (!year || !month || !day) return fallback;
   const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
   const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
-  return `${month}月${day}日（${weekdays[weekday]}）`;
+  return `${month}月${day}日${openParenthesis}${weekdays[weekday]}${closeParenthesis}`;
 };
+
+const tooltipDateLabel = (isoDate, fallback) =>
+  japaneseDateLabel(isoDate, fallback, '（', '）');
+
+const overviewDateLabel = (isoDate) => japaneseDateLabel(isoDate, isoDate, '(', ')');
 
 const clamp = (value, minimum, maximum) => Math.min(Math.max(value, minimum), maximum);
 
@@ -402,12 +407,18 @@ export class PlanSchedulingRenderer {
     }
     if (this.maintenanceWeek) {
       this.maintenanceWeek.hidden = isMaintenanceWeek;
+      this.maintenanceWeek.classList?.toggle?.(
+        'is-day-overview-groups',
+        !isMaintenanceWeek && !matrixVisible,
+      );
       this.maintenanceWeek.innerHTML = isMaintenanceWeek
         ? ''
-        : this.maintenanceWeekTemplate(
-          null,
-          this.chartWithPinnedMoveSource(state.workloadChart, selection).dates,
-        );
+        : !matrixVisible
+          ? this.dayOverviewGroupsTemplate(state.dayOverviewGroups)
+          : this.maintenanceWeekTemplate(
+            null,
+            this.chartWithPinnedMoveSource(state.workloadChart, selection).dates,
+          );
     }
     this.renderMatrixVisibility(matrixVisible);
     this.renderViewMode(state.viewMode || 'day');
@@ -834,6 +845,26 @@ export class PlanSchedulingRenderer {
       `<span class="plan-scheduling__maintenanceWeekCell${day.isPinnedMoveSource ? ' is-pinned-move-source' : ''}" data-plan-date="${escapeHtml(day.date)}">${escapeHtml(day.maintenanceWeekLabel || week?.label || '')}</span>`
     ).join('');
     return cells;
+  }
+
+  dayOverviewGroupsTemplate(groups = []) {
+    const groupCells = (className, labelForGroup) => groups.map((group) => {
+      const label = labelForGroup(group);
+      const spanLength = Math.max(1, Number(group.spanLength) || 1);
+      return `<span class="${className}" style="--plan-overview-group-span:${spanLength}">${escapeHtml(label)}</span>`;
+    }).join('');
+    const ranges = groupCells(
+      'plan-scheduling__overviewRangeCell',
+      (group) => `${overviewDateLabel(group.firstVisibleDate)}～${overviewDateLabel(group.lastVisibleDate)}`,
+    );
+    const labels = groupCells(
+      'plan-scheduling__overviewGroupCell',
+      (group) => group.label,
+    );
+    return `<div class="plan-scheduling__dayOverviewGroups">
+      <div class="plan-scheduling__overviewGroupRow plan-scheduling__overviewGroupRow--range" aria-label="表示日付範囲">${ranges}</div>
+      <div class="plan-scheduling__overviewGroupRow plan-scheduling__overviewGroupRow--label" aria-label="保全カレンダーグループ">${labels}</div>
+    </div>`;
   }
 
   maintenanceWeekColumnTemplate(week) {

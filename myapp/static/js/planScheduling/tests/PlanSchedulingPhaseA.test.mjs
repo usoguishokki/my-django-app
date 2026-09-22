@@ -2516,6 +2516,17 @@ test('controller preserves surviving selection, clears excluded selection, and r
   assert.equal(controller.selection().selectedSlot.key, selectedSlot.key);
   assert.deepEqual(restored.at(-1), { date: '2026-09-21', viewportRatio: 0.4 });
   assert.equal(lastState.timelineDates.length, 1);
+  assert.deepEqual(lastState.dayOverviewGroups.map((group) => ({
+    label: group.label,
+    firstVisibleDate: group.firstVisibleDate,
+    lastVisibleDate: group.lastVisibleDate,
+    spanLength: group.spanLength,
+  })), [{
+    label: 'W38',
+    firstVisibleDate: '2026-09-21',
+    lastVisibleDate: '2026-09-21',
+    spanLength: 1,
+  }]);
 
   assert.equal(controller.applyFilter({ weekdays: ['火'] }), true);
   assert.equal(controller.selection().selectedSlot, undefined);
@@ -2625,6 +2636,44 @@ test('maintenance-week projection uses stable contiguous calendar identity and c
     projected.workloadChart.dates.map((week) => week.date),
   );
   assert.deepEqual(source, snapshot);
+});
+
+
+test('Day Overview groups the filtered visible dates by stable maintenance identity', async () => {
+  const { projectDayOverviewGroups } = await importMaintenanceWeekProjection();
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const canonicalDates = [
+    { date: '2026-04-29', maintenanceWeekLabel: '4月連休' },
+    { date: '2026-05-06', maintenanceWeekLabel: '4月連休' },
+    { date: '2026-09-21', maintenanceWeekLabel: '9月4週目' },
+    { date: '2026-09-22', maintenanceWeekLabel: '9月4週目' },
+    { date: '2026-09-25', maintenanceWeekLabel: '9月4週目' },
+    { date: '2026-09-28', maintenanceWeekLabel: '10月1週目' },
+    { date: '2027-09-20', maintenanceWeekLabel: '9月4週目' },
+  ];
+  const visibleDates = canonicalDates.filter((day) => ![
+    '2026-09-21', '2026-09-28',
+  ].includes(day.date));
+
+  const groups = projectDayOverviewGroups(visibleDates, canonicalDates);
+  assert.deepEqual(groups, [
+    {
+      key: '2026-04-29', label: '4月連休',
+      firstVisibleDate: '2026-04-29', lastVisibleDate: '2026-05-06', spanLength: 2,
+    },
+    {
+      key: '2026-09-21', label: '9月4週目',
+      firstVisibleDate: '2026-09-22', lastVisibleDate: '2026-09-25', spanLength: 2,
+    },
+    {
+      key: '2027-09-20', label: '9月4週目',
+      firstVisibleDate: '2027-09-20', lastVisibleDate: '2027-09-20', spanLength: 1,
+    },
+  ]);
+  const html = new PlanSchedulingRenderer({}).dayOverviewGroupsTemplate(groups);
+  assert.match(html, /4月29日\(水\)～5月6日\(水\)/);
+  assert.match(html, />4月連休<\/span>/);
+  assert.equal((html.match(/--plan-overview-group-span:2/g) || []).length, 4);
 });
 
 
@@ -3032,18 +3081,27 @@ test('Matrix visibility switch is viewport-local, accessible, and backed by over
   assert.match(scss, /\.plan-scheduling__planningCanvas\.is-maintenance-week-view\.is-chart-overview\s*\{[^}]*--plan-date-track:\s*var\(--plan-overview-week-track\)/s);
   assert.match(scss, /\.plan-scheduling__matrix\[hidden\]\s*\{\s*display:\s*none/s);
   assert.match(scss, /\.plan-scheduling__planningCanvas\.is-chart-overview \.plan-scheduling__chartColumn > strong\s*\{\s*display:\s*none/s);
+  assert.match(scss, /\.plan-scheduling__dayOverviewGroups\s*\{[^}]*grid-template-rows:\s*repeat\(2,/s);
+  assert.match(scss, /\.plan-scheduling__overviewGroupRow\s*\{[^}]*grid-auto-columns:\s*var\(--plan-date-track\)[^}]*gap:\s*var\(--plan-date-column-gap\)/s);
+  assert.match(scss, /\.plan-scheduling__overviewRangeCell,[\s\S]*?\.plan-scheduling__overviewGroupCell\s*\{[^}]*grid-column:\s*span\s+var\(--plan-overview-group-span\)/s);
   assert.match(scss, /input:focus-visible \+ \.plan-scheduling__matrixSwitch[^}]*outline:/s);
 });
 
 
 test('renderer omits Matrix controls in overview while retaining Day maintenance context', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
+  const { projectDayOverviewGroups } = await importMaintenanceWeekProjection();
   const projected = maintenanceWeekFixture();
   projected.viewMode = 'day';
   projected.matrixVisible = false;
+  projected.dayOverviewGroups = projectDayOverviewGroups(projected.timelineDates);
   const dateGrid = { innerHTML: '' };
   const matrix = { hidden: false };
-  const maintenanceWeek = { innerHTML: '', hidden: true };
+  const maintenanceClasses = [];
+  const maintenanceWeek = {
+    innerHTML: '', hidden: true,
+    classList: { toggle: (...args) => maintenanceClasses.push(args) },
+  };
   const toggle = {
     checked: true,
     attributes: {},
@@ -3081,7 +3139,13 @@ test('renderer omits Matrix controls in overview while retaining Day maintenance
   assert.equal(matrix.hidden, true);
   assert.equal(dateGrid.innerHTML, '');
   assert.equal(maintenanceWeek.hidden, false);
-  assert.notEqual(maintenanceWeek.innerHTML, '');
+  assert.match(maintenanceWeek.innerHTML, /plan-scheduling__dayOverviewGroups/);
+  assert.match(maintenanceWeek.innerHTML, /9月21日\(月\)～9月26日\(土\)/);
+  assert.match(maintenanceWeek.innerHTML, /style="--plan-overview-group-span:3"/);
+  assert.match(maintenanceWeek.innerHTML, />9月4週目<\/span>/);
+  assert.match(maintenanceWeek.innerHTML, />10月1週目<\/span>/);
+  assert.doesNotMatch(maintenanceWeek.innerHTML, /plan-scheduling__maintenanceWeekCell/);
+  assert.deepEqual(maintenanceClasses.at(-1), ['is-day-overview-groups', true]);
   assert.deepEqual(canvasClasses.find(([name]) => name === 'is-chart-overview'), [
     'is-chart-overview', true,
   ]);

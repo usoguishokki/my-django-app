@@ -38,6 +38,7 @@ import {
   maintenanceWeekForDate,
   maintenanceDatesForFiscalRange,
   maintenanceWeeksForFiscalRange,
+  projectDayOverviewGroups,
   projectMaintenanceFiscalRange,
   projectMaintenanceWeeks,
 } from '../domain/PlanSchedulingMaintenanceWeekProjection.js';
@@ -282,19 +283,28 @@ export class PlanSchedulingController {
 
   refreshViewState() {
     const anchorDate = this.timelineFiscalAnchorDate || this.state?.week?.startDate;
-    const projection = this.viewMode === PLAN_SCHEDULING_VIEW_MODE.MAINTENANCE_WEEK
-      ? projectMaintenanceWeeks(
+    let projection;
+    if (this.viewMode === PLAN_SCHEDULING_VIEW_MODE.MAINTENANCE_WEEK) {
+      projection = projectMaintenanceWeeks(
         this.state,
         this.activeFilter,
         anchorDate,
-      )
-      : {
-        ...projectPlanSchedulingState(
-          projectMaintenanceFiscalRange(this.state, anchorDate),
-          this.activeFilter,
+      );
+    } else {
+      const fiscalProjection = projectMaintenanceFiscalRange(this.state, anchorDate);
+      const dayProjection = projectPlanSchedulingState(
+        fiscalProjection,
+        this.activeFilter,
+      );
+      projection = {
+        ...dayProjection,
+        dayOverviewGroups: projectDayOverviewGroups(
+          dayProjection.timelineDates,
+          fiscalProjection.timelineDates,
         ),
         viewMode: PLAN_SCHEDULING_VIEW_MODE.DAY,
       };
+    }
     this.viewState = { ...projection, matrixVisible: this.matrixVisible };
     return this.viewState;
   }

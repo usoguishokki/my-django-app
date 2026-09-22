@@ -39,12 +39,15 @@ const aggregateSlots = (slots) => {
 
 export const groupCanonicalMaintenanceWeeks = (dates = []) => {
   const groups = [];
+  let currentIdentity = null;
   dates.forEach((day) => {
     const label = day.maintenanceWeekLabel || '';
+    const identity = day.maintenanceGroupKey || label;
     const current = groups.at(-1);
-    if (!current || current.label !== label) {
+    if (!current || currentIdentity !== identity) {
+      currentIdentity = identity;
       groups.push({
-        key: day.date,
+        key: day.maintenanceGroupKey || day.date,
         date: day.date,
         label,
         firstDate: day.date,
@@ -57,6 +60,25 @@ export const groupCanonicalMaintenanceWeeks = (dates = []) => {
     current.dates.push(day);
   });
   return groups;
+};
+
+export const projectDayOverviewGroups = (visibleDates = [], canonicalDates = visibleDates) => {
+  const canonicalGroupByDate = new Map(
+    groupCanonicalMaintenanceWeeks(canonicalDates).flatMap((group) => (
+      group.dates.map((day) => [day.date, group])
+    )),
+  );
+  const datesWithStableIdentity = visibleDates.map((day) => ({
+    ...day,
+    maintenanceGroupKey: canonicalGroupByDate.get(day.date)?.key || day.maintenanceGroupKey,
+  }));
+  return groupCanonicalMaintenanceWeeks(datesWithStableIdentity).map((group) => ({
+    key: group.key,
+    label: group.label,
+    firstVisibleDate: group.firstDate,
+    lastVisibleDate: group.lastDate,
+    spanLength: group.dates.length,
+  }));
 };
 
 const fiscalStartYearForDate = (isoDate) => {
@@ -94,10 +116,13 @@ export const maintenanceDatesForFiscalRange = (dates = [], anchorDate) => (
 
 export const projectMaintenanceFiscalRange = (state, anchorDate) => {
   if (!state) return state;
-  const timelineDates = maintenanceDatesForFiscalRange(
+  const canonicalGroups = groupCanonicalMaintenanceWeeks(
     state.timelineDates || state.dates || [],
-    anchorDate,
   );
+  const fiscalGroups = anchorDate
+    ? maintenanceWeeksForFiscalRange(canonicalGroups, anchorDate)
+    : canonicalGroups;
+  const timelineDates = fiscalGroups.flatMap((group) => group.dates);
   const visibleDates = new Set(timelineDates.map((day) => day.date));
   return {
     ...state,
