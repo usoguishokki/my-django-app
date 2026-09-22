@@ -30,8 +30,15 @@ export const TEAM_COLORS = Object.freeze({
   'C班': '#FFC715',
 });
 
-const teamColorDeclaration = (teamName) =>
-  `--plan-scheduling-team-color:${TEAM_COLORS[teamName]}`;
+export const SHIFT_COLORS = Object.freeze({
+  '1直': 'rgba(45, 120, 218, 0.8)',
+  '2直': 'rgba(52, 236, 123, 0.8)',
+  '3直': 'rgba(255, 105, 105, 0.8)',
+  '休日': 'rgba(112, 112, 112, 0.8)',
+});
+
+const chartColorDeclaration = (shiftName) =>
+  `--plan-scheduling-chart-color:${SHIFT_COLORS[shiftName]}`;
 
 const hasPinnedMoveSource = (dates, selection) => {
   const sourceDate = selection?.isMoving && selection.moveContext?.sourceSlot?.date;
@@ -63,15 +70,15 @@ const formatDelta = (before, after) => {
 };
 
 const approvedChartDay = (day) => {
-  const teamWorkloads = day.teamWorkloads.filter((item) =>
-    Object.hasOwn(TEAM_COLORS, item.teamName));
-  const hasInvalidEffort = teamWorkloads.some((item) => item.hasInvalidEffort);
+  const shiftWorkloads = (day.shiftWorkloads || []).filter((item) =>
+    Object.hasOwn(SHIFT_COLORS, item.shiftName));
+  const hasInvalidEffort = shiftWorkloads.some((item) => item.hasInvalidEffort);
   const totalWorkloadMinutes = hasInvalidEffort
     ? null
-    : teamWorkloads.reduce((sum, item) => sum + (item.workloadMinutes ?? 0), 0);
+    : shiftWorkloads.reduce((sum, item) => sum + (item.workloadMinutes ?? 0), 0);
   return {
     ...day,
-    teamWorkloads,
+    shiftWorkloads,
     totalWorkloadMinutes,
     totalWorkloadLabel: formatMinutes(totalWorkloadMinutes),
   };
@@ -81,55 +88,67 @@ const chartPreviewFromSelection = (selection) => {
   const { plan, destination, preview } = selection || {};
   const source = plan?.current;
   if (!source || !destination || !preview) return null;
-  const sourceTeam = source.team?.name;
-  const destinationTeam = destination.team?.name;
-  if (!source.date || !sourceTeam || !destination.date || !destinationTeam) return null;
-  if (source.date === destination.date && sourceTeam === destinationTeam) return null;
+  const sourceShift = source.shift?.name;
+  const destinationShift = destination.shift?.name;
+  if (!source.date || !sourceShift || !destination.date || !destinationShift) return null;
   return {
     source: {
       date: source.date,
-      teamName: sourceTeam,
+      shiftName: sourceShift,
       before: preview.sourceBefore,
       after: preview.sourceAfter,
     },
     destination: {
       date: destination.date,
-      teamName: destinationTeam,
+      shiftName: destinationShift,
       before: preview.destinationBefore,
       after: preview.destinationAfter,
     },
   };
 };
 
-const matchingChartChange = (projection, date, teamName) => {
+const matchingChartChange = (projection, date, shiftName, workloadMinutes) => {
   if (!projection) return null;
-  if (projection.source.date === date && projection.source.teamName === teamName) {
-    return { ...projection.source, kind: 'source' };
-  }
-  if (projection.destination.date === date && projection.destination.teamName === teamName) {
-    return { ...projection.destination, kind: 'destination' };
-  }
-  return null;
+  const matches = [
+    { ...projection.source, kind: 'source' },
+    { ...projection.destination, kind: 'destination' },
+  ].filter((change) => change.date === date && change.shiftName === shiftName);
+  if (!matches.length || !Number.isInteger(workloadMinutes)) return null;
+  const delta = matches.reduce(
+    (total, change) => total + (change.after - change.before),
+    0,
+  );
+  if (delta === 0) return null;
+  return {
+    kind: delta < 0 ? 'source' : 'destination',
+    before: workloadMinutes,
+    after: workloadMinutes + delta,
+  };
 };
 
 export const buildChartPresentation = (chart, selection = {}) => {
   const projection = chartPreviewFromSelection(selection);
   const dates = chart.dates.map(approvedChartDay).map((day) => {
-    const teamWorkloads = day.teamWorkloads.map((item) => {
-      const change = matchingChartChange(projection, day.date, item.teamName);
+    const shiftWorkloads = day.shiftWorkloads.map((item) => {
+      const change = matchingChartChange(
+        projection,
+        day.date,
+        item.shiftName,
+        item.workloadMinutes,
+      );
       const projectedWorkloadMinutes = change && Number.isInteger(change.after)
         ? change.after
         : item.workloadMinutes;
       return { ...item, change, projectedWorkloadMinutes };
     });
-    const hasInvalidEffort = teamWorkloads.some((item) => item.hasInvalidEffort);
+    const hasInvalidEffort = shiftWorkloads.some((item) => item.hasInvalidEffort);
     const projectedTotalWorkloadMinutes = hasInvalidEffort
       ? null
-      : teamWorkloads.reduce(
+      : shiftWorkloads.reduce(
         (sum, item) => sum + (item.projectedWorkloadMinutes ?? 0),
         0,
       );
-    return { ...day, teamWorkloads, projectedTotalWorkloadMinutes };
+    return { ...day, shiftWorkloads, projectedTotalWorkloadMinutes };
   });
   const totals = dates.flatMap((day) => [
     day.totalWorkloadMinutes,
@@ -161,7 +180,7 @@ const chartSegmentTemplate = ({ item, day, maxTotal, isSelected }) => {
     const existing = Math.max(0, Math.min(100, (current / projected) * 100));
     portions = `<span class="plan-scheduling__chartPortion is-preview-existing" style="height:${existing}%"></span><span class="plan-scheduling__chartPortion is-preview-added" style="height:${100 - existing}%"></span>`;
   }
-  return `<span class="${classes}" data-chart-date="${escapeHtml(day.date)}" data-chart-team="${escapeHtml(item.teamName)}" style="${teamColorDeclaration(item.teamName)};height:${height}%" aria-hidden="true">${portions}</span>`;
+  return `<span class="${classes}" data-chart-date="${escapeHtml(day.date)}" data-chart-shift="${escapeHtml(item.shiftName)}" style="${chartColorDeclaration(item.shiftName)};height:${height}%" aria-hidden="true">${portions}</span>`;
 };
 
 const tooltipWorkloadTemplate = (item) => {
@@ -571,13 +590,13 @@ export class PlanSchedulingRenderer {
 
   renderChartSelection(selectedSlot) {
     const selectedDate = selectedSlot?.date;
-    const selectedTeam = selectedSlot?.team?.name;
-    const hasSelection = Boolean(selectedDate && selectedTeam);
+    const selectedShift = selectedSlot?.shift?.name;
+    const hasSelection = Boolean(selectedDate && selectedShift);
     this.workloadChart.classList.toggle('has-chart-selection', hasSelection);
-    this.root.querySelectorAll('[data-chart-date][data-chart-team]').forEach((segment) => {
+    this.root.querySelectorAll('[data-chart-date][data-chart-shift]').forEach((segment) => {
       const isSelected = hasSelection &&
         segment.dataset.chartDate === selectedDate &&
-        segment.dataset.chartTeam === selectedTeam;
+        segment.dataset.chartShift === selectedShift;
       segment.classList.toggle('is-selected-chart-segment', isSelected);
     });
   }
@@ -658,27 +677,29 @@ export class PlanSchedulingRenderer {
       isSelectionModel ? selection : { selectedSlot },
     );
     const bars = chartDays.map((day, dayIndex) => {
-      const segments = day.teamWorkloads.map((item) => {
+      const segments = day.shiftWorkloads.map((item) => {
         const isSelected = day.date === selectedSlot?.date &&
-          item.teamName === selectedSlot?.team?.name;
+          item.shiftName === selectedSlot?.shift?.name;
         return chartSegmentTemplate({ item, day, maxTotal, isSelected });
       }).join('');
       const tooltipId = `plan-workload-tooltip-${dayIndex}`;
-      const rows = day.teamWorkloads.map((item) => `
-        <div class="plan-scheduling__tooltipRow${item.change ? ` is-preview-${item.change.kind}` : ''}"><span><i style="${teamColorDeclaration(item.teamName)}"></i>${escapeHtml(item.teamName)}</span>${tooltipWorkloadTemplate(item)}</div>`).join('');
+      const rows = day.shiftWorkloads.map((item) => `
+        <div class="plan-scheduling__tooltipRow${item.change ? ` is-preview-${item.change.kind}` : ''}"><span><i style="${chartColorDeclaration(item.shiftName)}"></i>${escapeHtml(item.shiftName)}</span>${tooltipWorkloadTemplate(item)}</div>`).join('');
       const totalMinutes = projection
         ? day.projectedTotalWorkloadMinutes
         : day.totalWorkloadMinutes;
       const totalLabel = formatMinutes(totalMinutes);
-      const affectedDescriptions = day.teamWorkloads.filter((item) => item.change).map((item) => {
+      const affectedDescriptions = day.shiftWorkloads.filter((item) => item.change).map((item) => {
         const delta = item.change.after - item.change.before;
-        return `${item.teamName} 移動プレビュー後 ${formatMinutes(item.change.after)}、${formatMinutes(Math.abs(delta))}${delta < 0 ? '減少' : '増加'}`;
+        return `${item.shiftName} 移動プレビュー後 ${formatMinutes(item.change.after)}、${formatMinutes(Math.abs(delta))}${delta < 0 ? '減少' : '増加'}`;
       });
       const tooltipIdentityLabel = day.isMaintenanceWeek
         ? day.label
         : tooltipDateLabel(day.date, day.label);
       const ariaLabel = [
-        `${day.label}の工数詳細`,
+        `${day.label}の直別工数`,
+        ...day.shiftWorkloads.map((item) => `${item.shiftName} ${item.workloadLabel}`),
+        `合計 ${totalLabel}`,
         ...affectedDescriptions,
       ].join('。');
       const moveSourceLabel = day.isPinnedMoveSource
@@ -696,14 +717,13 @@ export class PlanSchedulingRenderer {
   }
 
   chartLegendTemplate(chart = {}) {
-    const configuredTeams = (chart.teams || [])
-      .map((team) => team.name)
-      .filter((teamName) => Object.hasOwn(TEAM_COLORS, teamName));
-    const teamNames = configuredTeams.length ? configuredTeams : Object.keys(TEAM_COLORS);
-    const items = teamNames.map((teamName) =>
-      `<li class="plan-scheduling__chartLegendItem"><i class="plan-scheduling__chartLegendSwatch" style="${teamColorDeclaration(teamName)}"></i>${escapeHtml(teamName)}</li>`
+    const configuredShifts = (chart.shiftNames || [])
+      .filter((shiftName) => Object.hasOwn(SHIFT_COLORS, shiftName));
+    const shiftNames = configuredShifts.length ? configuredShifts : Object.keys(SHIFT_COLORS);
+    const items = shiftNames.map((shiftName) =>
+      `<li class="plan-scheduling__chartLegendItem"><i class="plan-scheduling__chartLegendSwatch" style="${chartColorDeclaration(shiftName)}"></i>${escapeHtml(shiftName)}</li>`
     ).join('');
-    return `<ul class="plan-scheduling__chartLegend" aria-label="班別">${items}</ul>`;
+    return `<ul class="plan-scheduling__chartLegend" aria-label="直別">${items}</ul>`;
   }
 
   renderFilterState(filter = {}) {

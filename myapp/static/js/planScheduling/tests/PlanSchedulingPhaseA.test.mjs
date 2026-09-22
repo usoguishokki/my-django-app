@@ -251,7 +251,7 @@ test('renderer exposes chart, matrix, drawer, and selection contracts', () => {
   );
   assert.match(renderer, /dateTemplate/);
   assert.match(renderer, /workloadChartTemplate/);
-  assert.match(renderer, /teamWorkloads/);
+  assert.match(renderer, /shiftWorkloads/);
   assert.match(renderer, /chartSegment/);
   assert.match(renderer, /chartTooltip/);
   assert.match(renderer, /role="tooltip"/);
@@ -271,7 +271,7 @@ test('renderer exposes chart, matrix, drawer, and selection contracts', () => {
   assert.match(renderer, /pointerover|focusin|scroll/);
   assert.match(renderer, /renderChartSelection/);
   assert.match(renderer, /data-chart-date/);
-  assert.match(renderer, /data-chart-team/);
+  assert.match(renderer, /data-chart-shift/);
   assert.doesNotMatch(renderer, /previewTemplate|previewEmpty|destinationPrompt|data-role="preview"/);
   assert.doesNotMatch(renderer, /単位：分|工数（分）|plan-scheduling__yAxis/);
   assert.match(renderer, /detail-card/);
@@ -321,81 +321,82 @@ test('drawer Plan cards reuse detail-card content with an independent Move actio
 });
 
 
-test('stacked bars use stable distinct A/B/C colors and contain no text labels', async () => {
-  const { PlanSchedulingRenderer, TEAM_COLORS } = await importRenderer();
+test('stacked bars use the established distinct shift colors and contain no text labels', async () => {
+  const { PlanSchedulingRenderer, SHIFT_COLORS } = await importRenderer();
   assert.deepEqual(
-    { ...TEAM_COLORS },
-    { 'A班': '#1C55C8', 'B班': '#00D614', 'C班': '#FFC715' },
+    { ...SHIFT_COLORS },
+    {
+      '1直': 'rgba(45, 120, 218, 0.8)',
+      '2直': 'rgba(52, 236, 123, 0.8)',
+      '3直': 'rgba(255, 105, 105, 0.8)',
+      '休日': 'rgba(112, 112, 112, 0.8)',
+    },
   );
   const renderer = new PlanSchedulingRenderer({});
   const html = renderer.workloadChartTemplate({
-    teams: [
-      { id: 1, name: 'A班' }, { id: 2, name: 'B班' }, { id: 3, name: 'C班' },
-    ],
+    shiftNames: ['1直', '2直', '3直', '休日'],
     dates: [{
       date: '2026-09-16', label: '9/16（水）', totalWorkloadMinutes: 1800,
       totalWorkloadLabel: '1,800分',
-      teamWorkloads: [
-        { teamId: 1, teamName: 'A班', workloadMinutes: 600, workloadLabel: '600分' },
-        { teamId: 2, teamName: 'B班', workloadMinutes: 800, workloadLabel: '800分' },
-        { teamId: 3, teamName: 'C班', workloadMinutes: 400, workloadLabel: '400分' },
+      shiftWorkloads: [
+        { shiftName: '1直', workloadMinutes: 600, workloadLabel: '600分' },
+        { shiftName: '2直', workloadMinutes: 800, workloadLabel: '800分' },
+        { shiftName: '3直', workloadMinutes: 300, workloadLabel: '300分' },
+        { shiftName: '休日', workloadMinutes: 100, workloadLabel: '100分' },
       ],
     }],
   });
   assert.match(html, /9月16日（水）/);
-  assert.match(html, /--plan-scheduling-team-color:#1C55C8/);
-  assert.match(html, /--plan-scheduling-team-color:#00D614/);
-  assert.match(html, /--plan-scheduling-team-color:#FFC715/);
-  for (const color of Object.values(TEAM_COLORS)) {
-    assert.equal([...html.matchAll(new RegExp(color, 'g'))].length, 2);
+  for (const color of Object.values(SHIFT_COLORS)) {
+    assert.equal(html.split(color).length - 1, 2);
   }
   assert.match(html, /aria-describedby="plan-workload-tooltip-0"/);
   assert.match(html, /data-plan-date="2026-09-16"/);
   assert.match(html, /aria-label="[^"]*9\/16/);
   assert.match(html, /role="tooltip"/);
   assert.doesNotMatch(html, /<\/button><span>9\/16/);
-  assert.match(html, /A班[\s\S]*600分/);
-  assert.match(html, /B班[\s\S]*800分/);
-  assert.match(html, /C班[\s\S]*400分/);
+  assert.match(html, /1直[\s\S]*600分/);
+  assert.match(html, /2直[\s\S]*800分/);
+  assert.match(html, /3直[\s\S]*300分/);
+  assert.match(html, /休日[\s\S]*100分/);
   assert.match(html, /合計[\s\S]*1800分/);
   const segments = [...html.matchAll(/<span class="plan-scheduling__chartSegment[^>]*>(.*?)<\/span>/g)];
-  assert.equal(segments.length, 3);
+  assert.equal(segments.length, 4);
   assert.ok(segments.every((match) => match[1] === ''));
   const legend = renderer.chartLegendTemplate();
   assert.match(legend, /plan-scheduling__chartLegend/);
-  assert.match(legend, /A班/);
-  assert.match(legend, /B班/);
-  assert.match(legend, /C班/);
-  assert.match(legend, /--plan-scheduling-team-color:#1C55C8/);
-  assert.match(legend, /--plan-scheduling-team-color:#00D614/);
-  assert.match(legend, /--plan-scheduling-team-color:#FFC715/);
+  assert.match(legend, /1直/);
+  assert.match(legend, /2直/);
+  assert.match(legend, /3直/);
+  assert.match(legend, /休日/);
 });
 
 
-test('chart selection maps a matrix slot to its daily team segment only', async () => {
+test('chart selection maps a matrix slot to its daily shift segment only', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
   const renderer = new PlanSchedulingRenderer({});
   const chart = {
     dates: ['2026-09-16', '2026-09-17'].map((date) => ({
       date, label: date,
-      teamWorkloads: [
-        { teamName: 'A班', workloadMinutes: 100, workloadLabel: '100分' },
-        { teamName: 'B班', workloadMinutes: 200, workloadLabel: '200分' },
-        { teamName: 'C班', workloadMinutes: 300, workloadLabel: '300分' },
+      shiftWorkloads: [
+        { shiftName: '1直', workloadMinutes: 100, workloadLabel: '100分' },
+        { shiftName: '2直', workloadMinutes: 200, workloadLabel: '200分' },
+        { shiftName: '3直', workloadMinutes: 300, workloadLabel: '300分' },
+        { shiftName: '休日', workloadMinutes: 0, workloadLabel: '0分' },
       ],
     })),
   };
   const selected = { date: '2026-09-16', shift: { name: '2直' }, team: { name: 'B班' } };
   const html = renderer.workloadChartTemplate(chart, selected);
-  const selectedSegments = [...html.matchAll(/plan-scheduling__chartSegment is-selected-chart-segment[^>]*data-chart-date="([^"]+)"[^>]*data-chart-team="([^"]+)"/g)];
-  assert.deepEqual(selectedSegments.map((match) => match.slice(1)), [['2026-09-16', 'B班']]);
+  const selectedSegments = [...html.matchAll(/plan-scheduling__chartSegment is-selected-chart-segment[^>]*data-chart-date="([^"]+)"[^>]*data-chart-shift="([^"]+)"/g)];
+  assert.deepEqual(selectedSegments.map((match) => match.slice(1)), [['2026-09-16', '2直']]);
   assert.equal((html.match(/is-selected-chart-segment/g) || []).length, 1);
 
-  for (const teamName of ['A班', 'B班', 'C班']) {
-    const teamHtml = renderer.workloadChartTemplate(chart, {
-      date: '2026-09-16', shift: { name: '1直' }, team: { name: teamName },
+  for (const shiftName of ['1直', '2直', '3直', '休日']) {
+    const shiftHtml = renderer.workloadChartTemplate(chart, {
+      date: '2026-09-16', shift: { name: shiftName }, team: { name: 'A班' },
     });
-    assert.match(teamHtml, new RegExp(`is-selected-chart-segment[^>]*data-chart-date="2026-09-16"[^>]*data-chart-team="${teamName}"`));
+    assert.match(shiftHtml, new RegExp(`is-selected-chart-segment[^>]*data-chart-date="2026-09-16"[^>]*data-chart-shift="${shiftName}"`));
   }
 });
 
@@ -629,7 +630,7 @@ test('normal state rendering retains one date-aligned maintenance-week cell per 
   assert.equal(workspaceAttributes.get('aria-busy'), 'false');
   assert.equal(loadingSkeleton.hidden, true);
   assert.equal(planningLayout.hidden, false);
-  assert.match(chartLegend.innerHTML, /A班[\s\S]*B班[\s\S]*C班/);
+  assert.match(chartLegend.innerHTML, /1直[\s\S]*2直[\s\S]*3直[\s\S]*休日/);
   assert.deepEqual(
     [...maintenanceWeek.innerHTML.matchAll(/data-plan-date="([^"]+)"/g)].map((match) => match[1]),
     ['2026-09-14', '2026-09-15'],
@@ -1011,10 +1012,10 @@ test('chart selection replaces and clears using the authoritative selected slot'
   const { PlanSchedulingRenderer } = await importRenderer();
   const toggles = [];
   const segments = [
-    ['2026-09-16', 'A班'], ['2026-09-16', 'B班'], ['2026-09-17', 'B班'],
-  ].map(([chartDate, chartTeam]) => ({
-    dataset: { chartDate, chartTeam },
-    classList: { toggle: (name, value) => toggles.push([chartDate, chartTeam, name, value]) },
+    ['2026-09-16', '1直'], ['2026-09-16', '2直'], ['2026-09-17', '2直'],
+  ].map(([chartDate, chartShift]) => ({
+    dataset: { chartDate, chartShift },
+    classList: { toggle: (name, value) => toggles.push([chartDate, chartShift, name, value]) },
   }));
   const chart = { classList: { toggle: (...args) => toggles.push(['chart', ...args]) } };
   const renderer = new PlanSchedulingRenderer({
@@ -1022,14 +1023,14 @@ test('chart selection replaces and clears using the authoritative selected slot'
     querySelectorAll: () => segments,
   });
 
-  renderer.renderChartSelection({ date: '2026-09-16', team: { name: 'B班' } });
+  renderer.renderChartSelection({ date: '2026-09-16', shift: { name: '2直' } });
   assert.deepEqual(toggles.filter((entry) => entry.length === 4), [
-    ['2026-09-16', 'A班', 'is-selected-chart-segment', false],
-    ['2026-09-16', 'B班', 'is-selected-chart-segment', true],
-    ['2026-09-17', 'B班', 'is-selected-chart-segment', false],
+    ['2026-09-16', '1直', 'is-selected-chart-segment', false],
+    ['2026-09-16', '2直', 'is-selected-chart-segment', true],
+    ['2026-09-17', '2直', 'is-selected-chart-segment', false],
   ]);
   toggles.length = 0;
-  renderer.renderChartSelection({ date: '2026-09-17', team: { name: 'B班' } });
+  renderer.renderChartSelection({ date: '2026-09-17', shift: { name: '2直' } });
   assert.deepEqual(toggles.filter((entry) => entry.length === 4).map((entry) => entry[3]), [false, false, true]);
   toggles.length = 0;
   renderer.renderChartSelection(null);
@@ -1037,58 +1038,57 @@ test('chart selection replaces and clears using the authoritative selected slot'
 });
 
 
-test('chart tooltip and total defensively exclude values outside A/B/C scope', async () => {
+test('chart tooltip and total defensively exclude values outside configured shift scope', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
   const html = new PlanSchedulingRenderer({}).workloadChartTemplate({
     dates: [{
       date: '2026-09-16', label: '9/16（水）', totalWorkloadMinutes: 999,
       totalWorkloadLabel: '999分',
-      teamWorkloads: [
-        { teamName: 'A班', workloadMinutes: 100, workloadLabel: '100分' },
-        { teamName: 'B班', workloadMinutes: 200, workloadLabel: '200分' },
-        { teamName: 'C班', workloadMinutes: 300, workloadLabel: '300分' },
-        { teamName: '連2_A', workloadMinutes: 400, workloadLabel: '400分' },
-        { teamName: '連2_B', workloadMinutes: 500, workloadLabel: '500分' },
-        { teamName: '常昼', workloadMinutes: 600, workloadLabel: '600分' },
+      shiftWorkloads: [
+        { shiftName: '1直', workloadMinutes: 100, workloadLabel: '100分' },
+        { shiftName: '2直', workloadMinutes: 200, workloadLabel: '200分' },
+        { shiftName: '3直', workloadMinutes: 300, workloadLabel: '300分' },
+        { shiftName: '休日', workloadMinutes: 400, workloadLabel: '400分' },
+        { shiftName: '常昼', workloadMinutes: 600, workloadLabel: '600分' },
       ],
     }],
   });
-  assert.match(html, /600分/);
-  assert.doesNotMatch(html, /連2_A|連2_B|常昼|999分/);
+  assert.match(html, /1000分/);
+  assert.doesNotMatch(html, /常昼|999分/);
 });
 
 
-test('chart projection transfers workload by date and team using PreviewPolicy values', async () => {
+test('chart projection transfers workload by date and shift using PreviewPolicy deltas', async () => {
   const { buildChartPresentation } = await importRenderer();
   const chart = {
     dates: [
       {
         date: '2026-09-16', label: '9/16（水）',
-        teamWorkloads: [
-          { teamName: 'A班', workloadMinutes: 100, workloadLabel: '100分' },
-          { teamName: 'B班', workloadMinutes: 284, workloadLabel: '284分' },
-          { teamName: 'C班', workloadMinutes: 50, workloadLabel: '50分' },
+        shiftWorkloads: [
+          { shiftName: '1直', workloadMinutes: 100, workloadLabel: '100分' },
+          { shiftName: '2直', workloadMinutes: 284, workloadLabel: '284分' },
+          { shiftName: '3直', workloadMinutes: 50, workloadLabel: '50分' },
         ],
       },
       {
         date: '2026-09-17', label: '9/17（木）',
-        teamWorkloads: [
-          { teamName: 'A班', workloadMinutes: 133, workloadLabel: '133分' },
-          { teamName: 'B班', workloadMinutes: 100, workloadLabel: '100分' },
-          { teamName: 'C班', workloadMinutes: 0, workloadLabel: '0分' },
+        shiftWorkloads: [
+          { shiftName: '1直', workloadMinutes: 133, workloadLabel: '133分' },
+          { shiftName: '2直', workloadMinutes: 100, workloadLabel: '100分' },
+          { shiftName: '3直', workloadMinutes: 0, workloadLabel: '0分' },
         ],
       },
     ],
   };
   const selection = {
-    selectedSlot: { date: '2026-09-16', team: { name: 'B班' } },
-    plan: { current: { date: '2026-09-16', team: { name: 'B班' } } },
-    destination: { date: '2026-09-17', team: { name: 'A班' } },
+    selectedSlot: { date: '2026-09-16', shift: { name: '2直' } },
+    plan: { current: { date: '2026-09-16', shift: { name: '2直' } } },
+    destination: { date: '2026-09-17', shift: { name: '1直' } },
     preview: { sourceBefore: 284, sourceAfter: 264, destinationBefore: 133, destinationAfter: 153 },
   };
   const presentation = buildChartPresentation(chart, selection);
-  const source = presentation.dates[0].teamWorkloads.find((item) => item.teamName === 'B班');
-  const destination = presentation.dates[1].teamWorkloads.find((item) => item.teamName === 'A班');
+  const source = presentation.dates[0].shiftWorkloads.find((item) => item.shiftName === '2直');
+  const destination = presentation.dates[1].shiftWorkloads.find((item) => item.shiftName === '1直');
 
   assert.equal(source.workloadMinutes, 284);
   assert.equal(source.projectedWorkloadMinutes, 264);
@@ -1102,48 +1102,47 @@ test('chart projection transfers workload by date and team using PreviewPolicy v
 });
 
 
-test('chart projection handles same-date/team and transfer edge cases', async () => {
+test('chart projection handles same-date/shift and transfer edge cases', async () => {
   const { buildChartPresentation } = await importRenderer();
   const chart = {
     dates: [
-      { date: '2026-09-16', label: '9/16', teamWorkloads: [
-        { teamName: 'A班', workloadMinutes: 100 }, { teamName: 'B班', workloadMinutes: 284 },
+      { date: '2026-09-16', label: '9/16', shiftWorkloads: [
+        { shiftName: '1直', workloadMinutes: 100 }, { shiftName: '2直', workloadMinutes: 284 },
       ] },
-      { date: '2026-09-17', label: '9/17', teamWorkloads: [
-        { teamName: 'A班', workloadMinutes: 20 }, { teamName: 'B班', workloadMinutes: 40 },
+      { date: '2026-09-17', label: '9/17', shiftWorkloads: [
+        { shiftName: '1直', workloadMinutes: 20 }, { shiftName: '2直', workloadMinutes: 40 },
       ] },
     ],
   };
   const base = {
-    plan: { current: { date: '2026-09-16', team: { name: 'B班' } } },
+    plan: { current: { date: '2026-09-16', shift: { name: '2直' } } },
     preview: { sourceBefore: 284, sourceAfter: 264, destinationBefore: 100, destinationAfter: 120 },
   };
 
-  const sameTeam = buildChartPresentation(chart, {
-    ...base, destination: { date: '2026-09-16', team: { name: 'B班' } },
+  const sameShift = buildChartPresentation(chart, {
+    ...base, destination: { date: '2026-09-16', shift: { name: '2直' } },
   });
-  assert.equal(sameTeam.projection, null);
   assert.deepEqual(
-    sameTeam.dates[0].teamWorkloads.map((item) => item.projectedWorkloadMinutes),
+    sameShift.dates[0].shiftWorkloads.map((item) => item.projectedWorkloadMinutes),
     [100, 284],
   );
 
   const redistributed = buildChartPresentation(chart, {
-    ...base, destination: { date: '2026-09-16', team: { name: 'A班' } },
+    ...base, destination: { date: '2026-09-16', shift: { name: '1直' } },
   });
   assert.deepEqual(
-    redistributed.dates[0].teamWorkloads.map((item) => item.projectedWorkloadMinutes),
+    redistributed.dates[0].shiftWorkloads.map((item) => item.projectedWorkloadMinutes),
     [120, 264],
   );
   assert.equal(redistributed.dates[0].projectedTotalWorkloadMinutes, 384);
 
-  const sameTeamOtherDate = buildChartPresentation(chart, {
+  const sameShiftOtherDate = buildChartPresentation(chart, {
     ...base,
-    destination: { date: '2026-09-17', team: { name: 'B班' } },
+    destination: { date: '2026-09-17', shift: { name: '2直' } },
     preview: { ...base.preview, destinationBefore: 40, destinationAfter: 60 },
   });
-  assert.equal(sameTeamOtherDate.dates[0].teamWorkloads[1].projectedWorkloadMinutes, 264);
-  assert.equal(sameTeamOtherDate.dates[1].teamWorkloads[1].projectedWorkloadMinutes, 60);
+  assert.equal(sameShiftOtherDate.dates[0].shiftWorkloads[1].projectedWorkloadMinutes, 264);
+  assert.equal(sameShiftOtherDate.dates[1].shiftWorkloads[1].projectedWorkloadMinutes, 60);
 });
 
 
@@ -1151,20 +1150,20 @@ test('chart preview expands scale, renders transfer portions, and exposes toolti
   const { PlanSchedulingRenderer, buildChartPresentation } = await importRenderer();
   const chart = {
     dates: [
-      { date: '2026-09-16', label: '9/16（水）', teamWorkloads: [
-        { teamName: 'A班', workloadMinutes: 0, workloadLabel: '0分' },
-        { teamName: 'B班', workloadMinutes: 284, workloadLabel: '284分' },
+      { date: '2026-09-16', label: '9/16（水）', shiftWorkloads: [
+        { shiftName: '1直', workloadMinutes: 0, workloadLabel: '0分' },
+        { shiftName: '2直', workloadMinutes: 284, workloadLabel: '284分' },
       ] },
-      { date: '2026-09-17', label: '9/17（木）', teamWorkloads: [
-        { teamName: 'A班', workloadMinutes: 280, workloadLabel: '280分' },
-        { teamName: 'B班', workloadMinutes: 0, workloadLabel: '0分' },
+      { date: '2026-09-17', label: '9/17（木）', shiftWorkloads: [
+        { shiftName: '1直', workloadMinutes: 280, workloadLabel: '280分' },
+        { shiftName: '2直', workloadMinutes: 0, workloadLabel: '0分' },
       ] },
     ],
   };
   const selection = {
-    selectedSlot: { date: '2026-09-16', team: { name: 'B班' } },
-    plan: { current: { date: '2026-09-16', team: { name: 'B班' } } },
-    destination: { date: '2026-09-17', team: { name: 'A班' } },
+    selectedSlot: { date: '2026-09-16', shift: { name: '2直' } },
+    plan: { current: { date: '2026-09-16', shift: { name: '2直' } } },
+    destination: { date: '2026-09-17', shift: { name: '1直' } },
     preview: { sourceBefore: 284, sourceAfter: 264, destinationBefore: 280, destinationAfter: 300 },
   };
   assert.equal(buildChartPresentation(chart, selection).maxTotal, 300);
@@ -1653,8 +1652,11 @@ test('distant timeline slot hydrates its existing week, preserves scroll, and ca
   }));
 
   assert.deepEqual(requestedDates, [targetDate]);
-  assert.equal(renderedState.timelineDates, timelineDates);
-  assert.equal(renderedState.workloadChart, timelineChart);
+  assert.deepEqual(renderedState.timelineDates, timelineDates);
+  assert.deepEqual(
+    renderedState.workloadChart.dates.map((day) => day.date),
+    timelineChart.dates.map((day) => day.date),
+  );
   assert.equal(renderedSelection.selectedSlot, targetSlot);
   assert.deepEqual(renderedSelection.slotPlans, [targetPlan]);
   assert.equal(viewport.scrollLeft, 24680);
@@ -1815,12 +1817,18 @@ test('initial load combines full shared timeline summaries with current week int
   const form = { addEventListener: () => {} };
   const weekChart = { shiftNames: [], dates: [{ date: '2026-09-14' }] };
   const timelineChart = {
-    shiftNames: [],
-    dates: [{ date: '2026-02-09' }, { date: '2027-03-28' }],
+    shiftNames: ['1直', '2直', '3直', '休日'], teams: [],
+    dates: [
+      { date: '2026-03-23' }, { date: '2026-04-01' },
+      { date: '2026-09-14' }, { date: '2027-03-22' }, { date: '2027-03-29' },
+    ],
   };
   const timelineDates = [
-    { date: '2026-02-09', slots: [] },
-    { date: '2027-03-28', slots: [] },
+    { date: '2026-03-23', maintenanceWeekLabel: '3月4週目', slots: [] },
+    { date: '2026-04-01', maintenanceWeekLabel: '4月1週目', slots: [] },
+    { date: '2026-09-14', maintenanceWeekLabel: '9月3週目', slots: [] },
+    { date: '2027-03-22', maintenanceWeekLabel: '3月4週目', slots: [] },
+    { date: '2027-03-29', maintenanceWeekLabel: '4月1週目', slots: [] },
   ];
   let renderedState = null;
   let scrolledDate = null;
@@ -1852,8 +1860,14 @@ test('initial load combines full shared timeline summaries with current week int
   await controller.init();
 
   assert.equal(renderedState.dates.length, 1);
-  assert.equal(renderedState.workloadChart, timelineChart);
-  assert.equal(renderedState.timelineDates, timelineDates);
+  assert.deepEqual(
+    renderedState.timelineDates.map((day) => day.date),
+    ['2026-04-01', '2026-09-14', '2027-03-22'],
+  );
+  assert.deepEqual(
+    renderedState.workloadChart.dates.map((day) => day.date),
+    ['2026-04-01', '2026-09-14', '2027-03-22'],
+  );
   assert.equal(scrolledDate, input.value);
 });
 
@@ -1939,17 +1953,25 @@ test('week submit preserves the Drawer and pinned Move source through the live c
     },
   };
   const fullTimelineChart = {
-    shiftNames: ['1直'],
+    shiftNames: ['1直', '2直', '3直', '休日'], teams: [{ id: 1, name: 'A班' }],
     dates: [
+      { date: '2026-03-23' },
+      { date: '2026-04-01' },
       sourceWeek.workloadChart.dates[0],
       ...destinationWeek.workloadChart.dates,
       { date: '2026-10-01', label: '10/1（木）', maintenanceWeekLabel: '10月1週目', totalWorkloadMinutes: 0, teamWorkloads: [] },
+      { date: '2027-03-22' },
+      { date: '2027-03-29' },
     ],
   };
   const fullTimelineDates = [
+    { date: '2026-03-23', maintenanceWeekLabel: '3月4週目', slots: [] },
+    { date: '2026-04-01', maintenanceWeekLabel: '4月1週目', slots: [] },
     sourceWeek.dates[0],
     ...destinationDates,
     { date: '2026-10-01', label: '10/1（木）', maintenanceWeekLabel: '10月1週目', slots: [] },
+    { date: '2027-03-22', maintenanceWeekLabel: '3月4週目', slots: [] },
+    { date: '2027-03-29', maintenanceWeekLabel: '4月1週目', slots: [] },
   ];
   const view = new PlanSchedulingRenderer({});
   const input = { value: '2026-09-21' };
@@ -2002,7 +2024,8 @@ test('week submit preserves the Drawer and pinned Move source through the live c
   assert.equal(finalRender.selection.moveContext.sourceSlot, sourceSlot);
   assert.equal(finalRender.selection.selectedSlot, sourceSlot);
   assert.deepEqual(finalRender.matrixDates.map((day) => day.date), [
-    sourceSlot.date, ...destinationDates.map((day) => day.date), '2026-10-01',
+    '2026-04-01', sourceSlot.date,
+    ...destinationDates.map((day) => day.date), '2026-10-01', '2027-03-22',
   ]);
   assert.match(finalRender.chartHtml, /data-plan-date="2026-10-01"/);
   assert.equal(finalRender.matrixDates.some((day) => day.date === '2026-10-01'), true);
@@ -2010,7 +2033,8 @@ test('week submit preserves the Drawer and pinned Move source through the live c
   assert.equal((finalRender.chartHtml.match(/data-plan-date="2026-09-14"/g) || []).length, 1);
   assert.deepEqual(
     [...finalRender.maintenanceHtml.matchAll(/data-plan-date="([^"]+)"/g)].map((match) => match[1]),
-    [sourceSlot.date, ...destinationDates.map((day) => day.date), '2026-10-01'],
+    ['2026-04-01', sourceSlot.date,
+      ...destinationDates.map((day) => day.date), '2026-10-01', '2027-03-22'],
   );
 
   controller.handleClick(eventFor('[data-action="cancel-move"]', {}));
@@ -2094,9 +2118,9 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   );
   assert.doesNotMatch(scss, /#edf1f4/i);
   assert.match(scss, /\.plan-scheduling__chartBar[^}]*background:\s*transparent/s);
-  assert.match(scss, /--plan-scheduling-team-color/);
+  assert.match(scss, /--plan-scheduling-chart-color/);
   assert.match(scss, /\.plan-scheduling \[data-role="chart-legend"\]\s*\{[^}]*position:\s*absolute[^}]*z-index:\s*3[^}]*right:\s*11px[^}]*width:\s*max-content[^}]*height:\s*auto[^}]*pointer-events:\s*none/s);
-  assert.match(scss, /\.plan-scheduling__chartLegendSwatch\s*\{[^}]*background:\s*var\(--plan-scheduling-team-color\)/s);
+  assert.match(scss, /\.plan-scheduling__chartLegendSwatch\s*\{[^}]*background:\s*var\(--plan-scheduling-chart-color\)/s);
   assert.doesNotMatch(scss, /team-other/);
   assert.doesNotMatch(scss, /plan-scheduling__yAxis/);
   assert.match(scss, /\.plan-scheduling__planList[^}]*display:\s*flex[^}]*flex-direction:\s*column/s);
@@ -2266,7 +2290,9 @@ function fiscalMaintenanceWeekFixture() {
     ...sourceDays,
     emptyDay('2027-03-22', '3月4週目'),
     emptyDay('2027-03-29', '4月1週目'),
+    emptyDay('2027-04-01', '4月1週目'),
     emptyDay('2027-09-20', '9月4週目'),
+    emptyDay('2028-03-22', '3月4週目'),
   ];
   return {
     ...source,
@@ -2290,8 +2316,11 @@ test('filter projection applies category OR and cross-category AND without mutat
   const snapshot = structuredClone(source);
 
   const defaultView = projectPlanSchedulingState(source, {});
-  assert.equal(defaultView, source);
+  assert.notEqual(defaultView, source);
   assert.deepEqual(defaultView.timelineDates.map((day) => day.date), source.timelineDates.map((day) => day.date));
+  assert.deepEqual(defaultView.workloadChart.dates[0].shiftWorkloads.map(
+    (item) => item.shiftName,
+  ), ['1直', '2直', '3直', '休日']);
 
   const weekdayView = projectPlanSchedulingState(source, { weekdays: ['月', '火'] });
   assert.deepEqual(weekdayView.timelineDates.map((day) => day.date), ['2026-09-21', '2026-09-22']);
@@ -2309,6 +2338,17 @@ test('filter projection applies category OR and cross-category AND without mutat
     ['A班', 'C班', 'A班', 'C班', 'A班'],
   );
   assert.equal(teamView.workloadChart.dates[0].totalWorkloadMinutes, 40);
+  assert.deepEqual(
+    teamView.workloadChart.dates[0].shiftWorkloads.map(
+      (item) => [item.shiftName, item.workloadMinutes],
+    ),
+    [['1直', 10], ['2直', 30], ['3直', 0], ['休日', 0]],
+  );
+  assert.equal(
+    teamView.workloadChart.dates.find((day) => day.date === '2026-09-26')
+      .shiftWorkloads.find((item) => item.shiftName === '休日').workloadMinutes,
+    70,
+  );
 
   const combined = projectPlanSchedulingState(source, {
     weekdays: ['月', '火'], shifts: ['2直'], teams: ['A班', 'B班'],
@@ -2377,15 +2417,16 @@ test('renderer filter draft is explicit, discardable, and reports the applied co
 });
 
 
-test('filtered chart legend keeps only active teams while reusing configured team colors', async () => {
+test('filtered chart legend keeps only active shifts while reusing established shift colors', async () => {
   const { PlanSchedulingRenderer } = await importRenderer();
   const renderer = new PlanSchedulingRenderer({ querySelector: () => null });
-  const legend = renderer.chartLegendTemplate({ teams: [{ name: 'A班' }, { name: 'C班' }] });
-  assert.match(legend, /A班/);
-  assert.doesNotMatch(legend, /B班/);
-  assert.match(legend, /C班/);
-  assert.match(legend, /#1C55C8/);
-  assert.match(legend, /#FFC715/);
+  const legend = renderer.chartLegendTemplate({ shiftNames: ['1直', '休日'] });
+  assert.match(legend, /1直/);
+  assert.doesNotMatch(legend, /2直|3直/);
+  assert.match(legend, /休日/);
+  assert.match(legend, /rgba\(45, 120, 218, 0\.8\)/);
+  assert.match(legend, /rgba\(112, 112, 112, 0\.8\)/);
+  assert.doesNotMatch(legend, /A班|B班|C班/);
 });
 
 
@@ -2611,6 +2652,7 @@ test('weekly Matrix emits only actual Calendar-derived pairs and retains actual 
 test('maintenance-week fiscal range is inclusive from April week 1 through March week 4', async () => {
   const {
     groupCanonicalMaintenanceWeeks,
+    projectMaintenanceFiscalRange,
     maintenanceWeeksForFiscalRange,
     projectMaintenanceWeeks,
   } = await importMaintenanceWeekProjection();
@@ -2636,6 +2678,58 @@ test('maintenance-week fiscal range is inclusive from April week 1 through March
   );
   assert.equal(projected.timelineDates[0].label, '4月1週目');
   assert.equal(projected.timelineDates.at(-1).label, '3月4週目');
+
+  for (const anchorDate of ['2026-09-21', '2027-02-10']) {
+    const dayState = projectMaintenanceFiscalRange(source, anchorDate);
+    assert.equal(dayState.timelineDates[0].maintenanceWeekLabel, '4月1週目');
+    assert.equal(dayState.timelineDates.at(-1).maintenanceWeekLabel, '3月4週目');
+    assert.ok(dayState.timelineDates.some((day) => day.maintenanceWeekLabel === '4月連休'));
+    assert.ok(!dayState.timelineDates.some((day) => day.date === '2026-03-23'));
+    assert.ok(!dayState.timelineDates.some((day) => day.date === '2027-03-29'));
+    assert.deepEqual(
+      dayState.timelineDates.map((day) => day.date),
+      dayState.workloadChart.dates.map((day) => day.date),
+    );
+  }
+
+  const nextFiscalYear = projectMaintenanceFiscalRange(source, '2027-09-20');
+  assert.equal(nextFiscalYear.timelineDates[0].date, '2027-03-29');
+  assert.equal(nextFiscalYear.timelineDates[0].maintenanceWeekLabel, '4月1週目');
+  assert.equal(nextFiscalYear.timelineDates.at(-1).date, '2028-03-22');
+});
+
+
+test('Day navigation reprojects to the requested maintenance fiscal year', async () => {
+  const { PlanSchedulingController } = await importController();
+  const source = fiscalMaintenanceWeekFixture();
+  let renderedState = null;
+  const controller = new PlanSchedulingController({
+    root: {},
+    apiClient: {
+      fetchWeek: async (targetDate) => ({
+        ...source,
+        week: { ...source.week, startDate: targetDate },
+      }),
+    },
+    renderer: {
+      renderLoading: () => {},
+      renderState: (state) => { renderedState = state; },
+      renderFilterState: () => {},
+      renderFilterEmptyState: () => {},
+      scrollTimelineToDate: () => true,
+      renderError: (message) => { throw new Error(message); },
+    },
+    buildPreview: () => null,
+    selectSlotPlans: () => [],
+  });
+  controller.timelineDates = source.timelineDates;
+  controller.timelineChart = source.workloadChart;
+
+  await controller.load('2027-09-20');
+
+  assert.equal(renderedState.timelineDates[0].date, '2027-03-29');
+  assert.equal(renderedState.timelineDates.at(-1).date, '2028-03-22');
+  assert.ok(renderedState.timelineDates.some((day) => day.date === '2027-09-20'));
 });
 
 
@@ -2649,7 +2743,10 @@ test('weekly Chart and Matrix share filters while Holiday remains one teamless M
   const ordinarySlots = firstWeek.slots.filter((slot) => slot.shiftName !== '休日');
 
   assert.deepEqual(projected.workloadChart.teams.map((team) => team.name), ['A班']);
-  assert.equal(chartDay.teamWorkloads[0].workloadMinutes, 45);
+  assert.deepEqual(
+    chartDay.shiftWorkloads.map((item) => [item.shiftName, item.workloadMinutes]),
+    [['1直', 0], ['2直', 0], ['3直', 40], ['休日', 5]],
+  );
   assert.equal(chartDay.totalWorkloadMinutes, 45);
   assert.ok(ordinarySlots.every((slot) => slot.teamName === 'A班'));
   assert.equal(holidaySlots.length, 1);
@@ -2661,7 +2758,7 @@ test('weekly Chart and Matrix share filters while Holiday remains one teamless M
   });
   assert.equal(holidayOnly.timelineDates[0].slots.length, 1);
   assert.equal(holidayOnly.timelineDates[0].slots[0].workloadMinutes, 23);
-  assert.equal(holidayOnly.workloadChart.dates[0].teamWorkloads[0].workloadMinutes, 5);
+  assert.equal(holidayOnly.workloadChart.dates[0].shiftWorkloads[0].workloadMinutes, 5);
 });
 
 
@@ -2696,7 +2793,7 @@ test('weekly renderer provides aggregate tooltip identity and accessible Day dri
   assert.doesNotMatch(matrixHtml, /data-slot-key=/);
   assert.equal((matrixHtml.match(/plan-scheduling__weeklyShift">休日/g) || []).length, 1);
   assert.doesNotMatch(matrixHtml, /plan-scheduling__shiftGroup/);
-  assert.match(chartHtml, /9月4週目の工数詳細/);
+  assert.match(chartHtml, /9月4週目の直別工数/);
   assert.match(chartHtml, /plan-scheduling__tooltipDate">9月4週目/);
   assert.equal(
     buildChartPresentation(projected.workloadChart).maxTotal,

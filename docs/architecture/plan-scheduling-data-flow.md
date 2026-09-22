@@ -52,6 +52,8 @@ Calendar_tb
 
 Daily Matrix slots therefore represent actual Calendar assignments; they are not a generated shift/team cross-product.
 
+The Chart is a presentation projection of those same filtered slots. In both Day and Maintenance Week modes its series dimension is shift (`1直`, `2直`, `3直`, `休日`), while team remains a filter and a Matrix assignment attribute. Chart shift workload must therefore be aggregated only after weekday, shift, and team filters have selected the contributing daily slots.
+
 ## Maintenance-week projection
 
 The accepted frontend pipeline is:
@@ -75,7 +77,7 @@ Do not infer a production rotation formula from a small sample of maintenance we
 
 For Plan Scheduling, the Holiday shift is identified by `ShiftPattan_tb.pattern_name == "休日"`. It is not inferred from `date_tag` or `holiday_group_id`.
 
-Underlying Holiday `Calendar_tb` rows may still carry A/B/C affiliations. The Maintenance Week Matrix intentionally presents those actual Holiday slots as one teamless Holiday aggregate. This is a weekly presentation rule only; it does not change the database semantics, and the weekly Chart retains normal team-based aggregation.
+Underlying Holiday `Calendar_tb` rows may still carry A/B/C affiliations. The Maintenance Week Matrix intentionally presents those actual Holiday slots as one teamless Holiday aggregate and ignores the team filter for that aggregate. This is a weekly Matrix presentation rule only; it does not change the database semantics. The Chart treats Holiday as a normal shift series and applies the active team filter before aggregation.
 
 ## Known unknowns
 

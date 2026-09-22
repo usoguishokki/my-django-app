@@ -85,6 +85,30 @@ export const maintenanceWeeksForFiscalRange = (groups = [], anchorDate) => {
   return groups.slice(startIndex, endIndex + 1);
 };
 
+export const maintenanceDatesForFiscalRange = (dates = [], anchorDate) => (
+  anchorDate
+    ? maintenanceWeeksForFiscalRange(groupCanonicalMaintenanceWeeks(dates), anchorDate)
+      .flatMap((group) => group.dates)
+    : dates
+);
+
+export const projectMaintenanceFiscalRange = (state, anchorDate) => {
+  if (!state) return state;
+  const timelineDates = maintenanceDatesForFiscalRange(
+    state.timelineDates || state.dates || [],
+    anchorDate,
+  );
+  const visibleDates = new Set(timelineDates.map((day) => day.date));
+  return {
+    ...state,
+    timelineDates,
+    workloadChart: {
+      ...(state.workloadChart || {}),
+      dates: (state.workloadChart?.dates || []).filter((day) => visibleDates.has(day.date)),
+    },
+  };
+};
+
 const configuredNames = (values, fallback) => values?.length ? values : fallback;
 
 const weeklyTeamNames = (chart) => configuredNames(
@@ -97,21 +121,18 @@ const weeklyShiftNames = (chart) => configuredNames(
   PLAN_SCHEDULING_FILTER_OPTIONS.shifts,
 );
 
-const chartDayForWeek = (group, contributingDates, teamNames, shiftNames, teamsByName) => {
+const chartDayForWeek = (group, contributingDates, shiftNames) => {
   const slots = contributingDates.flatMap((day) => day.slots || []).filter((slot) => (
-    shiftNames.includes(slot.shift?.name) && teamNames.includes(slot.team?.name)
+    shiftNames.includes(slot.shift?.name)
   ));
-  const teamWorkloads = teamNames.map((teamName) => ({
-    teamId: teamsByName.get(teamName)?.id ?? slots.find(
-      (slot) => slot.team?.name === teamName,
-    )?.team?.id,
-    teamName,
-    ...aggregateSlots(slots.filter((slot) => slot.team?.name === teamName)),
+  const shiftWorkloads = shiftNames.map((shiftName) => ({
+    shiftName,
+    ...aggregateSlots(slots.filter((slot) => slot.shift?.name === shiftName)),
   }));
-  const hasInvalidEffort = teamWorkloads.some((item) => item.hasInvalidEffort);
+  const hasInvalidEffort = shiftWorkloads.some((item) => item.hasInvalidEffort);
   const totalWorkloadMinutes = hasInvalidEffort
     ? null
-    : teamWorkloads.reduce((total, item) => total + item.workloadMinutes, 0);
+    : shiftWorkloads.reduce((total, item) => total + item.workloadMinutes, 0);
   return {
     date: group.key,
     label: group.label,
@@ -119,7 +140,7 @@ const chartDayForWeek = (group, contributingDates, teamNames, shiftNames, teamsB
     firstDate: contributingDates[0].date,
     lastDate: contributingDates.at(-1).date,
     isMaintenanceWeek: true,
-    teamWorkloads,
+    shiftWorkloads,
     totalWorkloadMinutes,
     totalWorkloadLabel: formatMinutes(totalWorkloadMinutes),
     hasInvalidEffort,
@@ -201,13 +222,7 @@ export const projectMaintenanceWeeks = (state, activeFilter = {}, anchorDate = '
       (day) => projectedDatesByDate.get(day.date),
     ).filter(Boolean);
     if (!contributingDates.length) return null;
-    const chartDay = chartDayForWeek(
-      group,
-      contributingDates,
-      teamNames,
-      shiftNames,
-      teamsByName,
-    );
+    const chartDay = chartDayForWeek(group, contributingDates, shiftNames);
     return {
       ...group,
       date: group.key,

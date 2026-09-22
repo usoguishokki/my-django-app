@@ -75,24 +75,22 @@ const projectDates = (dates, filter, allowedShifts, allowedTeams) => (dates || [
     )),
   }));
 
-const chartTeamNames = (chart, filter) => {
-  const configured = (chart?.teams || [])
-    .map((team) => team.name)
-    .filter((name) => PLAN_SCHEDULING_FILTER_OPTIONS.teams.includes(name));
-  const available = configured.length ? configured : PLAN_SCHEDULING_FILTER_OPTIONS.teams;
-  return filter.teams.length
-    ? available.filter((name) => filter.teams.includes(name))
+const chartShiftNames = (chart, filter) => {
+  const configured = (chart?.shiftNames || [])
+    .filter((name) => PLAN_SCHEDULING_FILTER_OPTIONS.shifts.includes(name));
+  const available = configured.length ? configured : PLAN_SCHEDULING_FILTER_OPTIONS.shifts;
+  return filter.shifts.length
+    ? available.filter((name) => filter.shifts.includes(name))
     : available;
 };
 
 const projectChart = (chart, timelineDates, filter) => {
   const chartDays = new Map((chart?.dates || []).map((day) => [day.date, day]));
-  const teamsByName = new Map((chart?.teams || []).map((team) => [team.name, team]));
-  const teamNames = chartTeamNames(chart, filter);
+  const shiftNames = chartShiftNames(chart, filter);
   const dates = timelineDates.map((day) => {
     const original = chartDays.get(day.date) || day;
-    const teamWorkloads = teamNames.map((teamName) => {
-      const slots = day.slots.filter((slot) => slot.team?.name === teamName);
+    const shiftWorkloads = shiftNames.map((shiftName) => {
+      const slots = day.slots.filter((slot) => slot.shift?.name === shiftName);
       const hasInvalidEffort = slots.some((slot) => (
         slot.hasInvalidEffort || !Number.isInteger(slot.workloadMinutes)
       ));
@@ -100,23 +98,22 @@ const projectChart = (chart, timelineDates, filter) => {
         ? null
         : slots.reduce((total, slot) => total + slot.workloadMinutes, 0);
       return {
-        teamId: teamsByName.get(teamName)?.id ?? slots[0]?.team?.id,
-        teamName,
+        shiftName,
         workloadMinutes,
         workloadLabel: formatMinutes(workloadMinutes),
         hasInvalidEffort,
       };
     });
-    const hasInvalidEffort = teamWorkloads.some((item) => item.hasInvalidEffort);
+    const hasInvalidEffort = shiftWorkloads.some((item) => item.hasInvalidEffort);
     const totalWorkloadMinutes = hasInvalidEffort
       ? null
-      : teamWorkloads.reduce((total, item) => total + item.workloadMinutes, 0);
+      : shiftWorkloads.reduce((total, item) => total + item.workloadMinutes, 0);
     return {
       ...original,
       date: day.date,
       label: day.label || original.label,
       maintenanceWeekLabel: day.maintenanceWeekLabel || original.maintenanceWeekLabel || '',
-      teamWorkloads,
+      shiftWorkloads,
       totalWorkloadMinutes,
       totalWorkloadLabel: formatMinutes(totalWorkloadMinutes),
       hasInvalidEffort,
@@ -124,8 +121,10 @@ const projectChart = (chart, timelineDates, filter) => {
   });
   return {
     ...(chart || {}),
-    shiftNames: filter.shifts.length ? [...filter.shifts] : [...(chart?.shiftNames || [])],
-    teams: teamNames.map((name) => teamsByName.get(name) || { id: null, name }),
+    shiftNames,
+    teams: (chart?.teams || []).filter((team) => (
+      filter.teams.length === 0 || filter.teams.includes(team.name)
+    )),
     dates,
   };
 };
@@ -133,7 +132,6 @@ const projectChart = (chart, timelineDates, filter) => {
 export const projectPlanSchedulingState = (state, activeFilter = {}) => {
   if (!state) return state;
   const filter = normalizePlanSchedulingFilter(activeFilter);
-  if (planSchedulingFilterCount(filter) === 0) return state;
   const configuredShifts = state.workloadChart?.shiftNames || [];
   const configuredTeams = (state.workloadChart?.teams || []).map((team) => team.name);
   const allowedShifts = new Set(

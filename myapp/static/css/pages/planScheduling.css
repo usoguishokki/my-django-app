@@ -542,7 +542,7 @@
   height: 10px;
   border: 1px solid rgba(24, 48, 68, 0.24);
   border-radius: 2px;
-  background: var(--plan-scheduling-team-color); }
+  background: var(--plan-scheduling-chart-color); }
 
 .plan-scheduling__maintenanceWeek {
   display: grid;
@@ -903,7 +903,7 @@
   transition: height .18s ease, filter .12s ease, opacity .12s ease; }
 
 .plan-scheduling__chartSegment {
-  background: var(--plan-scheduling-team-color); }
+  background: var(--plan-scheduling-chart-color); }
 
 .plan-scheduling__chart > [data-role="workload-chart"].has-chart-selection .plan-scheduling__chartSegment:not(.is-selected-chart-segment):not(.is-preview-source):not(.is-preview-destination) {
   opacity: .35;
@@ -932,7 +932,7 @@
   display: block;
   flex: 0 0 auto;
   width: 100%;
-  background: var(--plan-scheduling-team-color);
+  background: var(--plan-scheduling-chart-color);
   transition: height .18s ease, opacity .18s ease; }
 
 .plan-scheduling__chartPortion.is-preview-removed {
@@ -988,7 +988,7 @@
   width: 11px;
   height: 11px;
   border-radius: 2px;
-  background: var(--plan-scheduling-team-color); }
+  background: var(--plan-scheduling-chart-color); }
 
 .plan-scheduling__tooltipPreview {
   display: grid !important;

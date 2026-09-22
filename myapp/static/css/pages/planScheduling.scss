@@ -169,7 +169,7 @@
 .plan-scheduling [data-role="chart-legend"] { position: absolute; z-index: 3; top: 11px; right: 11px; width: max-content; height: auto; pointer-events: none; }
 .plan-scheduling__chartLegend { display: flex; align-items: center; gap: 10px; margin: 0; padding: 0; color: #536a7b; font-size: 11px; list-style: none; }
 .plan-scheduling__chartLegendItem { display: inline-flex; align-items: center; gap: 4px; }
-.plan-scheduling__chartLegendSwatch { width: 10px; height: 10px; border: 1px solid rgba(24, 48, 68, .24); border-radius: 2px; background: var(--plan-scheduling-team-color); }
+.plan-scheduling__chartLegendSwatch { width: 10px; height: 10px; border: 1px solid rgba(24, 48, 68, .24); border-radius: 2px; background: var(--plan-scheduling-chart-color); }
 .plan-scheduling__maintenanceWeek { display: grid; grid-auto-columns: var(--plan-date-track); grid-auto-flow: column; gap: var(--plan-date-column-gap); box-sizing: border-box; width: max-content; min-width: 100%; min-height: 30px; padding: 6px 0; border-block: 1px solid #dce5ec; color: #536a7b; background: #f9fbfc; font-size: 12px; }
 .plan-scheduling__maintenanceWeek[hidden] { display: none; }
 .plan-scheduling__maintenanceWeekCell { min-width: 0; color: #39566c; font-weight: 700; text-align: center; }
@@ -313,13 +313,13 @@
 .plan-scheduling__chartBar { align-self: end; display: flex; flex-direction: column-reverse; justify-content: flex-start; width: 44px; height: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 4px 4px 0 0; background: transparent; cursor: help; }
 .plan-scheduling__chartBar:focus-visible { outline: 3px solid rgba(31, 95, 153, .32); outline-offset: 3px; }
 .plan-scheduling__chartSegment { display: block; position: relative; min-height: 0; transition: height .18s ease, filter .12s ease, opacity .12s ease; }
-.plan-scheduling__chartSegment { background: var(--plan-scheduling-team-color); }
+.plan-scheduling__chartSegment { background: var(--plan-scheduling-chart-color); }
 .plan-scheduling__chart > [data-role="workload-chart"].has-chart-selection .plan-scheduling__chartSegment:not(.is-selected-chart-segment):not(.is-preview-source):not(.is-preview-destination) { opacity: .35; filter: saturate(.3); }
 .plan-scheduling__chartSegment.is-selected-chart-segment { z-index: 1; filter: brightness(1.12) saturate(1.08); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .9); }
 .plan-scheduling__chartPlot.has-chart-preview .plan-scheduling__chartSegment { opacity: .28; filter: saturate(.25); }
 .plan-scheduling__chartPlot.has-chart-preview .plan-scheduling__chartSegment.is-preview-source,
 .plan-scheduling__chartPlot.has-chart-preview .plan-scheduling__chartSegment.is-preview-destination { z-index: 2; display: flex; flex-direction: column-reverse; opacity: 1; filter: saturate(1); background: transparent; box-shadow: 0 0 0 2px rgba(24, 48, 68, .16); }
-.plan-scheduling__chartPortion { display: block; flex: 0 0 auto; width: 100%; background: var(--plan-scheduling-team-color); transition: height .18s ease, opacity .18s ease; }
+.plan-scheduling__chartPortion { display: block; flex: 0 0 auto; width: 100%; background: var(--plan-scheduling-chart-color); transition: height .18s ease, opacity .18s ease; }
 .plan-scheduling__chartPortion.is-preview-removed { opacity: .18; background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .9) 0 3px, transparent 3px 6px); }
 .plan-scheduling__chartPortion.is-preview-added { filter: brightness(1.28); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .8); }
 
@@ -331,7 +331,7 @@
 .plan-scheduling__tooltipTotal { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .plan-scheduling__tooltipRow + .plan-scheduling__tooltipRow { margin-top: 5px; }
 .plan-scheduling__tooltipRow span { display: inline-flex; align-items: center; gap: 7px; }
-.plan-scheduling__tooltipRow i { flex: 0 0 auto; width: 11px; height: 11px; border-radius: 2px; background: var(--plan-scheduling-team-color); }
+.plan-scheduling__tooltipRow i { flex: 0 0 auto; width: 11px; height: 11px; border-radius: 2px; background: var(--plan-scheduling-chart-color); }
 .plan-scheduling__tooltipPreview { display: grid !important; justify-items: end; gap: 1px !important; }
 .plan-scheduling__tooltipPreview > span { color: #4f6475; font-size: 11px; }
 .plan-scheduling__tooltipPreview > strong { font-size: 12px; }

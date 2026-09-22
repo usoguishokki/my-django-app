@@ -36,7 +36,9 @@ import {
   groupCanonicalMaintenanceWeeks,
   maintenanceWeekByKey,
   maintenanceWeekForDate,
+  maintenanceDatesForFiscalRange,
   maintenanceWeeksForFiscalRange,
+  projectMaintenanceFiscalRange,
   projectMaintenanceWeeks,
 } from '../domain/PlanSchedulingMaintenanceWeekProjection.js';
 
@@ -53,7 +55,7 @@ export class PlanSchedulingController {
     this.viewState = null;
     this.activeFilter = emptyPlanSchedulingFilter();
     this.viewMode = PLAN_SCHEDULING_VIEW_MODE.DAY;
-    this.maintenanceWeekAnchorDate = '';
+    this.timelineFiscalAnchorDate = '';
     this.slotSelectionIntent = 0;
     this.interaction = initialInteractionState();
   }
@@ -90,6 +92,7 @@ export class PlanSchedulingController {
       ]);
       this.timelineChart = timelineState.workloadChart;
       this.timelineDates = timelineState.dates;
+      this.timelineFiscalAnchorDate = targetDate;
       this.state = this.withFullTimeline(weekState);
       this.refreshViewState();
       this.renderState();
@@ -104,6 +107,7 @@ export class PlanSchedulingController {
     this.renderer.renderLoading();
     try {
       const weekState = await this.apiClient.fetchWeek(targetDate);
+      this.timelineFiscalAnchorDate = targetDate;
       this.state = this.withFullTimeline(weekState);
       this.refreshViewState();
       this.renderState();
@@ -189,7 +193,9 @@ export class PlanSchedulingController {
         {
           plan,
           sourceSlot,
-          chartDay: this.state.workloadChart?.dates?.find((day) => day.date === sourceSlot?.date),
+          chartDay: this.viewState?.workloadChart?.dates?.find(
+            (day) => day.date === sourceSlot?.date,
+          ),
           weekLabel: this.state.week?.label || '',
         },
       );
@@ -268,14 +274,18 @@ export class PlanSchedulingController {
   }
 
   refreshViewState() {
+    const anchorDate = this.timelineFiscalAnchorDate || this.state?.week?.startDate;
     this.viewState = this.viewMode === PLAN_SCHEDULING_VIEW_MODE.MAINTENANCE_WEEK
       ? projectMaintenanceWeeks(
         this.state,
         this.activeFilter,
-        this.maintenanceWeekAnchorDate || this.state?.week?.startDate,
+        anchorDate,
       )
       : {
-        ...projectPlanSchedulingState(this.state, this.activeFilter),
+        ...projectPlanSchedulingState(
+          projectMaintenanceFiscalRange(this.state, anchorDate),
+          this.activeFilter,
+        ),
         viewMode: PLAN_SCHEDULING_VIEW_MODE.DAY,
       };
     return this.viewState;
@@ -317,9 +327,12 @@ export class PlanSchedulingController {
     const sourceDates = this.viewMode === PLAN_SCHEDULING_VIEW_MODE.MAINTENANCE_WEEK
       ? maintenanceWeeksForFiscalRange(
         groupCanonicalMaintenanceWeeks(this.state.timelineDates),
-        this.maintenanceWeekAnchorDate || this.state?.week?.startDate,
+        this.timelineFiscalAnchorDate || this.state?.week?.startDate,
       )
-      : this.state.timelineDates;
+      : maintenanceDatesForFiscalRange(
+        this.state.timelineDates,
+        this.timelineFiscalAnchorDate || this.state?.week?.startDate,
+      );
     anchor.date = nextFilteredDate(
       sourceDates,
       this.viewState.timelineDates,
@@ -370,7 +383,7 @@ export class PlanSchedulingController {
     if (nextMode === PLAN_SCHEDULING_VIEW_MODE.MAINTENANCE_WEEK) {
       this.slotSelectionIntent += 1;
       this.interaction = closeDrawer(this.interaction);
-      this.maintenanceWeekAnchorDate = targetDate;
+      this.timelineFiscalAnchorDate = targetDate;
     } else {
       const currentWeek = maintenanceWeekByKey(this.viewState?.timelineDates, targetDate);
       targetDate = currentWeek?.firstVisibleDate || '';
@@ -402,7 +415,7 @@ export class PlanSchedulingController {
       this.renderer.renderInteractionError?.('この保全週には条件に一致する日付がありません');
       return false;
     }
-    this.maintenanceWeekAnchorDate = targetDate;
+    this.timelineFiscalAnchorDate = targetDate;
     this.viewState = projectedState;
     this.renderState();
     return this.renderer.scrollTimelineToDate?.(visibleWeek.key) !== false;
