@@ -116,7 +116,16 @@
           </section>
         </div>
       </div>
-      <div class="plan-scheduling__chartLegendViewport" data-role="chart-legend"></div>
+      <div class="plan-scheduling__chartViewportControls">
+        <div class="plan-scheduling__chartLegendViewport" data-role="chart-legend"></div>
+        <label class="plan-scheduling__matrixVisibilityControl">
+          <span>マトリクス表示</span>
+          <input type="checkbox" data-action="toggle-matrix" role="switch" aria-label="マトリクス表示" aria-checked="true" checked>
+          <span class="plan-scheduling__matrixSwitch" aria-hidden="true">
+            <i></i><strong data-role="matrix-visibility-state">ON</strong>
+          </span>
+        </label>
+      </div>
       <div class="plan-scheduling__filterEmpty" data-role="filter-empty" hidden>
         <p>条件に一致する予定がありません</p>
         <button type="button" class="ui-btn ui-btn--outline" data-action="clear-applied-filters">フィルターをクリア</button>

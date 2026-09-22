@@ -469,6 +469,9 @@
   --plan-date-column-width: 190px;
   --plan-date-column-gap: 10px;
   --plan-date-track: var(--plan-date-column-width);
+  --plan-chart-bar-width: 44px;
+  --plan-overview-day-track: 36px;
+  --plan-overview-week-track: 80px;
   display: grid;
   grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
@@ -479,6 +482,16 @@
 
 .plan-scheduling__planningCanvas.is-maintenance-week-view {
   --plan-date-track: 260px; }
+
+.plan-scheduling__planningCanvas.is-chart-overview {
+  --plan-date-column-gap: 4px;
+  --plan-date-track: var(--plan-overview-day-track);
+  --plan-chart-bar-width: 28px;
+  grid-template-rows: minmax(0, 1fr); }
+
+.plan-scheduling__planningCanvas.is-maintenance-week-view.is-chart-overview {
+  --plan-date-track: var(--plan-overview-week-track);
+  --plan-chart-bar-width: 72px; }
 
 .plan-scheduling__chart,
 .plan-scheduling__matrix,
@@ -513,11 +526,22 @@
   height: 100%;
   overflow: hidden; }
 
-.plan-scheduling [data-role="chart-legend"] {
+.plan-scheduling__matrix[hidden] {
+  display: none; }
+
+.plan-scheduling__chartViewportControls {
   position: absolute;
   z-index: 3;
-  top: 11px;
+  top: 8px;
   right: 11px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: max-content;
+  max-width: calc(100% - 22px);
+  pointer-events: none; }
+
+.plan-scheduling [data-role="chart-legend"] {
   width: max-content;
   height: auto;
   pointer-events: none; }
@@ -543,6 +567,77 @@
   border: 1px solid rgba(24, 48, 68, 0.24);
   border-radius: 2px;
   background: var(--plan-scheduling-chart-color); }
+
+.plan-scheduling__matrixVisibilityControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #536a7b;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto; }
+
+.plan-scheduling__matrixVisibilityControl input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap; }
+
+.plan-scheduling__matrixSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 50px;
+  height: 24px;
+  padding: 2px 7px 2px 3px;
+  box-sizing: border-box;
+  border: 1px solid #9eb2c2;
+  border-radius: 999px;
+  color: #536a7b;
+  background: #edf2f5;
+  transition: background .14s ease, border-color .14s ease, box-shadow .14s ease; }
+
+.plan-scheduling__matrixSwitch i {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #7890a3;
+  box-shadow: 0 1px 2px rgba(29, 54, 77, 0.2);
+  transition: transform .14s ease, background .14s ease; }
+
+.plan-scheduling__matrixSwitch strong {
+  min-width: 20px;
+  font-size: 10px;
+  line-height: 1;
+  text-align: center; }
+
+.plan-scheduling__matrixVisibilityControl:hover .plan-scheduling__matrixSwitch {
+  border-color: #6688a2;
+  background: #e3edf4; }
+
+.plan-scheduling__matrixVisibilityControl input:checked + .plan-scheduling__matrixSwitch {
+  border-color: var(--ps-blue);
+  color: #fff;
+  background: var(--ps-blue); }
+
+.plan-scheduling__matrixVisibilityControl input:checked + .plan-scheduling__matrixSwitch i {
+  background: #fff;
+  transform: translateX(2px); }
+
+.plan-scheduling__matrixVisibilityControl input:focus-visible + .plan-scheduling__matrixSwitch {
+  outline: 3px solid rgba(31, 95, 153, 0.32);
+  outline-offset: 2px; }
+
+.plan-scheduling__matrixVisibilityControl:active .plan-scheduling__matrixSwitch {
+  transform: translateY(1px); }
+
+.plan-scheduling__matrixVisibilityControl input:disabled + .plan-scheduling__matrixSwitch {
+  cursor: not-allowed;
+  opacity: .55; }
 
 .plan-scheduling__maintenanceWeek {
   display: grid;
@@ -883,7 +978,7 @@
   display: flex;
   flex-direction: column-reverse;
   justify-content: flex-start;
-  width: 44px;
+  width: var(--plan-chart-bar-width);
   height: 100%;
   padding: 0;
   overflow: hidden;
@@ -891,6 +986,13 @@
   border-radius: 4px 4px 0 0;
   background: transparent;
   cursor: help; }
+
+.plan-scheduling__planningCanvas.is-chart-overview .plan-scheduling__chartColumn {
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0; }
+
+.plan-scheduling__planningCanvas.is-chart-overview .plan-scheduling__chartColumn > strong {
+  display: none; }
 
 .plan-scheduling__chartBar:focus-visible {
   outline: 3px solid rgba(31, 95, 153, 0.32);

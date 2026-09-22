@@ -72,6 +72,9 @@ class SharedLayoutScrollContractTests(TestCase):
         chart_rule = plan_scss.split(
             ".plan-scheduling__chart {", 1
         )[1].split("}", 1)[0]
+        chart_controls_rule = plan_scss.split(
+            ".plan-scheduling__chartViewportControls {", 1
+        )[1].split("}", 1)[0]
         legend_viewport_rule = plan_scss.split(
             '.plan-scheduling [data-role="chart-legend"] {', 1
         )[1].split("}", 1)[0]
@@ -101,8 +104,9 @@ class SharedLayoutScrollContractTests(TestCase):
             planning_canvas_rule,
         )
         self.assertIn("grid-template-rows: minmax(0, 1fr) auto;", chart_rule)
-        self.assertIn("position: absolute;", legend_viewport_rule)
-        self.assertIn("right: 11px;", legend_viewport_rule)
+        self.assertIn("position: absolute;", chart_controls_rule)
+        self.assertIn("right: 11px;", chart_controls_rule)
+        self.assertIn("pointer-events: none;", chart_controls_rule)
         self.assertIn("width: max-content;", legend_viewport_rule)
         self.assertIn("height: auto;", legend_viewport_rule)
         self.assertIn("pointer-events: none;", legend_viewport_rule)

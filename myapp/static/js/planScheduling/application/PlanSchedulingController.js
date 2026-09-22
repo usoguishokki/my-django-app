@@ -55,6 +55,7 @@ export class PlanSchedulingController {
     this.viewState = null;
     this.activeFilter = emptyPlanSchedulingFilter();
     this.viewMode = PLAN_SCHEDULING_VIEW_MODE.DAY;
+    this.matrixVisible = true;
     this.timelineFiscalAnchorDate = '';
     this.slotSelectionIntent = 0;
     this.interaction = initialInteractionState();
@@ -62,6 +63,7 @@ export class PlanSchedulingController {
 
   async init() {
     this.root.addEventListener('click', (event) => this.handleClick(event));
+    this.root.addEventListener('change', (event) => this.handleChange(event));
     this.root.ownerDocument?.addEventListener?.(
       'click',
       (event) => this.handleDocumentClick(event),
@@ -209,6 +211,11 @@ export class PlanSchedulingController {
     }
   }
 
+  handleChange(event) {
+    const matrixToggle = event.target.closest?.('[data-action="toggle-matrix"]');
+    if (matrixToggle) this.setMatrixVisible(matrixToggle.checked);
+  }
+
   async handleSlotClick(slotButton) {
     const slotKey = slotButton.dataset.slotKey;
     const slotDate = slotButton.dataset.slotDate;
@@ -275,7 +282,7 @@ export class PlanSchedulingController {
 
   refreshViewState() {
     const anchorDate = this.timelineFiscalAnchorDate || this.state?.week?.startDate;
-    this.viewState = this.viewMode === PLAN_SCHEDULING_VIEW_MODE.MAINTENANCE_WEEK
+    const projection = this.viewMode === PLAN_SCHEDULING_VIEW_MODE.MAINTENANCE_WEEK
       ? projectMaintenanceWeeks(
         this.state,
         this.activeFilter,
@@ -288,17 +295,45 @@ export class PlanSchedulingController {
         ),
         viewMode: PLAN_SCHEDULING_VIEW_MODE.DAY,
       };
+    this.viewState = { ...projection, matrixVisible: this.matrixVisible };
     return this.viewState;
   }
 
-  renderState() {
-    this.renderer.renderState(this.viewState || this.state, this.selection());
+  renderState(options = {}) {
+    this.renderer.renderState(this.viewState || this.state, this.selection(), options);
     this.renderer.renderFilterState?.(this.activeFilter);
     const noMatches = planSchedulingFilterCount(this.activeFilter) > 0 && (
       !this.viewState?.timelineDates?.length ||
       !this.viewState.timelineDates.some((day) => day.slots.length)
     );
     this.renderer.renderFilterEmptyState?.(noMatches);
+  }
+
+  setMatrixVisible(nextVisible) {
+    const matrixVisible = Boolean(nextVisible);
+    if (matrixVisible === this.matrixVisible) {
+      this.renderer.renderMatrixVisibility?.(this.matrixVisible);
+      return false;
+    }
+    if (!matrixVisible && this.interaction.mode === PlanSchedulingMode.MOVING) {
+      this.renderer.renderMatrixVisibility?.(true);
+      this.renderer.renderInteractionError?.('移動中はマトリクスを非表示にできません');
+      return false;
+    }
+
+    const selection = this.selection();
+    const timelineAnchor = this.renderer.captureTimelineAnchor?.(
+      selection.selectedSlot?.date,
+    );
+    if (!matrixVisible) {
+      this.slotSelectionIntent += 1;
+      this.interaction = closeDrawer(this.interaction);
+    }
+    this.matrixVisible = matrixVisible;
+    this.refreshViewState();
+    this.renderState({ timelineAnchor, layoutGeometryChanges: true });
+    this.renderer.focusMatrixVisibilityToggle?.();
+    return true;
   }
 
   applyFilter(filter) {
@@ -416,7 +451,7 @@ export class PlanSchedulingController {
       return false;
     }
     this.timelineFiscalAnchorDate = targetDate;
-    this.viewState = projectedState;
+    this.viewState = { ...projectedState, matrixVisible: this.matrixVisible };
     this.renderState();
     return this.renderer.scrollTimelineToDate?.(visibleWeek.key) !== false;
   }

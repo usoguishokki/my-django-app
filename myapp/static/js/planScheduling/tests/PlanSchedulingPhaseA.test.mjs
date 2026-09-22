@@ -1233,7 +1233,7 @@ test('drawer is absent before selection and old lower Plan stack is removed', ()
   assert.doesNotMatch(template, /PLAN SCHEDULING|<h1[^>]*>計画調整<\/h1>|配布待ち計画の工数を、保全週日付直班で確認します。/);
   assert.doesNotMatch(template, /単位：分|計画の「移動」を選ぶと、移動先の工数変化を確認できます。/);
   assert.doesNotMatch(chartMarkup, /data-role="chart-legend"/);
-  assert.match(template, /plan-scheduling__matrix[\s\S]*?<\/section>\s*<\/div>\s*<\/div>\s*<div class="plan-scheduling__chartLegendViewport" data-role="chart-legend"><\/div>/);
+  assert.match(template, /plan-scheduling__matrix[\s\S]*?<\/section>\s*<\/div>\s*<\/div>\s*<div class="plan-scheduling__chartViewportControls">[\s\S]*data-role="chart-legend"/);
   assert.match(template, /plan-scheduling__planningMain[\s\S]*data-role="planning-canvas"[\s\S]*plan-scheduling__chart[\s\S]*data-role="date-grid"/);
   assert.match(template, /data-role="workload-chart"/);
   assert.match(template, /data-role="maintenance-week"/);
@@ -1254,18 +1254,18 @@ test('chart legend is a compact planning-viewport overlay outside the full timel
     '<section class="plan-scheduling__chart"',
   )[1].split('</section>', 1)[0];
   const overlayRule = scss.split(
-    '.plan-scheduling [data-role="chart-legend"] {',
+    '.plan-scheduling__chartViewportControls {',
   )[1].split('}', 1)[0];
 
   assert.equal((template.match(/data-role="chart-legend"/g) || []).length, 1);
   assert.doesNotMatch(chartMarkup, /data-role="chart-legend"/);
-  assert.match(template, /plan-scheduling__matrix[\s\S]*?<\/section>\s*<\/div>\s*<\/div>\s*<div class="plan-scheduling__chartLegendViewport"/);
+  assert.match(template, /plan-scheduling__matrix[\s\S]*?<\/section>\s*<\/div>\s*<\/div>\s*<div class="plan-scheduling__chartViewportControls">[\s\S]*plan-scheduling__chartLegendViewport/);
   assert.match(overlayRule, /position:\s*absolute/);
   assert.match(overlayRule, /right:\s*11px/);
   assert.match(overlayRule, /width:\s*max-content/);
-  assert.match(overlayRule, /height:\s*auto/);
   assert.match(overlayRule, /pointer-events:\s*none/);
   assert.doesNotMatch(overlayRule, /transform|82\d{3}px/);
+  assert.match(scss, /\.plan-scheduling \[data-role="chart-legend"\]\s*\{[^}]*height:\s*auto[^}]*pointer-events:\s*none/s);
   assert.match(scss, /\.plan-scheduling__chartTooltip\s*\{[^}]*z-index:\s*4/s);
 });
 
@@ -1421,7 +1421,10 @@ test('chart tooltip visibility is bar-owned and requires successful positioning'
       selector === '.plan-scheduling__chartColumn' ? column : null,
     getBoundingClientRect: () => ({ left: 300, top: 200, width: 44, bottom: 260 }),
   };
-  const matrix = { getBoundingClientRect: () => ({ left: 100, top: 450, right: 700, bottom: 900 }) };
+  const matrix = {
+    hidden: false,
+    getBoundingClientRect: () => ({ left: 100, top: 450, right: 700, bottom: 900 }),
+  };
   const renderer = new PlanSchedulingRenderer({
     querySelector: (selector) => selector === '.plan-scheduling__matrix' ? matrix :
       selector === '.plan-scheduling__planningMain' ? { getBoundingClientRect: () => ({ left: 100, top: 100, right: 700, bottom: 500 }) } : null,
@@ -1435,6 +1438,11 @@ test('chart tooltip visibility is bar-owned and requires successful positioning'
   assert.equal(renderer.activeChartBar, chartBar);
   assert.deepEqual(positioned, ['is-positioned']);
   assert.equal(tooltip.style.top, '450px');
+  assert.equal(tooltip.style.left, '227px');
+
+  matrix.hidden = true;
+  renderer.positionActiveChartTooltip();
+  assert.equal(tooltip.style.top, '268px');
   assert.equal(tooltip.style.left, '227px');
 
   renderer.hideChartTooltip({ target: chartBar, relatedTarget: null });
@@ -2119,7 +2127,8 @@ test('chart styles have no filled workload track and drawer owns internal scroll
   assert.doesNotMatch(scss, /#edf1f4/i);
   assert.match(scss, /\.plan-scheduling__chartBar[^}]*background:\s*transparent/s);
   assert.match(scss, /--plan-scheduling-chart-color/);
-  assert.match(scss, /\.plan-scheduling \[data-role="chart-legend"\]\s*\{[^}]*position:\s*absolute[^}]*z-index:\s*3[^}]*right:\s*11px[^}]*width:\s*max-content[^}]*height:\s*auto[^}]*pointer-events:\s*none/s);
+  assert.match(scss, /\.plan-scheduling__chartViewportControls\s*\{[^}]*position:\s*absolute[^}]*z-index:\s*3[^}]*right:\s*11px[^}]*width:\s*max-content[^}]*pointer-events:\s*none/s);
+  assert.match(scss, /\.plan-scheduling \[data-role="chart-legend"\]\s*\{[^}]*width:\s*max-content[^}]*height:\s*auto[^}]*pointer-events:\s*none/s);
   assert.match(scss, /\.plan-scheduling__chartLegendSwatch\s*\{[^}]*background:\s*var\(--plan-scheduling-chart-color\)/s);
   assert.doesNotMatch(scss, /team-other/);
   assert.doesNotMatch(scss, /plan-scheduling__yAxis/);
@@ -2847,7 +2856,10 @@ test('weekly render uses one shared week sequence and omits the redundant mainte
   );
   assert.equal(maintenanceWeek.hidden, true);
   assert.equal(maintenanceWeek.innerHTML, '');
-  assert.deepEqual(planningCanvasClasses.at(-1), ['is-maintenance-week-view', true]);
+  assert.deepEqual(
+    planningCanvasClasses.find(([className]) => className === 'is-maintenance-week-view'),
+    ['is-maintenance-week-view', true],
+  );
 });
 
 
@@ -2995,4 +3007,143 @@ test('weekly drilldown preserves filters and reuses the existing Day load path',
   assert.deepEqual(controller.activeFilter, {
     weekdays: ['火'], shifts: ['2直'], teams: ['A班'],
   });
+});
+
+
+test('Matrix visibility switch is viewport-local, accessible, and backed by overview layout contracts', () => {
+  const template = readFileSync(
+    new URL('../../../../templates/planScheduling/plan_scheduling.html', import.meta.url),
+    'utf8',
+  );
+  const scss = readFileSync(
+    new URL('../../../../static/css/pages/planScheduling.scss', import.meta.url),
+    'utf8',
+  );
+  const planningMainMarkup = template.split(
+    '<div class="plan-scheduling__planningMain">',
+  )[1].split('<div class="plan-scheduling__chartViewportControls">', 1)[0];
+
+  assert.equal((template.match(/data-action="toggle-matrix"/g) || []).length, 1);
+  assert.match(template, /data-action="toggle-matrix" role="switch"[^>]*aria-checked="true"[^>]*checked/);
+  assert.doesNotMatch(planningMainMarkup, /data-action="toggle-matrix"/);
+  assert.match(scss, /--plan-overview-day-track:\s*36px/);
+  assert.match(scss, /--plan-overview-week-track:\s*80px/);
+  assert.match(scss, /\.plan-scheduling__planningCanvas\.is-chart-overview\s*\{[^}]*--plan-date-track:\s*var\(--plan-overview-day-track\)[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)/s);
+  assert.match(scss, /\.plan-scheduling__planningCanvas\.is-maintenance-week-view\.is-chart-overview\s*\{[^}]*--plan-date-track:\s*var\(--plan-overview-week-track\)/s);
+  assert.match(scss, /\.plan-scheduling__matrix\[hidden\]\s*\{\s*display:\s*none/s);
+  assert.match(scss, /\.plan-scheduling__planningCanvas\.is-chart-overview \.plan-scheduling__chartColumn > strong\s*\{\s*display:\s*none/s);
+  assert.match(scss, /input:focus-visible \+ \.plan-scheduling__matrixSwitch[^}]*outline:/s);
+});
+
+
+test('renderer omits Matrix controls in overview while retaining Day maintenance context', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const projected = maintenanceWeekFixture();
+  projected.viewMode = 'day';
+  projected.matrixVisible = false;
+  const dateGrid = { innerHTML: '' };
+  const matrix = { hidden: false };
+  const maintenanceWeek = { innerHTML: '', hidden: true };
+  const toggle = {
+    checked: true,
+    attributes: {},
+    setAttribute(name, value) { this.attributes[name] = value; },
+  };
+  const stateLabel = { textContent: '' };
+  const canvasClasses = [];
+  const layoutClasses = [];
+  const elements = new Map([
+    ['[data-role="feedback"]', { textContent: '', classList: { remove: () => {} } }],
+    ['[data-role="date-grid"]', dateGrid],
+    ['.plan-scheduling__matrix', matrix],
+    ['[data-role="maintenance-week"]', maintenanceWeek],
+    ['[data-role="chart-legend"]', { innerHTML: '' }],
+    ['[data-role="workspace"]', { hidden: true, setAttribute: () => {} }],
+    ['[data-role="loading-skeleton"]', { hidden: false }],
+    ['[data-role="planning-layout"]', {
+      hidden: true,
+      classList: { toggle: (...args) => layoutClasses.push(args) },
+    }],
+    ['[data-role="planning-canvas"]', {
+      classList: { toggle: (...args) => canvasClasses.push(args) },
+    }],
+    ['[data-action="toggle-matrix"]', toggle],
+    ['[data-role="matrix-visibility-state"]', stateLabel],
+  ]);
+  const renderer = new PlanSchedulingRenderer({
+    querySelector: (selector) => elements.get(selector) || null,
+    querySelectorAll: () => [],
+  });
+  renderer.renderSelection = () => {};
+
+  renderer.renderState(projected, {});
+
+  assert.equal(matrix.hidden, true);
+  assert.equal(dateGrid.innerHTML, '');
+  assert.equal(maintenanceWeek.hidden, false);
+  assert.notEqual(maintenanceWeek.innerHTML, '');
+  assert.deepEqual(canvasClasses.find(([name]) => name === 'is-chart-overview'), [
+    'is-chart-overview', true,
+  ]);
+  assert.deepEqual(layoutClasses.at(-1), ['is-chart-overview', true]);
+  assert.equal(toggle.checked, false);
+  assert.equal(toggle.attributes['aria-checked'], 'false');
+  assert.equal(stateLabel.textContent, 'OFF');
+});
+
+
+test('Matrix visibility preserves logical anchors, survives mode changes, and is blocked during Move', async () => {
+  const { PlanSchedulingController } = await importController();
+  const source = fiscalMaintenanceWeekFixture();
+  const rendered = [];
+  const messages = [];
+  const toggleStates = [];
+  let focusCount = 0;
+  const renderer = {
+    captureTimelineAnchor: (preferred) => ({
+      date: preferred || '2026-09-22',
+      viewportPosition: 0.43,
+    }),
+    renderState: (state, selection, options) => rendered.push({ state, selection, options }),
+    renderFilterState: () => {},
+    renderFilterEmptyState: () => {},
+    restoreTimelineAnchorAfterRender: () => {},
+    renderMatrixVisibility: (visible) => toggleStates.push(visible),
+    renderInteractionError: (message) => messages.push(message),
+    focusMatrixVisibilityToggle: () => { focusCount += 1; },
+  };
+  const controller = new PlanSchedulingController({
+    root: {}, apiClient: {}, renderer,
+    buildPreview: () => null, selectSlotPlans: () => [],
+  });
+  controller.state = source;
+  const selectedSlot = source.dates[1].slots[0];
+  controller.interaction = {
+    ...controller.interaction,
+    selectedSlotKey: selectedSlot.key,
+    selectedSlotContext: { slot: selectedSlot, slotPlans: [] },
+  };
+  controller.refreshViewState();
+
+  assert.equal(controller.matrixVisible, true);
+  assert.equal(controller.setMatrixVisible(false), true);
+  assert.equal(controller.matrixVisible, false);
+  assert.equal(controller.selection().selectedSlot, undefined);
+  assert.equal(rendered.at(-1).state.matrixVisible, false);
+  assert.equal(rendered.at(-1).options.timelineAnchor.date, selectedSlot.date);
+  assert.equal(rendered.at(-1).options.timelineAnchor.viewportPosition, 0.43);
+  assert.equal(rendered.at(-1).options.layoutGeometryChanges, true);
+  assert.equal(focusCount, 1);
+
+  controller.changeViewMode('maintenanceWeek');
+  assert.equal(controller.viewState.matrixVisible, false);
+  assert.equal(controller.setMatrixVisible(true), true);
+  assert.equal(controller.matrixVisible, true);
+  assert.equal(rendered.at(-1).state.matrixVisible, true);
+
+  controller.interaction = { ...controller.interaction, mode: 'moving' };
+  assert.equal(controller.setMatrixVisible(false), false);
+  assert.equal(controller.matrixVisible, true);
+  assert.equal(toggleStates.at(-1), true);
+  assert.equal(messages.at(-1), '移動中はマトリクスを非表示にできません');
 });

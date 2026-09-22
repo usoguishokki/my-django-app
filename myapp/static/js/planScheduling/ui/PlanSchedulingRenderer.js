@@ -323,10 +323,21 @@ export class PlanSchedulingRenderer {
     const tooltip = column?.querySelector('.plan-scheduling__chartTooltip');
     const bounds = this.planningMain?.getBoundingClientRect?.();
     if (!tooltip || !bounds || !matrix) return;
+    const chartBarRect = chartBar.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const detailBoundary = matrix.hidden
+      ? {
+        top: clamp(
+          chartBarRect.bottom + 8,
+          bounds.top + 8,
+          bounds.bottom - tooltipRect.height - 8,
+        ),
+      }
+      : matrix.getBoundingClientRect();
     const placement = placeChartTooltip({
-      horizontalAnchorRect: chartBar.getBoundingClientRect(),
-      matrixRect: matrix.getBoundingClientRect(),
-      tooltipRect: tooltip.getBoundingClientRect(),
+      horizontalAnchorRect: chartBarRect,
+      matrixRect: detailBoundary,
+      tooltipRect,
       boundsRect: bounds,
     });
     tooltip.style.left = `${placement.left}px`;
@@ -367,20 +378,25 @@ export class PlanSchedulingRenderer {
     this.planList.innerHTML = '<p class="plan-scheduling__empty">選択した週を読み込んでいます。</p>';
   }
 
-  renderState(state, selection) {
+  renderState(state, selection, { timelineAnchor = null, layoutGeometryChanges = false } = {}) {
     this.feedback.classList.remove('is-error');
     this.feedback.textContent = state.dataQuality.hasErrors
       ? `データ確認事項が${state.dataQuality.issueCount}件あります。`
       : '';
     const isMaintenanceWeek = state.viewMode === 'maintenanceWeek';
+    const matrixVisible = state.matrixVisible !== false;
     this.planningCanvas?.classList.toggle('is-maintenance-week-view', isMaintenanceWeek);
+    this.planningCanvas?.classList.toggle('is-chart-overview', !matrixVisible);
+    this.planningLayout?.classList?.toggle?.('is-chart-overview', !matrixVisible);
     const displayDates = isMaintenanceWeek
       ? state.timelineDates
       : this.matrixDates(state, selection);
-    this.dateGrid.innerHTML = displayDates
-      .map((day) => isMaintenanceWeek
+    if (this.matrix) this.matrix.hidden = !matrixVisible;
+    this.dateGrid.innerHTML = matrixVisible
+      ? displayDates.map((day) => isMaintenanceWeek
         ? this.maintenanceWeekColumnTemplate(day)
-        : this.dateTemplate(day)).join('');
+        : this.dateTemplate(day)).join('')
+      : '';
     if (this.chartLegend) {
       this.chartLegend.innerHTML = this.chartLegendTemplate(state.workloadChart);
     }
@@ -393,21 +409,23 @@ export class PlanSchedulingRenderer {
           this.chartWithPinnedMoveSource(state.workloadChart, selection).dates,
         );
     }
+    this.renderMatrixVisibility(matrixVisible);
     this.renderViewMode(state.viewMode || 'day');
     this.workspace.setAttribute?.('aria-busy', 'false');
     if (this.loadingSkeleton) this.loadingSkeleton.hidden = true;
     if (this.planningLayout) this.planningLayout.hidden = false;
     this.workspace.hidden = false;
-    this.renderSelection(state, selection);
+    this.renderSelection(state, selection, { timelineAnchor, layoutGeometryChanges });
   }
 
-  renderSelection(state, selection) {
+  renderSelection(state, selection, { timelineAnchor = null, layoutGeometryChanges = false } = {}) {
     const drawerWillOpen = Boolean(selection.selectedSlot);
     const drawerIsOpen = Boolean(this.drawer && !this.drawer.hidden);
     const drawerGeometryChanges = drawerIsOpen !== drawerWillOpen;
-    const timelineAnchor = drawerGeometryChanges
+    const geometryChanges = drawerGeometryChanges || layoutGeometryChanges;
+    const resolvedTimelineAnchor = timelineAnchor || (geometryChanges
       ? this.captureTimelineAnchor(selection.selectedSlot?.date)
-      : null;
+      : null);
     const layoutRevision = ++this.timelineLayoutRevision;
     this.planningLayout.classList.toggle(
       'has-pinned-move-source',
@@ -437,11 +455,25 @@ export class PlanSchedulingRenderer {
       );
     });
     this.renderSelectedDateTracks(selection.selectedSlot?.date, {
-      deferPin: drawerGeometryChanges,
+      deferPin: geometryChanges,
     });
-    if (drawerGeometryChanges) {
-      this.restoreTimelineAnchorAfterLayout(timelineAnchor, layoutRevision);
+    if (geometryChanges) {
+      this.restoreTimelineAnchorAfterLayout(resolvedTimelineAnchor, layoutRevision);
     }
+  }
+
+  renderMatrixVisibility(matrixVisible) {
+    if (this.matrixVisibilityToggle) {
+      this.matrixVisibilityToggle.checked = matrixVisible;
+      this.matrixVisibilityToggle.setAttribute('aria-checked', matrixVisible ? 'true' : 'false');
+    }
+    if (this.matrixVisibilityState) {
+      this.matrixVisibilityState.textContent = matrixVisible ? 'ON' : 'OFF';
+    }
+  }
+
+  focusMatrixVisibilityToggle() {
+    this.matrixVisibilityToggle?.focus?.();
   }
 
   renderSelectedDateTracks(selectedDate, { deferPin = false } = {}) {
@@ -931,6 +963,8 @@ export class PlanSchedulingRenderer {
   get matrix() { return this.root.querySelector('.plan-scheduling__matrix'); }
   get maintenanceWeek() { return this.root.querySelector('[data-role="maintenance-week"]'); }
   get chartLegend() { return this.root.querySelector('[data-role="chart-legend"]'); }
+  get matrixVisibilityToggle() { return this.root.querySelector('[data-action="toggle-matrix"]'); }
+  get matrixVisibilityState() { return this.root.querySelector('[data-role="matrix-visibility-state"]'); }
   get dateGrid() { return this.root.querySelector('[data-role="date-grid"]'); }
   get workloadChart() { return this.root.querySelector('[data-role="workload-chart"]'); }
   get filterButton() { return this.root.querySelector('[data-action="toggle-filter"]'); }

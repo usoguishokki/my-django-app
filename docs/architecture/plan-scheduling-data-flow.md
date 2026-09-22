@@ -54,6 +54,8 @@ Daily Matrix slots therefore represent actual Calendar assignments; they are not
 
 The Chart is a presentation projection of those same filtered slots. In both Day and Maintenance Week modes its series dimension is shift (`1直`, `2直`, `3直`, `休日`), while team remains a filter and a Matrix assignment attribute. Chart shift workload must therefore be aggregated only after weekday, shift, and team filters have selected the contributing daily slots.
 
+Matrix visibility is an independent frontend presentation state. With the Matrix visible, Plan Scheduling retains the detailed Chart/Matrix layout and interactions. With it hidden, the same filtered Chart projection is rendered as a compact, horizontally scrollable overview; no alternate data source or business aggregation is introduced. Switching visibility preserves the logical date/week anchor rather than a raw pixel scroll position.
+
 ## Maintenance-week projection
 
 The accepted frontend pipeline is:
