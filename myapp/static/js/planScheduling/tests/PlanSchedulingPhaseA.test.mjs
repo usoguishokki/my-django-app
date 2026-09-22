@@ -3015,19 +3015,29 @@ test('display-mode control is accessible, precedes navigation, and updates the n
     setAttribute: (name, value) => pressed.push([viewMode, name, value]),
   }));
   const weekButton = { textContent: '' };
+  const dateInputControl = { hidden: false };
+  const targetDate = { value: '2026-09-22' };
   const renderer = new PlanSchedulingRenderer({
-    querySelector: (selector) => selector === '.plan-scheduling__weekButton' ? weekButton : null,
+    querySelector: (selector) => ({
+      '.plan-scheduling__weekButton': weekButton,
+      '.plan-scheduling__dateInputControl': dateInputControl,
+      '[data-role="target-date"]': targetDate,
+    })[selector] || null,
     querySelectorAll: (selector) => selector === '[data-action="set-view-mode"]' ? buttons : [],
   });
 
   renderer.renderViewMode('maintenanceWeek');
   assert.equal(weekButton.textContent, '保全週を表示');
+  assert.equal(dateInputControl.hidden, true);
+  assert.equal(targetDate.value, '2026-09-22');
   assert.deepEqual(toggles.filter((item) => item[1] === 'is-active'), [
     ['day', 'is-active', false], ['maintenanceWeek', 'is-active', true],
   ]);
   assert.deepEqual(pressed.map((item) => item[2]), ['false', 'true']);
   renderer.renderViewMode('day');
   assert.equal(weekButton.textContent, '週を表示');
+  assert.equal(dateInputControl.hidden, false);
+  assert.equal(targetDate.value, '2026-09-22');
 
   const modePosition = template.indexOf('plan-scheduling__viewModeControl');
   const datePosition = template.indexOf('plan-scheduling__dateInputControl');
@@ -3035,6 +3045,15 @@ test('display-mode control is accessible, precedes navigation, and updates the n
   assert.equal((template.match(/data-action="set-view-mode"/g) || []).length, 2);
   assert.match(template, /data-view-mode="day" aria-pressed="true"/);
   assert.match(template, /data-view-mode="maintenanceWeek" aria-pressed="false"/);
+  const dateInputGroup = template.slice(
+    datePosition,
+    template.indexOf('</div>', datePosition),
+  );
+  assert.match(dateInputGroup, /data-role="target-date"/);
+  assert.match(dateInputGroup, /plan-scheduling__weekButton/);
+  assert.match(scss, /\.plan-scheduling__dateControls\s*\{[^}]*gap:\s*20px/s);
+  assert.match(scss, /\.plan-scheduling__dateInputControl\s*\{[^}]*gap:\s*6px/s);
+  assert.match(scss, /\.plan-scheduling__dateInputControl\[hidden\]\s*\{\s*display:\s*none/s);
   assert.match(scss, /\.plan-scheduling__planningCanvas\.is-maintenance-week-view\s*\{[^}]*--plan-date-track:\s*260px/s);
   assert.match(scss, /\.plan-scheduling__maintenanceWeek\[hidden\]\s*\{\s*display:\s*none/s);
 });

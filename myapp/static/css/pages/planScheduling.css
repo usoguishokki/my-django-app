@@ -35,11 +35,10 @@
 
 .plan-scheduling__dateControls {
   flex-wrap: wrap;
-  gap: 8px; }
+  gap: 20px; }
 
 .plan-scheduling__viewModeControl {
   display: inline-flex;
-  margin-right: 4px;
   padding: 2px;
   border: 1px solid #b8c8d4;
   border-radius: 9px;
@@ -80,6 +79,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px; }
+
+.plan-scheduling__dateInputControl[hidden] {
+  display: none; }
 
 .plan-scheduling__dateInputControl label {
   color: #39566c;

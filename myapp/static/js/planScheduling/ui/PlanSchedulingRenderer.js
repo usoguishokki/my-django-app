@@ -805,6 +805,9 @@ export class PlanSchedulingRenderer {
       button.classList.toggle('is-active', isActive);
       button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
+    if (this.dateInputControl) {
+      this.dateInputControl.hidden = viewMode === 'maintenanceWeek';
+    }
     if (this.weekButton) {
       this.weekButton.textContent = viewMode === 'maintenanceWeek'
         ? '保全週を表示'
@@ -1025,5 +1028,6 @@ export class PlanSchedulingRenderer {
   get filterEmptyState() { return this.root.querySelector('[data-role="filter-empty"]'); }
   get filterInputs() { return [...(this.root.querySelectorAll?.('[data-filter-category]') || [])]; }
   get viewModeButtons() { return [...(this.root.querySelectorAll?.('[data-action="set-view-mode"]') || [])]; }
+  get dateInputControl() { return this.root.querySelector('.plan-scheduling__dateInputControl'); }
   get weekButton() { return this.root.querySelector('.plan-scheduling__weekButton'); }
 }
