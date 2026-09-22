@@ -390,6 +390,7 @@ export class PlanSchedulingRenderer {
       : '';
     const isMaintenanceWeek = state.viewMode === 'maintenanceWeek';
     const matrixVisible = state.matrixVisible !== false;
+    const isMaintenanceWeekOverview = isMaintenanceWeek && !matrixVisible;
     this.planningCanvas?.classList.toggle('is-maintenance-week-view', isMaintenanceWeek);
     this.planningCanvas?.classList.toggle('is-chart-overview', !matrixVisible);
     this.planningLayout?.classList?.toggle?.('is-chart-overview', !matrixVisible);
@@ -406,13 +407,19 @@ export class PlanSchedulingRenderer {
       this.chartLegend.innerHTML = this.chartLegendTemplate(state.workloadChart);
     }
     if (this.maintenanceWeek) {
-      this.maintenanceWeek.hidden = isMaintenanceWeek;
+      this.maintenanceWeek.hidden = isMaintenanceWeek && matrixVisible;
+      this.maintenanceWeek.classList?.toggle?.(
+        'is-week-overview-labels',
+        isMaintenanceWeekOverview,
+      );
       this.maintenanceWeek.classList?.toggle?.(
         'is-day-overview-groups',
         !isMaintenanceWeek && !matrixVisible,
       );
-      this.maintenanceWeek.innerHTML = isMaintenanceWeek
-        ? ''
+      this.maintenanceWeek.innerHTML = isMaintenanceWeekOverview
+        ? this.maintenanceWeekOverviewTemplate(state.timelineDates)
+        : isMaintenanceWeek
+          ? ''
         : !matrixVisible
           ? this.dayOverviewGroupsTemplate(state.dayOverviewGroups)
           : this.maintenanceWeekTemplate(
@@ -845,6 +852,13 @@ export class PlanSchedulingRenderer {
       `<span class="plan-scheduling__maintenanceWeekCell${day.isPinnedMoveSource ? ' is-pinned-move-source' : ''}" data-plan-date="${escapeHtml(day.date)}">${escapeHtml(day.maintenanceWeekLabel || week?.label || '')}</span>`
     ).join('');
     return cells;
+  }
+
+  maintenanceWeekOverviewTemplate(weeks = []) {
+    const labels = weeks.map((week) => (
+      `<span class="plan-scheduling__weekOverviewLabel" data-plan-date="${escapeHtml(week.key || week.date)}">${escapeHtml(week.label || week.maintenanceWeekLabel || '')}</span>`
+    )).join('');
+    return `<div class="plan-scheduling__weekOverviewLabels" aria-label="保全週">${labels}</div>`;
   }
 
   dayOverviewGroupsTemplate(groups = []) {

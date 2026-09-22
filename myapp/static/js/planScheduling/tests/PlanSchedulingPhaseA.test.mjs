@@ -2911,6 +2911,63 @@ test('weekly render uses one shared week sequence and omits the redundant mainte
   );
 });
 
+test('weekly Overview renders one authoritative label track aligned with Chart weeks', async () => {
+  const { projectMaintenanceWeeks } = await importMaintenanceWeekProjection();
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const projected = projectMaintenanceWeeks(maintenanceWeekFixture());
+  projected.matrixVisible = false;
+  const dateGrid = { innerHTML: '' };
+  const workloadChart = { innerHTML: '' };
+  const maintenanceClasses = [];
+  const maintenanceWeek = {
+    innerHTML: '', hidden: true,
+    classList: { toggle: (...args) => maintenanceClasses.push(args) },
+  };
+  const elements = new Map([
+    ['[data-role="feedback"]', { textContent: '', classList: { remove: () => {} } }],
+    ['[data-role="date-grid"]', dateGrid],
+    ['.plan-scheduling__matrix', { hidden: false }],
+    ['[data-role="chart-legend"]', { innerHTML: '' }],
+    ['[data-role="maintenance-week"]', maintenanceWeek],
+    ['[data-role="workload-chart"]', workloadChart],
+    ['[data-role="workspace"]', { hidden: true, setAttribute: () => {} }],
+    ['[data-role="loading-skeleton"]', { hidden: false }],
+    ['[data-role="planning-layout"]', { hidden: true }],
+    ['[data-role="planning-canvas"]', { classList: { toggle: () => {} } }],
+  ]);
+  const renderer = new PlanSchedulingRenderer({
+    querySelector: (selector) => elements.get(selector) || null,
+    querySelectorAll: () => [],
+  });
+  renderer.renderSelection = (state, selection) => {
+    workloadChart.innerHTML = renderer.workloadChartTemplate(state.workloadChart, selection);
+  };
+
+  renderer.renderState(projected, {});
+
+  const chartWeeks = [...workloadChart.innerHTML.matchAll(
+    /plan-scheduling__chartColumn[^>]*data-plan-date="([^"]+)"/g,
+  )].map((match) => match[1]);
+  const labelWeeks = [...maintenanceWeek.innerHTML.matchAll(
+    /plan-scheduling__weekOverviewLabel[^>]*data-plan-date="([^"]+)"/g,
+  )].map((match) => match[1]);
+  assert.equal(maintenanceWeek.hidden, false);
+  assert.equal((maintenanceWeek.innerHTML.match(/plan-scheduling__weekOverviewLabels/g) || []).length, 1);
+  assert.deepEqual(labelWeeks, chartWeeks);
+  assert.deepEqual(labelWeeks, projected.timelineDates.map((week) => week.key));
+  projected.timelineDates.forEach((week) => assert.match(maintenanceWeek.innerHTML, new RegExp(`>${week.label}<`)));
+  assert.deepEqual(
+    maintenanceClasses.find(([className]) => className === 'is-week-overview-labels'),
+    ['is-week-overview-labels', true],
+  );
+  assert.match(
+    renderer.maintenanceWeekOverviewTemplate([
+      { key: '2026-04-29', label: '4月連休' },
+    ]),
+    />4月連休<\/span>/,
+  );
+});
+
 
 test('display-mode control is accessible, precedes navigation, and updates the navigation label', async () => {
   const template = readFileSync(
@@ -3076,14 +3133,16 @@ test('Matrix visibility switch is viewport-local, accessible, and backed by over
   assert.match(template, /data-action="toggle-matrix" role="switch"[^>]*aria-checked="true"[^>]*checked/);
   assert.doesNotMatch(planningMainMarkup, /data-action="toggle-matrix"/);
   assert.match(scss, /--plan-overview-day-track:\s*36px/);
-  assert.match(scss, /--plan-overview-week-track:\s*80px/);
+  assert.match(scss, /--plan-overview-week-track:\s*40px/);
   assert.match(scss, /\.plan-scheduling__planningCanvas\.is-chart-overview\s*\{[^}]*--plan-date-track:\s*var\(--plan-overview-day-track\)[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)/s);
   assert.match(scss, /\.plan-scheduling__planningCanvas\.is-maintenance-week-view\.is-chart-overview\s*\{[^}]*--plan-date-track:\s*var\(--plan-overview-week-track\)/s);
+  assert.match(scss, /\.plan-scheduling__planningCanvas\.is-maintenance-week-view\.is-chart-overview\s*\{[^}]*--plan-chart-bar-width:\s*calc\(var\(--plan-overview-week-track\)\s*-\s*12px\)/s);
   assert.match(scss, /\.plan-scheduling__matrix\[hidden\]\s*\{\s*display:\s*none/s);
   assert.match(scss, /\.plan-scheduling__planningCanvas\.is-chart-overview \.plan-scheduling__chartColumn > strong\s*\{\s*display:\s*none/s);
   assert.match(scss, /\.plan-scheduling__dayOverviewGroups\s*\{[^}]*grid-template-rows:\s*repeat\(2,/s);
   assert.match(scss, /\.plan-scheduling__overviewGroupRow\s*\{[^}]*grid-auto-columns:\s*var\(--plan-date-track\)[^}]*gap:\s*var\(--plan-date-column-gap\)/s);
   assert.match(scss, /\.plan-scheduling__overviewRangeCell,[\s\S]*?\.plan-scheduling__overviewGroupCell\s*\{[^}]*grid-column:\s*span\s+var\(--plan-overview-group-span\)/s);
+  assert.match(scss, /\.plan-scheduling__weekOverviewLabels\s*\{[^}]*grid-auto-columns:\s*var\(--plan-date-track\)[^}]*grid-auto-flow:\s*column[^}]*gap:\s*var\(--plan-date-column-gap\)/s);
   assert.match(scss, /input:focus-visible \+ \.plan-scheduling__matrixSwitch[^}]*outline:/s);
 });
 
