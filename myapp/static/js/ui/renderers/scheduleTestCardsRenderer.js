@@ -46,9 +46,10 @@ function formatTitleLine1(item) {
 function formatTitleLine2(item) {
   const manHours = formatManHours(item?.manHours);
   const dayOfWeek = formatDayOfWeek(item?.dayOfWeek, item?.planDate);
+  const shift = item?.currentShiftName ?? '';
   const period = formatPeriod(item?.interval, item?.unit);
 
-  return [manHours, dayOfWeek, period].filter(Boolean).join('_');
+  return [manHours, dayOfWeek, shift, period].filter(Boolean).join('_');
 }
 
 function renderTestCardHTML(item) {

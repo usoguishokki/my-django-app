@@ -767,6 +767,7 @@ export function fetchScheduleTestCardsWeek({
     date = null,
     dateAlias = '',
     shiftPatternId = '',
+    affiliationId = '',
   } = {}) {
     const params = new URLSearchParams();
   
@@ -780,6 +781,9 @@ export function fetchScheduleTestCardsWeek({
 
     if (shiftPatternId) {
         params.set('shiftPatternId', shiftPatternId);
+    }
+    if (affiliationId) {
+        params.set('affiliationId', affiliationId);
     }
   
     return asynchronousCommunication({

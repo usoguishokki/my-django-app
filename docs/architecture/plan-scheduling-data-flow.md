@@ -24,6 +24,14 @@ This document records verified repository behavior. It is not a description of a
 
 One daily presentation slot is resolved for a maintenance-date/team pair from these actual rows. The code rejects an ambiguous pair containing more than one distinct shift rather than guessing.
 
+## Inspection standard versus instantiated Plan
+
+`Check_tb.day_of_week` and `Check_tb.practitioner_id` describe the inspection standard and its recurrence. They remain inputs to future Plan generation; moving one existing Plan does not change them.
+
+For an already-created Plan, `Plan_tb.p_date` is its current scheduled date and `Plan_tb.planned_affilation_id`, when populated, is its current team. The current shift is resolved from the actual `Calendar_tb` rows for that Plan's current date/team pair and their `ShiftPattan_tb` pattern. A maintenance-week label groups dates but does not provide a representative shift for every Plan in that week.
+
+The timetable test-card week, weekday, team, shift, card display, and bulk-registration candidate list use this current-Plan projection. A NULL `planned_affilation_id` retains the timetable's local legacy master-pattern fallback; it never overrides a populated Plan team. Standard weekday remains a separate value from current scheduled weekday.
+
 ## Selector flow
 
 The relevant selectors are in `myapp/selectors/plan_scheduling.py`:

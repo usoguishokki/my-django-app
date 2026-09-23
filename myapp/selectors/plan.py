@@ -3,7 +3,7 @@ from typing import Iterable, Optional
 
 from datetime import date, datetime, time, timedelta
 
-from django.db.models import Count, F, Max, Prefetch, Q, Sum
+from django.db.models import Count, F, Max, Prefetch, Sum
 from django.db.models.functions import Coalesce
 
 from myapp.models import Calendar_tb, Plan_tb, CheckStatus, Db_details_tb, PlanStatus
@@ -340,29 +340,6 @@ def select_schedule_member_week_plans(*, member_id: int, target_date: date):
 def select_plan_by_id(plan_id: int):
     return plan_base_qs().filter(plan_id=plan_id).first()
 
-
-def filter_test_card_plans_by_shift_pattern(
-    plans_qs,
-    *,
-    shift_pattern_id=None,
-):
-    """
-    テストカードをシフトパターンで絞り込む。
-
-    条件:
-      - check_tb.practitioner_id == shift_pattern_id
-      - practitioner_id=7 は常に含める
-
-    practitioner_id は Plan_tb -> Check_tb の
-    inspection_no__practitioner_id を参照する。
-    """
-    if not shift_pattern_id:
-        return plans_qs
-
-    return plans_qs.filter(
-        Q(inspection_no__practitioner_id=shift_pattern_id)
-        | Q(inspection_no__practitioner_id=HOLIDAY_PRACTITIONER_ID)
-    )
 
 def select_bulk_registration_target_plans(*, plan_ids):
     """

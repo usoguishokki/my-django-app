@@ -28,6 +28,7 @@ class ScheduleTestCardsWeekRequestParams:
     target_date: date
     date_alias: str = ''
     shift_pattern_id: int | None = None
+    affiliation_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -69,6 +70,11 @@ def parse_schedule_test_cards_week_request_params(querydict) -> ScheduleTestCard
             querydict,
             'shift_pattern_id',
             fallback_key='shiftPatternId',
+        ),
+        affiliation_id=_parse_optional_int(
+            querydict,
+            'affiliation_id',
+            fallback_key='affiliationId',
         ),
     )
 

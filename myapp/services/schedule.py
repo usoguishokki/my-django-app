@@ -3,6 +3,11 @@ from django.db import transaction
 from datetime import timedelta
 
 from myapp.models import PlanStatus
+from myapp.domain.plan_scheduling import is_display_team, resolve_distinct_shift
+from myapp.selectors.plan_scheduling import (
+    select_calendar_rows_for_maintenance_dates,
+    select_maintenance_week,
+)
 
 from myapp.services.schedule_approver import (
     get_required_schedule_approver,
@@ -26,10 +31,6 @@ from myapp.selectors.hozen_calendar import (
     get_first_date_by_date_alias,
 )
 
-from myapp.selectors.shifts import (
-    select_team_shift_calendars_for_date,
-)
-
 from myapp.selectors.members import (
     select_members_by_affiliation_id,
     select_member_by_member_id,
@@ -37,12 +38,12 @@ from myapp.selectors.members import (
 
 
 from myapp.selectors.plan import (
+    HOLIDAY_PRACTITIONER_ID,
     select_schedule_day_plans,
     select_schedule_member_week_plans,
     select_plan_by_id,
     select_test_card_week_plans,
     select_test_card_plans_by_date_alias,
-    filter_test_card_plans_by_shift_pattern,
 )
 
 from myapp.selectors.calendar import (
@@ -273,6 +274,7 @@ def build_schedule_test_cards_week_result(
     target_date,
     date_alias='',
     shift_pattern_id=None,
+    affiliation_id=None,
 ):
     active_date_alias = date_alias or get_date_alias_by_date(target_date)
 
@@ -286,14 +288,21 @@ def build_schedule_test_cards_week_result(
             base_date=target_date,
         )
 
-    plans_qs = filter_test_card_plans_by_shift_pattern(
-        plans_qs,
-        shift_pattern_id=shift_pattern_id,
+    plans = list(annotate_plan_affiliation_from_calendar(plans_qs))
+    calendar_rows = select_calendar_rows_for_maintenance_dates(
+        maintenance_date_ids={plan.p_date_id for plan in plans if plan.p_date_id},
     )
-    
-    plans_qs = annotate_plan_affiliation_from_calendar(plans_qs)
-
-    items = present_schedule_test_cards_week_items(plans_qs)
+    current_schedules = build_test_card_current_schedules(plans, calendar_rows)
+    selected_plans = [
+        plan for plan in plans
+        if test_card_matches_current_schedule(
+            plan,
+            current_schedules[plan.plan_id],
+            affiliation_id=affiliation_id,
+            shift_pattern_id=shift_pattern_id,
+        )
+    ]
+    items = present_schedule_test_cards_week_items(selected_plans, current_schedules)
 
     return build_schedule_test_cards_week_payload(
         target_date=target_date,
@@ -363,9 +372,13 @@ def build_schedule_test_card_team_options_result(
 
     calendar_rows = []
     if resolved_target_date:
-        calendar_rows = select_team_shift_calendars_for_date(
-            target_date=resolved_target_date,
+        maintenance_days = select_maintenance_week(target_date=resolved_target_date)
+        calendar_rows = select_calendar_rows_for_maintenance_dates(
+            maintenance_date_ids=[day.h_id for day in maintenance_days],
         )
+        calendar_rows = [
+            row for row in calendar_rows if is_display_team(row.affilation)
+        ]
 
     team_options = present_schedule_test_card_team_options(calendar_rows)
 
@@ -373,4 +386,62 @@ def build_schedule_test_card_team_options_result(
         target_date=resolved_target_date,
         active_date_alias=active_date_alias,
         team_options=team_options,
+    )
+
+
+def build_test_card_current_schedules(plans, calendar_rows):
+    """Project each instantiated Plan's current date/team/shift once for all card consumers."""
+    rows_by_pair = {}
+    for row in calendar_rows:
+        rows_by_pair.setdefault((row.c_date_id, row.affilation_id), []).append(row)
+
+    schedules = {}
+    for plan in plans:
+        team_id = plan.planned_affilation_id
+        pattern = None
+        if team_id is not None:
+            resolution = resolve_distinct_shift(
+                rows_by_pair.get((plan.p_date_id, team_id), [])
+            )
+            if resolution.is_valid:
+                pattern = resolution.pattern
+        schedules[plan.plan_id] = {
+            "day_of_week": (
+                plan.p_date.h_date.weekday()
+                if plan.p_date and plan.p_date.h_date else None
+            ),
+            "affiliation_id": (
+                team_id if team_id is not None
+                else get_legacy_test_card_affiliation_id(plan)
+            ),
+            "shift_id": getattr(pattern, "pattern_id", None),
+            "shift_name": getattr(pattern, "pattern_name", "") if pattern else "",
+        }
+    return schedules
+
+
+def get_legacy_test_card_affiliation_id(plan):
+    """Keep the timetable's pre-existing NULL-team behavior only for NULL Plans."""
+    if getattr(plan.inspection_no, "practitioner_id", None) == HOLIDAY_PRACTITIONER_ID:
+        return None
+    return getattr(plan, "calendar_affiliation_id", None)
+
+
+def test_card_matches_current_schedule(
+    plan, schedule, *, affiliation_id=None, shift_pattern_id=None,
+):
+    if plan.planned_affilation_id is not None:
+        if affiliation_id is not None and schedule["affiliation_id"] != affiliation_id:
+            return False
+        if affiliation_id is None and shift_pattern_id is not None:
+            return schedule["shift_id"] == shift_pattern_id
+        return True
+
+    # This branch deliberately preserves the old local master-shift filter,
+    # including practitioner 7's all-shift behavior, for legacy NULL rows.
+    return (
+        shift_pattern_id is None
+        or getattr(plan.inspection_no, "practitioner_id", None) in (
+            shift_pattern_id, HOLIDAY_PRACTITIONER_ID,
+        )
     )

@@ -6,6 +6,7 @@ export class ScheduleTestCardDataService {
     getSelectedDate,
     getSelectedDateAlias,
     getSelectedShiftPatternId,
+    getSelectedAffiliationId,
     initialDateAliasOptions = [],
   }) {
     this.state = state;
@@ -13,6 +14,7 @@ export class ScheduleTestCardDataService {
     this.getSelectedDate = getSelectedDate;
     this.getSelectedDateAlias = getSelectedDateAlias;
     this.getSelectedShiftPatternId = getSelectedShiftPatternId;
+    this.getSelectedAffiliationId = getSelectedAffiliationId;
     this.initialDateAliasOptions = initialDateAliasOptions;
   
     this.items = [];
@@ -55,11 +57,13 @@ export class ScheduleTestCardDataService {
     try {
       const dateAlias = this.getSelectedDateAlias?.() ?? '';
       const shiftPatternId = this.getSelectedShiftPatternId?.() ?? '';
+      const affiliationId = this.getSelectedAffiliationId?.() ?? '';
       
       const response = await this.dataService.fetchTestCardsWeek({
         date: this.getSelectedDate?.(),
         dateAlias,
         shiftPatternId,
+        affiliationId,
       });
   
       this.items = response?.data?.items ?? [];

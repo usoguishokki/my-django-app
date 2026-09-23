@@ -11,18 +11,8 @@ export class ScheduleTestCardTeamFilter {
         return items;
       }
   
-      const selectedTeam = teamOptions.find(
-        (team) => String(team.affiliationId) === String(selectedAffiliationId)
-      );
-  
-      const shiftPatternId = selectedTeam?.shiftPatternId;
-  
-      if (!shiftPatternId) {
-        return items;
-      }
-  
       return items.filter(
-        (item) => String(item.practitionerId ?? '') === String(shiftPatternId)
+        (item) => String(item.assignedAffiliationId ?? '') === String(selectedAffiliationId)
       );
     }
 }

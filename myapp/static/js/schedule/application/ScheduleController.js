@@ -407,6 +407,9 @@ export class ScheduleController {
   
       getSelectedShiftPatternId: () =>
         this.state.getSelectedTestCardShiftPatternId?.() ?? '',
+
+      getSelectedAffiliationId: () =>
+        this.state.getSelectedTestCardAffiliationId?.() ?? '',
   
       initialDateAliasOptions:
         this.initialData?.filterOptions?.dateAliases
@@ -510,10 +513,10 @@ export class ScheduleController {
 
   async loadTestCardsWeek({ loading = true } = {}) {
     const run = async () => {
-      const shiftPatternId =
-        this.state.getSelectedTestCardShiftPatternId?.() ?? '';
+      const affiliationId =
+        this.state.getSelectedTestCardAffiliationId?.() ?? '';
   
-      if (!shiftPatternId) {
+      if (!affiliationId) {
         this.testCardDataService.clearItems?.();
         this.renderTestCardPanelByCurrentMode();
         return;

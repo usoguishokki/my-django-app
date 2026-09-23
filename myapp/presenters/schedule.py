@@ -21,21 +21,6 @@ def present_schedule_members(members_qs):
         for member in members_qs
     ]
     
-COMMON_TEST_CARD_PRACTITIONER_ID = 7
-
-
-def get_assigned_affiliation_id(plan):
-    practitioner_id = getattr(
-        getattr(plan, 'inspection_no', None),
-        'practitioner_id',
-        None,
-    )
-
-    if practitioner_id == COMMON_TEST_CARD_PRACTITIONER_ID:
-        return None
-
-    return getattr(plan, 'calendar_affiliation_id', None)
-
 def present_schedule_items(plans_qs, *, window=None):
     items = []
 
@@ -231,10 +216,11 @@ def present_schedule_event_move_result(plan):
         'planTime': plan.plan_time.isoformat() if plan.plan_time else None,
     }
     
-def present_schedule_test_cards_week_items(plans_qs):
+def present_schedule_test_cards_week_items(plans_qs, current_schedules):
     items = []
 
     for plan in plans_qs:
+        current = current_schedules[plan.plan_id]
         inspection = plan.inspection_no
         control = inspection.control_no if inspection else None
         line = control.line_name if control else None
@@ -252,9 +238,12 @@ def present_schedule_test_cards_week_items(plans_qs):
                 'timeZone': inspection.time_zone if inspection else '',
                 'workName': inspection.wark_name if inspection else '',
                 'manHours': inspection.man_hours if inspection else '',
-                'dayOfWeek': inspection.day_of_week if inspection else '',
+                'dayOfWeek': current['day_of_week'],
+                'standardDayOfWeek': inspection.day_of_week if inspection else None,
                 'practitionerId': inspection.practitioner_id if inspection else '',
-                'assignedAffiliationId': get_assigned_affiliation_id(plan),
+                'assignedAffiliationId': current['affiliation_id'],
+                'currentShiftId': current['shift_id'],
+                'currentShiftName': current['shift_name'],
                 'interval': rule.interval if rule else None,
                 'unit': rule.unit if rule else '',
                 "detailItems": build_inspection_detail_items(inspection),
@@ -298,8 +287,12 @@ def present_schedule_test_card_team_options(calendar_rows):
       shiftPatternName
     """
     team_options = []
+    seen_affiliations = set()
 
     for row in calendar_rows:
+        if row.affilation_id in seen_affiliations:
+            continue
+        seen_affiliations.add(row.affilation_id)
         pattern = row.pattern
         affilation = row.affilation
         affilation_name = affilation.affilation if affilation else ''

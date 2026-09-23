@@ -213,6 +213,7 @@ def schedule_test_cards_week_api(request):
         target_date=params.target_date,
         date_alias=params.date_alias,
         shift_pattern_id=params.shift_pattern_id,
+        affiliation_id=params.affiliation_id,
     )
     
     return JsonResponse(payload, json_dumps_params={'ensure_ascii': False})

@@ -24,11 +24,13 @@ export class ScheduleDataService {
     date = null,
     dateAlias = '',
     shiftPatternId = '',
+    affiliationId = '',
   } = {}) {
     return fetchScheduleTestCardsWeek({
       date,
       dateAlias,
       shiftPatternId,
+      affiliationId,
     });
   }
 
