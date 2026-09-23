@@ -12,6 +12,7 @@ Read this file before changing the repository. Detailed guidance lives in the li
 
 ## Database and browser-verification safety
 
+- Development and production application runtimes are separate, but they currently share the production Oracle `HOZENPDB`. A development runtime is not a development database: any write through the normal Django database connection is a production change. See [database access architecture](docs/architecture/database-access.md).
 - Never use the normal production Oracle connection for ad-hoc AI/Codex research. In particular, do not use ordinary `python manage.py shell` for that purpose.
 - Use `scripts/research/oracle_readonly.py` with the dedicated `HOZEN_READONLY_*` configuration. Research SQL is read-only: no `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `ALTER`, `DROP`, `TRUNCATE`, or other DDL.
 - Never print, store, log, prompt with, or commit real credentials.
