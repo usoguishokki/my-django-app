@@ -32,6 +32,8 @@ For an already-created Plan, `Plan_tb.p_date` is its current scheduled date and 
 
 The timetable test-card week, weekday, team, shift, card display, and bulk-registration candidate list use this current-Plan projection. A NULL `planned_affilation_id` retains the timetable's local legacy master-pattern fallback; it never overrides a populated Plan team. Standard weekday remains a separate value from current scheduled weekday.
 
+Timetable team-filter buttons use the repository's canonical A/B/C team order, independent of the current shift rotation or the Calendar row order. Each button retains its own Calendar-derived shift metadata; sorting buttons does not change Plan placement or shift resolution.
+
 ## Selector flow
 
 The relevant selectors are in `myapp/selectors/plan_scheduling.py`:

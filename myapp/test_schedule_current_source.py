@@ -1,9 +1,10 @@
-from datetime import date
+from datetime import date, time
 from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import patch
 
 from myapp.domain.schedule_request import parse_schedule_test_cards_week_request_params
+from myapp.presenters.schedule import present_schedule_test_card_team_options
 from myapp.services.schedule import (
     build_schedule_test_card_team_options_result,
     build_schedule_test_cards_week_result,
@@ -59,7 +60,7 @@ class TestCurrentTestCardSchedule(TestCase):
         a.affilation = SimpleNamespace(affilation="A班")
         b = make_calendar(make_plan(246, date(2026, 10, 12), 2), 2, 1, "1直")
         b.affilation = SimpleNamespace(affilation="B班")
-        select_calendar.return_value = [a, b]
+        select_calendar.return_value = [b, a]
 
         result = build_schedule_test_card_team_options_result(
             target_date=date(2026, 10, 12), date_alias="10月3週目",
@@ -69,6 +70,34 @@ class TestCurrentTestCardSchedule(TestCase):
             [option["affiliationId"] for option in result["data"]["teamOptions"]],
         )
         select_calendar.assert_called_once_with(maintenance_date_ids=[244, 246])
+
+    def test_team_buttons_keep_canonical_order_across_shift_rotations(self):
+        rotations = (
+            {"A": 1, "B": 2, "C": 3},
+            {"A": 3, "B": 1, "C": 2},
+            {"A": 2, "B": 3, "C": 1},
+        )
+        team_ids = {"A": 1, "B": 2, "C": 3}
+        for rotation in rotations:
+            with self.subTest(rotation=rotation):
+                rows = []
+                for team, shift_id in rotation.items():
+                    row = make_calendar(
+                        SimpleNamespace(p_date_id=246),
+                        team_ids[team], shift_id, f"{shift_id}直",
+                    )
+                    row.affilation = SimpleNamespace(affilation=f"{team}班")
+                    row.pattern.start_time = time(shift_id, 0)
+                    rows.append(row)
+                rows.sort(key=lambda row: row.pattern.start_time)
+
+                options = present_schedule_test_card_team_options(rows)
+                self.assertEqual(["A", "B", "C"], [o["key"] for o in options])
+                self.assertEqual([1, 2, 3], [o["affiliationId"] for o in options])
+                self.assertEqual(
+                    [rotation[team] for team in ("A", "B", "C")],
+                    [o["shiftPatternId"] for o in options],
+                )
 
     def test_date_team_and_shift_follow_moved_plan_not_master(self):
         saturday = make_plan(1, date(2026, 10, 10), 1)

@@ -1,5 +1,5 @@
 from datetime import timedelta, time
-from myapp.domain.org_constants import normalize_team_key
+from myapp.domain.org_constants import TEAM_FILTER_ORDER, normalize_team_key
 
 from myapp.domain.schedule_time_window import (
     clip_time_window,
@@ -309,6 +309,11 @@ def present_schedule_test_card_team_options(calendar_rows):
             'endTime': _format_time_hhmm(pattern.end_time if pattern else None),
         })
 
+    team_options.sort(
+        key=lambda option: TEAM_FILTER_ORDER.get(
+            option['key'], len(TEAM_FILTER_ORDER),
+        )
+    )
     return team_options
 
 

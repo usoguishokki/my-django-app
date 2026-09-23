@@ -66,3 +66,37 @@ test('week loader sends current affiliation to server and retains one card sourc
   assert.equal(requested.affiliationId, 2);
   assert.deepEqual(service.getItems(), [card]);
 });
+
+test('team buttons retain A-B-C order while B keeps its current shift metadata', async () => {
+  const { ScheduleState } = await importSource(
+    '../domain/ScheduleState.js',
+    [["import { formatDate } from '../../utils/dateTime.js';",
+      'const formatDate = () => "2026-10-12";']],
+  );
+  const { ScheduleTestCardTeamTemplate } = await importSource(
+    '../ui/ScheduleTestCardTeamTemplate.js',
+    [["import { UIManger } from '../../manager/UIManger.js';",
+      'const UIManger = { escapeHtml: (value) => String(value ?? "") };']],
+  );
+  const options = [
+    { key: 'A', label: 'A', affiliationId: 1, shiftPatternId: 3 },
+    { key: 'B', label: 'B', affiliationId: 2, shiftPatternId: 1 },
+    { key: 'C', label: 'C', affiliationId: 3, shiftPatternId: 2 },
+  ];
+  const state = new ScheduleState();
+  state.setTestCardTeamOptions(options);
+  state.setSelectedTestCardAffiliationId(2);
+
+  assert.equal(state.getSelectedTestCardShiftPatternId(), '1');
+  const html = ScheduleTestCardTeamTemplate.create({
+    items: state.getTestCardTeamOptions(), selectedAffiliationId: 2,
+  });
+  const positions = ['A', 'B', 'C'].map(
+    (team) => html.indexOf(`data-team-key="${team}"`),
+  );
+  assert.ok(positions[0] < positions[1] && positions[1] < positions[2]);
+  assert.match(
+    html,
+    /data-team-key="B"[^>]*data-affiliation-id="2"[^>]*data-shift-pattern-id="1"/,
+  );
+});
