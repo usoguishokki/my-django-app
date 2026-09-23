@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
+from enum import Enum
 from typing import Iterable
 
 from myapp.domain.checks.constants import CSV_EXCLUDED_CHECK_STATUSES
@@ -16,6 +17,14 @@ class PlanScheduleSnapshot:
     anchor_month: int | None
     week_of_month: int | None
     day_of_week: int | None
+    practitioner_id: int | None
+    creation_eligible: bool
+
+
+class PlanResyncDecision(str, Enum):
+    NO_RESYNC = 'NO_RESYNC'
+    RESYNC_SCHEDULE = 'RESYNC_SCHEDULE'
+    RESYNC_LIFECYCLE = 'RESYNC_LIFECYCLE'
 
 
 def capture_plan_schedule_snapshot(*, check) -> PlanScheduleSnapshot:
@@ -25,15 +34,19 @@ def capture_plan_schedule_snapshot(*, check) -> PlanScheduleSnapshot:
         anchor_month=getattr(check, 'anchor_month', None),
         week_of_month=getattr(check, 'week_of_month', None),
         day_of_week=getattr(check, 'day_of_week', None),
+        practitioner_id=getattr(check, 'practitioner_id', None),
+        creation_eligible=is_plan_creation_target_check(check=check),
     )
 
 
-def has_plan_schedule_changed(
-    *,
-    before: PlanScheduleSnapshot,
-    after: PlanScheduleSnapshot,
-) -> bool:
-    return before != after
+def decide_plan_resync(*, before: PlanScheduleSnapshot, after: PlanScheduleSnapshot) -> PlanResyncDecision:
+    if before.creation_eligible != after.creation_eligible:
+        return PlanResyncDecision.RESYNC_LIFECYCLE
+    if not after.creation_eligible:
+        return PlanResyncDecision.NO_RESYNC
+    if before != after:
+        return PlanResyncDecision.RESYNC_SCHEDULE
+    return PlanResyncDecision.NO_RESYNC
 
 
 def is_plan_creation_target_check(*, check) -> bool:

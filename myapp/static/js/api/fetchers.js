@@ -382,6 +382,8 @@ export function executeInspectionStandardCommonItemsUpdate(p = {}) {
       inspectionNo,
       values = {},
       changeReason = '',
+      deleteProtectedPlans = false,
+      expectedProtectedPlanCount = 0,
     } = p;
   
     if (!checkId) throw new Error('checkId is required');
@@ -394,6 +396,8 @@ export function executeInspectionStandardCommonItemsUpdate(p = {}) {
         inspection_no: inspectionNo,
         values,
         change_reason: changeReason,
+        delete_protected_plans: deleteProtectedPlans === true,
+        expected_protected_plan_count: expectedProtectedPlanCount,
       },
     });
 }
@@ -506,6 +510,8 @@ export function executeInspectionStandardCardAbolish(p = {}) {
         checkId,
         inspectionNo,
         changeReason = '',
+        deleteDistributedPlans = false,
+        expectedDistributedPlanCount = 0,
     } = p;
 
     if (!checkId) throw new Error('checkId is required');
@@ -517,7 +523,20 @@ export function executeInspectionStandardCardAbolish(p = {}) {
         data: {
             inspection_no: inspectionNo,
             change_reason: changeReason,
+            delete_distributed_plans: deleteDistributedPlans === true,
+            expected_distributed_plan_count: expectedDistributedPlanCount,
         },
+    });
+}
+
+export function fetchInspectionStandardCardAbolishPreview(p = {}) {
+    const { checkId, inspectionNo, changeReason = '' } = p;
+    if (!checkId) throw new Error('checkId is required');
+    if (!inspectionNo) throw new Error('inspectionNo is required');
+    return asynchronousCommunication({
+        url: `/api/inspection-standards/cards/${encodeURIComponent(String(checkId))}/abolish-preview/`,
+        method: 'POST',
+        data: { inspection_no: inspectionNo, change_reason: changeReason },
     });
 }
 

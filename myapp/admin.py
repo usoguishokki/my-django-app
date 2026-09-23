@@ -48,12 +48,30 @@ class Check_tbAdmin(admin.ModelAdmin):
     search_fields = ('inspection_no', 'wark_name')
     list_filter = ('day_of_week', 'time_zone')
 
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 # Db_details_tb管理クラス
 @admin.register(Db_details_tb)
 class Db_details_tbAdmin(admin.ModelAdmin):
     list_display = ('id', 'inspection_no', 'applicable_device', 'method', 'contents', 'standard', 'remarks', 'inspection_man_hours')
     search_fields = ('applicable_device', 'method', 'contents')
     list_filter = ('inspection_no',)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 # Hozen_calendar_tb管理クラス
 @admin.register(Hozen_calendar_tb)

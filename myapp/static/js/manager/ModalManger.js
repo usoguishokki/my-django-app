@@ -100,6 +100,7 @@ export class ModalManger {
         confirmText = 'OK',
         cancelText = 'キャンセル',
         confirmDisabled = false,
+        dismissValue = false,
         onOpen = () => {},
     }) {
         return new Promise((resolve) => {
@@ -145,7 +146,7 @@ export class ModalManger {
 
             const closeSpan = this.myModal?.querySelector('.close');
             if (closeSpan) {
-                closeSpan.onclick = () => finish(false);
+                closeSpan.onclick = () => finish(dismissValue);
             }
 
             const okButton = modalMessage.querySelector('[data-role="modal-confirm-ok"]');

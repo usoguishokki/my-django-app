@@ -606,26 +606,20 @@ def select_non_waiting_plan_p_date_ids_by_check_and_date_range(
     )
 
 
-def delete_not_completed_plans_by_check(*, check) -> int:
-    """
-    対象Checkに紐づくPlanのうち、完了以外を削除する。
+def select_abolition_plan_queryset(*, check, delete_distributed_plans: bool = False):
+    plans = Plan_tb.objects.filter(inspection_no=check).exclude(status=PlanStatus.COMPLETED)
+    if not delete_distributed_plans:
+        plans = plans.filter(status=PlanStatus.WAITING)
+    return plans
 
-    仕様:
-      - 完了Planは履歴として残す
-      - 配布待ち / 実施待ち / 承認待ち / 差戻し / 遅れ などは削除する
-    """
 
-    if check is None:
-        return 0
-
-    deleted_count, _ = (
-        Plan_tb.objects
-        .filter(inspection_no=check)
-        .exclude(status=PlanStatus.COMPLETED)
-        .delete()
+def count_distributed_plans_for_abolition(*, check) -> int:
+    return (
+        Plan_tb.objects.filter(inspection_no=check)
+        .exclude(status__in=[PlanStatus.WAITING, PlanStatus.COMPLETED])
+        .count()
     )
 
-    return deleted_count
 
 def select_waiting_plans_for_update_by_check_and_date_range(
     *,
@@ -646,6 +640,21 @@ def select_waiting_plans_for_update_by_check_and_date_range(
             'p_date',
             'inspection_no',
         )
+        .filter(
+            inspection_no=check,
+            p_date__h_date__gte=start_date,
+            p_date__h_date__lte=end_date,
+            status=PlanStatus.WAITING.value,
+        )
+        .order_by('p_date__h_date', 'plan_id')
+    )
+
+
+def select_waiting_plans_by_check_and_date_range(*, check, start_date, end_date) -> list[Plan_tb]:
+    """Read-only counterpart used by the resync confirmation preview."""
+    return list(
+        Plan_tb.objects
+        .select_related('p_date', 'inspection_no')
         .filter(
             inspection_no=check,
             p_date__h_date__gte=start_date,

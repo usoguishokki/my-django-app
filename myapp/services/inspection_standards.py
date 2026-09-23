@@ -9,6 +9,7 @@ from myapp.models import (
     Check_tb,
     Db_details_tb,
     CheckStatus,
+    PlanStatus,
     InspectionStandardHistorySource,
     InspectionStandardHistoryOperation,
     InspectionStandardHistoryTargetType,
@@ -38,7 +39,9 @@ from myapp.selectors.check import (
     update_db_details_status_to_abolished_by_check,
 )
 from myapp.selectors.plan import (
-    delete_not_completed_plans_by_check,
+    delete_plans_by_ids,
+    select_abolition_plan_queryset,
+    count_distributed_plans_for_abolition,
 )
 from typing import Any
 from myapp.domain.inspection_standards import (
@@ -73,7 +76,8 @@ from myapp.presenters.inspection_standards import (
 
 from myapp.domain.inspection_standard_plan_schedule import (
     capture_plan_schedule_snapshot,
-    has_plan_schedule_changed,
+    decide_plan_resync,
+    PlanResyncDecision,
 )
 
 from myapp.services.inspection_standard_plan_sync import (
@@ -395,12 +399,15 @@ def update_inspection_standard_common_items(
         
         plan_sync_result = None
         
-        if has_plan_schedule_changed(
+        decision = decide_plan_resync(
             before=before_plan_schedule_snapshot,
             after=after_plan_schedule_snapshot,
-        ):
+        )
+        if decision != PlanResyncDecision.NO_RESYNC:
             plan_sync_result = sync_waiting_plans_for_inspection_standard(
                 check=check,
+                delete_protected_plans=data.get('delete_protected_plans') is True,
+                expected_protected_plan_count=data.get('expected_protected_plan_count'),
             )
         
         record_inspection_standard_common_items_update_history(
@@ -416,6 +423,7 @@ def update_inspection_standard_common_items(
         
         if plan_sync_result is not None:
             response['planSync'] = plan_sync_result.to_dict()
+        response['planResyncDecision'] = decision.value
         
         return response
 
@@ -617,24 +625,31 @@ def build_inspection_standard_common_items_plan_preview(
         check=check,
         resolved=resolved,
     )
+    check.practitioner = resolved['practitioner']
 
     after_snapshot = capture_plan_schedule_snapshot(check=check)
 
-    if not has_plan_schedule_changed(
+    decision = decide_plan_resync(
         before=before_snapshot,
         after=after_snapshot,
-    ):
+    )
+    if decision == PlanResyncDecision.NO_RESYNC:
         return {
             'scheduleChanged': False,
+            'decision': decision.value,
             'deletedCount': 0,
             'createdCount': 0,
+            'protectedPlanCount': 0,
             'deleteTargetDates': [],
             'createTargetDates': [],
         }
 
-    return preview_waiting_plans_for_inspection_standard(
-        check=check,
-    ).to_dict()
+    return {
+        **preview_waiting_plans_for_inspection_standard(
+            check=check,
+        ).to_dict(),
+        'decision': decision.value,
+    }
 
 
 def resolve_common_item_components(*, values: dict[str, Any]) -> dict[str, Any]:
@@ -990,6 +1005,7 @@ def abolish_inspection_standard_card(
         check_id=check_id,
         data=data,
     )
+    delete_distributed_plans = data.get('delete_distributed_plans') is True
 
     with transaction.atomic():
         check = select_check_for_update_by_pk_and_inspection_no(
@@ -1016,10 +1032,22 @@ def abolish_inspection_standard_card(
         ]
 
         delete_target_plans = list(
-            check.plans
-            .select_for_update()
-            .exclude(status='完了')
+            select_abolition_plan_queryset(
+                check=check,
+                delete_distributed_plans=delete_distributed_plans,
+            ).select_for_update()
         )
+        if delete_distributed_plans:
+            distributed_count = sum(
+                plan.status != PlanStatus.WAITING for plan in delete_target_plans
+            )
+            if (
+                type(data.get('expected_distributed_plan_count')) is not int
+                or data['expected_distributed_plan_count'] != distributed_count
+            ):
+                raise InvalidInspectionStandardParams(
+                    detail='配布済み・実施中の計画数が変わりました。再度確認してください。'
+                )
 
         before_plan_snapshots = [
             build_plan_snapshot(plan)
@@ -1030,9 +1058,8 @@ def abolish_inspection_standard_card(
             check=check,
         )
 
-        deleted_plan_count = delete_not_completed_plans_by_check(
-            check=check,
-        )
+        delete_plans_by_ids(plan_ids=[plan.plan_id for plan in delete_target_plans])
+        deleted_plan_count = len(delete_target_plans)
 
         check.status = CheckStatus.ABOLISHED
         check.save(update_fields=['status'])
@@ -1122,6 +1149,16 @@ def abolish_inspection_standard_card(
             'abolishedDetailCount': abolished_detail_count,
             'deletedPlanCount': deleted_plan_count,
         }
+
+
+def preview_inspection_standard_card_abolition(*, check_id, data) -> dict[str, int]:
+    payload = normalize_inspection_standard_card_abolish_payload(check_id=check_id, data=data)
+    check = select_check_by_pk_and_inspection_no(
+        check_id=payload['check_id'], inspection_no=payload['inspection_no'],
+    )
+    if check is None:
+        raise InspectionStandardNotFound(detail='Inspection Standard not found')
+    return {'distributedPlanCount': count_distributed_plans_for_abolition(check=check)}
 
 
 def build_next_inspection_no(

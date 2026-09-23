@@ -18,6 +18,7 @@ from myapp.services.inspection_standards import (
     build_inspection_standard_common_items_plan_preview,
     create_inspection_standard_card,
     abolish_inspection_standard_card,
+    preview_inspection_standard_card_abolition,
 )
 from myapp.services.inspection_card_detail import (
     build_inspection_card_detail_result,
@@ -470,6 +471,22 @@ def inspection_standard_card_abolish_api(request, check_id: int):
         return _server_error_response(
             message='点検カードの廃止に失敗しました。'
         )
+
+
+@require_POST
+@login_required
+def inspection_standard_card_abolish_preview_api(request, check_id: int):
+    try:
+        result = preview_inspection_standard_card_abolition(
+            check_id=check_id, data=_parse_json_body(request),
+        )
+        return _success_response({'abolishPreview': result})
+    except InspectionStandardError as error:
+        return _domain_error_response(error)
+    except ValueError as error:
+        return _bad_request_response(error)
+    except Exception:
+        return _server_error_response(message='廃止対象の確認に失敗しました。')
 
 
 @require_GET

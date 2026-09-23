@@ -421,6 +421,7 @@ def build_plan_snapshot(plan: Plan_tb | None) -> dict[str, Any]:
             '',
         ),
         'p_date': p_date.isoformat() if p_date else '',
+        'planned_affilation_id': getattr(plan, 'planned_affilation_id', None),
         'plan_time': stringify_datetime(getattr(plan, 'plan_time', None)),
         'implementation_date': stringify_datetime(
             getattr(plan, 'implementation_date', None)

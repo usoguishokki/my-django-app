@@ -7,6 +7,7 @@ import {
   executeInspectionStandardCommonItemsUpdate,
   fetchInspectionStandardCommonItemsPlanPreview,
   executeInspectionStandardCardAbolish,
+  fetchInspectionStandardCardAbolishPreview,
 } from '../../../api/fetchers.js';
 import {
   buildInspectionStandardDetailUpdateValues,
@@ -18,7 +19,6 @@ import {
   buildInspectionStandardCommonItemUpdateValues,
   hasInspectionStandardCommonItemChanges,
   buildInspectionStandardCommonItemChangeEntries,
-  hasInspectionStandardPlanScheduleChangeEntries,
   applyInspectionStandardEditedCommonItemsToDetailVM,
 } from '../../domain/InspectionStandardEditMapper.js';
 import {
@@ -440,11 +440,25 @@ export class InspectionStandardEditSubmitService {
 
     if (changeReason === null) return;
 
-    const confirmed = await this._confirmAbolishCard({
-      inspectionNo,
-    });
+    let abolishPreview;
+    try {
+      const response = await fetchInspectionStandardCardAbolishPreview({
+        checkId, inspectionNo, changeReason,
+      });
+      abolishPreview = response?.abolishPreview;
+      if (!abolishPreview) throw new Error('Abolition preview unavailable');
+    } catch (error) {
+      this._showMessageModal({ type: 'error', title: '確認できませんでした', message: '計画の状態を確認してから再度お試しください。' });
+      return;
+    }
 
-    if (!confirmed) return;
+    const hasDistributedPlans = Number(abolishPreview.distributedPlanCount) > 0;
+    const abolitionChoice = hasDistributedPlans
+      ? await this._confirmDistributedAbolition()
+      : false;
+    if (abolitionChoice === null) return;
+    const deleteDistributedPlans = abolitionChoice === true;
+    if (!hasDistributedPlans && !await this._confirmAbolishCard({ inspectionNo })) return;
 
     this._setSubmitButtonSaving({
       button: element,
@@ -457,6 +471,8 @@ export class InspectionStandardEditSubmitService {
         checkId,
         inspectionNo,
         changeReason,
+        deleteDistributedPlans,
+        expectedDistributedPlanCount: Number(abolishPreview.distributedPlanCount),
       });
 
       if (response?.success === false) {
@@ -551,21 +567,10 @@ export class InspectionStandardEditSubmitService {
       after: values,
     });
 
-    const hasPlanScheduleChanges =
-      hasInspectionStandardPlanScheduleChangeEntries(changeEntries);
-
-    const planPreview = hasPlanScheduleChanges
-      ? await this._fetchCommonItemPlanPreview({
-          checkId,
-          inspectionNo,
-          values,
-          changeReason,
-        })
-      : null;
-
-    if (hasPlanScheduleChanges && !planPreview) {
-      return;
-    }
+    const planPreview = await this._fetchCommonItemPlanPreview({
+      checkId, inspectionNo, values, changeReason,
+    });
+    if (!planPreview) return;
 
     const confirmed = await this._confirmCommonItemChanges({
       formEl,
@@ -579,6 +584,12 @@ export class InspectionStandardEditSubmitService {
       return;
     }
 
+    const protectedChoice = Number(planPreview.protectedPlanCount) > 0
+      ? await this._confirmProtectedPlanResync()
+      : false;
+    if (protectedChoice === null) return;
+    const deleteProtectedPlans = protectedChoice === true;
+
     setInspectionStandardEditSaveButtonState({
       button: element,
       isSaving: true,
@@ -591,6 +602,8 @@ export class InspectionStandardEditSubmitService {
         inspectionNo,
         values: buildInspectionStandardCommonItemUpdateValues(values),
         changeReason,
+        deleteProtectedPlans,
+        expectedProtectedPlanCount: Number(planPreview.protectedPlanCount),
       });
 
       if (response?.success === false) {
@@ -624,7 +637,10 @@ export class InspectionStandardEditSubmitService {
       this._showMessageModal({
         type: 'error',
         title: '保存に失敗しました',
-        message: '時間をおいて再度実行してください。',
+        message: this._resolveErrorMessage({
+          error,
+          fallbackMessage: '時間をおいて再度実行してください。',
+        }),
       });
     } finally {
       setInspectionStandardEditSaveButtonState({
@@ -648,6 +664,26 @@ export class InspectionStandardEditSubmitService {
     return window.confirm(
       `点検番号「${inspectionNo}」のカードを削除します。よろしいですか？`
     );
+  }
+
+  _confirmDistributedAbolition() {
+    return ModalManger.showConfirmModal({
+      message: '<strong>実施中の計画があります</strong><br>この点検には、すでに配布済みまたは実施中の計画があります。<br>点検を廃止しても、これらの計画を残しますか？',
+      color: 'danger',
+      confirmText: '計画も削除して廃止する',
+      cancelText: '計画を残して廃止する',
+      dismissValue: null,
+    });
+  }
+
+  _confirmProtectedPlanResync() {
+    return ModalManger.showConfirmModal({
+      message: '<strong>計画を作り直しますか？</strong><br>点検内容の変更により、現在の計画を作り直す必要があります。<br>この中には、すでに予定日を過ぎている計画、または時間が設定されている計画が含まれています。<br>変更前の計画を削除して、新しい条件で計画を作り直してもよいですか？<br>予定日を過ぎている計画は、削除後に再作成されない場合があります。',
+      color: 'danger',
+      confirmText: '削除して計画を作り直す',
+      cancelText: '変更前の計画を残す',
+      dismissValue: null,
+    });
   }
 
   _buildAbolishCardSuccessMessage({ card } = {}) {

@@ -34,6 +34,16 @@ The timetable test-card week, weekday, team, shift, card display, and bulk-regis
 
 Timetable team-filter buttons use the repository's canonical A/B/C team order, independent of the current shift rotation or the Calendar row order. Each button retains its own Calendar-derived shift metadata; sorting buttons does not change Plan placement or shift resolution.
 
+## Inspection Standard Plan resynchronization
+
+The Inspection Standard is the recurrence and Plan-generation definition; an instantiated Plan retains its own current operational placement. The common-item update service uses the domain policy in `myapp/domain/inspection_standard_plan_schedule.py` to classify effective changes as `NO_RESYNC`, `RESYNC_SCHEDULE`, or `RESYNC_LIFECYCLE`. Rule, anchors, week, weekday, and practitioner/team-generation changes require schedule resync while Plan generation is eligible. A status change requires lifecycle resync only when Plan-generation eligibility changes; edits while both states are ineligible do not generate Plans. Work name, effort, staffing count, time zone, safe point, and detail content do not trigger Plan schedule resync.
+
+Phase 1 retains delete-and-regenerate for eligible `WAITING` Plans. A manually moved waiting Plan may therefore be replaced after a genuine scheduling-standard change; a descriptive edit does not replace it. Normal resync preserves waiting Plans whose current scheduled date is already past or whose `plan_time` is set. Deleting those protected Plans requires an explicit confirmation, rechecked against the locked candidate count. Past dates are not generated again merely because an explicitly confirmed resync deleted an old Plan. Non-waiting Plans are not common-resync delete candidates.
+
+Card abolition is a separate lifecycle operation. It deletes waiting Plans by default, preserves completed Plans always, and preserves distributed/in-progress Plans unless their deletion is explicitly confirmed. Inspection Standard history records standard-driven Plan deletion/creation; Move history snapshots survive a deleted Plan through its nullable `SET_NULL` FK. Delete/regenerate may change `plan_id`. Explicit old-Plan to new-Plan occurrence lineage is a future design, not part of Phase 1.
+
+Inspection Standard business edits go through the Nika UI/API. Django Admin is read-only for `Check_tb` and `Db_details_tb` so it cannot bypass the resync decision.
+
 ## Selector flow
 
 The relevant selectors are in `myapp/selectors/plan_scheduling.py`:

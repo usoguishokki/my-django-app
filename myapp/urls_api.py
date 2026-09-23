@@ -36,6 +36,7 @@ from myapp.api.inspection_standards import (
     inspection_standard_detail_delete_api,
     inspection_standard_card_create_api,
     inspection_standard_card_abolish_api,
+    inspection_standard_card_abolish_preview_api,
     inspection_standard_history_list_api,
     inspection_standard_history_detail_api,
     inspection_standard_history_note_update_api,
@@ -144,6 +145,11 @@ urlpatterns = [
         'inspection-standards/cards/<int:check_id>/abolish/',
         inspection_standard_card_abolish_api,
         name='inspection_standard_card_abolish_api',
+    ),
+    path(
+        'inspection-standards/cards/<int:check_id>/abolish-preview/',
+        inspection_standard_card_abolish_preview_api,
+        name='inspection_standard_card_abolish_preview_api',
     ),
     path(
         'inspection-standards/history/',

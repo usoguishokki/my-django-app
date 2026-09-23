@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from django.utils import timezone
+from myapp.domain.errors import InvalidInspectionStandardParams
 
 from myapp.domain.inspection_standard_plan_schedule import (
     filter_calendar_rows_for_check_schedule,
@@ -20,8 +21,8 @@ from myapp.selectors.plan import (
     select_waiting_plans_for_update_by_check_and_date_range,
     delete_plans_by_ids,
     select_existing_plan_p_date_ids_by_check_and_date_range,
-    select_waiting_plan_calendar_rows_by_check_and_date_range,
     select_non_waiting_plan_p_date_ids_by_check_and_date_range,
+    select_waiting_plans_by_check_and_date_range,
 )
 
 
@@ -67,6 +68,8 @@ class InspectionStandardPlanSyncResult:
 def sync_waiting_plans_for_inspection_standard(
     *,
     check,
+    delete_protected_plans: bool = False,
+    expected_protected_plan_count: int | None = None,
 ) -> InspectionStandardPlanSyncResult:
     """
     点検基準書の周期変更後に、対象年度内の配布待ちPlanを再同期する。
@@ -91,6 +94,25 @@ def sync_waiting_plans_for_inspection_standard(
         start_date=delete_start_date,
         end_date=delete_end_date,
     )
+
+    today = get_plan_sync_today()
+    protected_plans = [
+        plan for plan in delete_target_plans
+        if is_protected_waiting_plan(plan=plan, today=today)
+    ]
+    if delete_protected_plans and (
+        type(expected_protected_plan_count) is not int
+        or expected_protected_plan_count != len(protected_plans)
+    ):
+        raise InvalidInspectionStandardParams(
+            detail='保護対象の計画数が変わりました。再度確認してください。'
+        )
+    if not delete_protected_plans:
+        protected_plan_ids = {plan.plan_id for plan in protected_plans}
+        delete_target_plans = [
+            plan for plan in delete_target_plans
+            if plan.plan_id not in protected_plan_ids
+        ]
 
     delete_plans_by_ids(
         plan_ids=[
@@ -158,6 +180,12 @@ def sync_waiting_plans_for_inspection_standard(
         created_plans=tuple(created_plans),
     )
 
+
+def is_protected_waiting_plan(*, plan, today: date) -> bool:
+    scheduled_date = getattr(getattr(plan, 'p_date', None), 'h_date', None)
+    return bool(plan.plan_time is not None or scheduled_date is None or scheduled_date < today)
+
+
 def resolve_plan_sync_creation_date_range(*, base_date: date) -> tuple[date, date]:
     """
     Plan同期対象期間を解決する。
@@ -187,12 +215,14 @@ def resolve_plan_sync_delete_date_range(*, base_date: date) -> tuple[date, date]
 class InspectionStandardPlanSyncPreviewResult:
     delete_target_dates: list
     create_target_dates: list
+    protected_plan_count: int = 0
 
     def to_dict(self) -> dict:
         return {
             'scheduleChanged': True,
             'deletedCount': len(self.delete_target_dates),
             'createdCount': len(self.create_target_dates),
+            'protectedPlanCount': self.protected_plan_count,
             'deleteTargetDates': [
                 present_plan_preview_calendar_row(row)
                 for row in self.delete_target_dates
@@ -221,24 +251,34 @@ def preview_waiting_plans_for_inspection_standard(
         base_date=PLAN_SYNC_BASE_DATE,
     )
 
-    delete_target_dates = list(
-        select_waiting_plan_calendar_rows_by_check_and_date_range(
-            check=check,
-            start_date=delete_start_date,
-            end_date=delete_end_date,
-        )
+    waiting_plans = select_waiting_plans_by_check_and_date_range(
+        check=check,
+        start_date=delete_start_date,
+        end_date=delete_end_date,
     )
+    today = get_plan_sync_today()
+    protected_plans = [
+        plan for plan in waiting_plans
+        if is_protected_waiting_plan(plan=plan, today=today)
+    ]
+    protected_plan_ids = {plan.plan_id for plan in protected_plans}
+    delete_target_dates = [
+        plan.p_date for plan in waiting_plans
+        if plan.plan_id not in protected_plan_ids and plan.p_date is not None
+    ]
 
     if create_start_date > create_end_date:
         return InspectionStandardPlanSyncPreviewResult(
             delete_target_dates=delete_target_dates,
             create_target_dates=[],
+            protected_plan_count=len(protected_plans),
         )
 
     if not is_plan_creation_target_check(check=check):
         return InspectionStandardPlanSyncPreviewResult(
             delete_target_dates=delete_target_dates,
             create_target_dates=[],
+            protected_plan_count=len(protected_plans),
         )
 
     calendar_rows = list(
@@ -273,6 +313,9 @@ def preview_waiting_plans_for_inspection_standard(
             end_date=create_end_date,
         )
     )
+    existing_non_waiting_p_date_ids.update(
+        plan.p_date_id for plan in protected_plans if plan.p_date_id
+    )
 
     create_target_dates = [
         row
@@ -283,6 +326,7 @@ def preview_waiting_plans_for_inspection_standard(
     return InspectionStandardPlanSyncPreviewResult(
         delete_target_dates=delete_target_dates,
         create_target_dates=create_target_dates,
+        protected_plan_count=len(protected_plans),
     )
 
 
