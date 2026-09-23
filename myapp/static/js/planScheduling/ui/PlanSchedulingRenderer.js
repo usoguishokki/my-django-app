@@ -285,6 +285,7 @@ export class PlanSchedulingRenderer {
     this.root?.addEventListener?.('pointerout', (event) => this.hideChartTooltip(event));
     this.root?.addEventListener?.('focusin', (event) => this.showChartTooltip(event));
     this.root?.addEventListener?.('focusout', (event) => this.hideChartTooltip(event));
+    this.moveSuccessDialog?.addEventListener?.('close', () => this.filterButton?.focus?.());
     this.root?.addEventListener?.('scroll', (event) => {
       if (event.target === this.planningMain) {
         this.scheduleTimelineScrollPresentation();
@@ -975,7 +976,7 @@ export class PlanSchedulingRenderer {
     </button>`;
   }
 
-  moveContextTemplate({ plan, destination, preview }) {
+  moveContextTemplate({ plan, destination, preview, isMoveSubmitting = false }) {
     if (!preview) return this.moveSelectingContextTemplate(plan);
     const current = plan.current;
     return `<section class="plan-scheduling__moveContext">
@@ -990,8 +991,8 @@ export class PlanSchedulingRenderer {
         <tbody><tr><th scope="row">移動元</th><td>${formatMinutes(preview.sourceBefore)}</td><td>${formatMinutes(preview.sourceAfter)}</td><td><strong class="is-decrease">${formatDelta(preview.sourceBefore, preview.sourceAfter)}</strong></td></tr>
         <tr><th scope="row">移動先</th><td>${formatMinutes(preview.destinationBefore)}</td><td>${formatMinutes(preview.destinationAfter)}</td><td><strong class="is-increase">${formatDelta(preview.destinationBefore, preview.destinationAfter)}</strong></td></tr></tbody>
       </table></section>
-      <p class="plan-scheduling__readOnly">プレビューのみ。保存・更新は行われません。</p>
-      <footer class="plan-scheduling__moveActions"><button type="button" class="ui-btn ui-btn--sm ui-btn--ghost plan-scheduling__cancelMove plan-scheduling__cancelButton" data-action="cancel-move">キャンセル</button></footer>
+      <p class="plan-scheduling__readOnly">移動内容を確認して確定してください。</p>
+      <footer class="plan-scheduling__moveActions"><button type="button" class="ui-btn ui-btn--sm ui-btn--ghost plan-scheduling__cancelMove plan-scheduling__cancelButton" data-action="cancel-move" ${isMoveSubmitting ? 'disabled' : ''}>キャンセル</button><button type="button" class="ui-btn plan-scheduling__controlButton plan-scheduling__controlButton--primary plan-scheduling__confirmMove" data-action="confirm-move" ${isMoveSubmitting ? 'disabled' : ''}>${isMoveSubmitting ? '確定中' : '移動を確定'}</button></footer>
       </section>`;
   }
 
@@ -1006,11 +1007,42 @@ export class PlanSchedulingRenderer {
     </section>`;
   }
 
+  showMoveSuccess(receipt, { refreshWarning = '' } = {}) {
+    const dialog = this.moveSuccessDialog;
+    if (!dialog || !receipt?.source || !receipt?.destination) return;
+    const setText = (role, value) => {
+      const target = dialog.querySelector(`[data-role="${role}"]`);
+      if (target) target.textContent = value;
+    };
+    const describe = (slot) => [
+      tooltipDateLabel(slot.date, slot.date),
+      slot.shift?.name,
+      slot.affiliationName,
+    ].filter(Boolean).join(' / ');
+    setText('move-success-source', describe(receipt.source));
+    setText('move-success-destination', describe(receipt.destination));
+    setText('move-success-warning', refreshWarning);
+    const warning = dialog.querySelector('[data-role="move-success-warning"]');
+    if (warning) warning.hidden = !refreshWarning;
+    if (!dialog.open) dialog.showModal?.();
+    dialog.querySelector('[data-action="close-move-success"]')?.focus?.();
+  }
+
+  closeMoveSuccess() {
+    const dialog = this.moveSuccessDialog;
+    if (dialog?.open) {
+      dialog.close();
+      return;
+    }
+    this.filterButton?.focus?.();
+  }
+
   get feedback() { return this.root.querySelector('[data-role="feedback"]'); }
   get workspace() { return this.root.querySelector('[data-role="workspace"]'); }
   get loadingSkeleton() { return this.root.querySelector('[data-role="loading-skeleton"]'); }
   get planList() { return this.root.querySelector('[data-role="plan-list"]'); }
   get movePreview() { return this.root.querySelector('[data-role="move-preview"]'); }
+  get moveSuccessDialog() { return this.root?.querySelector?.('[data-role="move-success-dialog"]') || null; }
   get drawer() { return this.root.querySelector('[data-role="slot-drawer"]'); }
   get planningLayout() { return this.root.querySelector('[data-role="planning-layout"]'); }
   get planningMain() { return this.root.querySelector('.plan-scheduling__planningMain'); }

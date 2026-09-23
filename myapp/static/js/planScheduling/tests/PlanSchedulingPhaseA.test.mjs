@@ -60,10 +60,11 @@ async function importController() {
   ).replace(
     /import \{[\s\S]*?\} from '\.\.\/domain\/PlanSchedulingPreviewPolicy\.js';/,
     `const PlanSchedulingMode = { NORMAL: 'normal', MOVING: 'moving' };
-     const initialInteractionState = () => ({ mode: 'normal', selectedSlotKey: '', selectedSlotContext: null, movingPlanId: null, moveContext: null, destinationSlotKey: '' });
-     const beginMove = (state, planId, moveContext = null) => ({ ...state, mode: 'moving', movingPlanId: planId, moveContext, destinationSlotKey: '' });
-     const cancelMove = (state) => ({ ...state, mode: 'normal', movingPlanId: null, moveContext: null, destinationSlotKey: '' });
+     const initialInteractionState = () => ({ mode: 'normal', selectedSlotKey: '', selectedSlotContext: null, movingPlanId: null, moveContext: null, destinationSlotKey: '', isMoveSubmitting: false });
+     const beginMove = (state, planId, moveContext = null) => ({ ...state, mode: 'moving', movingPlanId: planId, moveContext, destinationSlotKey: '', isMoveSubmitting: false });
+     const cancelMove = (state) => ({ ...state, mode: 'normal', movingPlanId: null, moveContext: null, destinationSlotKey: '', isMoveSubmitting: false });
      const closeDrawer = initialInteractionState;
+     const setMoveSubmitting = (state, value) => ({ ...state, isMoveSubmitting: Boolean(value) });
      const selectMatrixSlot = (state, key, selectedSlotContext = null) => state.mode === 'moving'
        ? { ...state, destinationSlotKey: key }
        : { ...state, selectedSlotKey: key, selectedSlotContext, destinationSlotKey: '' };`,
@@ -140,6 +141,35 @@ test('API client loads the read-only full Chart timeline endpoint', async () => 
 
   assert.equal(requestedUrl, '/api/plan-scheduling/timeline/');
   assert.deepEqual(state, { dates: [], workloadChart: { dates: [] } });
+});
+
+
+test('API client posts only Move identities with same-origin CSRF protection', async () => {
+  const { PlanSchedulingApiClient } = await importSource(
+    '../application/PlanSchedulingApiClient.js',
+  );
+  let request;
+  const client = new PlanSchedulingApiClient(async (url, options) => {
+    request = { url, options };
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ status: 'success', move: { historyId: 9 } }),
+    };
+  });
+  const payload = {
+    planId: 71,
+    expectedSourceDate: '2026-09-21',
+    expectedSourceAffiliationId: 1,
+    destinationDate: '2026-09-22',
+    destinationAffiliationId: 2,
+  };
+  const receipt = await client.movePlan(payload);
+  assert.equal(request.url, '/api/plan-scheduling/move/');
+  assert.equal(request.options.method, 'POST');
+  assert.equal(request.options.credentials, 'same-origin');
+  assert.deepEqual(JSON.parse(request.options.body), payload);
+  assert.equal(receipt.historyId, 9);
 });
 
 
@@ -1346,8 +1376,18 @@ test('Move immediately opens the same preview component and progressively fills 
   assert.match(preview, /133分/);
   assert.match(preview, /147分/);
   assert.match(preview, /\+14分/);
-  assert.match(preview, /プレビューのみ。保存・更新は行われません。/);
-  assert.doesNotMatch(preview, /data-action="(?:save|confirm|submit)/);
+  assert.match(preview, /移動内容を確認して確定してください。/);
+  assert.match(preview, /data-action="confirm-move"/);
+  assert.match(preview, />移動を確定<\/button>/);
+
+  const pending = renderer.moveContextTemplate({
+    plan,
+    destination: { dateLabel: '9/17', shift: { name: '1直' }, team: { name: 'A班' } },
+    preview: { sourceBefore: 284, sourceAfter: 270, destinationBefore: 133, destinationAfter: 147 },
+    isMoveSubmitting: true,
+  });
+  assert.match(pending, /data-action="confirm-move" disabled>確定中/);
+  assert.match(pending, /data-action="cancel-move" disabled/);
 });
 
 
@@ -2097,7 +2137,7 @@ test('drawer close has a dedicated non-modal controller transition', async () =>
 });
 
 
-test('Phase A UI has no mutation request or capacity vocabulary', () => {
+test('Move mutation is explicit while capacity vocabulary remains absent', () => {
   const api = readFileSync(
     new URL('../application/PlanSchedulingApiClient.js', import.meta.url),
     'utf8',
@@ -2110,12 +2150,14 @@ test('Phase A UI has no mutation request or capacity vocabulary', () => {
     new URL('../ui/PlanSchedulingRenderer.js', import.meta.url),
     'utf8',
   );
-  assert.doesNotMatch(api, /method\s*:\s*['"](?:POST|PUT|PATCH|DELETE)/);
+  assert.equal((api.match(/method\s*:\s*['"]POST['"]/g) || []).length, 1);
+  assert.match(api, /\/api\/plan-scheduling\/move\//);
+  assert.match(renderer, /data-action="confirm-move"/);
   assert.doesNotMatch(template, /残余能力|利用率|過負荷|capacity|utilization/i);
   assert.doesNotMatch(template, /保存する|更新する/);
   assert.doesNotMatch(`${template}\n${renderer}`, /残余能力|利用率|過負荷|空き|capacity|utilization|overload/i);
   assert.doesNotMatch(renderer, /変更する/);
-  assert.doesNotMatch(template, /role="dialog"|aria-modal|backdrop/i);
+  assert.match(template, /<dialog[^>]*data-role="move-success-dialog"[^>]*aria-labelledby=/);
 });
 
 
@@ -2449,8 +2491,8 @@ test('filter controls remain outside the shared scrolling timeline and expose lo
     'utf8',
   );
   assert.equal((template.match(/data-action="toggle-filter"/g) || []).length, 1);
-  assert.equal((template.match(/plan-scheduling__controlButton /g) || []).length, 4);
-  assert.equal((template.match(/plan-scheduling__controlButton--primary/g) || []).length, 2);
+  assert.equal((template.match(/plan-scheduling__controlButton /g) || []).length, 5);
+  assert.equal((template.match(/plan-scheduling__controlButton--primary/g) || []).length, 3);
   assert.equal((template.match(/plan-scheduling__controlButton--secondary/g) || []).length, 2);
   assert.equal((template.match(/data-filter-category="weekdays"/g) || []).length, 7);
   assert.equal((template.match(/data-filter-category="shifts"/g) || []).length, 4);
@@ -3320,4 +3362,262 @@ test('Matrix visibility preserves logical anchors, survives mode changes, and is
   assert.equal(controller.matrixVisible, true);
   assert.equal(toggleStates.at(-1), true);
   assert.equal(messages.at(-1), '移動中はマトリクスを非表示にできません');
+});
+
+
+test('Move confirmation posts authoritative identities once and reconciles before success popup', async () => {
+  const { PlanSchedulingController } = await importController();
+  const receipt = {
+    historyId: 9,
+    planId: 71,
+    source: { date: '2026-09-21' },
+    destination: { date: '2026-09-22' },
+  };
+  const calls = [];
+  let resolveMove;
+  const apiClient = {
+    movePlan: (payload) => {
+      calls.push(payload);
+      return new Promise((resolve) => { resolveMove = resolve; });
+    },
+  };
+  const shown = [];
+  const renderer = {
+    renderSelection: () => {},
+    showMoveSuccess: (...args) => shown.push(args),
+  };
+  const controller = new PlanSchedulingController({
+    root: {}, apiClient, renderer,
+    buildPreview: () => ({}), selectSlotPlans: () => [],
+  });
+  controller.interaction = {
+    ...controller.interaction,
+    mode: 'moving',
+    movingPlanId: 71,
+    moveContext: {},
+    destinationSlotKey: '2026-09-22:2',
+  };
+  controller.selection = () => ({
+    isMoving: true,
+    plan: { planId: 71 },
+    source: { date: '2026-09-21', team: { id: 1 } },
+    destination: { date: '2026-09-22', team: { id: 2 } },
+    preview: {},
+  });
+  const reconciled = [];
+  controller.reconcileAuthoritativeState = async (date) => reconciled.push(date);
+
+  const first = controller.confirmMove();
+  const duplicate = await controller.confirmMove();
+  assert.equal(duplicate, false);
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0], {
+    planId: 71,
+    expectedSourceDate: '2026-09-21',
+    expectedSourceAffiliationId: 1,
+    destinationDate: '2026-09-22',
+    destinationAffiliationId: 2,
+  });
+  resolveMove(receipt);
+  assert.equal(await first, true);
+  assert.deepEqual(reconciled, ['2026-09-22']);
+  assert.equal(controller.interaction.mode, 'normal');
+  assert.equal(shown[0][0], receipt);
+  assert.equal(shown[0][1].refreshWarning, '');
+});
+
+
+test('committed Move refresh failure remains success and carries a refresh warning', async () => {
+  const { PlanSchedulingController } = await importController();
+  const receipt = {
+    source: { date: '2026-09-21' },
+    destination: { date: '2026-09-22' },
+  };
+  const shown = [];
+  const errors = [];
+  const controller = new PlanSchedulingController({
+    root: {},
+    apiClient: { movePlan: async () => receipt },
+    renderer: {
+      renderSelection: () => {},
+      renderState: () => {},
+      renderFilterState: () => {},
+      renderFilterEmptyState: () => {},
+      renderInteractionError: (message) => errors.push(message),
+      showMoveSuccess: (...args) => shown.push(args),
+    },
+    buildPreview: () => ({}), selectSlotPlans: () => [],
+  });
+  controller.interaction = { ...controller.interaction, mode: 'moving' };
+  controller.selection = () => ({
+    isMoving: true,
+    plan: { planId: 71 },
+    source: { date: '2026-09-21', team: { id: 1 } },
+    destination: { date: '2026-09-22', team: { id: 2 } },
+    preview: {},
+  });
+  controller.reconcileAuthoritativeState = async () => { throw new Error('refresh failed'); };
+  controller.viewState = {};
+  controller.state = {};
+
+  assert.equal(await controller.confirmMove(), true);
+  assert.equal(controller.interaction.mode, 'normal');
+  assert.match(shown[0][1].refreshWarning, /最新の予定表示を更新できませんでした/);
+  assert.match(errors[0], /最新の予定表示を更新できませんでした/);
+});
+
+
+test('network-uncertain Move rereads authority and never reports a definite failure', async () => {
+  const { PlanSchedulingController } = await importController();
+  const messages = [];
+  const controller = new PlanSchedulingController({
+    root: {},
+    apiClient: { movePlan: async () => { throw new Error('connection lost'); } },
+    renderer: {
+      renderSelection: () => {},
+      renderInteractionError: (message) => messages.push(message),
+    },
+    buildPreview: () => ({}), selectSlotPlans: () => [],
+  });
+  const source = { date: '2026-09-21', team: { id: 1 } };
+  const destination = { date: '2026-09-22', team: { id: 2 } };
+  controller.interaction = { ...controller.interaction, mode: 'moving' };
+  controller.selection = () => ({
+    isMoving: true,
+    plan: { planId: 71 },
+    source,
+    destination,
+    preview: {},
+  });
+  controller.reconcileAuthoritativeState = async (date) => {
+    assert.equal(date, destination.date);
+    controller.timelineDates = [{
+      date: destination.date,
+      slots: [{ ...destination, planIds: [71] }],
+    }];
+  };
+
+  assert.equal(await controller.confirmMove(), false);
+  assert.equal(controller.interaction.mode, 'normal');
+  assert.match(messages[0], /最新の予定では移動先に反映されています/);
+  assert.doesNotMatch(messages[0], /移動できませんでした/);
+});
+
+
+test('stale and non-waiting Move conflicts clear unsafe context and reread authority', async () => {
+  const { PlanSchedulingController } = await importController();
+  for (const [code, expectedMessage] of [
+    ['STALE_SOURCE', '予定が更新されています'],
+    ['PLAN_NOT_WAITING', '配布待ちではないため移動できません'],
+    ['PLAN_TIME_CONFLICT', '時刻が設定されているため移動できません'],
+  ]) {
+    const messages = [];
+    const controller = new PlanSchedulingController({
+      root: {},
+      apiClient: { movePlan: async () => { throw { status: 409, code }; } },
+      renderer: {
+        renderSelection: () => {},
+        renderInteractionError: (message) => messages.push(message),
+      },
+      buildPreview: () => ({}), selectSlotPlans: () => [],
+    });
+    controller.interaction = { ...controller.interaction, mode: 'moving' };
+    controller.selection = () => ({
+      isMoving: true,
+      plan: { planId: 71 },
+      source: { date: '2026-09-21', team: { id: 1 } },
+      destination: { date: '2026-09-22', team: { id: 2 } },
+      preview: {},
+    });
+    const reconciled = [];
+    controller.reconcileAuthoritativeState = async (date) => reconciled.push(date);
+
+    assert.equal(await controller.confirmMove(), false);
+    assert.equal(controller.interaction.mode, 'normal');
+    assert.deepEqual(reconciled, ['2026-09-21']);
+    assert.match(messages[0], new RegExp(expectedMessage));
+  }
+});
+
+
+test('definite server failure keeps the write-free preview available for retry', async () => {
+  const { PlanSchedulingController } = await importController();
+  let renderCount = 0;
+  let reconcileCount = 0;
+  const controller = new PlanSchedulingController({
+    root: {},
+    apiClient: {
+      movePlan: async () => { throw { status: 500, message: 'server failed' }; },
+    },
+    renderer: {
+      renderSelection: () => { renderCount += 1; },
+      renderInteractionError: () => {},
+    },
+    buildPreview: () => ({}), selectSlotPlans: () => [],
+  });
+  controller.interaction = { ...controller.interaction, mode: 'moving' };
+  controller.selection = () => ({
+    isMoving: true,
+    plan: { planId: 71 },
+    source: { date: '2026-09-21', team: { id: 1 } },
+    destination: { date: '2026-09-22', team: { id: 2 } },
+    preview: {},
+  });
+  controller.reconcileAuthoritativeState = async () => { reconcileCount += 1; };
+
+  assert.equal(await controller.confirmMove(), false);
+  assert.equal(controller.interaction.mode, 'moving');
+  assert.equal(controller.interaction.isMoveSubmitting, false);
+  assert.equal(reconcileCount, 0);
+  assert.equal(renderCount, 2);
+});
+
+
+test('success dialog renders committed receipt values and uses a stable close target', async () => {
+  const { PlanSchedulingRenderer } = await importRenderer();
+  const fields = new Map();
+  const closeButton = { focusCount: 0, focus() { this.focusCount += 1; } };
+  for (const role of [
+    'move-success-source', 'move-success-destination', 'move-success-warning',
+  ]) fields.set(role, { textContent: '', hidden: false });
+  const dialog = {
+    open: false,
+    closeListener: null,
+    addEventListener(name, listener) {
+      if (name === 'close') this.closeListener = listener;
+    },
+    querySelector(selector) {
+      const role = selector.match(/data-role="([^"]+)"/)?.[1];
+      if (role) return fields.get(role);
+      if (selector.includes('close-move-success')) return closeButton;
+      return null;
+    },
+    showModal() { this.open = true; },
+    close() { this.open = false; this.closeListener?.(); },
+  };
+  const filter = { focusCount: 0, focus() { this.focusCount += 1; } };
+  const root = {
+    addEventListener: () => {},
+    querySelector(selector) {
+      if (selector.includes('move-success-dialog')) return dialog;
+      if (selector.includes('toggle-filter')) return filter;
+      return null;
+    },
+  };
+  const renderer = new PlanSchedulingRenderer(root);
+  renderer.showMoveSuccess({
+    source: {
+      date: '2026-09-21', shift: { name: '1直' }, affiliationName: 'A班',
+    },
+    destination: {
+      date: '2026-09-22', shift: { name: '2直' }, affiliationName: 'B班',
+    },
+  });
+  assert.equal(dialog.open, true);
+  assert.match(fields.get('move-success-source').textContent, /1直 \/ A班/);
+  assert.match(fields.get('move-success-destination').textContent, /2直 \/ B班/);
+  assert.equal(closeButton.focusCount, 1);
+  renderer.closeMoveSuccess();
+  assert.equal(dialog.open, false);
+  assert.equal(filter.focusCount, 1);
 });

@@ -4,7 +4,13 @@ from django.db.models import Prefetch
 
 from myapp.domain.periods import get_fiscal_year_range
 from myapp.domain.plan_status import PlanStatus
-from myapp.models import Calendar_tb, Db_details_tb, Hozen_calendar_tb, Plan_tb
+from myapp.models import (
+    Affilation_tb,
+    Calendar_tb,
+    Db_details_tb,
+    Hozen_calendar_tb,
+    Plan_tb,
+)
 
 
 def select_maintenance_week(*, target_date):
@@ -99,4 +105,47 @@ def select_waiting_plans_for_maintenance_dates(
             ),
         )
         .order_by("p_date__h_date", "plan_id")
+    )
+
+
+def select_plan_for_scheduling_move(*, plan_id, organization_code):
+    """Lock one organization-scoped Plan; callers must be inside atomic()."""
+
+    try:
+        return (
+            Plan_tb.objects
+            .select_for_update()
+            .select_related(
+                "p_date",
+                "planned_affilation",
+                "inspection_no__control_no__line_name__organization",
+            )
+            .get(
+                plan_id=plan_id,
+                inspection_no__control_no__line_name__organization__organization=(
+                    organization_code
+                ),
+            )
+        )
+    except Plan_tb.DoesNotExist:
+        return None
+
+
+def select_maintenance_date_by_date(*, maintenance_date):
+    return Hozen_calendar_tb.objects.filter(h_date=maintenance_date).first()
+
+
+def select_affiliation_by_id(*, affiliation_id):
+    return Affilation_tb.objects.filter(affilation_id=affiliation_id).first()
+
+
+def select_calendar_rows_for_slot(*, maintenance_date_id, affiliation_id):
+    return list(
+        Calendar_tb.objects
+        .select_related("c_date", "affilation", "pattern")
+        .filter(
+            c_date_id=maintenance_date_id,
+            affilation_id=affiliation_id,
+        )
+        .order_by("pattern__start_time", "c_id")
     )

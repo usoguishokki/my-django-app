@@ -76,6 +76,7 @@ export function initialInteractionState() {
     movingPlanId: null,
     moveContext: null,
     destinationSlotKey: '',
+    isMoveSubmitting: false,
   };
 }
 
@@ -99,6 +100,7 @@ export function beginMove(interaction, planId, moveContext = null) {
     movingPlanId: planId,
     moveContext,
     destinationSlotKey: '',
+    isMoveSubmitting: false,
   };
 }
 
@@ -109,7 +111,13 @@ export function cancelMove(interaction) {
     movingPlanId: null,
     moveContext: null,
     destinationSlotKey: '',
+    isMoveSubmitting: false,
   };
+}
+
+export function setMoveSubmitting(interaction, isSubmitting) {
+  if (interaction.mode !== PlanSchedulingMode.MOVING) return interaction;
+  return { ...interaction, isMoveSubmitting: Boolean(isSubmitting) };
 }
 
 export function closeDrawer() {

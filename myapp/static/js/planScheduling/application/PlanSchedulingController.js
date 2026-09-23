@@ -22,6 +22,7 @@ import {
   closeDrawer,
   initialInteractionState,
   selectMatrixSlot,
+  setMoveSubmitting,
 } from '../domain/PlanSchedulingPreviewPolicy.js';
 import {
   emptyPlanSchedulingFilter,
@@ -169,8 +170,18 @@ export class PlanSchedulingController {
       return;
     }
 
+    if (event.target.closest('[data-action="close-move-success"]')) {
+      this.renderer.closeMoveSuccess?.();
+      return;
+    }
+
+    if (event.target.closest('[data-action="confirm-move"]')) {
+      return this.confirmMove();
+    }
+
     const cancelButton = event.target.closest('[data-action="cancel-move"]');
     if (cancelButton) {
+      if (this.interaction.isMoveSubmitting) return;
       this.interaction = cancelMove(this.interaction);
       this.renderSelection();
       return;
@@ -208,8 +219,119 @@ export class PlanSchedulingController {
 
     const slotButton = event.target.closest('[data-slot-key]');
     if (slotButton && !slotButton.disabled) {
+      if (this.interaction.isMoveSubmitting) return;
       return this.handleSlotClick(slotButton);
     }
+  }
+
+  async reconcileAuthoritativeState(targetDate) {
+    const [timelineState, weekState] = await Promise.all([
+      this.apiClient.fetchTimeline(),
+      this.apiClient.fetchWeek(targetDate),
+    ]);
+    this.timelineChart = timelineState.workloadChart;
+    this.timelineDates = timelineState.dates;
+    this.timelineFiscalAnchorDate = targetDate;
+    this.state = this.withFullTimeline(weekState);
+    this.refreshViewState();
+    this.renderState();
+    this.renderer.scrollTimelineToDate?.(targetDate);
+  }
+
+  authoritativePlanLocation(planId, source, destination) {
+    const slots = (this.timelineDates || []).flatMap((day) => day.slots || []);
+    const containsPlan = (slot, expected) => (
+      slot.date === expected.date &&
+      slot.team?.id === expected.team.id &&
+      (slot.planIds || []).includes(planId)
+    );
+    if (slots.some((slot) => containsPlan(slot, destination))) return 'destination';
+    if (slots.some((slot) => containsPlan(slot, source))) return 'source';
+    return 'unknown';
+  }
+
+  async confirmMove() {
+    const selection = this.selection();
+    if (
+      this.interaction.isMoveSubmitting ||
+      !selection.isMoving ||
+      !selection.plan ||
+      !selection.source ||
+      !selection.destination ||
+      !selection.preview
+    ) return false;
+
+    const payload = {
+      planId: selection.plan.planId,
+      expectedSourceDate: selection.source.date,
+      expectedSourceAffiliationId: selection.source.team.id,
+      destinationDate: selection.destination.date,
+      destinationAffiliationId: selection.destination.team.id,
+    };
+    this.interaction = setMoveSubmitting(this.interaction, true);
+    this.renderSelection();
+
+    let receipt;
+    try {
+      receipt = await this.apiClient.movePlan(payload);
+    } catch (error) {
+      if (!error?.status) {
+        this.interaction = closeDrawer(this.interaction);
+        let outcome = 'unknown';
+        try {
+          await this.reconcileAuthoritativeState(payload.destinationDate);
+          outcome = this.authoritativePlanLocation(
+            payload.planId,
+            selection.source,
+            selection.destination,
+          );
+        } catch (_refreshError) {
+          this.renderState();
+        }
+        const uncertainMessages = {
+          destination: '通信結果を確認できませんでしたが、最新の予定では移動先に反映されています。',
+          source: '通信結果を確認できませんでした。最新の予定では移動は反映されていません。',
+          unknown: '通信結果を確認できません。最新の予定位置を確認してから再操作してください。',
+        };
+        this.renderer.renderInteractionError?.(uncertainMessages[outcome]);
+        return false;
+      }
+      const shouldReload = [400, 404, 409].includes(error?.status);
+      if (shouldReload) {
+        this.interaction = closeDrawer(this.interaction);
+        try {
+          await this.reconcileAuthoritativeState(payload.expectedSourceDate);
+        } catch (_refreshError) {
+          this.renderState();
+        }
+      } else {
+        this.interaction = setMoveSubmitting(this.interaction, false);
+        this.renderSelection();
+      }
+      const messages = {
+        STALE_SOURCE: '予定が更新されています。最新の状態を読み込みました。',
+        PLAN_NOT_WAITING: 'この予定は配布待ちではないため移動できません。',
+        PLAN_TIME_CONFLICT: '配布待ち予定に時刻が設定されているため移動できません。',
+        INVALID_SLOT: '移動元または移動先を利用できません。最新の状態を確認してください。',
+        MOVE_NOT_FOUND: '予定が見つからないか、アクセスできません。',
+      };
+      this.renderer.renderInteractionError?.(
+        messages[error?.code] || error?.message || '予定を移動できませんでした。',
+      );
+      return false;
+    }
+
+    this.interaction = closeDrawer(this.interaction);
+    let refreshWarning = '';
+    try {
+      await this.reconcileAuthoritativeState(receipt.destination.date);
+    } catch (_error) {
+      refreshWarning = '最新の予定表示を更新できませんでした。ページを再読み込みしてください。';
+      this.renderState();
+      this.renderer.renderInteractionError?.(refreshWarning);
+    }
+    this.renderer.showMoveSuccess?.(receipt, { refreshWarning });
+    return true;
   }
 
   handleChange(event) {
@@ -524,6 +646,7 @@ export class PlanSchedulingController {
         : this.interaction.selectedSlotContext?.slotPlans || [],
       destination,
       preview: this.buildPreview(plan, destination, source),
+      isMoveSubmitting: Boolean(this.interaction.isMoveSubmitting),
     };
   }
 }

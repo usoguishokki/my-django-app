@@ -134,6 +134,17 @@
       </div>
     </div>
   </section>
+  <dialog class="plan-scheduling__moveSuccessDialog" data-role="move-success-dialog" aria-labelledby="plan-scheduling-move-success-title">
+    <div class="plan-scheduling__moveSuccessContent">
+      <h2 id="plan-scheduling-move-success-title">予定を移動しました</h2>
+      <dl>
+        <div><dt>移動元</dt><dd data-role="move-success-source"></dd></div>
+        <div><dt>移動先</dt><dd data-role="move-success-destination"></dd></div>
+      </dl>
+      <p class="plan-scheduling__moveSuccessWarning" data-role="move-success-warning" role="status" hidden></p>
+      <footer><button type="button" class="ui-btn plan-scheduling__controlButton plan-scheduling__controlButton--primary" data-action="close-move-success">閉じる</button></footer>
+    </div>
+  </dialog>
 </main>
 {% endblock %}
 

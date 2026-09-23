@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import Q
+from django.db.models import F, Q
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -106,6 +106,11 @@ class InspectionStandardHistoryTargetType(models.TextChoices):
 
 class DateTag(models.TextChoices):
     LONG_HOLIDAY = "LONG_HOLIDAY", "連休"
+
+
+class PlanScheduleChangeType(models.TextChoices):
+    MOVE = "MOVE", "予定移動"
+
 
 class DateFilterManger(models.Manager):
     def filter_by_date(self, queryset, dates):
@@ -1448,6 +1453,138 @@ class Plan_tb(DateFilterable): #DateFilterableが'models.Modelを継承してい
 
     def __str__(self):
         return f"Plan {self.plan_id} ({self.status})"
+
+
+class PlanScheduleChangeHistory(models.Model):
+    """Append-only audit receipt for a committed Plan scheduling change."""
+
+    id = models.BigAutoField(primary_key=True)
+    change_type = models.CharField(
+        max_length=16,
+        choices=PlanScheduleChangeType.choices,
+        default=PlanScheduleChangeType.MOVE,
+    )
+    changed_at = models.DateTimeField(default=timezone.now)
+
+    plan = models.ForeignKey(
+        Plan_tb,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="schedule_change_histories",
+        db_index=False,
+    )
+    plan_id_snapshot = models.PositiveIntegerField()
+
+    source_date = models.ForeignKey(
+        Hozen_calendar_tb,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="source_plan_schedule_changes",
+        db_index=False,
+    )
+    source_date_snapshot = models.DateField()
+    source_affiliation = models.ForeignKey(
+        Affilation_tb,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="source_plan_schedule_changes",
+        db_index=False,
+    )
+    source_affiliation_id_snapshot = models.PositiveIntegerField()
+    source_affiliation_name_snapshot = models.CharField(max_length=20)
+    source_shift_pattern = models.ForeignKey(
+        ShiftPattan_tb,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="source_plan_schedule_changes",
+        db_index=False,
+    )
+    source_shift_pattern_id_snapshot = models.PositiveIntegerField()
+    source_shift_name_snapshot = models.CharField(max_length=20)
+
+    destination_date = models.ForeignKey(
+        Hozen_calendar_tb,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="destination_plan_schedule_changes",
+        db_index=False,
+    )
+    destination_date_snapshot = models.DateField()
+    destination_affiliation = models.ForeignKey(
+        Affilation_tb,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="destination_plan_schedule_changes",
+        db_index=False,
+    )
+    destination_affiliation_id_snapshot = models.PositiveIntegerField()
+    destination_affiliation_name_snapshot = models.CharField(max_length=20)
+    destination_shift_pattern = models.ForeignKey(
+        ShiftPattan_tb,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="destination_plan_schedule_changes",
+        db_index=False,
+    )
+    destination_shift_pattern_id_snapshot = models.PositiveIntegerField()
+    destination_shift_name_snapshot = models.CharField(max_length=20)
+
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="plan_schedule_change_histories",
+        db_index=False,
+    )
+    changed_by_member_id_snapshot = models.CharField(max_length=10)
+    changed_by_name_snapshot = models.CharField(max_length=20)
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="plan_schedule_change_histories",
+        db_index=False,
+    )
+    organization_code_snapshot = models.CharField(max_length=10)
+    organization_name_snapshot = models.CharField(max_length=10)
+
+    class Meta:
+        db_table = "plan_schedule_change_history"
+        indexes = [
+            models.Index(fields=["plan", "changed_at"], name="psch_plan_at_idx"),
+            models.Index(fields=["changed_at"], name="psch_at_idx"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    ~Q(source_date_snapshot=F("destination_date_snapshot"))
+                    | ~Q(
+                        source_affiliation_id_snapshot=F(
+                            "destination_affiliation_id_snapshot"
+                        )
+                    )
+                ),
+                name="psch_source_dest_diff",
+            ),
+            models.CheckConstraint(
+                check=Q(change_type=PlanScheduleChangeType.MOVE),
+                name="psch_move_type",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Plan {self.plan_id_snapshot} {self.change_type} at {self.changed_at}"
+
 
 class InspectionStandardHistory(models.Model):
     """

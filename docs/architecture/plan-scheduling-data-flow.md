@@ -1,4 +1,4 @@
-# Plan Scheduling read data flow
+# Plan Scheduling data flow
 
 This document records verified repository behavior. It is not a description of an inferred rotation formula.
 
@@ -82,6 +82,23 @@ Do not infer a production rotation formula from a small sample of maintenance we
 For Plan Scheduling, the Holiday shift is identified by `ShiftPattan_tb.pattern_name == "休日"`. It is not inferred from `date_tag` or `holiday_group_id`.
 
 Underlying Holiday `Calendar_tb` rows may still carry A/B/C affiliations. The Maintenance Week Matrix intentionally presents those actual Holiday slots as one teamless Holiday aggregate and ignores the team filter for that aggregate. This is a weekly Matrix presentation rule only; it does not change the database semantics. The Chart treats Holiday as a normal shift series and applies the active team filter before aggregation.
+
+## Move mutation
+
+Selecting a destination and rendering Move Preview are read-only operations. A write occurs only after the user explicitly activates `移動を確定`, which sends an authenticated POST to `/api/plan-scheduling/move/` with the Plan id, expected source date/team, and destination date/team.
+
+The mutation service executes one atomic transaction:
+
+1. Lock the Plan with `select_for_update()` through the authenticated request organization scope. A missing and a cross-organization Plan both produce the same not-found result.
+2. Require `PlanStatus.WAITING` and `plan_time IS NULL`.
+3. Compare the locked `p_date` and `planned_affilation` with the expected source precondition to reject stale browser state.
+4. Resolve both source and destination shifts from the actual `Calendar_tb` date/team assignments through the same `resolve_distinct_shift()` and `is_display_slot()` rules used by the read model. Client-provided shift or workload data is never authoritative.
+5. Update only `Plan_tb.p_date` and `Plan_tb.planned_affilation`.
+6. Append exactly one `PlanScheduleChangeHistory` row with nullable relational references and immutable source, destination, shift, actor, organization, and Plan identity snapshots.
+
+The Plan update and history insert commit together or roll back together. Move history is application-append-only, and its shift snapshots record the resolved meaning at mutation time rather than recomputing history from a later calendar state.
+
+After a committed response, the frontend rebuilds the display from authoritative timeline/week reads instead of applying Preview arithmetic locally. The committed server receipt supplies the success dialog. A refresh failure after commit is reported as a display-refresh warning, not as a failed Move.
 
 ## Known unknowns
 

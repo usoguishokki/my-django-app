@@ -457,12 +457,32 @@
 .plan-scheduling__arithmetic td > strong { display: inline-block; min-width: 44px; padding: 2px 5px; border-radius: 999px; text-align: center; font-size: 11px; }
 .plan-scheduling__arithmetic .is-decrease { color: #9a3412; background: #fff0e8; }
 .plan-scheduling__arithmetic .is-increase { color: #166534; background: #eaf7ed; }
-.plan-scheduling__moveActions { display: flex; justify-content: flex-end; padding-top: 2px; }
+.plan-scheduling__moveActions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 2px; }
+.plan-scheduling__confirmMove { min-width: 104px; }
 .plan-scheduling__cancelMove { min-height: 38px; padding-inline: 14px; border-radius: 8px; color: #536a7b; border-color: #c9d4dc; background: #fff; font-weight: 700; transition: background .14s ease, border-color .14s ease, box-shadow .14s ease, transform .14s ease; }
 .plan-scheduling__cancelMove:hover { border-color: #9babb7; background: #f4f7f9; box-shadow: 0 1px 3px rgba(29, 54, 77, .08); }
 .plan-scheduling__cancelMove:active { transform: translateY(1px); box-shadow: none; }
 .plan-scheduling__cancelMove:focus-visible { outline: 3px solid rgba(31, 95, 153, .28); outline-offset: 2px; }
 .plan-scheduling__cancelMove:disabled { color: #8a99a5; border-color: #d5dde4; background: #f3f5f7; box-shadow: none; }
+
+.plan-scheduling__moveSuccessDialog {
+  width: unquote("min(440px, calc(100vw - 32px))");
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  color: var(--ps-ink);
+  background: #fff;
+  box-shadow: 0 20px 48px rgba(16, 38, 56, .28);
+}
+.plan-scheduling__moveSuccessDialog::backdrop { background: rgba(15, 29, 40, .42); }
+.plan-scheduling__moveSuccessContent { display: grid; gap: 18px; padding: 24px; }
+.plan-scheduling__moveSuccessContent h2 { margin: 0; font-size: 20px; }
+.plan-scheduling__moveSuccessContent dl { display: grid; gap: 10px; margin: 0; }
+.plan-scheduling__moveSuccessContent dl > div { display: grid; gap: 3px; padding: 10px 12px; border-radius: 8px; background: #f3f7fa; }
+.plan-scheduling__moveSuccessContent dt { color: #536a7b; font-size: 12px; font-weight: 700; }
+.plan-scheduling__moveSuccessContent dd { margin: 0; font-weight: 700; }
+.plan-scheduling__moveSuccessContent footer { display: flex; justify-content: flex-end; }
+.plan-scheduling__moveSuccessWarning { margin: 0; color: #8a4b08; font-size: 13px; line-height: 1.5; }
 
 @media (prefers-reduced-motion: reduce) {
   .plan-scheduling__chartSegment,
