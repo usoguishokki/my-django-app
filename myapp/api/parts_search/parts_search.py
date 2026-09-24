@@ -8,6 +8,7 @@ import pyodbc
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.http import require_GET
 
+from myapp.infrastructure.marp.connection import MarpUnavailable
 from myapp.domain.parts_search.parts_search import (
     PartsSearchValidationError,
 )
@@ -139,6 +140,13 @@ def parts_search_api(
             code="validation_error",
             message=str(error),
             status=400,
+        )
+
+    except MarpUnavailable:
+        return _error_response(
+            code="feature_unavailable",
+            message="MARP is unavailable in the validation environment.",
+            status=503,
         )
 
     except pyodbc.Error:

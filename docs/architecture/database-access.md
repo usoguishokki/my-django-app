@@ -1,6 +1,6 @@
 # Database access architecture
 
-This repository has three distinct Oracle access paths. Do not substitute one for another.
+This repository has three existing Oracle access paths and a dedicated validation safety foundation for a future fourth path. Do not substitute one for another.
 
 ## Environment topology
 
@@ -19,6 +19,8 @@ Verified production Oracle identity:
 - Instance/CDB: `ORCL` / `orcl`
 - PDB: `HOZENPDB`
 - Service: `hozenpdb`
+- Production application owner: `MYDJANGO_USER`
+- Full service observed by the read-only audit: `hozenpdb.ad.toyota-shokki.co.jp`
 
 There is no separate writable development or staging Oracle database. **“Development application environment” does not imply “development database.”** Any operation through the normal Django database connection that performs `migrate`, schema DDL, `INSERT`, `UPDATE`, `DELETE`, an application mutation API, Move persistence, fixture creation, or destructive test setup is a production database change even when initiated from the development worktree or runtime.
 
@@ -38,7 +40,19 @@ Running `python manage.py migrate` from the development worktree/runtime with th
 
 ### Plan Scheduling Move production gate
 
-The Plan Scheduling Move implementation exists in source, but migration `myapp.0025_planschedulechangehistory` has not yet been applied to production. Move persistence is not production-enabled until that migration is explicitly applied and its Oracle schema is verified. The first real Move must be treated as a controlled production operation. Intentional transaction failure or rollback testing will not be performed on the shared production database; it requires a verified writable non-production Oracle target.
+The read-only validation design audit on 2026-09-25 verified that the production migration recorder includes `myapp.0025_planschedulechangehistory`. This corrects the earlier statement that it was unapplied. The research account could not see `PLAN_SCHEDULE_CHANGE_HISTORY` in its object inventory; its live structure and grants were not certified by that audit. A migration-recorder entry alone is not structural verification or authorization for a production Move. Intentional transaction failure or rollback testing requires a verified writable validation target and must not run against production application data.
+
+## Future writable validation path: safety foundation only
+
+`myproject.settings_validation` reuses non-secret defaults from `settings_shared.py` without importing normal settings or loading the normal `.env`. It requires explicit opt-in and dedicated credentials from process variables or ignored `.env.validation`. The fixed future identity is `NIKA_TEST_USER` for session user, current user and current schema, in `HOZENPDB`, on service `hozenpdb.ad.toyota-shokki.co.jp`.
+
+`NIKA_TEST_USER` has **not been created or provisioned**. This phase contains no Oracle grants, schema migrations, view creation, seed/reset mechanism or real Oracle write tests. Identity preflight does not certify object readiness or absence of production grants.
+
+Every physical Django connection is checked through `connection_created`; a mismatch or identity-query error closes the connection and raises a fatal safety error. There is no schema repair or `SET CURRENT_SCHEMA`. The explicit preflight command checks the same identity before future Human Review. Validation has local-memory cache, console logs, independent secret and cookie names, a visible marker (including login/Admin), and disabled MARP access.
+
+The proposed schema lives on the **same Oracle instance/PDB** as production. Schema separation does not isolate CPU, RAM, storage, undo, redo or availability. It is not a separate Oracle server. The required future DBA boundary is no production application-object grants, no broad roles/ANY privileges, a finite quota, and review of PUBLIC, nested-role, executable and database-link access. Use a minimal synthetic dataset later.
+
+See [validation environment workflow](../engineering/validation-environment.md) for configuration, preflight and remaining provisioning gates.
 
 ## AI/Codex read-only research path
 

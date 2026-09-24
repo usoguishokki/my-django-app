@@ -18,6 +18,7 @@ Read this file before changing the repository. Detailed guidance lives in the li
 - Never print, store, log, prompt with, or commit real credentials.
 - Browser verification uses `myproject/settings_browser_verification.py` and `myapp/browser_verification.py`, with `NIKA_ZERO_WRITE_BROWSER_VERIFY=1` and the browser-verification settings module.
 - See [database access architecture](docs/architecture/database-access.md) for commands and safeguards.
+- Future writable validation uses `myproject.settings_validation`, dedicated `HOZEN_VALIDATION_*` credentials, and fixed `NIKA_TEST_USER` identity checks. The account/schema is not provisioned yet. Never substitute normal settings when validation fails. See [validation workflow](docs/engineering/validation-environment.md).
 
 ## Plan Scheduling data rule
 

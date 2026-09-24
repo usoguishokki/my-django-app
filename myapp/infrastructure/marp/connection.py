@@ -20,7 +20,13 @@ _REQUIRED_CONFIG_KEYS = (
 )
 
 
+class MarpUnavailable(ImproperlyConfigured):
+    """MARP is deliberately unavailable in this runtime."""
+
+
 def _load_marp_database_config() -> dict[str, str]:
+    if getattr(settings, "MARP_ENABLED", True) is False:
+        raise MarpUnavailable("MARP is unavailable in the validation environment.")
     config = getattr(settings, "MARP_DATABASE", None)
 
     if not isinstance(config, dict):
