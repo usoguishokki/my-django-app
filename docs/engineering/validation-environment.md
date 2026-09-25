@@ -8,7 +8,11 @@ Fresh-schema migrations succeeded on real Oracle: admin 3, auth 12, contenttypes
 
 The separately provisioned unmanaged (`managed=False`) `SHIFTPATTERN_WORKER_VIEW` is VALID and depends only on `NIKA_TEST_USER.MYAPP_SHIFTPATTAN_TB` and `NIKA_TEST_USER.MYAPP_FIELD_WORKER_TB`, with no production-owner or database-link dependency. Migration scripts do not create it. All initialization privileges, including `CREATE VIEW`, were subsequently revoked. Seed/reset require no DDL privileges. As owner, `NIKA_TEST_USER` can perform DML on its existing objects with `CREATE SESSION` only; ownership also retains substantial control over those objects.
 
-These Oracle facts come from the human's verified handoff, not a new Codex connection. Real Oracle preflight and the initial synthetic seed succeeded. Subsequent runserver initialization exposed missing affiliation ID 7; the corrected seed preserves affiliation IDs 1–7 and has passed offline middleware/reset regressions. A successful real reset/reseed and UI startup after that correction have not yet been reported; do not infer that every Human Review scenario has passed.
+These Oracle facts come from human-run verification, not a new Codex connection. Real Oracle preflight, initial seeding, and subsequent `reset_validation_environment` against `NIKA_TEST_USER` succeeded. Reset/reseed with anchor `2026-09-25` restored the corrected affiliation master IDs 1–7, including `7=休日`. Verified row counts were: Affilation_tb 7, ShiftPattan_tb 4, Field_worker_tb 4, Hozen_calendar_tb 28, Calendar_tb 84, Organization 2, Member_tb 2, Check_tb 10, Db_details_tb 10, and Plan_tb 25. `inspect_validation_dataset` succeeded with `worker_view_rows=4` and the expected VAL-* Plan scenarios.
+
+Middleware initialization and `runserver 127.0.0.1:8011 --settings=myproject.settings_validation --insecure` also succeeded: the system check reported no issues and the development server started at `http://127.0.0.1:8011/`. The startup failure caused by missing affiliation ID 7 is resolved.
+
+Browser login Human Review, Inspection Standard Phase 1 UI/write scenarios, Move UI Human Review, and real Oracle rollback/concurrency scenarios remain **not yet verified** unless separately recorded. Successful reset, inspection and server startup do not establish those outcomes.
 
 Production remains `MYDJANGO_USER` on `JP1052VS074`, Oracle `ORCL/orcl`, PDB `HOZENPDB`. Validation is `NIKA_TEST_USER` in that same PDB. CPU, RAM, storage, undo, redo and availability remain shared. Start/use the local validation runtime only when needed.
 
