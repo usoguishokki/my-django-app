@@ -2,9 +2,15 @@
 
 ## Status and boundary
 
-Phase 1 provides application/configuration safeguards only. **The validation Oracle account and schema have not been created.** No migration, seed, reset or writable Oracle scenario has been executed as part of this phase. A failed connection is expected until a later approved provisioning phase.
+The human-verified provisioning handoff establishes that `NIKA_TEST_USER` exists in `HOZENPDB`, is OPEN, uses `USERS` with a **100 MB finite quota**, `TEMP`, and profile `DEFAULT`; it is local (`COMMON=NO`, `INHERITED=NO`). No roles or production application-object grants were found. The current runtime system privilege is **CREATE SESSION only**.
 
-Production remains `MYDJANGO_USER` on `JP1052VS074`, Oracle `ORCL/orcl`, PDB `HOZENPDB`. Future validation is `NIKA_TEST_USER` in that same PDB. CPU, RAM, storage, undo, redo and availability remain shared. Start/use the local validation runtime only when needed.
+Fresh-schema migrations succeeded on real Oracle: admin 3, auth 12, contenttypes 2, myapp 25, sessions 1; myapp leaf `0025_planschedulechangehistory`. Post-migration inventory was 37 tables, 158 indexes, 24 LOBs and 35 sequences. `CREATE TABLE` alone failed with ORA-01031 while creating `django_migrations`. Successful initialization required `CREATE SESSION`, `CREATE TABLE`, `CREATE SEQUENCE`, `CREATE PROCEDURE`, and `CREATE TRIGGER`. This empirical privilege finding supersedes the earlier design inference from identity-column syntax. It does not isolate which of the three added privileges was individually necessary.
+
+The separately provisioned unmanaged `SHIFTPATTERN_WORKER_VIEW` is VALID and depends only on `NIKA_TEST_USER.MYAPP_SHIFTPATTAN_TB` and `NIKA_TEST_USER.MYAPP_FIELD_WORKER_TB`. Migration scripts do not create it. All initialization privileges, including `CREATE VIEW`, were subsequently revoked. Seed/reset require no DDL privileges.
+
+These Oracle facts come from the human's verified handoff, not a new Codex connection. The new dataset workflow is verified offline; its first Oracle execution remains a human step.
+
+Production remains `MYDJANGO_USER` on `JP1052VS074`, Oracle `ORCL/orcl`, PDB `HOZENPDB`. Validation is `NIKA_TEST_USER` in that same PDB. CPU, RAM, storage, undo, redo and availability remain shared. Start/use the local validation runtime only when needed.
 
 Normal development/IIS still uses `myproject.settings` and `.env`. Browser research still uses the separately guarded read-only settings and account. Neither is a fallback for failed validation.
 
@@ -18,15 +24,15 @@ All these values are mandatory; there are no credential or port defaults:
 |---|---|
 | `NIKA_VALIDATION_MODE` | Exactly `1` |
 | `NIKA_VALIDATION_SECRET_KEY` | Independently generated validation-only secret; never reuse the normal key |
-| `HOZEN_VALIDATION_HOST` | DBA-approved hostname/IPv4 address; anticipated host `JP1052VS074` |
+| `HOZEN_VALIDATION_HOST` | DBA-approved hostname/IPv4 address; host `jp1052vs074.ad.toyota-shokki.co.jp` |
 | `HOZEN_VALIDATION_PORT` | DBA-approved numeric port, 1–65535 |
 | `HOZEN_VALIDATION_SERVICE` | Exactly `hozenpdb.ad.toyota-shokki.co.jp` |
 | `HOZEN_VALIDATION_USER` | `NIKA_TEST_USER` (normalized to uppercase) |
-| `HOZEN_VALIDATION_PASSWORD` | Dedicated account password supplied after provisioning |
+| `HOZEN_VALIDATION_PASSWORD` | Dedicated validation account password |
 
 The expected user/schema/PDB/service are fixed in code, not configurable target-switching variables. `DJANGO_SECRET_KEY`, `ORACLE_DATABASE_*`, `MARP_DB_*` and `HOZEN_READONLY_*` do not supply validation credentials. No real secrets belong in command arguments, logs, committed examples or the runbook.
 
-The Oracle client/driver must be installed as for the normal local runtime. Client/network authentication setup has not been proven against the future account; failures must not cause a fallback to another account or settings module.
+The Oracle client/driver must be installed as for the normal local runtime. The human has successfully run preflight against the account. Codex connectivity has previously failed; failures must not cause a fallback to another account or settings module.
 
 ## Isolation and connection verification
 
@@ -39,14 +45,14 @@ The Oracle client/driver must be installed as for the normal local runtime. Clie
 - Local-memory cache is process-local and cannot clear normal memcached data.
 - Logging goes to console/stderr, never the IIS log directory.
 - Session cookie: `nika_validation_sessionid`; CSRF cookie: `nika_validation_csrftoken`. Cookies are host-only by Django default; ports do not isolate cookies.
-- Future database sessions belong in validation-owned `django_session`.
+- Database sessions belong in validation-owned `django_session`.
 - MARP is disabled at the existing connection configuration boundary, before `pyodbc.connect`. The parts-search API returns a clear unavailable response (503).
 - Application base, login and Django Admin display `検証環境 / VALIDATION`; titles carry `[検証環境]`. Normal runtime pages have no marker.
 - `DEBUG=False`; allowed hosts are only `127.0.0.1`, `localhost`, `[::1]`. Cross-origin allowances are disabled.
 
-## Future preflight and local launch
+## Preflight and local launch
 
-These commands are for a later approved phase after dedicated credentials are configured. Do not supply production credentials to make preflight succeed.
+Use these commands with the dedicated local validation configuration. Do not supply production credentials to make preflight succeed.
 
 ```powershell
 E:\repos\myproject\venv\Scripts\python.exe manage.py validate_validation_environment --settings=myproject.settings_validation
@@ -68,14 +74,66 @@ E:\repos\myproject\venv\Scripts\python.exe manage.py runserver 127.0.0.1:8011 --
 
 For offline tests, configure Django from `settings_shared` with `DATABASES={}`, a synthetic secret, local-memory cache and no file logging before `django.setup()`, then use `unittest`. Do not use the normal settings or Django's Oracle test-database creation runner. System checks must use the same isolated configuration or mock driver connection methods before loading validation settings.
 
-## Remaining DBA/provisioning gates
+## Synthetic baseline and guarded reset
 
-1. Review exact account identity, tablespace/quota and minimum initialization/runtime privileges. No production application-object grants are required.
-2. Inspect direct, nested-role, non-default-role and PUBLIC privileges, proxy/executable access and public database links. Identity verification alone cannot prove write isolation.
-3. Approve account provisioning separately. The application account must not receive DBA/RESOURCE, broad ANY privileges, user/tablespace administration or unlimited quota.
-4. Rehearse the existing migration chain in the empty validation schema under the guard; establish the precise privilege minimum.
-5. Provision local `SHIFTPATTERN_WORKER_VIEW` over validation-owned shift/field-worker tables. Migrations do not create this unmanaged view, and middleware loads it.
-6. Implement minimal synthetic initialization and guarded transactional data reset. Preserve required legacy rule IDs 1/3/4/15, holiday shift ID 7, affiliation ID 1 and the view's matched pattern IDs. Align scenarios with the existing 2026 fiscal-window behavior; do not invent Calendar rotations.
-7. Verify objects/grants and then implement real Oracle rollback, constraint and bounded concurrency tests.
+No production data is read or copied. Add **`NIKA_VALIDATION_SEED_PASSWORD`** to ignored, access-restricted `.env.validation` with a locally chosen secret. No actual value belongs in examples, command arguments, logs or Git. Both seed and reset require it and use Django `create_user` / `set_password` hashing. Users are `VAL_A_USER` and `VAL_B_USER`, with synthetic profiles in organizations `VAL_A` and `VAL_B`; neither is staff/superuser.
 
-Until those gates are complete, this foundation is not a usable writable validation environment. Do not run seed, flush, migrate, rollback fault injection or production-data copy as a workaround.
+**Existing Nika login is member-number-only:** `/login/` calls `MemberAuthenticationBackend.authenticate(member_id=...)` without a password. The seed password does not change that behavior or provide an additional access boundary for this page. Login with the synthetic member ID. Keep the server bound to loopback. Admin access is not granted by this dataset.
+
+Stop the validation server and all other validation writers before seed/reset. Run one command at a time. There is no cross-process maintenance lock. Restart the server afterward so its process-local caches cannot retain deleted IDs. Reset deletes validation sessions, requiring a fresh login.
+
+```powershell
+E:\repos\myproject\venv\Scripts\python.exe -B manage.py validate_validation_environment --settings=myproject.settings_validation
+$validationAnchor = Get-Date -Format yyyy-MM-dd
+E:\repos\myproject\venv\Scripts\python.exe -B manage.py seed_validation_environment --anchor-date $validationAnchor --settings=myproject.settings_validation
+E:\repos\myproject\venv\Scripts\python.exe -B manage.py inspect_validation_dataset --settings=myproject.settings_validation
+```
+
+Seed requires every managed `myapp` table to be empty; migration-created auth permissions/contenttypes are retained. A second seed refuses before DML. No fixtures or schema migrations contain synthetic data.
+
+All commands require the exact validation settings module, explicit mode, single default connection, no routers, and reuse the existing identity verifier. Readiness checks require CREATE SESSION only, no enabled roles or directly received production object/column grants, all managed tables owned locally, complete migration graph, and the exact two local VALID view dependencies. These runtime checks do not replace DBA review of PUBLIC/nested-role/proxy/executable/database-link privileges.
+
+Seed and reset use one `transaction.atomic` boundary. Reset requires explicit confirmation, refuses unrelated managed application tables or rows outside the reviewed synthetic scope, and deletes only the explicit model allowlist in child-first order. This includes Plans, approvals/practitioners/weekly duties, synthetic histories, details/cards, reference/calendar/profile rows and validation sessions. It preserves `django_migrations`, auth permission/group/contenttype metadata, schema objects and the unmanaged view. Do not add unrelated test datasets to this schema and expect this reset to remove them.
+
+```powershell
+# Destructive to the reviewed synthetic baseline: stop the validation server first.
+E:\repos\myproject\venv\Scripts\python.exe -B manage.py reset_validation_environment --anchor-date $validationAnchor --confirm-validation-reset --settings=myproject.settings_validation
+E:\repos\myproject\venv\Scripts\python.exe -B manage.py inspect_validation_dataset --settings=myproject.settings_validation
+```
+
+The same anchor yields the same business scenarios, not the same generated IDs, timestamps or password hashes. Oracle identity counters do not roll back. Only existing code-required IDs are fixed: affiliation 1=A班, shift 7=休日, rules 1/3/4/15. Ordinary affiliations/shifts use generated IDs; a generated reserved value is consumed and its temporary row deleted before inserting the special reference row. Field-worker IDs intentionally match shift IDs for the existing view join. No sequence reset or DDL is used.
+
+### Calendar and scenario map
+
+The anchor is explicit and should be today's date. The builder uses the existing `get_plan_sync_today` seam and fiscal range derived from `PLAN_SYNC_BASE_DATE=2026-04-01`. It refuses a window without both past and future dates inside that fiscal year. Never override the application clock to force this dataset to pass. After the application's current fiscal window expires, review its fiscal-date policy separately.
+
+Past = Monday of the preceding week; future/Move source = next Monday strictly after the anchor; Move destination = following Tuesday. Calendar spans past through future+13 days. For anchor **2026-09-25**: past **09-14**, source **09-28**, destination **09-29**, last **10-11**. Future+6/+7 are explicitly LONG_HOLIDAY with holiday shift assignments. Other dates explicitly assign A班=1直, B班=2直, C班=3直. `VAL-W1..4` are synthetic maintenance-week labels. This is controlled fixture data, not an inferred production rotation.
+
+Rules: 1=D1 weekdays `[0,1,2,3,4]`; 3=W2 weeks `[1,3]`; 4=W2 weeks `[2,4]`; 15=D1 NEXT_DATE_TAG EQ `{"value":"LONG_HOLIDAY"}`. Rules 1/15 automatically manage weekdays in the existing UI. No unrelated monthly/yearly rules are added.
+
+Find cards by `VAL-<key>` inspection number and `[VALIDATION] <key>` name, under `VAL_A-EQUIP` or `VAL_B-EQUIP`. Initial Plan comments identify scenario variants; after regeneration identify Plans by card/date/team, not comment or generated ID. Inventory prints current IDs for API checks.
+
+| Key | Human Review action / expected behavior |
+|---|---|
+| NO_RESYNC | Change description; existing Plans and a manually moved Plan remain. |
+| SCHEDULE | Change practitioner from 1直 to 2直; eligible future WAITING rows regenerate using Calendar-derived teams. Past and timed WAITING remain unless explicitly confirmed. |
+| LIFECYCLE | Rule 3 periodic card; switch to メーカ (ineligible), then back to 定期点検. Verify lifecycle resync and preserved protected/non-WAITING Plans. |
+| INELIGIBLE | Rule 3 メーカ card initially has no Plans; switch to 定期点検 and verify generation. |
+| ABOLISH | Abolish card; WAITING may delete, IN_PROGRESS preserves by default and requires explicit confirmation to delete; COMPLETED always preserves. |
+| MOVE | Move future source from A班 to next-day B班. Exactly one Move history row; then descriptive edit preserves moved Plan, schedule edit can supersede it. |
+| STALE | Open same Plan in two tabs; commit one Move then submit the old source from the other. Expect stale rejection without a second history row. |
+| ROLLBACK | Dedicated card for later controlled Oracle transaction-failure tests. No fault-injection UI or Oracle write test is implemented here. |
+| FOREIGN | VAL_B card/Plan: as VAL_A_USER, its Move ID must be rejected as not found. Log in as VAL_B_USER to see its own scope. |
+| HOLIDAY | Rule 15, shift 7; Plan on future+5 (holiday eve), exercising affiliation 1 fallback. |
+
+SCHEDULE/LIFECYCLE/ABOLISH/ROLLBACK each have future WAITING, past WAITING, future WAITING with `plan_time`, IN_PROGRESS with time, and COMPLETED. Explicit protected deletion must not regenerate past dates. Histories start empty and are created through actual application operations; this makes unexpected history inserts visible. No lineage behavior is added.
+
+Before Human Review, inspect the real view row count/values, login and Calendar slots, verify schema quota headroom, and record the seed summary. Real Oracle FK/rollback/concurrency behavior remains to be tested there; offline SQLite tests are not proof of those engine behaviors.
+
+### Offline verification
+
+```powershell
+E:\repos\myproject\venv\Scripts\python.exe -B scripts/testing/validation_dataset_tests.py
+```
+
+This runner configures only in-memory SQLite from non-secret shared settings and blocks Oracle/SQL Server driver connections. Schema creation inside this disposable SQLite test harness is not an Oracle migration. Tests cover identity rejection, deterministic baseline, reset rollback, scope rejection, actual resync and Move services, stale Move/history, and no reset DDL.
