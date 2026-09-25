@@ -53,12 +53,12 @@
 
 ### 3.1 DAY_OF_WEEK
 **対象**：保全カレンダーの日付の曜日  
-**想定**：1=月, 2=火, 3=水, 4=木, 5=金, 6=土, 7=日（※このルールで固定）
+**現行契約**：0=月, 1=火, 2=水, 3=木, 4=金, 5=土, 6=日（`DayOfWeek` / Python weekdayと一致）
 
 - 例）平日のみ
   - cond_type=`DAY_OF_WEEK`
   - op=`IN`
-  - value_json=`[1,2,3,4,5]`
+  - value_json=`[0,1,2,3,4]`
 
 ---
 
@@ -124,24 +124,11 @@
 
 ---
 
-## 6. “連休は各連休に1回” の標準化（重要）
+## 6. 現行の連休前日ルール
 
-### 6.1 追加前提（hozen_calendar 側）
-連休日には以下を付与する。
+rule_id=15 は `NEXT_DATE_TAG` / `EQ` / `{"value":"LONG_HOLIDAY"}`。翌日の保全カレンダー行のタグを判定する。現行の `inspection_standard_plan_schedule.py` は当日が `LONG_HOLIDAY` の行をPlan生成から除外する。
 
-- `date_tag = "LONG_HOLIDAY"`
-- `holiday_group_id`：連休ブロックを識別するID（例：GW, SV, WV など）
-  - **連休期間の全行に必ず同一IDを入れること（必須）**
-
-### 6.2 抽出仕様
-rule_id=15（連休）は「連休日をすべて候補にする」だけでは不十分。  
-**holiday_group_id ごとに1件だけ**採用する。
-
-代表日の選び方（どちらかを固定）
-- FIRST：holiday_group_id 内で最も早い日付
-- LAST：holiday_group_id 内で最も遅い日付
-
-> 推奨：FIRST（運用上分かりやすい）
+以前の「holiday_group_idごとにFIRST/LASTを選ぶ」案は現行実装の契約ではない。`holiday_group_id` の業務意味・運用は未確定であり、生成規則を推測しない。[Plan Scheduling data flow](architecture/plan-scheduling-data-flow.md) と [検証データの固定ID・条件](engineering/validation-environment.md#calendar-and-scenario-map) を参照する。
 
 ---
 
@@ -154,15 +141,15 @@ rule_id=15（連休）は「連休日をすべて候補にする」だけでは�
 | 2 | 毎週 | W | 1 |
 | 3 | 隔週(奇数) | W | 2 |
 | 4 | 隔週(偶数) | W | 2 |
-| 15 | 連休 | D | 1 |
+| 15 | 連休前日 | D | 1 |
 
 ### 7.2 rule_condition（抜粋）
 | id | rule_id | cond_type | op | value_json |
 |---:|---:|---|---|---|
-| 1 | 1 | DAY_OF_WEEK | IN | [1,2,3,4,5] |
+| 1 | 1 | DAY_OF_WEEK | IN | [0,1,2,3,4] |
 | 2 | 3 | WEEK_PARITY | IN | [1,3] |
 | 3 | 4 | WEEK_PARITY | IN | [2,4] |
-| 4 | 15 | DATE_TAG | EQ | "LONG_HOLIDAY" |
+| 4 | 15 | NEXT_DATE_TAG | EQ | {"value":"LONG_HOLIDAY"} |
 
 ---
 

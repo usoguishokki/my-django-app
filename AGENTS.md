@@ -20,6 +20,8 @@ Read this file before changing the repository. Detailed guidance lives in the li
 - See [database access architecture](docs/architecture/database-access.md) for commands and safeguards.
 - Writable validation uses `myproject.settings_validation`, dedicated `HOZEN_VALIDATION_*` credentials, and fixed `NIKA_TEST_USER` identity checks. The account/schema and unmanaged worker view are provisioned; runtime has CREATE SESSION only. Synthetic seed/reset must use the guarded validation commands. Never substitute normal settings when validation fails. See [validation workflow](docs/engineering/validation-environment.md).
 
+Production and validation use the same business code and migration chain. Rehearse schema changes in validation before an approved production application of the same migration. Temporary migration privileges require a reviewed DBA window and must be removed before normal validation use; follow the [migration operating standard](docs/engineering/validation-environment.md#future-schema-migration-standard).
+
 ## Plan Scheduling data rule
 
 Do not invent maintenance-week shift/team rotations. Plan Scheduling assignments come from actual `Calendar_tb`-derived daily slots. See [Plan Scheduling data flow](docs/architecture/plan-scheduling-data-flow.md).

@@ -4,17 +4,19 @@
 
 The human-verified provisioning handoff establishes that `NIKA_TEST_USER` exists in `HOZENPDB`, is OPEN, uses `USERS` with a **100 MB finite quota**, `TEMP`, and profile `DEFAULT`; it is local (`COMMON=NO`, `INHERITED=NO`). No roles or production application-object grants were found. The current runtime system privilege is **CREATE SESSION only**.
 
-Fresh-schema migrations succeeded on real Oracle: admin 3, auth 12, contenttypes 2, myapp 25, sessions 1; myapp leaf `0025_planschedulechangehistory`. Post-migration inventory was 37 tables, 158 indexes, 24 LOBs and 35 sequences. `CREATE TABLE` alone failed with ORA-01031 while creating `django_migrations`. Successful initialization required `CREATE SESSION`, `CREATE TABLE`, `CREATE SEQUENCE`, `CREATE PROCEDURE`, and `CREATE TRIGGER`. This empirical privilege finding supersedes the earlier design inference from identity-column syntax. It does not isolate which of the three added privileges was individually necessary.
+Fresh-schema migrations succeeded on real Oracle: admin 3, auth 12, contenttypes 2, myapp 25, sessions 1; myapp leaf `0025_planschedulechangehistory`. `showmigrations` confirmed all 43 applied, including myapp 0001 through 0025. Post-migration inventory was 37 tables, 158 indexes, 24 LOBs and 35 sequences. `CREATE SESSION` + `CREATE TABLE` was insufficient: creation of `django_migrations` failed with ORA-01031. Successful initialization required `CREATE SESSION`, `CREATE TABLE`, `CREATE SEQUENCE`, `CREATE PROCEDURE`, and `CREATE TRIGGER`. This empirical privilege finding supersedes the earlier design inference from identity-column syntax. It does not isolate which of the three added privileges was individually necessary.
 
-The separately provisioned unmanaged `SHIFTPATTERN_WORKER_VIEW` is VALID and depends only on `NIKA_TEST_USER.MYAPP_SHIFTPATTAN_TB` and `NIKA_TEST_USER.MYAPP_FIELD_WORKER_TB`. Migration scripts do not create it. All initialization privileges, including `CREATE VIEW`, were subsequently revoked. Seed/reset require no DDL privileges.
+The separately provisioned unmanaged (`managed=False`) `SHIFTPATTERN_WORKER_VIEW` is VALID and depends only on `NIKA_TEST_USER.MYAPP_SHIFTPATTAN_TB` and `NIKA_TEST_USER.MYAPP_FIELD_WORKER_TB`, with no production-owner or database-link dependency. Migration scripts do not create it. All initialization privileges, including `CREATE VIEW`, were subsequently revoked. Seed/reset require no DDL privileges. As owner, `NIKA_TEST_USER` can perform DML on its existing objects with `CREATE SESSION` only; ownership also retains substantial control over those objects.
 
-These Oracle facts come from the human's verified handoff, not a new Codex connection. The new dataset workflow is verified offline; its first Oracle execution remains a human step.
+These Oracle facts come from the human's verified handoff, not a new Codex connection. Real Oracle preflight and the initial synthetic seed succeeded. Subsequent runserver initialization exposed missing affiliation ID 7; the corrected seed preserves affiliation IDs 1–7 and has passed offline middleware/reset regressions. A successful real reset/reseed and UI startup after that correction have not yet been reported; do not infer that every Human Review scenario has passed.
 
 Production remains `MYDJANGO_USER` on `JP1052VS074`, Oracle `ORCL/orcl`, PDB `HOZENPDB`. Validation is `NIKA_TEST_USER` in that same PDB. CPU, RAM, storage, undo, redo and availability remain shared. Start/use the local validation runtime only when needed.
 
 Normal development/IIS still uses `myproject.settings` and `.env`. Browser research still uses the separately guarded read-only settings and account. Neither is a fallback for failed validation.
 
 ## Configuration
+
+Never grant `DBA`, `RESOURCE`, `CONNECT`, `UNLIMITED TABLESPACE`, ANY privileges, production application-object privileges or production roles/proxies to the validation user. No production grants are required. Use the [same-code architecture and access boundaries](../architecture/database-access.md).
 
 Use `myproject.settings_validation`. It imports `settings_shared.py`, which does not load environment files or credentials. Only `.env.validation` is loaded, without overriding process variables. This file is ignored by Git and must contain only validation configuration. Never copy the production `.env` into it.
 
@@ -68,6 +70,30 @@ E:\repos\myproject\venv\Scripts\python.exe manage.py runserver 127.0.0.1:8011 --
 
 `--insecure` here only enables Django development static serving with `DEBUG=False`; it does not bypass the database guard. Reviewed collected static assets must be available for the configured manifest storage. `ALLOWED_HOSTS` checks request host headers; it is not a socket-binding or firewall control. Never bind this local validation runtime to `0.0.0.0` or expose it through IIS/proxy/tunnel.
 
+## Future schema migration standard
+
+Maintain **one Django migration file/chain** for both schemas. Schema changes (tables, columns, FKs, constraints or indexes) require reviewed migrations; ordinary Python, JavaScript, CSS, text or business-logic edits do not automatically require one. Do not create environment-specific business seed migrations.
+
+1. Make the model/code change and create the migration once. Review its SQL/data operations, dependencies, reversibility and compatibility with deployed code. Rehearsal through `myapp.0025_planschedulechangehistory` is empirically proven; it does not certify future migrations automatically.
+2. Stop validation writers, select `myproject.settings_validation`, and run identity preflight. Review quota headroom, target objects, isolation and the recovery plan. No production credentials may be used in this process.
+3. In an approved migration window, a human DBA temporarily grants the reviewed capabilities to `NIKA_TEST_USER` in `HOZENPDB`: the empirically successful initialization set is `CREATE TABLE`, `CREATE SEQUENCE`, `CREATE PROCEDURE`, `CREATE TRIGGER`, in addition to retained `CREATE SESSION`. Review the actual new migration; do not improvise extra privileges after an error or retain schema-creation privileges for convenience. Codex must not request/use SYS credentials.
+4. Apply the same reviewed migration files to validation using explicit settings:
+
+   ```powershell
+   python manage.py migrate --plan --settings=myproject.settings_validation
+   python manage.py migrate --settings=myproject.settings_validation
+   python manage.py showmigrations --settings=myproject.settings_validation
+   ```
+
+5. Verify the recorder, local objects, indexes/constraints and any approved data transformations. Stop on errors. Oracle DDL must not be assumed to roll back with `transaction.atomic`; recovery requires a reviewed repair/restore plan.
+6. Have the DBA revoke temporary privileges back to `CREATE SESSION` only and verify effective privileges. Seed/reset/inventory require this runtime privilege state, so revoke **before** using those commands or resuming normal Human Review. Then verify real Oracle behavior and the applicable scenarios below; record results and obtain Human Review approval.
+7. In an approved production maintenance window, apply the **same migration files** to `MYDJANGO_USER` using the production procedure, backup and recovery gates in the [runtime/deployment rules](../開発・本番運用ルール（更新版）.md). Select `myproject.settings` explicitly, verify the production target and plan, and coordinate migration/deployment order with code compatibility. Validation success does not authorize production writes.
+8. Verify production and record the migration names, code revision and results. Each schema has its own migration recorder; do not generate a second production migration or use `--fake` to bypass an unexplained difference.
+
+## Unmanaged view maintenance
+
+For an approved creation/change of `NIKA_TEST_USER.SHIFTPATTERN_WORKER_VIEW`, obtain the authoritative definition through the dedicated read-only research path and review its source relations. A human DBA grants `CREATE VIEW` only for that window. Verify the exact validation identity, then provision a normal non-FORCE view over the two validation-owned tables. Verify `USER_VIEWS`, VALID status and `USER_DEPENDENCIES`: only those two local tables, no `MYDJANGO_USER` owner and no database link. The DBA then revokes `CREATE VIEW`; verify runtime privileges again. Django `migrate` does not provision this view. Stop for unexpected dependencies or Oracle errors; do not switch schema to repair them.
+
 ## Verification without Oracle
 
 `myapp/test_validation_environment.py` uses subprocess settings imports with synthetic values and disabled dotenv IO, mocked cursors, and a mocked driver factory exercising Django's actual connect/close lifecycle. It also tests MARP, templates and sanitized preflight output. No Oracle account is needed.
@@ -75,6 +101,8 @@ E:\repos\myproject\venv\Scripts\python.exe manage.py runserver 127.0.0.1:8011 --
 For offline tests, configure Django from `settings_shared` with `DATABASES={}`, a synthetic secret, local-memory cache and no file logging before `django.setup()`, then use `unittest`. Do not use the normal settings or Django's Oracle test-database creation runner. System checks must use the same isolated configuration or mock driver connection methods before loading validation settings.
 
 ## Synthetic baseline and guarded reset
+
+Human Review order: preflight -> seed an empty baseline (or explicitly reset an existing one) -> inspect -> [start local UI](#preflight-and-local-launch) -> exercise the scenario map below and record results. Stop/restart the validation server around reset. A seeded dataset is not evidence that the scenarios have passed.
 
 No production data is read or copied. Add **`NIKA_VALIDATION_SEED_PASSWORD`** to ignored, access-restricted `.env.validation` with a locally chosen secret. No actual value belongs in examples, command arguments, logs or Git. Both seed and reset require it and use Django `create_user` / `set_password` hashing. Users are `VAL_A_USER` and `VAL_B_USER`, with synthetic profiles in organizations `VAL_A` and `VAL_B`; neither is staff/superuser.
 
@@ -94,6 +122,8 @@ Seed requires every managed `myapp` table to be empty; migration-created auth pe
 All commands require the exact validation settings module, explicit mode, single default connection, no routers, and reuse the existing identity verifier. Readiness checks require CREATE SESSION only, no enabled roles or directly received production object/column grants, all managed tables owned locally, complete migration graph, and the exact two local VALID view dependencies. These runtime checks do not replace DBA review of PUBLIC/nested-role/proxy/executable/database-link privileges.
 
 Seed and reset use one `transaction.atomic` boundary. Reset requires explicit confirmation, refuses unrelated managed application tables or rows outside the reviewed synthetic scope, and deletes only the explicit model allowlist in child-first order. This includes Plans, approvals/practitioners/weekly duties, synthetic histories, details/cards, reference/calendar/profile rows and validation sessions. It preserves `django_migrations`, auth permission/group/contenttype metadata, schema objects and the unmanaged view. Do not add unrelated test datasets to this schema and expect this reset to remove them.
+
+Reset uses ordinary DML, never Django `flush`, `TRUNCATE`, or schema drops. Production data is not a seed source.
 
 ```powershell
 # Destructive to the reviewed synthetic baseline: stop the validation server first.

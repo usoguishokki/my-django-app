@@ -7,29 +7,29 @@ This repository has three existing Oracle access paths and a dedicated writable 
 The development application/runtime and production IIS application/runtime are separate, but both normal application connections currently use the same production Oracle database:
 
 ```text
-Development application/runtime ─┐
-                                 ├─ shared production Oracle HOZENPDB
-Production IIS application/runtime ─┘
+Normal development / production IIS (myproject.settings)
+    -> MYDJANGO_USER in HOZENPDB
+Local validation (myproject.settings_validation)
+    -> NIKA_TEST_USER in the same HOZENPDB
 ```
 
 Verified production Oracle identity:
 
-- Host: `JP1052VS074`
+- Host: `jp1052vs074.ad.toyota-shokki.co.jp` (`JP1052VS074`)
 - Oracle: 19c Standard Edition 2, `19.19.0.0.0`
 - Instance/CDB: `ORCL` / `orcl`
 - PDB: `HOZENPDB`
-- Service: `hozenpdb`
+- Nika service: `hozenpdb.ad.toyota-shokki.co.jp`
 - Production application owner: `MYDJANGO_USER`
-- Full service observed by the read-only audit: `hozenpdb.ad.toyota-shokki.co.jp`
 
-There is no separate writable development or staging Oracle database. **“Development application environment” does not imply “development database.”** Any operation through the normal Django database connection that performs `migrate`, schema DDL, `INSERT`, `UPDATE`, `DELETE`, an application mutation API, Move persistence, fixture creation, or destructive test setup is a production database change even when initiated from the development worktree or runtime.
+Writable validation has separate application objects/data in `NIKA_TEST_USER`; it is not a fully isolated staging database or separate Oracle server. **Normal development settings still target production.** Any operation through the normal Django database connection that performs `migrate`, schema DDL, `INSERT`, `UPDATE`, `DELETE`, an application mutation API, Move persistence, fixture creation, or destructive test setup is a production database change even when initiated from the development worktree or runtime.
 
 Accordingly:
 
 - Unit, static, and frontend tests that do not connect to Oracle remain safe.
 - Offline migration graph and state inspection remain safe.
 - Authorized SELECT-only research through the dedicated read-only path remains safe.
-- Synthetic fixture writes, intentional rollback/failure injection, concurrency mutation tests, and test Move writes must not be run against the shared production database merely for validation.
+- Synthetic fixture writes, intentional rollback/failure injection, concurrency mutation tests, and test Move writes require the guarded validation schema; never target `MYDJANGO_USER` for these tests.
 - Normal development browser access is not isolated from production data. Use the guarded read-only browser-verification path for browser research that must not write.
 
 ## Normal application path
@@ -46,13 +46,17 @@ The read-only validation design audit on 2026-09-25 verified that the production
 
 `myproject.settings_validation` reuses non-secret defaults from `settings_shared.py` without importing normal settings or loading the normal `.env`. It requires explicit opt-in and dedicated credentials from process variables or ignored `.env.validation`. The fixed validation identity is `NIKA_TEST_USER` for session user, current user and current schema, in `HOZENPDB`, on service `hozenpdb.ad.toyota-shokki.co.jp`.
 
-`NIKA_TEST_USER` is provisioned in `HOZENPDB` (human-verified provisioning handoff). It has a finite 100 MB `USERS` quota, temporary tablespace `TEMP`, no roles or production object grants, and runtime `CREATE SESSION` only. Fresh-schema migrations through `myapp.0025_planschedulechangehistory` succeeded on real Oracle. Initialization required temporary `CREATE TABLE`, `CREATE SEQUENCE`, `CREATE PROCEDURE`, and `CREATE TRIGGER`; `CREATE TABLE` alone failed with ORA-01031 creating `django_migrations`. These privileges and temporary `CREATE VIEW` were revoked after provisioning. The separately provisioned unmanaged `SHIFTPATTERN_WORKER_VIEW` is VALID and references only validation-owned `MYAPP_SHIFTPATTAN_TB` and `MYAPP_FIELD_WORKER_TB`. Identity preflight alone still does not certify readiness or absence of production grants. Guarded synthetic seed/reset commands use DML only; their real Oracle execution remains a Human Review step.
+`NIKA_TEST_USER` is provisioned in `HOZENPDB`, with its own migrated tables and unmanaged worker view. The [validation runbook](../engineering/validation-environment.md) owns verified provisioning/migration evidence, quota, temporary privileges, runtime privileges, view maintenance, and synthetic seed/reset procedures. Identity preflight alone does not certify readiness or absence of production grants.
+
+**Same code; different settings and data.** Production (`myproject.settings` -> `MYDJANGO_USER`) and validation (`myproject.settings_validation` -> `NIKA_TEST_USER`) execute the same application business logic. Do not create separate production/test business implementations. Validation-only differences are limited to environmental safeguards: identity verification, UI marker, cache/cookies/logging isolation and MARP disablement. There is one migration chain; follow the [future migration standard](../engineering/validation-environment.md#future-schema-migration-standard).
 
 Every physical Django connection is checked through `connection_created`; a mismatch or identity-query error closes the connection and raises a fatal safety error. There is no schema repair or `SET CURRENT_SCHEMA`. The explicit preflight command checks the same identity before future Human Review. Validation has local-memory cache, console logs, independent secret and cookie names, a visible marker (including login/Admin), and disabled MARP access.
 
 The validation schema lives on the **same Oracle instance/PDB** as production. Schema separation does not isolate CPU, RAM, storage, undo, redo or availability. It is not a separate Oracle server. The required DBA boundary is no production application-object grants, no broad roles/ANY privileges, a finite quota, and review of PUBLIC, nested-role, executable and database-link access. Use only the guarded minimal synthetic dataset; never copy production records.
 
-See [validation environment workflow](../engineering/validation-environment.md) for configuration, preflight and remaining provisioning gates.
+Access responsibilities are distinct: `MYDJANGO_USER` owns production application data; `HOZEN_READONLY` is for SELECT-only production research/browser verification; `NIKA_TEST_USER` owns writable validation data. Never reuse the research account for validation writes or use production credentials as a fallback.
+
+Documentation ownership: `AGENTS.md` owns mandatory repository safety rules; this document owns topology/access responsibilities; the [validation runbook](../engineering/validation-environment.md) owns validation operations and the migration standard; [runtime/deployment rules](../開発・本番運用ルール（更新版）.md) own IIS/production deployment. Link to these procedures rather than copying them.
 
 ## AI/Codex read-only research path
 
