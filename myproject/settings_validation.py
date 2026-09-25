@@ -43,6 +43,8 @@ if not 1 <= _port <= 65535:
 SECRET_KEY = _required("NIKA_VALIDATION_SECRET_KEY")
 NIKA_VALIDATION_MODE = True
 DEBUG = False
+# Local runserver --insecure serves source files through staticfiles finders.
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 ALLOWED_HOSTS = ["127.0.0.1", "localhost", "[::1]"]
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = []

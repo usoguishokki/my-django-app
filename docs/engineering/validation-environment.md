@@ -72,7 +72,7 @@ Successful identity verification **does not certify privileges, local object own
 E:\repos\myproject\venv\Scripts\python.exe manage.py runserver 127.0.0.1:8011 --settings=myproject.settings_validation --insecure
 ```
 
-`--insecure` here only enables Django development static serving with `DEBUG=False`; it does not bypass the database guard. Reviewed collected static assets must be available for the configured manifest storage. `ALLOWED_HOSTS` checks request host headers; it is not a socket-binding or firewall control. Never bind this local validation runtime to `0.0.0.0` or expose it through IIS/proxy/tunnel.
+`--insecure` enables Django development static serving with `DEBUG=False`; it does not bypass the database guard. Validation uses plain `StaticFilesStorage`, so templates emit unhashed URLs that `runserver --insecure` serves from `myapp/static/` and `STATICFILES_DIRS`. Validation does not require `collectstatic` for this local server. Production keeps manifest-hashed assets served by IIS; follow the [static asset release runbook](../static-asset-release.md) for that workflow. `ALLOWED_HOSTS` checks request host headers; it is not a socket-binding or firewall control. Never bind this local validation runtime to `0.0.0.0` or expose it through IIS/proxy/tunnel.
 
 ## Future schema migration standard
 

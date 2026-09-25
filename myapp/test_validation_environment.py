@@ -6,9 +6,11 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+from django.contrib.staticfiles import finders
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db.backends.signals import connection_created
@@ -58,7 +60,8 @@ with patch.dict(os.environ, environment, clear=True), patch('dotenv.load_dotenv'
         module = importlib.import_module(sys.argv[1])
         names = ['DATABASES', 'MARP_DATABASE', 'MARP_ENABLED', 'SECRET_KEY', 'DEBUG',
                  'ALLOWED_HOSTS', 'CACHES', 'LOGGING', 'SESSION_COOKIE_NAME',
-                 'CSRF_COOKIE_NAME', 'CORS_ALLOW_ALL_ORIGINS', 'TEMPLATES']
+                 'CSRF_COOKIE_NAME', 'CORS_ALLOW_ALL_ORIGINS', 'TEMPLATES',
+                 'STATICFILES_STORAGE']
         result = {name: getattr(module, name, None) for name in names}
         result['normal_loaded'] = 'myproject.settings' in sys.modules
         result['dotenv_files'] = [str(call.args[0]) for call in load.call_args_list]
@@ -172,6 +175,54 @@ class ValidationSettingsTests(SimpleTestCase):
                 self.assertEqual(result["SECRET_KEY"], NORMAL_ENV["DJANGO_SECRET_KEY"])
                 self.assertTrue(result["CORS_ALLOW_ALL_ORIGINS"])
                 self.assertNotIn("validation_environment", json.dumps(result["TEMPLATES"]))
+
+    def test_validation_static_storage_is_plain_and_normal_storage_is_manifest(self):
+        validation = inspect_settings("myproject.settings_validation", VALIDATION_ENV)
+        normal = inspect_settings("myproject.settings", NORMAL_ENV)
+        from myproject import settings_shared
+
+        self.assertEqual(settings_shared.STATICFILES_STORAGE,
+                         "myproject.staticfiles.StaticFilesStorage")
+        self.assertEqual(normal["STATICFILES_STORAGE"], settings_shared.STATICFILES_STORAGE)
+        self.assertEqual(validation["STATICFILES_STORAGE"],
+                         "django.contrib.staticfiles.storage.StaticFilesStorage")
+        self.assertEqual(validation["DATABASES"]["default"]["USER"], "NIKA_TEST_USER")
+        self.assertFalse(validation["MARP_ENABLED"])
+        self.assertEqual(validation["CACHES"]["default"]["BACKEND"],
+                         "django.core.cache.backends.locmem.LocMemCache")
+        self.assertNotIn("filename", json.dumps(validation["LOGGING"]))
+        self.assertEqual(validation["SESSION_COOKIE_NAME"], "nika_validation_sessionid")
+        self.assertEqual(validation["CSRF_COOKIE_NAME"], "nika_validation_csrftoken")
+
+    def test_login_static_urls_match_each_environment_storage(self):
+        assets = ("css/login.css", "css/base.css", "css/footer.css",
+                  "img/Nika.png", "img/RAV4.png", "js/base.js")
+        with override_settings(
+            STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage",
+            DEBUG=False,
+        ):
+            html = render_to_string("login.html", {"nika_validation_mode": True})
+            for asset in assets:
+                with self.subTest(environment="validation", asset=asset):
+                    self.assertIn(f'/static/{asset}', html)
+                    self.assertIsNotNone(finders.find(asset))
+
+        with tempfile.TemporaryDirectory() as root:
+            paths = {asset: asset.rsplit(".", 1)[0] + ".abcdef123456." + asset.rsplit(".", 1)[1]
+                     for asset in assets}
+            (Path(root) / "staticfiles.json").write_text(
+                json.dumps({"version": "1.1", "paths": paths, "hash": "synthetic"}),
+                encoding="utf-8",
+            )
+            with override_settings(
+                STATICFILES_STORAGE="myproject.staticfiles.StaticFilesStorage",
+                STATIC_ROOT=root,
+                DEBUG=False,
+            ):
+                html = render_to_string("login.html", {"nika_validation_mode": False})
+                for asset, hashed in paths.items():
+                    with self.subTest(environment="production", asset=asset):
+                        self.assertIn(f'/static/{hashed}', html)
 
 
 class ValidationGuardTests(SimpleTestCase):
