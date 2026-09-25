@@ -10,11 +10,15 @@ from django.apps import apps
 from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.core.cache import cache
 from django.db import connection, transaction
 from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
 
 from myapp import models as m
+from myapp.cache_manager import CacheManager
+from myapp.cache_manager_if import CacheManagerIF
+from myapp.middlewares import ModelCacheMiddleware
 from myapp.services import validation_dataset as ds
 from myapp.services.inspection_standard_plan_sync import sync_waiting_plans_for_inspection_standard
 from myapp.services.plan_scheduling_move import move_plan_schedule
@@ -41,8 +45,19 @@ class DatasetTests(TestCase):
         with connection.cursor() as cursor:
             cursor.execute("CREATE TABLE django_migrations (id integer PRIMARY KEY, name varchar(100))")
             cursor.execute("INSERT INTO django_migrations VALUES (1, 'sentinel')")
-            # Join compatibility sentinel, not a reproduction of the Oracle view.
-            cursor.execute("CREATE VIEW shiftpattern_worker_view AS SELECT s.pattern_name AS shift_pattern_name FROM myapp_shiftpattan_tb s JOIN myapp_field_worker_tb f ON s.pattern_id = f.pattern_id")
+            # SQLite test view supplies the unmanaged model's columns; it is not
+            # the authoritative Oracle view definition.
+            view_columns = ", ".join(
+                f"NULL AS {field.column}"
+                for field in m.Shift_pattern_worker_view._meta.fields
+                if field.column != "shift_pattern_name"
+            )
+            cursor.execute(
+                "CREATE VIEW shiftpattern_worker_view AS SELECT "
+                f"s.pattern_name AS shift_pattern_name, {view_columns} "
+                "FROM myapp_shiftpattan_tb s JOIN myapp_field_worker_tb f "
+                "ON s.pattern_id = f.pattern_id"
+            )
 
     def setUp(self):
         self.atomic = transaction.atomic()
@@ -97,8 +112,14 @@ class DatasetTests(TestCase):
     def test_baseline_relationships_and_conditions(self):
         result = self.seed()
         self.assertEqual(set(m.Organization.objects.values_list("organization", flat=True)), set(ds.ORG_CODES))
-        self.assertEqual(set(m.Affilation_tb.objects.values_list("affilation", flat=True)), {"A班", "B班", "C班"})
-        self.assertEqual(m.Affilation_tb.objects.get(pk=1).affilation, "A班")
+        self.assertEqual(
+            list(m.Affilation_tb.objects.order_by("pk").values_list("pk", "affilation")),
+            list(ds.AFFILIATION_REFERENCES),
+        )
+        self.assertEqual(m.Affilation_tb.objects.get(pk=7).affilation, "休日")
+        generated = m.Affilation_tb.objects.create(affilation="VAL-TEMP-LATER")
+        self.assertGreater(generated.pk, 7)
+        generated.delete()
         self.assertEqual(m.ShiftPattan_tb.objects.get(pk=7).pattern_name, "休日")
         self.assertEqual(set(m.ShiftPattan_tb.objects.values_list("pattern_name", flat=True)), {"1直", "2直", "3直", "休日"})
         self.assertEqual(set(m.ShiftPattan_tb.objects.values_list("pk", flat=True)), set(m.Field_worker_tb.objects.values_list("pk", flat=True)))
@@ -212,6 +233,10 @@ class DatasetTests(TestCase):
         with CaptureQueriesContext(connection) as queries:
             after = ds.run_dataset(anchor=ANCHOR, reset=True, confirmed=True)
         self.assertEqual(before, after)
+        self.assertEqual(
+            list(m.Affilation_tb.objects.order_by("pk").values_list("pk", "affilation")),
+            list(ds.AFFILIATION_REFERENCES),
+        )
         self.assertFalse(any(q["sql"].lstrip().upper().startswith(("CREATE", "ALTER", "DROP", "TRUNCATE")) for q in queries))
         with connection.cursor() as cursor:
             cursor.execute("SELECT name FROM django_migrations")
@@ -232,6 +257,23 @@ class DatasetTests(TestCase):
         with self.assertRaises(CommandError):
             ds.run_dataset(anchor=ANCHOR, reset=True, confirmed=True)
         self.assertTrue(m.Plan_tb.objects.exists())
+
+    def test_middleware_cache_initialization_resolves_holiday_affiliation(self):
+        self.seed()
+        cache.clear()
+        self.addCleanup(cache.clear)
+        CacheManager._instance = None
+        CacheManagerIF._instance = None
+        self.addCleanup(setattr, CacheManager, "_instance", None)
+        self.addCleanup(setattr, CacheManagerIF, "_instance", None)
+        # Week lookup is unrelated to the reported startup failure.
+        with patch.object(CacheManagerIF, "get_week_information", return_value=None):
+            middleware = ModelCacheMiddleware(lambda request: None)
+        self.assertEqual(middleware.cache_manager_if.holiday_inf, {"id": 7, "name": "休日"})
+        self.assertEqual(
+            middleware.cache_manager_if.middlewares_cache["affiliations"].get(affilation_id=7).affilation,
+            "休日",
+        )
 
     def test_commands_and_output_no_password(self):
         out = io.StringIO()

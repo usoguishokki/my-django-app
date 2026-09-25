@@ -18,6 +18,12 @@ from myproject.validation import verify_validation_connection
 
 ORG_CODES = ("VAL_A", "VAL_B")
 MEMBER_IDS = ("VAL_A_USER", "VAL_B_USER")
+# The existing cache runtime resolves holiday by Affilation_tb ID 7.
+# Keep the verified reference spelling and IDs; Calendar slots still use A/B/C.
+AFFILIATION_REFERENCES = (
+    (1, "A班"), (2, "B班"), (3, "C班"),
+    (4, "連2_A"), (5, "連2_B"), (6, "常昼"), (7, "休日"),
+)
 SCENARIOS = ("NO_RESYNC", "SCHEDULE", "LIFECYCLE", "INELIGIBLE", "ABOLISH", "MOVE", "STALE", "ROLLBACK", "FOREIGN", "HOLIDAY")
 # Children first. New application models are NOT automatically added to reset.
 RESET_MODELS = (
@@ -102,11 +108,26 @@ def _auto_create(model, reserved, **values):
     return row
 
 
+def _reserve_affiliation_identity_values():
+    """Keep later generated IDs above the fixed reference master range."""
+    highest_reference_id = AFFILIATION_REFERENCES[-1][0]
+    for index in range(highest_reference_id + 1):
+        row = m.Affilation_tb.objects.create(affilation=f"VAL-TEMP-{index}")
+        generated_id = row.pk
+        row.delete()
+        if generated_id > highest_reference_id:
+            return
+    raise CommandError("Validation affiliation identity did not advance past the reserved IDs.")
+
+
 def build_baseline(*, anchor, password):
     """One builder for seed/reset; caller owns the guard and atomic transaction."""
     past, future, last = scenario_dates(anchor)
-    teams = {name: _auto_create(m.Affilation_tb, {1}, affilation=name) for name in ("B班", "C班")}
-    teams["A班"] = m.Affilation_tb.objects.create(pk=1, affilation="A班")
+    _reserve_affiliation_identity_values()
+    teams = {
+        name: m.Affilation_tb.objects.create(pk=pk, affilation=name)
+        for pk, name in AFFILIATION_REFERENCES
+    }
     shifts = {}
     for name, begin, finish in (("1直", time(8), time(16)), ("2直", time(16), time(0)), ("3直", time(0), time(8))):
         shifts[name] = _auto_create(m.ShiftPattan_tb, {7}, pattern_name=name, start_time=begin, end_time=finish,
@@ -199,7 +220,10 @@ def assert_reset_scope():
         (m.Practitioner_tb, {"plan_id__inspection_no__control_no__line_name__organization__organization__in": ORG_CODES, "member_id_id__in": MEMBER_IDS}),
         (m.PlanApproval, {"plan__inspection_no__control_no__line_name__organization__organization__in": ORG_CODES, "member_id__in": MEMBER_IDS}),
         (m.WeeklyDuty, {"plan__inspection_no__control_no__line_name__organization__organization__in": ORG_CODES}),
-        (m.Affilation_tb, {"affilation__in": ("A班", "B班", "C班")}),
+        (m.Affilation_tb, {
+            "pk__in": tuple(pk for pk, _ in AFFILIATION_REFERENCES),
+            "affilation__in": tuple(name for _, name in AFFILIATION_REFERENCES),
+        }),
         (m.ShiftPattan_tb, {"pattern_name__in": ("1直", "2直", "3直", "休日")}),
         (m.Field_worker_tb, {"pattern_name__in": ("1直", "2直", "3直", "休日")}),
         (m.PlanScheduleRule, {"pk__in": (1, 3, 4, 15), "name__startswith": "[VALIDATION]"}),

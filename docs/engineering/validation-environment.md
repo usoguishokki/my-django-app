@@ -101,7 +101,7 @@ E:\repos\myproject\venv\Scripts\python.exe -B manage.py reset_validation_environ
 E:\repos\myproject\venv\Scripts\python.exe -B manage.py inspect_validation_dataset --settings=myproject.settings_validation
 ```
 
-The same anchor yields the same business scenarios, not the same generated IDs, timestamps or password hashes. Oracle identity counters do not roll back. Only existing code-required IDs are fixed: affiliation 1=A班, shift 7=休日, rules 1/3/4/15. Ordinary affiliations/shifts use generated IDs; a generated reserved value is consumed and its temporary row deleted before inserting the special reference row. Field-worker IDs intentionally match shift IDs for the existing view join. No sequence reset or DDL is used.
+The same anchor yields the same business scenarios, not the same generated IDs, timestamps or password hashes. Oracle identity counters do not roll back. The validation affiliation reference master preserves the verified IDs and exact names: `1=A班`, `2=B班`, `3=C班`, `4=連2_A`, `5=連2_B`, `6=常昼`, `7=休日`. Existing cache middleware resolves the holiday affiliation by ID 7. Calendar assignments use only A/B/C. This affiliation naming does not determine shift/worker pattern names. Before inserting these fixed IDs, the builder consumes generated affiliation IDs through 7 with temporary rows that it deletes in the same transaction; later generated IDs therefore do not collide with the reference rows. Shift 7=休日 and rules 1/3/4/15 remain fixed. Ordinary shifts use generated IDs; a generated reserved value is consumed and its temporary row deleted before inserting the special reference row. Field-worker IDs intentionally match shift IDs for the existing view join. No sequence reset or DDL is used.
 
 ### Calendar and scenario map
 
